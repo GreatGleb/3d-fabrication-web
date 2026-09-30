@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AIQME создаёт 3D-модели по фотографиям, выполняет 3D-сканирование, полимерную и металлическую печать, CNC-обработку и гравировку.">
+  <meta name="theme-color" content="#f7f9fc">
+  <title>AIQME — 3D-модели по фото, сканирование и печать</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/calculator.js"></script>
+  <script defer src="assets/lead.js"></script>
+<link rel="stylesheet" href="assets/motion-v2/motion.css?v=daa76288ed35"><script defer src="assets/motion-v2/motion.js?v=daa76288ed35"></script><script defer src="assets/motion-v2/gear.js?v=daa76288ed35"></script><script defer src="assets/motion-v2/navigation.js?v=daa76288ed35"></script><script defer src="assets/motion-v2/section-transition.js?v=daa76288ed35"></script><link rel="stylesheet" href="assets/motion-v2/mosaic.css?v=daa76288ed35"><script defer src="assets/motion-v2/mosaic.js?v=daa76288ed35"></script><link rel="stylesheet" href="assets/motion-v2/floating-cta.css?v=daa76288ed35"><script defer src="assets/motion-v2/floating-cta.js?v=daa76288ed35"></script><link rel="stylesheet" href="assets/motion-v2/services.css?v=daa76288ed35"><script defer src="assets/motion-v2/services.js?v=daa76288ed35"></script><link rel="stylesheet" href="assets/responsive.css"></head>
+<body class="page-home">
+<header class="site-header" data-site-mode="demo">
+  <div class="header-inner shell">
+    <a class="brand" href="./" aria-label="AIQME — главная">
+      <img src="assets/images/logo-dark.png" width="1671" height="416" alt="AIQME">
+    </a>
+    <button class="menu-button" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Открыть меню" data-open-label="Открыть меню" data-close-label="Закрыть меню">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="primary-navigation" id="primary-navigation" aria-label="Основная навигация">
+      <a href="./#services">Услуги</a>
+      <a href="./#process">Процесс</a>
+      <a href="./projektai/">Проекты</a>
+      <a href="./#about">О нас</a>
+      <a href="./#information">Информация</a>
+      <a href="./calculator/">Калькулятор</a>
+      <a href="./login/">Кабинет</a>
+      <a href="./kontaktai/">Контакты</a>
+      <div class="locale-switch"><span aria-current="page">RU</span></div>
+      <a class="button button-primary header-cta" href="./kontaktai/">Обсудить проект <span aria-hidden="true">↗</span></a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <figure class="v2-media"><div class="v2-frame"><img src="assets/motion-v2/poster.jpg" width="1280" height="720" alt=""><video muted playsinline loop preload="none" aria-hidden="true"></video></div><figcaption class="v2-controls"><span>Видео: <a href="https://vimeo.com/1012463800" target="_blank" rel="noopener">Bleu · Daria Serova ↗</a></span><button type="button" hidden>Воспроизвести</button></figcaption></figure>
+    <div class="shell hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">МОДЕЛЬ ПО ФОТО · 3D-СКАНИРОВАНИЕ · ПЕЧАТЬ</p>
+        <h1 id="hero-title">От фото<br><span>к точной форме.</span></h1>
+        <p class="hero-description">Создадим 3D-модель даже по фотографии, оцифруем физический объект или изготовим деталь. Поможем пройти путь от идеи до готового результата.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="./kontaktai/">Обсудить задачу <span aria-hidden="true">↗</span></a>
+          <a class="button button-outline" href="./projektai/">Смотреть проекты <span aria-hidden="true">→</span></a>
+        </div>
+        <p class="hero-note"><span class="note-dot" aria-hidden="true"></span>Можно начать с фотографии, чертежа или самой детали</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="capabilities" aria-label="Направления работы">
+    <div class="shell capability-grid">
+      <div class="capability"><span>01 / ЗАХВАТ</span><strong>3D-сканирование</strong><p>Геометрия реального объекта в цифровом виде</p></div>
+      <div class="capability"><span>02 / МОДЕЛЬ</span><strong>3D-моделирование</strong><p>Создание модели по фото, чертежу или скану</p></div>
+      <div class="capability"><span>03 / РЕЗУЛЬТАТ</span><strong>3D-печать</strong><p>Физическая деталь по согласованной задаче</p></div>
+    </div>
+  </section>
+
+  <section class="quick-calculator" id="quick-calculator" aria-labelledby="quick-calculator-title">
+    <div class="shell quick-calculator-layout">
+      <div><p class="eyebrow">КАЛЬКУЛЯТОР 3D-МОДЕЛИ</p><h2 id="quick-calculator-title">Проверить STL за минуту.</h2><p>Загрузите модель и сразу узнайте её габариты и объём. Файл останется в вашем браузере.</p><a class="text-link" href="./calculator/">Полный калькулятор с расчётом массы <span aria-hidden="true">↗</span></a></div>
+      <form id="quick-stl-calculator" class="quick-calculator-form" novalidate
+        data-error-file="Выберите STL-файл." data-error-size="Файл больше 25 МБ. Выберите модель меньшего размера."
+        data-error-format="Не удалось прочитать STL-файл. Проверьте формат и целостность модели." data-error-volume="Размеры получены, но объём не удалось определить. Проверьте, замкнута ли сетка и правильно ли ориентированы её грани."
+        data-processing="Анализируем файл…">
+        <div class="field"><label for="quick-stl-file">STL-файл</label><input id="quick-stl-file" type="file" data-file-choose="Выбрать файл" data-file-empty="Файл пока не выбран" data-file-remove="Убрать файл" accept=".stl,model/stl,application/sla"><small>Поддерживаются бинарный и текстовый STL до 25 МБ.</small></div>
+        <div class="quick-calculator-controls"><div class="field"><label for="quick-stl-unit">Единицы координат в файле</label><select id="quick-stl-unit"><option value="mm">Миллиметры (мм)</option><option value="cm">Сантиметры (см)</option><option value="inch">Дюймы (in)</option></select></div><button class="button button-primary" type="submit">Рассчитать <span aria-hidden="true">↗</span></button></div>
+        <p id="quick-calculator-status" class="calculator-status" role="status" hidden></p>
+        <div id="quick-calculator-result" class="quick-calculator-result" hidden><div><span>Габариты, мм</span><strong id="quick-result-dimensions"></strong></div><div><span>Объём модели, см³</span><strong id="quick-result-volume"></strong></div></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="mosaic" id="possibilities" aria-labelledby="mosaic-title">
+  <div class="mosaic-stage">
+    <div class="mosaic-grid" aria-hidden="true">
+      <div class="mosaic-tile mosaic-metal"><img src="assets/motion-v2/mosaic/amazemet.jpg" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="assets/motion-v2/mosaic/amazemet.mp4"></video></div>
+      <div class="mosaic-tile mosaic-scan"><img src="assets/images/bust.jpg" alt="" loading="lazy"></div>
+      <div class="mosaic-tile mosaic-center"><img src="assets/motion-v2/mosaic/bosch.jpg" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="assets/motion-v2/mosaic/bosch.mp4"></video></div>
+      <div class="mosaic-tile mosaic-part"><img src="assets/images/bmw-console.jpg" alt="" loading="lazy"></div>
+      <div class="mosaic-tile mosaic-panel"><img src="assets/images/siemens-panel.jpg" alt="" loading="lazy"></div>
+    </div>
+    <div class="mosaic-heading"><p class="eyebrow">ОТ ИДЕИ К ИЗГОТОВЛЕНИЮ</p><h2 id="mosaic-title">Одна задача.<br>Разные возможности.</h2></div>
+    <div class="mosaic-footer"><div><a class="mosaic-next" href="#services">Выбрать технологию ↓</a><p>Видео: <a href="https://www.youtube.com/watch?v=1Nd_xg8QfXo" target="_blank" rel="noopener">Bosch / The Apic</a> · <a href="https://www.symbolstudio.pl/works/amazemet" target="_blank" rel="noopener">Amazemet / Symbol Studio</a></p></div><button type="button" hidden>Пауза видео</button></div>
+  </div>
+</section>
+
+<section class="section services-section" id="services" aria-labelledby="services-title">
+    <div class="shell">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">ЧТО МЫ ДЕЛАЕМ</p><h2 id="services-title">Технологии под вашу задачу.</h2></div>
+        <p class="section-intro">Можно прийти даже с фотографией: также подойдут готовый файл, чертёж, идея или физическая деталь. Подберём подходящий следующий шаг.</p>
+      </div>
+      <div class="service-grid">
+        <article class="service-card">
+          <div class="service-image"><img src="assets/images/excel-scan.png" width="227" height="107" alt="Иллюстрация 3D-сканера из дизайн-макета" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">01 / СКАНИРОВАНИЕ</span><h3>3D-сканирование</h3><p>Переносим форму существующего объекта в цифровую модель. Это полезно для восстановления деталей, измерений и дальнейшего проектирования.</p><a class="text-link" href="./kontaktai/">Обсудить услугу <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="assets/images/excel-model.png" width="228" height="107" alt="Иллюстрация компьютерной модели детали из дизайн-макета" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">02 / МОДЕЛЬ</span><h3>3D-моделирование</h3><p>Создаём и корректируем 3D-модели по фотографиям, сканам и чертежам. Если нужен точный размер, уточним его и попросим дополнительные ракурсы. Подготовим геометрию к печати или дальнейшей работе.</p><a class="text-link" href="./kontaktai/">Обсудить услугу <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="assets/images/excel-print.png" width="230" height="107" alt="Иллюстрация 3D-печатной детали из дизайн-макета" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">03 / ПОЛИМЕРЫ</span><h3>Полимерная 3D-печать</h3><p>Изготавливаем прототипы, индивидуальные детали и небольшие партии из полимеров. Материал подбираем под назначение изделия.</p><a class="text-link" href="./kontaktai/">Обсудить услугу <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="assets/images/excel-metal.png" width="353" height="102" alt="Иллюстрация металлической детали из дизайн-макета" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">04 / МЕТАЛЛ</span><h3>Металлическая 3D-печать</h3><p>Создаём металлические детали сложной формы. Подходящий материал и технологию уточняем после оценки модели и требований к изделию.</p><a class="text-link" href="./kontaktai/">Обсудить услугу <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="assets/images/excel-cnc.png" width="353" height="102" alt="Иллюстрация детали с гравировкой AIQME из дизайн-макета" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">05 / ОБРАБОТКА</span><h3>CNC-обработка и гравировка</h3><p>Изготавливаем детали и панели, наносим надписи и гравировку. Материал, размеры и способ обработки согласуем по задаче.</p><a class="text-link" href="./kontaktai/">Обсудить услугу <span aria-hidden="true">↗</span></a></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section process-section" id="process" aria-labelledby="process-title">
+    <div class="shell">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">КАК МЫ РАБОТАЕМ</p><h2 id="process-title">От фотографии или детали до результата.</h2></div>
+        <p class="section-intro">Понятная последовательность действий помогает выбрать нужную услугу и согласовать результат до изготовления.</p>
+      </div>
+      <div class="process-line" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="process-grid">
+        <article class="process-step"><span>01</span><h3>Расскажите о задаче</h3><p>Пришлите описание и хотя бы одну фотографию. Если есть другие ракурсы, размеры, чертёж, 3D-файл или сама деталь, приложите их тоже.</p></article>
+        <article class="process-step"><span>02</span><h3>Выберем подход</h3><p>Определим, нужны ли сканирование, моделирование, полимерная или металлическая печать, CNC-обработка либо сочетание этих этапов.</p></article>
+        <article class="process-step"><span>03</span><h3>Подготовим модель</h3><p>Сделаем модель по фотографиям или другим исходным данным, уточним недостающие размеры и согласуем геометрию и формат результата.</p></article>
+        <article class="process-step"><span>04</span><h3>Передадим результат</h3><p>Вы получите цифровой файл, изготовленную деталь или оба результата — по договорённости.</p></article>
+      </div>
+    </div>
+<div class="gear-case shell" id="motion-case" aria-labelledby="gear-title">
+  <div class="gear-panel">
+    <div class="gear-heading"><p class="eyebrow">РЕАЛЬНЫЙ ПРОЕКТ / AIQME</p><h2 id="gear-title">Вернуть детали<br> её форму.</h2><p>Восстановление конической шестерни: от сканирования до печати из нейлона.</p></div>
+    <div class="gear-stage" aria-hidden="true">
+      <div class="gear-stage-top"><span>СКАН → CAD → ДЕТАЛЬ</span><span class="gear-count">01 / 03</span></div>
+      <div class="gear-picture">
+        <div class="gear-layer gear-scan"><div class="gear-crop" style="--row:0"><img src="assets/images/gear.jpg" alt="" width="1000" height="1200"></div></div>
+        <div class="gear-layer gear-cad"><div class="gear-crop" style="--row:2"><img src="assets/images/gear.jpg" alt="" width="1000" height="1200"></div></div>
+        <div class="gear-layer gear-result"><div class="gear-crop" style="--row:3"><img src="assets/images/gear.jpg" alt="" width="1000" height="1200"></div></div>
+        <div class="gear-seam"></div>
+        <svg class="gear-pointer" viewBox="0 0 500 300"><path d="M350 135 L415 65 L485 65" pathLength="1"/><circle cx="350" cy="135" r="6"/></svg>
+      </div>
+      <div class="gear-callout">Зубчатый венец · восстанавливаем форму в CAD</div>
+      <div class="gear-progress"><span></span></div>
+    </div>
+    <div class="gear-story">
+      <p class="gear-hint" hidden>Прокрутите вниз или выберите этап</p>
+      <nav class="gear-nav" aria-label="Этапы восстановления" hidden><button type="button" data-gear-go="0">01 · Скан</button><button type="button" data-gear-go="1">02 · CAD</button><button type="button" data-gear-go="2">03 · Деталь</button></nav>
+      <ol class="gear-steps">
+        <li><h3>01 / Считываем геометрию</h3><p>Скан исходной детали становится основой для восстановления её формы.</p><div class="gear-crop" style="--row:0"><img src="assets/images/gear.jpg" alt="Цветной скан конической шестерни" width="1000" height="1200" loading="lazy"></div></li>
+        <li><h3>02 / Создаём CAD-модель</h3><p>Воссоздаём зубчатый венец и подготавливаем цифровую модель детали.</p><div class="gear-crop" style="--row:2"><img src="assets/images/gear.jpg" alt="CAD-модель зубчатого венца шестерни" width="1000" height="1200" loading="lazy"></div></li>
+        <li><h3>03 / Получаем результат</h3><p>Печатаем шестерню из нейлона. На фото — изготовленная деталь рядом с исходной.</p><div class="gear-crop" style="--row:3"><img src="assets/images/gear.jpg" alt="Напечатанная и исходная шестерни рядом" width="1000" height="1200" loading="lazy"></div></li>
+      </ol>
+      <div class="gear-actions"><a class="button button-primary" href="./kontaktai/">Обсудить такую деталь <span aria-hidden="true">↗</span></a><a class="text-link" href="#projects">К проектам ↓</a></div>
+    </div>
+  </div>
+</div>
+
+  </section>
+
+  <section class="section projects-section" id="projects" aria-labelledby="projects-title">
+    <div class="shell">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">РЕАЛЬНЫЕ РАБОТЫ AIQME</p><h2 id="projects-title">Задачи, которые стали деталями.</h2></div>
+        <p class="section-intro">Посмотрите, как сканирование, моделирование и печать применяются в конкретных проектах.</p>
+      </div>
+      <div class="project-grid">
+        <article class="project-card"><a href="./projektai/#impeller"><div class="project-image"><img src="assets/images/impeller.jpg" width="1200" height="900" alt="Коллаж со сканированием и моделью крыльчатки компрессора" loading="lazy"></div><div class="project-content"><span>СКАНИРОВАНИЕ · CAD</span><h3>Крыльчатка компрессора <span aria-hidden="true">↗</span></h3><p>Сканирование геометрии и подготовка параметрической модели по физической детали.</p></div></a></article>
+        <article class="project-card"><a href="./projektai/#bmw"><div class="project-image"><img src="assets/images/bmw-console.jpg" width="1000" height="1200" alt="Коллаж с деталью и напечатанной вставкой в консоль BMW" loading="lazy"></div><div class="project-content"><span>МОДЕЛИРОВАНИЕ · ПЕЧАТЬ</span><h3>Вставка в консоль BMW <span aria-hidden="true">↗</span></h3><p>Модель и изготовление вставки для установки регулятора в штатную пепельницу автомобиля.</p></div></a></article>
+        <article class="project-card"><a href="./projektai/#siemens"><div class="project-image"><img src="assets/images/siemens-panel.jpg" width="950" height="1000" alt="Операторская панель Siemens и восстановленная модель корпуса" loading="lazy"></div><div class="project-content"><span>ВОССТАНОВЛЕНИЕ ДЕТАЛИ</span><h3>Панель Siemens Simatic <span aria-hidden="true">↗</span></h3><p>Воссоздание корпуса операторской панели по существующему образцу.</p></div></a></article>
+      </div>
+      <div class="section-bottom"><a class="button button-outline" href="./projektai/">Все проекты <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+
+  <section class="section about-section" id="about" aria-labelledby="about-title">
+    <div class="shell about-grid">
+      <div class="about-photo"><img src="assets/images/bust.jpg" width="599" height="805" alt="Сканирование женского бюста для создания цифровой модели" loading="lazy"></div>
+      <div class="about-copy"><p class="eyebrow">О ПОДХОДЕ</p><h2 id="about-title">Работа начинается с вашей задачи.</h2><p>Иногда есть только фотография нужной детали. Иногда — физический образец, чертёж или готовый файл. AIQME объединяет моделирование, сканирование и печать, чтобы выбрать подходящий путь к результату.</p><blockquote>От фотографии или идеи — к 3D-модели и детали, с которыми можно работать дальше.</blockquote></div>
+    </div>
+  </section>
+
+  <section class="section info-section" id="information" aria-labelledby="info-title">
+    <div class="shell">
+      <div class="section-heading split-heading"><div><p class="eyebrow">ПЕРЕД НАЧАЛОМ</p><h2 id="info-title">Что подготовить для обращения.</h2></div><p class="section-intro">Для начала достаточно описать задачу и прислать даже одну фотографию. Если потребуются точные размеры, уточним их вместе.</p></div>
+      <div class="info-grid">
+        <article><span>01</span><h3>Есть только фотография?</h3><p>Мы можем начать создание 3D-модели по фото. Для точной геометрии полезны размеры предмета и снимки с нескольких сторон; если их нет, обсудим возможные допущения.</p></article>
+        <article><span>02</span><h3>Есть 3D-файл или чертёж?</h3><p>Сообщите формат файла, предполагаемое применение и требования к готовой детали.</p></article>
+        <article><span>03</span><h3>Нужна печать?</h3><p>Опишите нагрузку, условия использования, желаемый материал и количество. Вариант изготовления обсудим после оценки модели.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section lead-section" id="contact-form" aria-labelledby="lead-title">
+  <div class="shell">
+    <div class="lead-card">
+      <div class="lead-heading"><p class="eyebrow">ОБСУДИМ ВАШ ПРОЕКТ</p><h2 id="lead-title">Оставить заявку.</h2><p>Три коротких шага — и мы получим всё необходимое, чтобы начать разговор о вашей задаче.</p></div>
+      
+      <div class="lead-progress" aria-label="Шаги заявки"><span class="active" aria-current="step"></span><span></span><span></span></div>
+      <p class="lead-step-label" id="lead-step-label" aria-live="polite"></p>
+      <form id="lead-form" data-step-label="Шаг {step} из 3" data-error-description="Опишите задачу: от 10 до 3000 символов." data-error-quantity="Укажите целое количество от 1 до 10 000." novalidate enctype="multipart/form-data"
+        data-demo-complete-title="Заявка подготовлена." data-demo-complete-text="Чтобы передать задачу команде AIQME, напишите нам по почте."
+        data-error-required="Заполните обязательные поля этого шага." data-error-email="Укажите корректный адрес электронной почты."
+        data-error-file="Выберите файл поддерживаемого формата до 25 МБ." data-error-fields="Проверьте данные заявки: услугу, описание, количество и контакты." data-error-server="Не удалось отправить заявку. Попробуйте позже или напишите на info@aiqme.eu."
+        data-error-limit="Слишком много заявок за короткое время. Попробуйте позже." data-success="Заявка сохранена.">
+        <div class="lead-step" data-step="0">
+          <h3 tabindex="-1">Какая услуга вас интересует?</h3>
+          <div class="lead-service-grid">
+            <label><input type="radio" name="service" value="scan" required><span>3D-сканирование</span></label>
+            <label><input type="radio" name="service" value="model"><span>3D-моделирование</span></label>
+            <label><input type="radio" name="service" value="polymer"><span>Полимерная 3D-печать</span></label>
+            <label><input type="radio" name="service" value="metal"><span>Металлическая 3D-печать</span></label>
+            <label><input type="radio" name="service" value="cnc"><span>CNC-обработка и гравировка</span></label>
+            <label><input type="radio" name="service" value="unsure"><span>Нужна помощь с выбором</span></label>
+          </div>
+          <div class="lead-actions"><button class="button button-primary lead-next" type="button">Далее <span aria-hidden="true">→</span></button></div>
+        </div>
+        <div class="lead-step" data-step="1" hidden>
+          <h3 tabindex="-1">Расскажите о задаче</h3>
+          <div class="lead-fields">
+            <div class="field"><label for="lead-message">Что нужно сделать?</label><textarea id="lead-message" name="message" rows="5" maxlength="3000" minlength="10" placeholder="Опишите объект, назначение детали и желаемый результат" required></textarea></div>
+            <div class="field"><label for="lead-quantity">Количество деталей, если известно</label><input id="lead-quantity" name="quantity" type="number" min="1" max="10000" step="1" inputmode="numeric" placeholder="Например, 2"></div>
+            <div class="field"><label for="lead-attachment">Фото, чертёж или 3D-файл</label><input id="lead-attachment" name="attachment" type="file" data-file-choose="Выбрать файл" data-file-empty="Файл пока не выбран" data-file-remove="Убрать файл" accept=".jpg,.jpeg,.png,.webp,.pdf,.stl,.obj,.step,.stp"><small>Необязательно. JPG, PNG, WebP, PDF, STL, OBJ или STEP до 25 МБ.</small></div>
+          </div>
+          <div class="lead-actions"><button class="button button-outline lead-back" type="button">Назад</button><button class="button button-primary lead-next" type="button">Далее <span aria-hidden="true">→</span></button></div>
+        </div>
+        <div class="lead-step" data-step="2" hidden>
+          <h3 tabindex="-1">Как с вами связаться?</h3>
+          <div class="lead-fields lead-contact-fields">
+            <div class="field"><label for="lead-name">Имя</label><input id="lead-name" name="name" type="text" autocomplete="name" maxlength="120" required></div>
+            <div class="field"><label for="lead-email">Электронная почта</label><input id="lead-email" name="email" type="email" autocomplete="email" maxlength="254" required></div>
+            <div class="field"><label for="lead-phone">Телефон</label><input id="lead-phone" name="phone" type="tel" autocomplete="tel" maxlength="80"><small>Необязательно</small></div>
+          </div>
+          <div class="lead-honeypot" aria-hidden="true"><label for="lead-website">Website</label><input id="lead-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+          <p class="lead-privacy">Используем указанные контакты, чтобы ответить на вашу заявку.</p>
+          <div class="lead-actions"><button class="button button-outline lead-back" type="button">Назад</button><button class="button button-primary" type="submit">Отправить заявку <span aria-hidden="true">↗</span></button></div>
+        </div>
+        <p class="lead-status" id="lead-status" role="status" aria-live="polite" hidden></p>
+      </form>
+      <div class="lead-complete" id="lead-complete" hidden><div class="lead-complete-mark" aria-hidden="true">✓</div><h3 id="lead-complete-title" tabindex="-1">Заявка подготовлена.</h3><p id="lead-complete-text">Чтобы передать задачу команде AIQME, напишите нам по почте.</p><a class="lead-demo-mail" href="mailto:info@aiqme.eu?subject=AIQME%20%E2%80%94%20%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81%20%D0%BF%D0%BE%20%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D1%83">Написать на info@aiqme.eu</a></div>
+      <noscript><p class="lead-noscript">Для отправки формы включите JavaScript или напишите нам на <a href="mailto:info@aiqme.eu">info@aiqme.eu</a>.</p></noscript>
+    </div>
+  </div>
+</section>
+
+  <section class="contact-banner" aria-labelledby="banner-title"><div class="shell banner-inner"><div><h2 id="banner-title">Есть задача для 3D-технологий?</h2><p>Пришлите фотографию или опишите задачу — вместе определим следующий шаг.</p></div><a class="button button-white" href="#contact-form">Связаться с AIQME <span aria-hidden="true">↗</span></a></div></section>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-main">
+    <div class="footer-brand">
+      <a href="./" aria-label="AIQME — главная"><img src="assets/images/logo-dark.png" width="1671" height="416" alt="AIQME"></a>
+      <p>3D-модели по фото · сканирование · печать · CNC</p>
+    </div>
+    <div class="footer-links">
+      <a href="./#services">Услуги</a>
+      <a href="./projektai/">Проекты</a>
+      <a href="./#about">О нас</a>
+      <a href="./#information">Информация</a>
+      <a href="./calculator/">Калькулятор</a>
+      <a href="./login/">Кабинет</a>
+      <a href="./kontaktai/">Контакты</a>
+    </div>
+    <div class="footer-contact">
+      <span>Эл. почта</span><a href="mailto:info@aiqme.eu">info@aiqme.eu</a>
+      <span>Телефон</span><a href="tel:+37068884084">+370 688 84 084</a>
+    </div>
+  </div>
+  <div class="shell footer-bottom"><span>© AIQME. Все права защищены.</span><span>Код компании: 308110786</span></div>
+</footer>
+
+</body>
+</html>
