@@ -451,3 +451,7 @@ main>section.process-section{background:var(--section-edge)}
 }
 .file-pick,.file-remove{transition:background-color .2s,border-color .2s,color .2s}
 html:not(.js-enabled) #lead-form,html:not(.js-enabled) .lead-progress,html:not(.js-enabled) .lead-step-label{display:none}
+
+#drop-zone { border: 2px dashed var(--line, #b8c6d9); border-radius: 12px; padding: 16px; }
+#drop-zone.is-dragging { border-color: #1769d2; background: #edf5ff; }
+#infill-slider { width: 100%; }

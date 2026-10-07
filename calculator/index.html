@@ -7,7 +7,7 @@
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/site.css">
   <script defer src="../assets/app.js"></script>
-  <script defer src="../assets/calculator.js"></script>
+  <script defer src="../assets/vendor/stl-loader.js"></script><script defer src="../assets/calculator.js"></script>
 <link rel="stylesheet" href="../assets/responsive.css"></head>
 <body class="page-calculator">
 <header class="site-header" data-site-mode="demo">
@@ -36,7 +36,7 @@
 <main id="main">
   <section class="interior-hero calculator-hero"><div class="shell"><p class="eyebrow">КАЛЬКУЛЯТОР 3D-МОДЕЛИ</p><h1>Проверьте модель перед обращением.</h1><p>Выберите STL-файл: расчёт выполняется в вашем браузере, файл никуда не отправляется.</p></div></section>
   <section class="section calculator-section"><div class="shell calculator-layout">
-    <form class="calculator-form" id="stl-calculator" novalidate
+    <form class="calculator-form" id="stl-calculator" novalidate data-price-per-gram="0.10" data-base-setup-fee="5"
       data-error-file="Выберите STL-файл."
       data-error-size="Файл больше 25 МБ. Выберите модель меньшего размера."
       data-error-format="Не удалось прочитать STL-файл. Проверьте формат и целостность модели."
@@ -44,28 +44,32 @@
       data-error-density="Укажите плотность больше 0 и не больше 30 г/см³."
       data-error-quantity="Количество должно быть целым числом больше нуля."
       data-processing="Анализируем файл…">
-      <div class="field"><label for="stl-file">STL-файл</label><input id="stl-file" type="file" data-file-choose="Выбрать файл" data-file-empty="Файл пока не выбран" data-file-remove="Убрать файл" name="model" accept=".stl,model/stl,application/sla"><small>Поддерживаются бинарный и текстовый STL до 25 МБ.</small></div>
+      <div class="field" id="drop-zone"><p>Перетащите STL сюда или выберите файл.</p><label for="stl-upload">STL-файл</label><input id="stl-upload" type="file" data-file-choose="Выбрать файл" data-file-empty="Файл пока не выбран" data-file-remove="Убрать файл" name="model" accept=".stl,model/stl,application/sla"><small>Поддерживаются бинарный и текстовый STL до 25 МБ.</small></div>
       <div class="calculator-fields">
+        <div class="field"><label for="material-select">Материал</label><select id="material-select"><option value="PLA">PLA — 1.24 г/см³</option><option value="ABS">ABS — 1.04 г/см³</option><option value="PETG">PETG — 1.27 г/см³</option></select></div>
+        <div class="field"><label for="infill-slider">Заполнение <output id="infill-value" for="infill-slider">20%</output></label><input id="infill-slider" type="range" min="0" max="100" step="1" value="20"></div>
         <div class="field"><label for="stl-unit">Единицы координат в файле</label><select id="stl-unit" name="unit"><option value="mm">Миллиметры (мм)</option><option value="cm">Сантиметры (см)</option><option value="inch">Дюймы (in)</option></select></div>
-        <div class="field"><label for="stl-density">Плотность материала, г/см³</label><input id="stl-density" name="density" type="number" inputmode="decimal" min="0.01" max="30" step="any" placeholder="1.24"><small>Необязательно. Уточните плотность выбранного материала у производителя.</small></div>
+        <div class="field"><label for="stl-density">Плотность материала, г/см³</label><input id="stl-density" name="density" type="number" inputmode="decimal" min="0.01" max="30" step="any" placeholder="1.24"><small>Необязательно: заменяет плотность выбранного материала.</small></div>
         <div class="field"><label for="stl-quantity">Количество деталей</label><input id="stl-quantity" name="quantity" type="number" inputmode="numeric" min="1" max="10000" step="1" value="1" required></div>
       </div>
       <button class="button button-primary" type="submit">Рассчитать модель <span aria-hidden="true">↗</span></button>
+      <progress id="calculator-loading" aria-label="Анализируем файл…" hidden></progress>
       <p class="calculator-status" id="calculator-status" role="status" aria-live="polite" hidden></p>
     </form>
     <aside class="calculator-results" id="calculator-results" aria-labelledby="calculator-result-title">
       <p class="eyebrow">КАЛЬКУЛЯТОР 3D-МОДЕЛИ</p><h2 id="calculator-result-title">Результат анализа</h2>
-      <p class="calculator-empty" data-invalid="Исправьте параметры в форме — результат обновится автоматически." id="calculator-empty">Выберите модель и нажмите «Рассчитать модель». Данные останутся в вашем браузере.</p>
+      <p class="calculator-empty" data-invalid="Исправьте параметры в форме — результат обновится автоматически." id="calculator-empty">Выберите модель для автоматического расчёта. Файл останется в вашем браузере.</p>
       <div id="calculator-values" hidden>
         <dl>
           <div><dt>Файл</dt><dd id="result-file"></dd></div>
           <div><dt>Треугольников</dt><dd id="result-triangles"></dd></div>
-          <div><dt>Габариты, мм</dt><dd id="result-dimensions"></dd></div>
-          <div><dt>Объём модели, см³</dt><dd id="result-volume"></dd></div>
-          <div><dt>Масса материала, г</dt><dd id="result-mass"></dd></div>
+          <div><dt>Габариты, мм</dt><dd id="result-dimensions"><span id="dim-x"></span> × <span id="dim-y"></span> × <span id="dim-z"></span></dd></div>
+          <div><dt>Объём модели, см³</dt><dd id="result-volume"><span id="volume-val"></span></dd></div>
+          <div><dt>Масса материала, г</dt><dd id="result-mass"><span id="weight-val"></span></dd></div>
+          <div><dt>Ориентировочная стоимость, USD</dt><dd id="price-val"></dd></div>
         </dl>
-        <p class="result-hint">Расчёт для сплошной модели с указанной плотностью и количеством.</p>
-        <p class="result-warning" id="result-warning">Объём корректен для замкнутой сетки с правильно ориентированными гранями. Поддержки, заполнение и отходы печати не учитываются. Это не расчёт цены.</p>
+        <p class="result-hint">Масса и цена учитывают заполнение и количество деталей. Пример тарифа: $0.10/г + $5 за весь заказ; это не коммерческое предложение.</p>
+        <p class="result-warning" id="result-warning">Объём корректен для замкнутой сетки с согласованным направлением граней. Поддержки и отходы печати не учитываются.</p>
       </div>
     </aside>
   </div></section>
