@@ -1,0 +1,30 @@
+{
+ "archive": "/home/greatgleb/Downloads/AIQME-site-backup-2026-10-16.zip",
+ "archive_sha256": "bf0184b0c02ec6a03c0b95304e9c1a1a740397225c96060558a6b0932ba2c33c",
+ "archive_entries": 180,
+ "extracted_to": "docs/customer-prototype/source-backup-20261016/",
+ "executed_code": false,
+ "audit_resources": [
+  "3b7cc88c8440eb71267c680bfc7a89a76497a4119a208617e1e55b909a9e56b4.js",
+  "3b84c1552d750b1f9d1d94c1ede102fc5cb443bf8e0b98963fb38cdd600aa5d8.css",
+  "a4317b5dfffa834611ae05c52d0cbc5b2c53c3ca914a6df7c73e5ccfcbafe341.js"
+ ],
+ "comparison": {
+  "app.js": {
+   "sha256": "3b7cc88c8440eb71267c680bfc7a89a76497a4119a208617e1e55b909a9e56b4",
+   "size": 163209,
+   "matches_audit_resource": "3b7cc88c8440eb71267c680bfc7a89a76497a4119a208617e1e55b909a9e56b4.js"
+  },
+  "data.js": {
+   "sha256": "a4317b5dfffa834611ae05c52d0cbc5b2c53c3ca914a6df7c73e5ccfcbafe341",
+   "size": 22483,
+   "matches_audit_resource": "a4317b5dfffa834611ae05c52d0cbc5b2c53c3ca914a6df7c73e5ccfcbafe341.js"
+  },
+  "style.css": {
+   "sha256": "3b84c1552d750b1f9d1d94c1ede102fc5cb443bf8e0b98963fb38cdd600aa5d8",
+   "size": 43286,
+   "matches_audit_resource": "3b84c1552d750b1f9d1d94c1ede102fc5cb443bf8e0b98963fb38cdd600aa5d8.css"
+  }
+ },
+ "all_match": true
+}

@@ -1,0 +1,29 @@
+Loading composer repositories with package information
+Updating dependencies
+Nothing to modify in lock file
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Nothing to install, update or remove
+Generating optimized autoload files
+> Illuminate\Foundation\ComposerScripts::postAutoloadDump
+> @php artisan package:discover --ansi
+
+   ErrorException 
+
+  require(/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/app/../../orders-comparison/shared/routes.php): Failed to open stream: No such file or directory
+
+  at routes/web.php:40
+     36▕ 
+     37▕     return response()->json(['id' => $publisher->publish($request->user(), $data['locale'], $data['title'], $data['id'] ?? null, $data['revision'] ?? 0)]);
+     38▕ })->middleware('auth')->name('probe.content');
+     39▕ 
+  ➜  40▕ require base_path('../../orders-comparison/shared/routes.php');
+     41▕
+
+  1   routes/web.php:40
+      [2m+20 vendor frames [22m
+
+  22  [internal]:0
+      Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1139}()
+
+Script @php artisan package:discover --ansi handling the post-autoload-dump event returned with error code 1

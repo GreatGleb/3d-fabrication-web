@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIQME — страница не найдена</title>
+<meta name="robots" content="noindex">
+<script>
+// Старые адреса /3d-fabrication-web/<путь> ведут в папку сборки прежнего сайта.
+(function () {
+  var repo = '/3d-fabrication-web/', site = 'legacy-landing/github-pages/';
+  var path = location.pathname;
+  if (path.indexOf(repo) !== 0) return;
+  var rest = path.slice(repo.length);
+  if (rest.indexOf(site) === 0) return;
+  location.replace(repo + site + rest + location.search + location.hash);
+})();
+</script>
+</head>
+<body>
+<p>Страница не найдена. <a href="/3d-fabrication-web/legacy-landing/github-pages/">Открыть сайт AIQME</a>.</p>
+</body>
+</html>

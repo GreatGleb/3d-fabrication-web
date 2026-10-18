@@ -1,0 +1,86 @@
+[
+  {
+    "command": "python3 legacy-landing/scripts/build_pages.py",
+    "exit": 0,
+    "seconds": 0.0,
+    "log": "build_pages.py.log",
+    "last_line": "Built 1 locale(s), 5 pages in /home/greatgleb/PycharmProjects/3D_website/legacy-landing/build/server (server)"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/build_pages.py --mode demo",
+    "exit": 0,
+    "seconds": 0.0,
+    "log": "build_pages.py-demo.log",
+    "last_line": "Built 1 locale(s), 5 pages in /home/greatgleb/PycharmProjects/3D_website/legacy-landing/build/demo (demo)"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/build_motion_preview.py",
+    "exit": 0,
+    "seconds": 0.1,
+    "log": "build_motion_preview.py.log",
+    "last_line": "Comparison built in /home/greatgleb/PycharmProjects/3D_website/legacy-landing/build/motion-v1; ordinary site untouched"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/build_motion_v2.py",
+    "exit": 0,
+    "seconds": 0.0,
+    "log": "build_motion_v2.py.log",
+    "last_line": "/home/greatgleb/PycharmProjects/3D_website/legacy-landing/build/motion-v2"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/build_github_pages_v2.py",
+    "exit": 0,
+    "seconds": 0.1,
+    "log": "build_github_pages_v2.py.log",
+    "last_line": "Ready to upload: /home/greatgleb/PycharmProjects/3D_website/legacy-landing/github-pages"
+  },
+  {
+    "command": "STL_TEST_DIRECTORY=github-pages python3 legacy-landing/scripts/check_stl_pricing.py",
+    "exit": 0,
+    "seconds": 2.7,
+    "log": "check_stl_pricing.py.log",
+    "last_line": "STL geometry, invalid files, pricing, drop, clear, responsive layout and quick calculator passed."
+  },
+  {
+    "command": "python3 legacy-landing/scripts/check_github_pages_ui.py",
+    "exit": 0,
+    "seconds": 26.6,
+    "log": "check_github_pages_ui.py.log",
+    "last_line": "PASS: package layouts, menu, forms, calculator, portal, scene fit, CTA, fallbacks; no JS/HTTP errors."
+  },
+  {
+    "command": "python3 legacy-landing/scripts/check_pages.py",
+    "exit": 0,
+    "seconds": 8.7,
+    "log": "check_pages.py.log",
+    "last_line": "}"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/check_demo.py",
+    "exit": 0,
+    "seconds": 4.5,
+    "log": "check_demo.py.log",
+    "last_line": "Demo build passed under /aiqme-preview/ at 390, 768, 1440 px; no API requests"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/check_portal.py",
+    "exit": 1,
+    "seconds": 0.2,
+    "log": "check_portal.py.log",
+    "last_line": "ModuleNotFoundError: No module named 'werkzeug'"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/check_motion_preview.py",
+    "exit": 1,
+    "seconds": 0.2,
+    "log": "check_motion_preview.py.log",
+    "last_line": "AssertionError: site/index.html"
+  },
+  {
+    "command": "python3 legacy-landing/scripts/check_motion_v2.py",
+    "exit": 1,
+    "seconds": 0.2,
+    "log": "check_motion_v2.py.log",
+    "last_line": "AssertionError: site/index.html"
+  }
+]

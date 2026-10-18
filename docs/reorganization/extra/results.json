@@ -1,0 +1,14 @@
+[
+  {
+    "script": "check_motion_effects",
+    "exit": 0
+  },
+  {
+    "script": "check_gear_v2",
+    "exit": 0
+  },
+  {
+    "script": "check_services_v2",
+    "exit": 0
+  }
+]

@@ -1,0 +1,130 @@
+[
+ {
+  "from": "archive",
+  "to": "legacy-landing/archive"
+ },
+ {
+  "from": "build",
+  "to": "legacy-landing/build"
+ },
+ {
+  "from": "design-previews",
+  "to": "legacy-landing/design-previews"
+ },
+ {
+  "from": "github-pages",
+  "to": "legacy-landing/github-pages"
+ },
+ {
+  "from": "instance",
+  "to": "legacy-landing/instance"
+ },
+ {
+  "from": "server",
+  "to": "legacy-landing/server"
+ },
+ {
+  "from": "site",
+  "to": "legacy-landing/site"
+ },
+ {
+  "from": "requirements-dev.txt",
+  "to": "legacy-landing/requirements-dev.txt"
+ },
+ {
+  "from": "requirements-server.txt",
+  "to": "legacy-landing/requirements-server.txt"
+ },
+ {
+  "from": "scripts/plan_workflow.py",
+  "to": "docs/planning/workflow/plan_workflow.py"
+ },
+ {
+  "from": "tests/test_plan_workflow.py",
+  "to": "docs/planning/workflow/test_plan_workflow.py"
+ },
+ {
+  "from": "tools/planning/README.md",
+  "to": "docs/planning/workflow/README.md"
+ },
+ {
+  "from": "tools/planning/layers.json",
+  "to": "docs/planning/workflow/layers.json"
+ },
+ {
+  "from": "scripts/capture_prototype_chrome.py",
+  "to": "docs/customer-prototype/tools/capture_prototype_chrome.py"
+ },
+ {
+  "from": "scripts/read_prototype_chrome.py",
+  "to": "docs/customer-prototype/tools/read_prototype_chrome.py"
+ },
+ {
+  "from": "scripts",
+  "to": "legacy-landing/scripts"
+ },
+ {
+  "from": "tools/stl",
+  "to": "legacy-landing/tools/stl"
+ },
+ {
+  "from": "references/relats",
+  "to": "legacy-landing/references/relats"
+ },
+ {
+  "from": "references/aiqme-prototype",
+  "to": "docs/customer-prototype/evidence"
+ },
+ {
+  "from": "references/behance-videos",
+  "to": "docs/research/references/behance-videos"
+ },
+ {
+  "from": "references/competitors.txt",
+  "to": "docs/research/references/competitors.txt"
+ },
+ {
+  "from": "references/README.md",
+  "to": "docs/research/references/README.md"
+ },
+ {
+  "from": "materials",
+  "to": "docs/customer"
+ },
+ {
+  "from": "prototypes/lunar-aiqme",
+  "to": "aiqme-site/experiments/lunar-aiqme"
+ },
+ {
+  "from": "prototypes/laravel-orders-aiqme",
+  "to": "aiqme-site/experiments/laravel-orders-aiqme"
+ },
+ {
+  "from": "prototypes/orders-comparison",
+  "to": "aiqme-site/experiments/orders-comparison"
+ },
+ {
+  "from": "docs/prototype-audit-20261016",
+  "to": "docs/customer-prototype/audit-20261016"
+ },
+ {
+  "from": "docs/prototype-browser.md",
+  "to": "docs/customer-prototype/prototype-browser.md"
+ },
+ {
+  "from": "docs/lunar-evaluation-20261017.md",
+  "to": "docs/research/lunar-evaluation-20261017.md"
+ },
+ {
+  "from": "docs/lunar-vs-laravel-comparison-20261017.md",
+  "to": "docs/research/lunar-vs-laravel-comparison-20261017.md"
+ },
+ {
+  "from": "docs/github-pages-v2.md",
+  "to": "docs/legacy-landing/github-pages-v2.md"
+ },
+ {
+  "from": "docs/local-server.md",
+  "to": "docs/legacy-landing/local-server.md"
+ }
+]

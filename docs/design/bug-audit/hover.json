@@ -1,0 +1,150 @@
+[
+  [
+    "primary",
+    {
+      "background": "linear-gradient(125deg, rgb(7, 89, 220), rgb(17, 104, 255))",
+      "color": "rgba(0, 0, 0, 0)",
+      "transform": "none",
+      "shadow": "rgba(17, 104, 255, 0.125) 0px 7px 18px 0px",
+      "cursor": "pointer",
+      "rect": "{\"x\":60,\"y\":501.703125,\"width\":195.515625,\"height\":50,\"top\":501.703125,\"right\":255.515625,\"bottom\":551.703125,\"left\":60}"
+    },
+    {
+      "background": "none",
+      "color": "rgb(0, 85, 230)",
+      "transform": "matrix(1, 0, 0, 1, 0, -2)",
+      "shadow": "rgba(17, 104, 255, 0.125) 0px 7px 18px 0px",
+      "cursor": "pointer",
+      "rect": "{\"x\":60,\"y\":499.703125,\"width\":195.515625,\"height\":50,\"top\":499.703125,\"right\":255.515625,\"bottom\":549.703125,\"left\":60}"
+    }
+  ],
+  [
+    "service",
+    {
+      "background": "none",
+      "color": "rgb(248, 250, 253)",
+      "transform": "none",
+      "shadow": "none",
+      "cursor": "auto",
+      "rect": "{\"x\":60,\"y\":273.28125,\"width\":429.328125,\"height\":544.234375,\"top\":273.28125,\"right\":489.328125,\"bottom\":817.515625,\"left\":60}"
+    },
+    {
+      "background": "none",
+      "color": "rgb(248, 250, 253)",
+      "transform": "matrix(1, 0, 0, 1, 0, -3)",
+      "shadow": "rgba(16, 24, 32, 0.063) 0px 20px 38px 0px",
+      "cursor": "auto",
+      "rect": "{\"x\":60,\"y\":270.28125,\"width\":429.328125,\"height\":544.234375,\"top\":270.28125,\"right\":489.328125,\"bottom\":814.515625,\"left\":60}"
+    }
+  ],
+  [
+    "project",
+    {
+      "background": "none",
+      "color": "rgb(255, 255, 255)",
+      "transform": "none",
+      "shadow": "none",
+      "cursor": "auto",
+      "rect": "{\"x\":60,\"y\":313.546875,\"width\":429.328125,\"height\":462.359375,\"top\":313.546875,\"right\":489.328125,\"bottom\":775.90625,\"left\":60}"
+    },
+    {
+      "background": "none",
+      "color": "rgb(255, 255, 255)",
+      "transform": "matrix(1, 0, 0, 1, 0, -3)",
+      "shadow": "rgba(16, 24, 32, 0.07) 0px 20px 38px 0px",
+      "cursor": "auto",
+      "rect": "{\"x\":60,\"y\":310.546875,\"width\":429.328125,\"height\":462.359375,\"top\":310.546875,\"right\":489.328125,\"bottom\":772.90625,\"left\":60}"
+    }
+  ],
+  [
+    "file",
+    {
+      "background": "none",
+      "color": "rgb(255, 255, 255)",
+      "transform": "none",
+      "shadow": "none",
+      "cursor": "pointer",
+      "rect": "{\"x\":715.671875,\"y\":522.703125,\"width\":130.8125,\"height\":44,\"top\":522.703125,\"right\":846.484375,\"bottom\":566.703125,\"left\":715.671875}"
+    },
+    {
+      "background": "none",
+      "color": "rgb(255, 255, 255)",
+      "transform": "none",
+      "shadow": "none",
+      "cursor": "pointer",
+      "rect": "{\"x\":715.671875,\"y\":522.703125,\"width\":130.8125,\"height\":44,\"top\":522.703125,\"right\":846.484375,\"bottom\":566.703125,\"left\":715.671875}"
+    }
+  ],
+  [
+    "button_edge",
+    [
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -1.74671)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      },
+      {
+        "hover": true,
+        "transform": "matrix(1, 0, 0, 1, 0, -2)"
+      }
+    ]
+  ],
+  [
+    "file_remove",
+    {
+      "background": "none",
+      "color": "rgba(0, 0, 0, 0)",
+      "transform": "none",
+      "shadow": "none",
+      "cursor": "pointer",
+      "rect": "{\"x\":1238.578125,\"y\":531.703125,\"width\":96.421875,\"height\":44,\"top\":531.703125,\"right\":1335,\"bottom\":575.703125,\"left\":1238.578125}"
+    },
+    {
+      "background": "none",
+      "color": "rgba(0, 0, 0, 0)",
+      "transform": "none",
+      "shadow": "none",
+      "cursor": "pointer",
+      "rect": "{\"x\":1238.578125,\"y\":531.703125,\"width\":96.421875,\"height\":44,\"top\":531.703125,\"right\":1335,\"bottom\":575.703125,\"left\":1238.578125}"
+    }
+  ]
+]

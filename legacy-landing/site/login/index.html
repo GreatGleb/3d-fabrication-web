@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{login_page_description}}"><meta name="theme-color" content="#f7f9fc">
+  <title>{{login_page_title}}</title>
+  <link rel="icon" href="{{asset_root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{asset_root}}site.css">
+  <script defer src="{{asset_root}}app.js"></script>
+  <script defer src="{{asset_root}}portal.js"></script>
+</head>
+<body class="page-login">
+{{header}}
+<main id="main">
+  <section class="interior-hero"><div class="shell"><p class="eyebrow">{{login_eyebrow}}</p><h1>{{login_heading}}</h1><p>{{login_intro}}</p></div></section>
+  <section class="section portal-section"><div class="shell">
+    <div class="portal-login" id="portal-login" data-demo-client="{{login_demo_client}}">
+      <div class="portal-demo-entry"><p class="portal-demo-label">{{login_demo_label}}</p><h2>{{login_demo_title}}</h2><p>{{login_demo_intro}}</p><button class="button button-primary" id="open-demo-button" type="button">{{login_demo_open}} <span aria-hidden="true">↗</span></button></div>
+      <form class="portal-login-form" id="login-form" novalidate
+        data-invalid="{{login_invalid}}" data-limit="{{login_limit}}" data-unavailable="{{login_unavailable}}">
+        <h2>{{login_form_title}}</h2>
+        <div class="field"><label for="login-email">{{login_email}}</label><input id="login-email" name="email" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="login-password">{{login_password}}</label><input id="login-password" name="password" type="password" autocomplete="current-password" required></div>
+        <button class="button button-primary" type="submit">{{login_submit}} <span aria-hidden="true">↗</span></button>
+        <p class="portal-message" id="login-message" role="alert" hidden></p>
+        <p class="portal-help">{{login_help}}</p>
+      </form>
+    </div>
+    <div class="portal-dashboard" id="portal-dashboard" hidden
+      data-demo-projects-url="{{asset_root}}demo/projects.json"
+      data-empty="{{login_empty}}" data-updated="{{login_updated}}" data-files="{{login_files}}"
+      data-no-files="{{login_no_files}}" data-download="{{login_download}}" data-size-unit="{{login_size_unit}}" data-loading="{{login_loading}}" data-error="{{login_error}}">
+      <p class="portal-demo-notice">{{login_demo_notice}}</p>
+      <div class="portal-dashboard-head"><div><p class="eyebrow">{{login_eyebrow}}</p><h2>{{login_projects_title}}</h2><p id="portal-email"></p></div><button class="button button-outline" id="logout-button" type="button" data-demo-close="{{login_demo_close}}">{{login_logout}}</button></div>
+      <p class="portal-message" id="portal-message" role="status" hidden></p>
+      <div class="portal-projects" id="portal-projects"></div>
+    </div>
+  </div></section>
+</main>
+{{footer}}
+</body>
+</html>

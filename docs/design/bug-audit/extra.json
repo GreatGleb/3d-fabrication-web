@@ -1,0 +1,70 @@
+[
+  [
+    "service_images",
+    [
+      {
+        "src": "excel-scan.png",
+        "fit": "contain",
+        "position": "50% 50%",
+        "radius": "20px 20px 0px 0px"
+      },
+      {
+        "src": "excel-model.png",
+        "fit": "contain",
+        "position": "50% 44%",
+        "radius": "20px 20px 0px 0px"
+      },
+      {
+        "src": "excel-print.png",
+        "fit": "contain",
+        "position": "50% 100%",
+        "radius": "20px 20px 0px 0px"
+      },
+      {
+        "src": "excel-metal.png",
+        "fit": "contain",
+        "position": "50% 50%",
+        "radius": "20px 20px 0px 0px"
+      },
+      {
+        "src": "excel-cnc.png",
+        "fit": "contain",
+        "position": "50% 50%",
+        "radius": "20px 20px 0px 0px"
+      }
+    ]
+  ],
+  [
+    "invalid_error_cleared",
+    null,
+    0
+  ],
+  [
+    "scientific_quantity_accepted",
+    true,
+    "1e2"
+  ],
+  [
+    "service_error_after_selection",
+    "Заполните обязательные поля этого шага.",
+    true
+  ],
+  [
+    "portal_focus",
+    {
+      "tag": "BODY",
+      "id": "",
+      "visible": true
+    }
+  ],
+  [
+    "tiny_volume",
+    "0",
+    ""
+  ],
+  [
+    "nojs_form",
+    true,
+    true
+  ]
+]

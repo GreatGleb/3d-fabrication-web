@@ -1,0 +1,2303 @@
+{
+  "totalPayloadBytes": 108224029,
+  "totals": {
+    "image/png": {
+      "count": 15,
+      "bytes": 7216952
+    },
+    "image/svg+xml": {
+      "count": 46,
+      "bytes": 1595889
+    },
+    "image/gif": {
+      "count": 1,
+      "bytes": 348168
+    },
+    "video/mp4": {
+      "count": 19,
+      "bytes": 86282067
+    },
+    "image/jpeg": {
+      "count": 50,
+      "bytes": 10177632
+    },
+    "application/json": {
+      "count": 2,
+      "bytes": 2314
+    },
+    "font/woff2": {
+      "count": 6,
+      "bytes": 853572
+    },
+    "application/javascript": {
+      "count": 11,
+      "bytes": 882466
+    },
+    "text/html": {
+      "count": 1,
+      "bytes": 204598
+    },
+    "text/css": {
+      "count": 2,
+      "bytes": 660371
+    }
+  },
+  "assets": [
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/revitex-vhg10.png",
+      "cache": "примеры/relats/cache/relats/00e6a916325f326762d56b4e16e159d9027c6c8554202f7e8a5aa565f0ced348.bin",
+      "bytes": 617825,
+      "mime": "image/png",
+      "sha256": "ca936adf0ce38a53949c4f7bb01fc37fc5788fe434de4d8899083bd53b336545"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/railway.svg",
+      "cache": "примеры/relats/cache/relats/0324659b56ce4c22b0f217df17e2eed2d0daec693ec095b1986cef5f1c41515f.bin",
+      "bytes": 1287,
+      "mime": "image/svg+xml",
+      "sha256": "3830988ce8b9eb521696112e060a10b8b763d588f25f10e6b80b45912575ac10"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/loader.gif",
+      "cache": "примеры/relats/cache/relats/0468ec71130442be95ff34a484599ac1ebf3463e4a706050f8fae82930f2855e.bin",
+      "bytes": 348168,
+      "mime": "image/gif",
+      "sha256": "c73f3986b66c21f0a6522888afebf15f927166714c39db832499e9b13963ef4e"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/heat.svg",
+      "cache": "примеры/relats/cache/relats/05cafec27e7eff9c9d53c5353e3cd09411d88bdc1c8721c477bf4f0ad5b13468.bin",
+      "bytes": 894,
+      "mime": "image/svg+xml",
+      "sha256": "85966bba86b4139fcb67f68e57fbe852b91ad2d3b8112dec099f74c312a97719"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-left.mp4",
+      "cache": "примеры/relats/cache/relats/06f6f2c94465aaf8dbd896b791681d4f024163d1f968a0eaae35b66b0faf345b.bin",
+      "bytes": 1039561,
+      "mime": "video/mp4",
+      "sha256": "8c661538373afdb35a26381ad405a7d923b3d3667bf5233d1d83f3c6a5303e9b",
+      "media": {
+        "duration": "5.005000",
+        "bit_rate": "1661635",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 720,
+            "height": 480,
+            "r_frame_rate": "24000/1001",
+            "nb_frames": "120",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-vsc25/material.jpg",
+      "cache": "примеры/relats/cache/relats/079615ae8bb7fd04d542de044a1fc809cdd75418884c8e62d9d969722f22eb72.bin",
+      "bytes": 439000,
+      "mime": "image/jpeg",
+      "sha256": "9ddbde05e194b2b339ce3c56b6ca662778d61ff75706b4d7eda36f7c37ceed3c"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/revitex-vsctf.jpg",
+      "cache": "примеры/relats/cache/relats/097011f497e4b1ac35709e54381fea4de50f84fcc0daa331f30678cb1b50ca6d.bin",
+      "bytes": 5483,
+      "mime": "image/jpeg",
+      "sha256": "6b8879ff0b6e666e503b363eea838aee85a0a4e76afe4cb7d69362bcfd474dc4"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/revitex-vsctf.png",
+      "cache": "примеры/relats/cache/relats/0a55d33864b503a30764b9996acd504bc3b9f0a27fbb224ac4295599cbacd2c5.bin",
+      "bytes": 379956,
+      "mime": "image/png",
+      "sha256": "1b9c8edaff01141fc4b8e83e3a615e5da76a6c0086a3cec5b5c8cba3bac5afe9"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/swatches/grey.svg",
+      "cache": "примеры/relats/cache/relats/0c4ac59bd5a9c72fd42949a254ab20a59e638c2464be17cb67cac7e50a48b42f.bin",
+      "bytes": 150,
+      "mime": "image/svg+xml",
+      "sha256": "237de72dffd489b2493b3d5b846858de92fdc8e459daa4e9d1e15af035f6e6ce"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-json/contact-form-7/v1/contact-forms/339/feedback/schema",
+      "cache": "примеры/relats/cache/relats/0f24d14519464ea9f5f8dc49c7ad0f11c1de225c8a747847f45536983e1c9285.bin",
+      "bytes": 1157,
+      "mime": "application/json",
+      "sha256": "de2731e4700421f13ebf29e96605cf1effdc15be9b4e343e020497e8bf29f1cb"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/electrical-insulation.svg",
+      "cache": "примеры/relats/cache/relats/0f2a789e0f7c147436f2f4108c60c510ab6d15b93c37ea820ea3cfce652a061c.bin",
+      "bytes": 3237,
+      "mime": "image/svg+xml",
+      "sha256": "973093b2900556feb71c4a223f49ec9725135752506f3196977f6281b79faf45"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-wsx45/material-02.jpg",
+      "cache": "примеры/relats/cache/relats/103320ac243aecb418e3015964c109215db64ff8dc66d9fd3ccda8e9ba3aba29.bin",
+      "bytes": 108314,
+      "mime": "image/jpeg",
+      "sha256": "e047d5d17aeb79d46aeb6bb06980b57b2750829ba3e70a58327665f00f972a29"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/swatches/purple.svg",
+      "cache": "примеры/relats/cache/relats/114266c1223a70ba6ea5e26dd9f8b9d20d8abc845ec83201205ccc717835ce75.bin",
+      "bytes": 150,
+      "mime": "image/svg+xml",
+      "sha256": "5a49b4fea270e0caa4784529dfa2139d7538dcf8179a6332ebe7d19522b8c6a6"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-vsctf-rw/mask.png",
+      "cache": "примеры/relats/cache/relats/14c813473123d9d595189a75d4fa2b26ac904ea7764f239b5f844763848117c6.bin",
+      "bytes": 316783,
+      "mime": "image/png",
+      "sha256": "201c415e7b923d6e4948622b690d6510e5e863425edc20e646f43b0cedad51da"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-right.mp4",
+      "cache": "примеры/relats/cache/relats/160f217d4ea98abfa896d674dbccbca5a62ddec012a20256c6ee19f8edd2af8f.bin",
+      "bytes": 414216,
+      "mime": "video/mp4",
+      "sha256": "927567f7c9fec7a1492ef72171f718c202d973fa8fe22359cefe77c551090053",
+      "media": {
+        "duration": "5.038367",
+        "bit_rate": "657698",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 720,
+            "height": 480,
+            "r_frame_rate": "30000/1001",
+            "nb_frames": "151",
+            "pix_fmt": "yuv420p"
+          },
+          {
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "width": null,
+            "height": null,
+            "r_frame_rate": "0/0",
+            "nb_frames": "236",
+            "pix_fmt": null
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/robotics.jpg",
+      "cache": "примеры/relats/cache/relats/168a119bbb23acfd22471701e8f13e449253ab7c9a0700aace679084ab67ac43.bin",
+      "bytes": 156849,
+      "mime": "image/jpeg",
+      "sha256": "f76b932878a844e7fe66e41f63cc14d4ab76ffaccc70f8cbae95a05cfeef37d0"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/periflex-dura-ha/material.jpg",
+      "cache": "примеры/relats/cache/relats/168f4dcdc8b26883bae424e8e55fd4b20dc70cf4e3b1608ffcd853e1c2e70d06.bin",
+      "bytes": 253937,
+      "mime": "image/jpeg",
+      "sha256": "d94d42d643797743f8269d822b465cd29d905cf8a15eeaa7e0bd4437121331e1"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/passenger-body.svg",
+      "cache": "примеры/relats/cache/relats/1699a5226d9bca921ee737a4057f180d10ee00a1a37ad1a5494320350933702c.bin",
+      "bytes": 6285,
+      "mime": "image/svg+xml",
+      "sha256": "7bf4234471a5a48f24adc5fcd7bd0897d57e3dd426030ffe274ae3b1b3de5e78"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/revitex/busbar.mp4",
+      "cache": "примеры/relats/cache/relats/1924f43a1282f808145817a46a18139e364f83cedd1000fb9aafe71554978288.bin",
+      "bytes": 22098568,
+      "mime": "video/mp4",
+      "sha256": "495ab57bb368455ed1650f049efc704be013355db13cc96d64f39255d92c89df",
+      "media": {
+        "duration": "33.266667",
+        "bit_rate": "5314284",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080,
+            "r_frame_rate": "30/1",
+            "nb_frames": "998",
+            "pix_fmt": "yuv420p"
+          },
+          {
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "width": null,
+            "height": null,
+            "r_frame_rate": "0/0",
+            "nb_frames": "1561",
+            "pix_fmt": null
+          }
+        ],
+        "keyframes": 100,
+        "max_keyframe_gap_seconds": 0.3333340000000007
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/fonts/fa-regular-400.woff2",
+      "cache": "примеры/relats/cache/relats/192d469a364abba74df176366d3ebfbd18b19e190068a4f2d4b1d3bd332e7c21.bin",
+      "bytes": 397196,
+      "mime": "font/woff2",
+      "sha256": "2b7265fb8e98286a6e61d73e4278df35c0e911db1e8a94c82836d0b21088125b"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/thermal-protection.svg",
+      "cache": "примеры/relats/cache/relats/19f0fdc85b619ffe09a72873db7f056213b47ba2c28810125483955ba90a8381.bin",
+      "bytes": 33613,
+      "mime": "image/svg+xml",
+      "sha256": "d633ef4d2eb84194699e4c08fba1b9b4259b12ce3db90894738be77287c51b98"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/periflex-emi/mask.png",
+      "cache": "примеры/relats/cache/relats/1a64da20282bd879c06a93aa7f76c405b1e04719826b3638c1f4a1a1581fe2d1.bin",
+      "bytes": 376923,
+      "mime": "image/png",
+      "sha256": "63c17afc846af784fa6218f37d09dec2c5f478dfba1d17d46cfe697e492829da"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/periflex-dura-ha.jpg",
+      "cache": "примеры/relats/cache/relats/1c3a8526ed7e05fcde60cff3fc44b2efa4e1631eb17fbc9b9e1fdf10bb44565d.bin",
+      "bytes": 4249,
+      "mime": "image/jpeg",
+      "sha256": "4a789e89794b0bbc16743e47bda597b83a6bdcb33a34b753de89bb618034728f"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/drivetrain.svg",
+      "cache": "примеры/relats/cache/relats/1f81eae0299475d025db648ddcf459eca6490e1ed8341ddbed101419f5370ce2.bin",
+      "bytes": 1014,
+      "mime": "image/svg+xml",
+      "sha256": "4f67dc2d0dba9d535b7bab9dbb062675d111eaf1a2cf3efb459c7c79d708a401"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/revitex/WSX45.jpg",
+      "cache": "примеры/relats/cache/relats/1fab0cf79a90188d280669ff3d5fc0e2c7da35d8a520752ae9315bd09bcf5abd.bin",
+      "bytes": 132872,
+      "mime": "image/jpeg",
+      "sha256": "035fc0e90df93c773692c353953242a785957a5d0e0f72bd7fee52b43670922f"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/revitex-vhg10.jpg",
+      "cache": "примеры/relats/cache/relats/23cad8f4ec407053292dc60e42519706a204354a7d0bad4bb5adefab29fa05e9.bin",
+      "bytes": 4869,
+      "mime": "image/jpeg",
+      "sha256": "caa24d09f6626c050c010c7c523d7a8e485d07810c609a9baccd85139dffabb1"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-vsc25/mask.png",
+      "cache": "примеры/relats/cache/relats/24012f5bc909f4a71d94c7feb6f7653175f4dbbd02c4860af4d0e813f4605086.bin",
+      "bytes": 323716,
+      "mime": "image/png",
+      "sha256": "d5ec1ed8b98dc8759dfa44a4d1a41395156d51a295d03466f52fa8d8b0b4c066"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/mechanical-protection.svg",
+      "cache": "примеры/relats/cache/relats/245b008b414d0bb6d2eb04faf40bda32251ca32d8b15fd6ccbe143a62c4f14f0.bin",
+      "bytes": 4147,
+      "mime": "image/svg+xml",
+      "sha256": "b50d6174b602b52d166fe7cfaa208ed5626a301dbe9f57243252e95c7ff06191"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left.mp4",
+      "cache": "примеры/relats/cache/relats/24cee390e64d74e02ff16b687fc800bc977dd3da58c6e92f863e64c6a79c5cab.bin",
+      "bytes": 946613,
+      "mime": "video/mp4",
+      "sha256": "e349ae82886d9b418c4cc7404df03904810923080ec4b8387384877028a657b7",
+      "media": {
+        "duration": "5.000000",
+        "bit_rate": "1514580",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 720,
+            "height": 480,
+            "r_frame_rate": "24/1",
+            "nb_frames": "120",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/perfilex-ps/material-01.jpg",
+      "cache": "примеры/relats/cache/relats/25ff92d8f2d09dce1389b758e13f47856195a50af13919903cb71f8f42bfa0b2.bin",
+      "bytes": 567164,
+      "mime": "image/jpeg",
+      "sha256": "ed54c395f6ca80413eb394b4561a94197b23e58281f1b638d057fcd18f86bcea"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/periflex-emi/material.jpg",
+      "cache": "примеры/relats/cache/relats/2a71af4de07ff883e640d236dd6c790faf7e86ccce09fa11c33ba8f6626e9b14.bin",
+      "bytes": 752185,
+      "mime": "image/jpeg",
+      "sha256": "fc3bfad6debc2bfdbb581380ba77fdf648326b93e531108a7e729148616c25f8"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/fonts/DMMono-Medium.woff2",
+      "cache": "примеры/relats/cache/relats/2ba0fbae94fe6fcf4851a5af9b7e5cb20b67bee8c6ee736e993fc47aa5a93b88.bin",
+      "bytes": 21868,
+      "mime": "font/woff2",
+      "sha256": "1bb66fbe4bdd7e89e96a1d504e5a96d8b96004ed220c472fceb3aa27f7f4d94b"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-contact-form-7-fac2a8013ba5ba355cd0.js",
+      "cache": "примеры/relats/cache/relats/2d2a2cf388108ba1ab4957adbba444d52dac62cadab1a4c7fd40137cd2bd5848.bin",
+      "bytes": 7362,
+      "mime": "application/javascript",
+      "sha256": "b0d0f70e74bc28354c15c9ff9164924c3191a67fd14f672088cc95a59bbe5a37"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/periflex/icons/shield.svg",
+      "cache": "примеры/relats/cache/relats/2dced10ebfdaeb0ac1ebcb2894cfb77850f073c3531c9c27e203ba52e259ed2c.bin",
+      "bytes": 1377,
+      "mime": "image/svg+xml",
+      "sha256": "3b1e50bc270baecb48a998acc83647110703bfc4d6efefc9e9bbde27c297a451"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/periflex/periflex.jpg",
+      "cache": "примеры/relats/cache/relats/2f1607121a5092b59390d85d8cf4b955b542b9ddf2539f383e1d7a029b208edc.bin",
+      "bytes": 475533,
+      "mime": "image/jpeg",
+      "sha256": "5de520d07f91a42b377e95124e8cbe94e546a3b6644bb9775dd131bd2bd72d8c"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/revitex/VSCTF.jpg",
+      "cache": "примеры/relats/cache/relats/323d05c4834c2ad9b7dff674dfe88a0c6daaf0b1bff62df23cc9612f98a18ea7.bin",
+      "bytes": 173749,
+      "mime": "image/jpeg",
+      "sha256": "53acf77b2d969152e11f7099b6c6bfad6905e423a0d83fad9432e63cf697e4dc"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/fire-protection.svg",
+      "cache": "примеры/relats/cache/relats/32b56cd3b57e4e748bee0e5e17ce6558322bd5dcb3909f43dfcf86b65b6c2387.bin",
+      "bytes": 842,
+      "mime": "image/svg+xml",
+      "sha256": "1b72cfd0f18ccc42ad09529c65efaa221f9d08d9ef395c66a3464c5a7b02d189"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-left.jpg",
+      "cache": "примеры/relats/cache/relats/3498e93088cdc7e2885a24eb5480213d63ca852c633699e528cc2701a084d477.bin",
+      "bytes": 270195,
+      "mime": "image/jpeg",
+      "sha256": "c711b5bc7ac098c65cbe1a26bd4be914814eb8f83282ade51fe9ce9054f65be6"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-right.mp4",
+      "cache": "примеры/relats/cache/relats/3764cd319c0b835309026cac4934541db6bc77b9601242487e78820f4c27e913.bin",
+      "bytes": 300996,
+      "mime": "video/mp4",
+      "sha256": "53710b9aa8a3935f4d22853a7bbb8e2296ddbe3aab93c4c0fef80ad77a687a94",
+      "media": {
+        "duration": "5.005000",
+        "bit_rate": "481112",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 720,
+            "height": 480,
+            "r_frame_rate": "30000/1001",
+            "nb_frames": "150",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/periflex/periflex.mp4",
+      "cache": "примеры/relats/cache/relats/37b5dfa163e9ee217a0ac0a3355fc400fee79586467ae0adaea4021bd96ee299.bin",
+      "bytes": 11260503,
+      "mime": "video/mp4",
+      "sha256": "9c163222b20b877afdb205d23bcdb4e3613eed9d03fed34da8b62e30e95efc57",
+      "media": {
+        "duration": "9.000000",
+        "bit_rate": "10009336",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080,
+            "r_frame_rate": "30/1",
+            "nb_frames": "270",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 54,
+        "max_keyframe_gap_seconds": 0.16666700000000034
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/busbar-protection.svg",
+      "cache": "примеры/relats/cache/relats/39eaa622fd49fb848206206f0d48fcb66b430b7ce2a5441ec8d1a749edaa8f57.bin",
+      "bytes": 2508,
+      "mime": "image/svg+xml",
+      "sha256": "e9c5b580c7bfbe5993c211ec529b37c3777c7261fcd5ed80ba5e4a02b1b9f311"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/truck/truck.jpg",
+      "cache": "примеры/relats/cache/relats/3a096a13d70ffddc945f77e64be64e9fc2b5f1df46e8b4ed24da2cea25c470d9.bin",
+      "bytes": 739231,
+      "mime": "image/jpeg",
+      "sha256": "383dacab2195a6db22aa677a75f3bf71c51b764e1516d783848e7cf09a6d9566"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/self-closing.mp4",
+      "cache": "примеры/relats/cache/relats/3b5485c1857b90b232d37ee8570956a3d773d5c0698c3d32e5c50af36e520935.bin",
+      "bytes": 7141891,
+      "mime": "video/mp4",
+      "sha256": "88c9699c62c48fbf549cd728dc7c70fffa700acf23239939a7e8ac5ee354ede7",
+      "media": {
+        "duration": "5.733333",
+        "bit_rate": "9965429",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080,
+            "r_frame_rate": "30/1",
+            "nb_frames": "172",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 35,
+        "max_keyframe_gap_seconds": 0.16666700000000034
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/ovens.jpg",
+      "cache": "примеры/relats/cache/relats/3c47c180fd2ebb5186c6bae6d64b0914a4799374d55b524f450fa0a63fed174b.bin",
+      "bytes": 84392,
+      "mime": "image/jpeg",
+      "sha256": "efaa964651a00fdcda678914ca5d5466d30b40b44bf80709c117ce8043e04cd5"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.mp4",
+      "cache": "примеры/relats/cache/relats/3dcfb3822f0d3eebe16918c8e207ba83ce6bb1675ab4c51d7c8a05757cbe621d.bin",
+      "bytes": 938977,
+      "mime": "video/mp4",
+      "sha256": "22b885fc9ef5cc2ebc7e252924e338af91e6a230a4f9059fd7a187ea59ba32fc",
+      "media": {
+        "duration": "6.002000",
+        "bit_rate": "1251552",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 640,
+            "height": 360,
+            "r_frame_rate": "30000/1001",
+            "nb_frames": "180",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/swatches/orange.svg",
+      "cache": "примеры/relats/cache/relats/3eed674ccbabf59909e472cc7c76cf60122c144e0916144088424fd89b9c9ad9.bin",
+      "bytes": 150,
+      "mime": "image/svg+xml",
+      "sha256": "7f98c41a2f5634ca0e40f9518733133ba128e8fc3f39137e1acf01e8e2843e1e"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.1",
+      "cache": "примеры/relats/cache/relats/444c60a7221ec752eb27e8791ea40381b1bab23f5528b6d714bf0ebb57f68106.bin",
+      "bytes": 87553,
+      "mime": "application/javascript",
+      "sha256": "cb6f2d32c49d1c2b25e9ffc9aaafa3f83075346c01bcd4ae6eb187392a4292cf"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/electricity.jpg",
+      "cache": "примеры/relats/cache/relats/44fa4be71fb0a3e225ed9cfa572b6ceef55e7de4b975eae223b6a3b12fe871ab.bin",
+      "bytes": 571361,
+      "mime": "image/jpeg",
+      "sha256": "60f23baa00cd39791617ce2d00edef8c0570fd53aa8dddda2243244a0cd30e17"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/engine-compartment.svg",
+      "cache": "примеры/relats/cache/relats/457e0fa66f5842fa0e31898b65a7435e97e17139043ced1404c24ba5c799a34d.bin",
+      "bytes": 3816,
+      "mime": "image/svg+xml",
+      "sha256": "faede08bf73e6990e5e2290749df7c541dac566f48c22a834f5633c5c9a3e668"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/truck/truck.mp4",
+      "cache": "примеры/relats/cache/relats/45f64ca757c51512789b94a99addff78b7d19abc36459e9fe3697defcb9cd9be.bin",
+      "bytes": 9257377,
+      "mime": "video/mp4",
+      "sha256": "f8dce18a788f8142acd1f9096412ed194e727bb968b1e3457701f84a6619bc41",
+      "media": {
+        "duration": "7.233333",
+        "bit_rate": "10238574",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080,
+            "r_frame_rate": "30/1",
+            "nb_frames": "217",
+            "pix_fmt": "yuv420p"
+          },
+          {
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "width": null,
+            "height": null,
+            "r_frame_rate": "0/0",
+            "nb_frames": "341",
+            "pix_fmt": null
+          }
+        ],
+        "keyframes": 109,
+        "max_keyframe_gap_seconds": 0.0666670000000007
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/periflex-emi.jpg",
+      "cache": "примеры/relats/cache/relats/47334bd9aca8a0f7c59dda9c42f2195682ddec8b7c5549020adeb6f4e19a3ea0.bin",
+      "bytes": 6953,
+      "mime": "image/jpeg",
+      "sha256": "76ecaa81e347978fd25f29d5907df40c04e02740fa5c0135fed0d4235411e569"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/impact-protection.svg",
+      "cache": "примеры/relats/cache/relats/488a413e448329a34f73fa5113b4b7f19441008a33a5555a4dc7088248fa4a01.bin",
+      "bytes": 1347,
+      "mime": "image/svg+xml",
+      "sha256": "3c77647c30cea37a5ae8a75cb626d8b24634f63e2722499efa64198bd514227e"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/circuit-brakers.svg",
+      "cache": "примеры/relats/cache/relats/4992c5506c2a13725c7e7d7652146c096fd0711181b41afbbaa1c5d5aaf65d0d.bin",
+      "bytes": 623,
+      "mime": "image/svg+xml",
+      "sha256": "a5fd4eff9e1b97d31bdf94b48fcd651847c415bf8742a1ba01559b422cb5f3c3"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1",
+      "cache": "примеры/relats/cache/relats/4bbef15b64e4badb3d0eb030fc01a00c517218bd9773dee9331d684b6c8abdd3.bin",
+      "bytes": 13577,
+      "mime": "application/javascript",
+      "sha256": "5274f11e6fb32ae0cf2dfb9f8043272865c397a7c4223b4cfa7d50ea52fbde89"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.jpg",
+      "cache": "примеры/relats/cache/relats/4ca546e503df217174d4e430b7f85656a74ffc874b6c99a94af898d1cb8dc046.bin",
+      "bytes": 76666,
+      "mime": "image/jpeg",
+      "sha256": "e3330e54596a0e99d44f064ed7c425354ea19161eb0468d1a456c139bee52c75"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/hero/hero.jpg",
+      "cache": "примеры/relats/cache/relats/4f93ee095930c7ae2556e09fd476152288c8367e69ee471e46c61957e7256d13.bin",
+      "bytes": 135789,
+      "mime": "image/jpeg",
+      "sha256": "0b8f3973a10a42ff0f419531dfe7ae72a02f2a698f1ab53f565b25fa8fd7a8ff"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-right.jpg",
+      "cache": "примеры/relats/cache/relats/4fb0fffc8058cae3f4bce2c6b9cb7127e4c51b7e4f968b5157f2e43cc02001f8.bin",
+      "bytes": 188951,
+      "mime": "image/jpeg",
+      "sha256": "dd50b0d9b1493f90bf268ec4d1912fd24a6aa4f86a7336aeee213525469b3e50"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center.mp4",
+      "cache": "примеры/relats/cache/relats/503a8ca1824f01e47c3df7d45019d556b801089cd3d78dd053cb91bea5545241.bin",
+      "bytes": 9200612,
+      "mime": "video/mp4",
+      "sha256": "88c9b503170dc6192e806287cba6ccbb088134bf7ff5938306f81bfeaa5603bc",
+      "media": {
+        "duration": "14.080000",
+        "bit_rate": "5227620",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1280,
+            "height": 720,
+            "r_frame_rate": "25/1",
+            "nb_frames": "352",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 2,
+        "max_keyframe_gap_seconds": 10.0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-json/contact-form-7/v1/contact-forms/340/feedback/schema",
+      "cache": "примеры/relats/cache/relats/5178af4a7469c8430ac9a3728a06a3583a906afba90ba39aa7438e3cd5c0c92d.bin",
+      "bytes": 1157,
+      "mime": "application/json",
+      "sha256": "de2731e4700421f13ebf29e96605cf1effdc15be9b4e343e020497e8bf29f1cb"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/flammability.svg",
+      "cache": "примеры/relats/cache/relats/536db253de8361b837353f67fb42168e0b5dd146b664ff770ee7dbf555a2d568.bin",
+      "bytes": 483,
+      "mime": "image/svg+xml",
+      "sha256": "ca892efe25129cedcb346aaf93d9e6290bf10871f32c005a66b4fa6c66138065"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/vitroceramics.jpg",
+      "cache": "примеры/relats/cache/relats/537fedecc1075e601d718d8fa2999dcc1dba693863ed2790f9e0ec66a114f0df.bin",
+      "bytes": 114489,
+      "mime": "image/jpeg",
+      "sha256": "65b9b26f9d2761857697e93cc2bd5727bb634e52930b69101483b1952fc1a77d"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/industrial-installations.svg",
+      "cache": "примеры/relats/cache/relats/551da78b56e99cd95ee1aa987aa4f7d4f27b48b60dbb02984d07ca07cb98b370.bin",
+      "bytes": 2151,
+      "mime": "image/svg+xml",
+      "sha256": "3ac12e11199c86d4bcaec477ad11db765f2679739428dba668848840e13befe3"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/periflex-ps.png",
+      "cache": "примеры/relats/cache/relats/55d6ca68582e501ec7695ac7b5666f5f3175aaafac5f926b0e088d1428da15c9.bin",
+      "bytes": 714733,
+      "mime": "image/png",
+      "sha256": "918b79586e3bbea3129c94f7786957a83b0ab240606f0fd3d980d9ad3c68b9ec"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.jpg",
+      "cache": "примеры/relats/cache/relats/56b6832d4a76a36ee609d83ef225031d3a6be6e1e364ee1260cdfb1823d03001.bin",
+      "bytes": 17559,
+      "mime": "image/jpeg",
+      "sha256": "5b8d8ae5fb85a73307c01399f7a0282e475067e9c0d3ffa6f0faeb50b0bea94c"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-right.mp4",
+      "cache": "примеры/relats/cache/relats/57b8a2434ebfeefebf4435e70bf588e30e2abe8072da89136ec479ea8a124c41.bin",
+      "bytes": 210815,
+      "mime": "video/mp4",
+      "sha256": "bbba77cd6dc31a66864e666391c612fc889beab2f4fbf1697400acdccb10fac1",
+      "media": {
+        "duration": "6.640000",
+        "bit_rate": "253993",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 720,
+            "height": 480,
+            "r_frame_rate": "25/1",
+            "nb_frames": "166",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/plugins/contact-form-7/includes/swv/js/index.js?ver=6.1.7",
+      "cache": "примеры/relats/cache/relats/585922e2988b0311174f42011f80b90afbb2ca20c731b668deee44998a52673b.bin",
+      "bytes": 12512,
+      "mime": "application/javascript",
+      "sha256": "29fdd17a7002a2e1bbd9b33adafc53457c64006b5aca8f6e4dbf907de35433ca"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/temperature.svg",
+      "cache": "примеры/relats/cache/relats/59c54b51b128e541d6228474b5bf5e3a0fcd06d1409cf114833351e8b8343cd6.bin",
+      "bytes": 1083,
+      "mime": "image/svg+xml",
+      "sha256": "b8cb21dd8fefc86997350eadf0951ef831531f891defd5c4288bc4fa6fba5570"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.mp4",
+      "cache": "примеры/relats/cache/relats/5d7e09733c6e2dd560a20742bad1cef6ce89465edfd500c3242a46ce5106f690.bin",
+      "bytes": 528084,
+      "mime": "video/mp4",
+      "sha256": "25e9616e76cd8958dc3ce2eb8b7d1435cc6198c727ef88878325a1b15f9b1077",
+      "media": {
+        "duration": "6.032000",
+        "bit_rate": "700376",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 640,
+            "height": 360,
+            "r_frame_rate": "30000/1001",
+            "nb_frames": "181",
+            "pix_fmt": "yuv420p"
+          },
+          {
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "width": null,
+            "height": null,
+            "r_frame_rate": "0/0",
+            "nb_frames": "285",
+            "pix_fmt": null
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/high-temperature.svg",
+      "cache": "примеры/relats/cache/relats/5e7df89cd83a1895eb1ab2517a0bd75bd5a91834c920280649c2b029448fd47b.bin",
+      "bytes": 2134,
+      "mime": "image/svg+xml",
+      "sha256": "d543c69d2a9e0f3ffd30a760330cc8b9d810dca8d9ab119861b70cd063058b74"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.mp4",
+      "cache": "примеры/relats/cache/relats/5eda606a6051d9378f9b7c000d129ddf75e5e7764fed9df2ade738b96e01a3a7.bin",
+      "bytes": 2311286,
+      "mime": "video/mp4",
+      "sha256": "24ae6f13972376363015d01e5cf841b65fd443f4f46ef65541e55d1d4d822b10",
+      "media": {
+        "duration": "6.982000",
+        "bit_rate": "2648279",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 640,
+            "height": 360,
+            "r_frame_rate": "24000/1001",
+            "nb_frames": "229",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-content-events-c7172f3fd0e4d5ad62ef.js",
+      "cache": "примеры/relats/cache/relats/601872f45ffe3c470bb4e44a22ad828ad6690a9e9d3536e97b35a58b8d099731.bin",
+      "bytes": 11616,
+      "mime": "application/javascript",
+      "sha256": "8467e8d8af66b367a4cf03f3f8ba8f44381b6e2494670588908619c6fe13baac"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/noise-reduction.svg",
+      "cache": "примеры/relats/cache/relats/60256012b91690d43f9d8a4e60ed2c98a5d1635634fa999021bf61218666dcaa.bin",
+      "bytes": 1792,
+      "mime": "image/svg+xml",
+      "sha256": "3b26a2fdd43f9fb42077f58e318e301a555d41324419bc90fd434d4d58164afe"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left.jpg",
+      "cache": "примеры/relats/cache/relats/6130296cc29ee9f3a17513ce8b90be7719b4b802f33339b5b670e2dd00c95a09.bin",
+      "bytes": 231427,
+      "mime": "image/jpeg",
+      "sha256": "810eb0f6cc063cd258da2aa1c759d6fda3bf39026e9994aa8eb29883fbcd84a1"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/fonts/Roobert-Medium.woff2",
+      "cache": "примеры/relats/cache/relats/61bdc285f1cfe28e4d84d6e1d0c0d2ba0f30740fd0c82da9dad8b0b1d5d40c68.bin",
+      "bytes": 43636,
+      "mime": "font/woff2",
+      "sha256": "9a1fb140fa4059bfd8718ce0ea61a3f4b9f77c487d2ca22c2f343cd092640355"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/heat.jpg",
+      "cache": "примеры/relats/cache/relats/636af202e11f04e2dba16b267eafa92a11c5e363b3a51b1e7401f11f749c7ac5.bin",
+      "bytes": 142660,
+      "mime": "image/jpeg",
+      "sha256": "d7ab89369e24f15252ad247bf6720b41506d8bfc74e2ccda6eec43322032fbbc"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/swatches/black.svg",
+      "cache": "примеры/relats/cache/relats/638cc69ea6bb0452ab17236ff130675e741f86d8729b51931c403874dd4c91d8.bin",
+      "bytes": 150,
+      "mime": "image/svg+xml",
+      "sha256": "cb731a7eb9839310e3d374bf8573708ff1e784855cee690ce7ffa2d55d9a0d22"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/combo/sustainability.jpg",
+      "cache": "примеры/relats/cache/relats/63d16c9a3c56fcdfcee1bc46aab682e5d5b8b9c48df7a2b8a3a1deecfa793260.bin",
+      "bytes": 223089,
+      "mime": "image/jpeg",
+      "sha256": "48239b0c1c2889c678e12e4380bdc7bce86fed8c928f3565f7bfd1b27e33d3f3"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.mp4",
+      "cache": "примеры/relats/cache/relats/63f8ae5d988749d59a7642d6b73d463dc3bce9ece317c4cfdca8791775d39111.bin",
+      "bytes": 486014,
+      "mime": "video/mp4",
+      "sha256": "478155232bd0c7c021d79058a9b1a732f2b686fbcd6e70b485c91f20d88f4c20",
+      "media": {
+        "duration": "7.916000",
+        "bit_rate": "491171",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 640,
+            "height": 360,
+            "r_frame_rate": "25/1",
+            "nb_frames": "209",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 0,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/perfilex-ps.jpg",
+      "cache": "примеры/relats/cache/relats/64f0f6db8f5d4a42de12115877892e05a4f87c5f055a30901caa1dabf84a8a3c.bin",
+      "bytes": 6724,
+      "mime": "image/jpeg",
+      "sha256": "d034593afa5cfebe04628f24273901190158656ddd81ec67e94a5152aa5182c1"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/impact-protection.svg",
+      "cache": "примеры/relats/cache/relats/65014d63216dd2d345386887622c585c6f23cece70551b17702d7e4ecd443272.bin",
+      "bytes": 1334,
+      "mime": "image/svg+xml",
+      "sha256": "07442372c63ae309aad647e87fd42165ed2105860ef6eb85829b3a7a57773d66"
+    },
+    {
+      "url": "https://toptier.relats.com/",
+      "cache": "примеры/relats/cache/relats/6802ce5cf72a757d3cebbafe1676b5492fa2483f83c1f8859ef30433273885fc.bin",
+      "bytes": 204598,
+      "mime": "text/html",
+      "sha256": "92cfa1b37d8aad642b522a0dabf1f0cf241c580cc51aa9c874827085435f3e8e"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/electricity.svg",
+      "cache": "примеры/relats/cache/relats/68fabe6127709e46184fccc53af661af37b0056e43437cf0842c3f5955199bf2.bin",
+      "bytes": 1013,
+      "mime": "image/svg+xml",
+      "sha256": "06b411c54955b866cf5ef097e6a59f84699726c941307420c96a5acd8f0f6551"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/swatches/red-brown.svg",
+      "cache": "примеры/relats/cache/relats/6913d10b8327e9130f6e1a42945e1d1735ba159ca6be89a65808a4d25feaaa67.bin",
+      "bytes": 150,
+      "mime": "image/svg+xml",
+      "sha256": "7cbe738dc41e6b8c95fba09b6777cda9bb8d637f5d56a46ca388b162846d7900"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/industrial-installations.jpg",
+      "cache": "примеры/relats/cache/relats/6c9f9358ebd83fa7917a27799d4088ad473a5829f8c09eb0a93feb9085e479a7.bin",
+      "bytes": 152867,
+      "mime": "image/jpeg",
+      "sha256": "56ef57cbff2aeda0c7d1de76fabcf6de1ba92682359b5dd5e46a4e0e90d4555e"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/favicon/favicon-32x32.png",
+      "cache": "примеры/relats/cache/relats/6ce30f1e37d1acb51dce5966c3d5f4eecc3dde14f426588384278527a9848806.bin",
+      "bytes": 1191,
+      "mime": "image/png",
+      "sha256": "3f97b9a9fe434ec9c80e7ba59635fd147074604ee204f869d296506e5d4651e2"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/revitex-wsx45.jpg",
+      "cache": "примеры/relats/cache/relats/6f0cfe12137aa9b410688f5a299b498dfe04ed3c679c03426c370b87804d5b54.bin",
+      "bytes": 6318,
+      "mime": "image/jpeg",
+      "sha256": "cbb45f3495b78c7566ad4dd11cc51711867151752ef97f58d744228c264f2c22"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-vhg10/material.jpg",
+      "cache": "примеры/relats/cache/relats/72e5715012da9ba720530342850aa466441527cd458bbe7839e9f14805e0a0b1.bin",
+      "bytes": 293039,
+      "mime": "image/jpeg",
+      "sha256": "d6eb4f910a31e053ba85c1894fe0993ada5c53a42371270b59b33a283a865cc3"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/electric-vehicle.svg",
+      "cache": "примеры/relats/cache/relats/74e0623100c263f6e7e0426df3f473199e721cad4cc0f4098ad7dbad2834f702.bin",
+      "bytes": 1896,
+      "mime": "image/svg+xml",
+      "sha256": "23a34f01cfc9460fbc412a74181430387a361c48ffd070389ef3673e4a2435bc"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/js/app.min.js",
+      "cache": "примеры/relats/cache/relats/768c1f52445eda2917d900578048a1d39157d01b88d8365960409ff1afd80f28.bin",
+      "bytes": 154037,
+      "mime": "application/javascript",
+      "sha256": "4658151517749bfe7b09eb0d072f7e860ff6add7b8f3320d95e7ca749b742ea9"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/plas8-na/material-01.jpg",
+      "cache": "примеры/relats/cache/relats/77a743e6903d2e660c050b408c053763f89fc355aacc0f3448615dff6927492c.bin",
+      "bytes": 249902,
+      "mime": "image/jpeg",
+      "sha256": "c40220522a7a1ae569ce063d057f48cb4e3c21f58459f74c5a7deaad2d25f137"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/revitex/icons/temperature.svg",
+      "cache": "примеры/relats/cache/relats/7917030b18cd9b1099e357b14da7603c7d38e6ed2d371ec1dbff764331e1610e.bin",
+      "bytes": 1059,
+      "mime": "image/svg+xml",
+      "sha256": "f10275e85fc5295992e8aca7dd3e7d53b68b34b2ba91c94befcdcd81a9a5a59a"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-wsx45/mask.png",
+      "cache": "примеры/relats/cache/relats/7cb64595b3ae601c80ec1d2814cb115dc184114ba38fcc7ba05e80f99eb2d647.bin",
+      "bytes": 317843,
+      "mime": "image/png",
+      "sha256": "2f89dcc25243cde5fec4990a763a019a20f90cda8c636b3f23f56cca594bcb04"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/thermal-protection.svg",
+      "cache": "примеры/relats/cache/relats/7f71ff3364d596156338869e3f8a05469d93b9dfedd5fddd2071651c528f29b6.bin",
+      "bytes": 33625,
+      "mime": "image/svg+xml",
+      "sha256": "62f7e74735364e0b126aa356e29b8aa1e60441b533944b6d0e70502bdecf3ec6"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/heavy-industry.svg",
+      "cache": "примеры/relats/cache/relats/802edd8633a62917d759dd5749536e0c732eb30147ccc1685ad59f7d454b18d3.bin",
+      "bytes": 1667,
+      "mime": "image/svg+xml",
+      "sha256": "51491f79b04624de4086dc02f1ea8000f01ac14fe4d327d25568bd30b43982bb"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/periflex-dura-ha/mask.png",
+      "cache": "примеры/relats/cache/relats/80fa12b897cd16eab1da62aa17286b4399d758b4a2a4b11221ecb9db0fdba676.bin",
+      "bytes": 484016,
+      "mime": "image/png",
+      "sha256": "aeeaad70334e076a92897757a763946c49362043d7e6375543f1039b1f438668"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/js/vendor.min.js",
+      "cache": "примеры/relats/cache/relats/8705ceff47af0a6b581f66911e20cc8ab9dc8bfe157fc9945806bdbdf2132832.bin",
+      "bytes": 570012,
+      "mime": "application/javascript",
+      "sha256": "1ccaddaa4e3076348688470a468bbbdb5682fc38bd9a3802164f904215a58958"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-includes/js/dist/i18n.min.js?ver=1dfe7db3940c23ea9216",
+      "cache": "примеры/relats/cache/relats/888870873953a603f0dfd8ca85f1a14a69c27c52bd9a1eb2cac25c092173f8ea.bin",
+      "bytes": 5791,
+      "mime": "application/javascript",
+      "sha256": "5083905862c2b7aa8a84c4f2313d359d2288fb25fbe1ff577fa7325eff2ed2d9"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/catalog.jpg",
+      "cache": "примеры/relats/cache/relats/88fada89550385dd764de19e8ce909af5be6d9d47f429205dfff9d9b2a7d1c21.bin",
+      "bytes": 1510,
+      "mime": "image/jpeg",
+      "sha256": "65bdc28e9e4f21d8b58e913ba2522c2c1e867556f90ccc7c5a7ab71ababedcfa"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/plas8-na.png",
+      "cache": "примеры/relats/cache/relats/8ac5646248a494744200acac72d1e1ea3fde43d7abf6bb39fad6229bb45b348b.bin",
+      "bytes": 719382,
+      "mime": "image/png",
+      "sha256": "b17659f37f59d33ab06e32e9efda6d7bcf8613c4e2dba43b7bc36a8844d45b58"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/revitex/icons/thermal.svg",
+      "cache": "примеры/relats/cache/relats/8be150b915bcbceca3983a2dba9ba813374fc1f6f916d956dfa3d107b828ebb5.bin",
+      "bytes": 1015,
+      "mime": "image/svg+xml",
+      "sha256": "30263d84f4f68dd4b57e0afe896f1572a4cc43e2bd3e10c00cf26c2762e1614c"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/fonts/Roobert-Regular.woff2",
+      "cache": "примеры/relats/cache/relats/90d3cc4a3dacfce5319b9cbc36b9dd89f786cd2325288c51257a6a99dca8c63c.bin",
+      "bytes": 43644,
+      "mime": "font/woff2",
+      "sha256": "36d143d7ffe3fbefff1f412722a3da32277a6024a86a406f8b814ce238c118d8"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/mechanical-protection.svg",
+      "cache": "примеры/relats/cache/relats/924dba4deb00cdca49bc582e0c80534bde75d32c8c18d286641c84ce60a763b8.bin",
+      "bytes": 4133,
+      "mime": "image/svg+xml",
+      "sha256": "d42682f3ada9073212566c9860df501148ed8269653329fdcd9743e4a167f834"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.jpg",
+      "cache": "примеры/relats/cache/relats/96f20b1bd4189660b0fe3c5e5e6cde3589a2bd8a5fc17aa87b91e8c94e4f82ea.bin",
+      "bytes": 72869,
+      "mime": "image/jpeg",
+      "sha256": "27f469e5f2f588cb8e4ce31c69cf3a8249ddcae66069bacb0699979dc4649aa2"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/electromagnetic.svg",
+      "cache": "примеры/relats/cache/relats/983bd652b83672b1361076650f69607d70c3f029f6d71c91335b89491470c510.bin",
+      "bytes": 1493,
+      "mime": "image/svg+xml",
+      "sha256": "91586bbbb8c8dadf6e2757550d4b75c78d634b233e522b1603a49b5d820da688"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/emi-shielding.svg",
+      "cache": "примеры/relats/cache/relats/98ada311d074d5e33e7729f7bb9cef38c019bac2d3cca80615bc6695bcee2324.bin",
+      "bytes": 1547,
+      "mime": "image/svg+xml",
+      "sha256": "8c96b3070c5dca8e410a917226bb5879294f389a570527d20c43f08cdeaf0241"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/electrical-insulation.svg",
+      "cache": "примеры/relats/cache/relats/9b9f07b86d2ca6ee288cee8efb35e91e33f133dd7735267f592cbef8cb2914c5.bin",
+      "bytes": 3180,
+      "mime": "image/svg+xml",
+      "sha256": "55bf2686bcc709f71cff621ce8c18c48f50048865975b3a182a65b025742141a"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/revitex-vsctf-rw.jpg",
+      "cache": "примеры/relats/cache/relats/9da248a23cae91b19db670b8a863b60fa635657868b65b282a8bea214e4e1d04.bin",
+      "bytes": 4990,
+      "mime": "image/jpeg",
+      "sha256": "1018d26b4205b02de8824e6ed8aa34cabe7c7967ee22b4bb3ff997258689a354"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/revitex/icons/flammability.svg",
+      "cache": "примеры/relats/cache/relats/9ebd5e5538e976ba1734a7609ea6b1236786a20f33324df6267221c8523c8bdf.bin",
+      "bytes": 438,
+      "mime": "image/svg+xml",
+      "sha256": "1bbc2480410424abf63bd05ff29be8ab26922a01a4568d6a21288c2fce6a530f"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/robotics.svg",
+      "cache": "примеры/relats/cache/relats/a3a29b0bfbf764d82fe9d806ed8febbbfd9b6209549c1034ffa50e6fde7a8d24.bin",
+      "bytes": 1249,
+      "mime": "image/svg+xml",
+      "sha256": "a3cb73a20f4c96165836d0f1346b6778d57a534d81849804d58a748bc7368775"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-wsx45/material-01.jpg",
+      "cache": "примеры/relats/cache/relats/a88f24e4a6f2306cf87deae2885f56021b73a40640f1543ccff6e8ba984d7b5e.bin",
+      "bytes": 105143,
+      "mime": "image/jpeg",
+      "sha256": "729c2216655bab6f2aae9172038fda25bc92fbb265d1c6a4c69c237dfa66f0f3"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-vhg10/mask.png",
+      "cache": "примеры/relats/cache/relats/b224159169871265e9d940a69482199f581774ecaeec88fb59ddea1c1b4b301a.bin",
+      "bytes": 517106,
+      "mime": "image/png",
+      "sha256": "0cf3faae095a47b0389cb08c53cdad43358ef313f39519bc81c20099a952f374"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/plas8-na.jpg",
+      "cache": "примеры/relats/cache/relats/b30b101c3d10887b205d20de310d470d54afe951ce1800ef92eda2a63b078b2a.bin",
+      "bytes": 6283,
+      "mime": "image/jpeg",
+      "sha256": "aed11002e5bc557f2b4ea5fee222b830aa4e8611c91f2c75ca0012d90539fbd8"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-left.mp4",
+      "cache": "примеры/relats/cache/relats/b95788837fb7955d71ffc4e33a28fe08094440dbceb568df97e1e94d0d0e3a9e.bin",
+      "bytes": 668125,
+      "mime": "video/mp4",
+      "sha256": "1601999678e55aa16ce2fd047909fc38d5bcaa2fa9cced8c73f26624a7cdc4d0",
+      "media": {
+        "duration": "5.038367",
+        "bit_rate": "1060859",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 720,
+            "height": 480,
+            "r_frame_rate": "30000/1001",
+            "nb_frames": "151",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/jointheride/cable.mp4",
+      "cache": "примеры/relats/cache/relats/b9bb363fa8a48d12a5701f49028c8e206dfef0493ca645ee7a17d1c77b570d22.bin",
+      "bytes": 8001534,
+      "mime": "video/mp4",
+      "sha256": "01fd7dbe34336294820fa5acefab81366f6fa6e75798074746cc3e96a929d8d5",
+      "media": {
+        "duration": "10.866667",
+        "bit_rate": "5890699",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080,
+            "r_frame_rate": "30/1",
+            "nb_frames": "326",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 66,
+        "max_keyframe_gap_seconds": 0.16666700000000034
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/worldwide/world.svg",
+      "cache": "примеры/relats/cache/relats/ba987a15d7ea5c4749695305e012f07eaee465c61caf976383f7143a7c51ec32.bin",
+      "bytes": 1460602,
+      "mime": "image/svg+xml",
+      "sha256": "079d155ce8de707d88e98edce2b56d2617867a4d78d6d456038c82560d45f9c4"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/perfilex-ps/material-02.jpg",
+      "cache": "примеры/relats/cache/relats/bae873ed1af63b0e6311c3228ae9e5b2e466edf389beea872cd351e4ae7370cb.bin",
+      "bytes": 340263,
+      "mime": "image/jpeg",
+      "sha256": "eb8ba17be8a25050578c3436944237ca00ae94dd4a7032d481a12d9ab61864f9"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-includes/js/dist/hooks.min.js?ver=f0f188028580e8dc1255",
+      "cache": "примеры/relats/cache/relats/bd8f2e104ef2b2110795b49007115615c253b9667cff8d61ceb4c2c162d8314c.bin",
+      "bytes": 5107,
+      "mime": "application/javascript",
+      "sha256": "fc774906082b59dedcfc55b8ef127783b6d056578ff4586a8ebbdb81bbe286f1"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/revitex/VSC25.jpg",
+      "cache": "примеры/relats/cache/relats/bf7f039036f4286b471c6b8286a69bcfe7c794d5ca170ae434245eeb87e931ad.bin",
+      "bytes": 129175,
+      "mime": "image/jpeg",
+      "sha256": "d2ae7231786d059018ba77f43b23e4990ca7af1fea4b8ed8d1a50a954b5d0935"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.jpg",
+      "cache": "примеры/relats/cache/relats/c014d510901e3dd72fa07728af419d3cdb2a6e813cb53592be007fd286a95213.bin",
+      "bytes": 51318,
+      "mime": "image/jpeg",
+      "sha256": "079e28c316ea5eea97e2cec92731e6d4efea9980b5a43af41e968d217c345e82"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=6.1.7",
+      "cache": "примеры/relats/cache/relats/c39f76294db835ac3b5b2b28dc1743eecf82231eefb2a1fbdb6167aa0ba7cd54.bin",
+      "bytes": 2979,
+      "mime": "text/css",
+      "sha256": "a3b9f5df6bf638a4cb583480bed6e18a84ad7141cc3d75b81094f91dd7b82f32"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/fire-protection.svg",
+      "cache": "примеры/relats/cache/relats/c4bb3fc159306393b5f1d7b0c05f9b3cc1dab8d9edd7bbb017ff12288ff1705c.bin",
+      "bytes": 861,
+      "mime": "image/svg+xml",
+      "sha256": "d84800ed789fb4a63afe1cce53b070ce426e5ba8898b932750e27ac8247309c6"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/electromagnetic.jpg",
+      "cache": "примеры/relats/cache/relats/c82dc5e88093a0f9f2d194b968a9517e349bca63f2ccc91eff324d6155230356.bin",
+      "bytes": 124582,
+      "mime": "image/jpeg",
+      "sha256": "0929de756a964a00752d0fc8346dd56958e5bdcce0ed6038fc2dcdbf8366a625"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/plas8-na-black.jpg",
+      "cache": "примеры/relats/cache/relats/c8acd246d1ec5894b9d5ce954e922c354eb3d25f4b6646511fe248e90b33cc1d.bin",
+      "bytes": 10917,
+      "mime": "image/jpeg",
+      "sha256": "a3be76063b28aa070807a578e7c8c0e283f95acd5af4e5e91126dbe165ca3c51"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center.jpg",
+      "cache": "примеры/relats/cache/relats/ca748bff2ce4c64d64ba20f7275d78e7c87e7c8d92ea17813f7bfabbd9c044aa.bin",
+      "bytes": 700849,
+      "mime": "image/jpeg",
+      "sha256": "7085972cae582ed92c376feb56dea68dad903a3adf560cdb2a0009a8c913677a"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/self-closing.jpg",
+      "cache": "примеры/relats/cache/relats/cb749c6e82d8e7e379ae2bbe3e9c98e76b7ed768c7847a76f24e69e78d81968d.bin",
+      "bytes": 67584,
+      "mime": "image/jpeg",
+      "sha256": "0f74542702b6369701b20830afb71601bf54ff07688406444200b42975e41e9b"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/uploads/2026/06/Relats-BPM_V02.mp4",
+      "cache": "примеры/relats/cache/relats/cc434ae49c2398192802b20ab6ae6d3e82f70ebaf433044748e6f66dac6d1321.bin",
+      "bytes": 7593166,
+      "mime": "video/mp4",
+      "sha256": "a7a07a86715700cd343d87af91a19410d3f143febc29eaf8f3652624c929cca3",
+      "media": {
+        "duration": "6.041667",
+        "bit_rate": "10054398",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1080,
+            "r_frame_rate": "24/1",
+            "nb_frames": "145",
+            "pix_fmt": "yuv420p"
+          },
+          {
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "width": null,
+            "height": null,
+            "r_frame_rate": "0/0",
+            "nb_frames": "285",
+            "pix_fmt": null
+          }
+        ],
+        "keyframes": 5,
+        "max_keyframe_gap_seconds": 1.25
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/revitex/busbar.jpg",
+      "cache": "примеры/relats/cache/relats/cd4c5168a16df167ba7051e17f57d5e711fff65ce26405c6c76e9de71a2543da.bin",
+      "bytes": 115956,
+      "mime": "image/jpeg",
+      "sha256": "881e38e5d0ae33f4f2b5198da9868801f11098a009104bd72ccb63ed448cfaff"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/sustainability.jpg",
+      "cache": "примеры/relats/cache/relats/cf2f458948ec8978bb2f34aed94147c6d6f1da775f0569086c30502681709979.bin",
+      "bytes": 973321,
+      "mime": "image/jpeg",
+      "sha256": "1f1e7e612eaee0dbd78c29a017f8644b556255beef069bbc80e6e69fc04c72a6"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/plugins/contact-form-7/includes/js/index.js?ver=6.1.7",
+      "cache": "примеры/relats/cache/relats/d3977c981a0e4929e8bd732f051a37fba7620b1c5cefec63fe9db5b9c19c4b3c.bin",
+      "bytes": 13452,
+      "mime": "application/javascript",
+      "sha256": "ddcce687729cb358abf9d0d8e1217a097859be2b0d18c23d7c851b38c87bc9c0"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/swatches/violet.svg",
+      "cache": "примеры/relats/cache/relats/d4997adb71e19e2509dcb5d95baba4c4ec6752bb2319d29e6b128cf5667ff4b9.bin",
+      "bytes": 150,
+      "mime": "image/svg+xml",
+      "sha256": "148dfbb5555c25299d171cc654d4e7e56d9e74766f43bb8fdaa42fb4247cdcef"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-right.jpg",
+      "cache": "примеры/relats/cache/relats/d53ad022e0d89ca8bfe75d76b275d5e65da56f67c40fb2fd2e6c83a8d311067d.bin",
+      "bytes": 152546,
+      "mime": "image/jpeg",
+      "sha256": "c2b653a001503976a9824d3a0706ebbc44768e1e605f5488d543ce728ffc9345"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/impact.svg",
+      "cache": "примеры/relats/cache/relats/d910a831ace50c6cde08c4d784554827ff72f6982cd96c19748e078d3b84aa9c.bin",
+      "bytes": 1355,
+      "mime": "image/svg+xml",
+      "sha256": "23cb4e5ff8a382117482660fc6edd6057fce3a989adc97646a63c4ee4beed59b"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/periflex/icons/temperature.svg",
+      "cache": "примеры/relats/cache/relats/db03180ff1c2e8cad4f50e585641d898974254d4bc5452e515d7e0b1c4a4b3f5.bin",
+      "bytes": 1053,
+      "mime": "image/svg+xml",
+      "sha256": "df52e7a57e6098fbadfcf7e93c1538423a0b1be2a1cebeeaa7f66ef676ad4acd"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/style.css",
+      "cache": "примеры/relats/cache/relats/dc91c227fdca250f24d9db2ccb293f249bedffa7ef634598786254d8760ac88b.bin",
+      "bytes": 657392,
+      "mime": "text/css",
+      "sha256": "e891de7a62a7af5d48f53da3298b0ba6792944f793523f93cc15ad1706718f7d"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.jpg",
+      "cache": "примеры/relats/cache/relats/df68d1f66c2c289e94ebae45ed9ce63d9e9fb67b494866f3607d1abe392e625c.bin",
+      "bytes": 33347,
+      "mime": "image/jpeg",
+      "sha256": "f015d1544955c1b620987f7fa5f84fdb17fce20b52b8a5dfe2da77615f6c427f"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/plugins/integration-for-cf7-pardot-form-handlers/js/functions.js?ver=2.0",
+      "cache": "примеры/relats/cache/relats/e08941e95c82d77c5ccf920d442ab339aed296eee07711cdd410d2dde8e28dea.bin",
+      "bytes": 1447,
+      "mime": "application/javascript",
+      "sha256": "b0a621eae3a2a4d45ce64c9075ef1fe630566fec4d6bad6d2c901b9a0e3698d9"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-right.jpg",
+      "cache": "примеры/relats/cache/relats/e35ee1a90abde818bccde23f6dfa01725543e0b2990f315ad1691597b0bc7ea1.bin",
+      "bytes": 163410,
+      "mime": "image/jpeg",
+      "sha256": "d776c1e6655d108ced2eb0c1372a9d5e6027fb8b6932bd6fc89c5e4d9b9b8e6c"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-left.jpg",
+      "cache": "примеры/relats/cache/relats/e6fc1a8e5b25cae4a0e4fe43b5f77225cd86b57acfdfdb488e287f073d270a9a.bin",
+      "bytes": 363392,
+      "mime": "image/jpeg",
+      "sha256": "693c1021d1cba5a262180a08ac185b8cbf347cae53d7e980b848e85dc7dd86ea"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/icons/emi-shielding.svg",
+      "cache": "примеры/relats/cache/relats/e8583041b78bc5b285407cc4e5ad3177094f728457b42312272450f518e35b26.bin",
+      "bytes": 1562,
+      "mime": "image/svg+xml",
+      "sha256": "a642be72e92481deaa642579f3cc71aac26e16b2275d573483bc02b06db2ece5"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/plas8-na/material-02.jpg",
+      "cache": "примеры/relats/cache/relats/e957befc7432a2f435352dc224de1c5952988376997ff63774809246aecbe332.bin",
+      "bytes": 168457,
+      "mime": "image/jpeg",
+      "sha256": "7d08648958b22b879530bef452346b6f3d83cbe735ba21db543ac8ab8a77925e"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/fonts/DMMono-Regular.woff2",
+      "cache": "примеры/relats/cache/relats/ed6890bc6b32f547abd0e4e9761f027b6f542fdce942422e0d45c027a0be6671.bin",
+      "bytes": 21636,
+      "mime": "font/woff2",
+      "sha256": "7d1034ea1431fad655bc34f8dcf1041ce4ba784498e51bae7a6f2a1a0caa652a"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.mp4",
+      "cache": "примеры/relats/cache/relats/ef732d0c1ea9ab7f6264bc8d99ad77cc02883457254a349960169c61f1fb69ba.bin",
+      "bytes": 349629,
+      "mime": "video/mp4",
+      "sha256": "c0723f84ae3d17a645e057538d322bd86240f72b93d22df1014a74d018786cc9",
+      "media": {
+        "duration": "6.025000",
+        "bit_rate": "464237",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 640,
+            "height": 360,
+            "r_frame_rate": "25/1",
+            "nb_frames": "152",
+            "pix_fmt": "yuv420p"
+          }
+        ],
+        "keyframes": 1,
+        "max_keyframe_gap_seconds": 0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/plas8-na2.png",
+      "cache": "примеры/relats/cache/relats/f0e1b3d02a15f45fb16d984ecee6ab7a5361fb9d6418dac62b769043199a6045.bin",
+      "bytes": 634398,
+      "mime": "image/png",
+      "sha256": "c62e526bf95a7b9616e3dae8aba0e1490bed3405a3187bd2c4415a459f150594"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/fonts/fa-solid-900.woff2",
+      "cache": "примеры/relats/cache/relats/f15390a96566f5faf6ae362175743798abb530662eac7e2710ff5e7c941d62ec.bin",
+      "bytes": 325592,
+      "mime": "font/woff2",
+      "sha256": "a4ce23501f658a336323bd90b52746e73e0ddca6be18651594d169b263db5410"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/vitroceramics.svg",
+      "cache": "примеры/relats/cache/relats/f1fa621ec9b364d549450c449d4cdb39955ee36e2f332d0df48e4c9a22afbbc8.bin",
+      "bytes": 2310,
+      "mime": "image/svg+xml",
+      "sha256": "2bc1ad2bd9aa7d51775e7aaee72c6a8c86fe28271d1d1b9538f6d95e9d5b6588"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/plas8-na/mask.png",
+      "cache": "примеры/relats/cache/relats/f2c6fcbec3c23cb40c8aa39dc86ffd35d01e1f5fa653e951969ec26d8d7163f5.bin",
+      "bytes": 539578,
+      "mime": "image/png",
+      "sha256": "83a450963365bef150d83e285677d31551615c29a94925dc861380dc5b3b2569"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/noise-reduction.svg",
+      "cache": "примеры/relats/cache/relats/f3085c2604c01461e9d73ebaf12dbc1e6710c39d5f7c19ad2a79e4eb4c5dcf23.bin",
+      "bytes": 1787,
+      "mime": "image/svg+xml",
+      "sha256": "3167c7951dcace9063f2e9a88c118ba2d801f053f266bce09536d2b7d2c8c922"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/videos/hero/hero.mp4",
+      "cache": "примеры/relats/cache/relats/f50ab7f6b73f27d258c563d0d556bff31ade64205eeea715b56a443e370da5bd.bin",
+      "bytes": 3534100,
+      "mime": "video/mp4",
+      "sha256": "46e3e43dbeab45af7778fe31ec5a97df5a374251e797e1aed7d65a8efec93998",
+      "media": {
+        "duration": "10.026000",
+        "bit_rate": "2819948",
+        "streams": [
+          {
+            "codec_type": "video",
+            "codec_name": "h264",
+            "width": 1280,
+            "height": 720,
+            "r_frame_rate": "25/1",
+            "nb_frames": "250",
+            "pix_fmt": "yuv420p"
+          },
+          {
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "width": null,
+            "height": null,
+            "r_frame_rate": "0/0",
+            "nb_frames": "472",
+            "pix_fmt": null
+          }
+        ],
+        "keyframes": 6,
+        "max_keyframe_gap_seconds": 2.0
+      }
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/perfilex-ps/mask.png",
+      "cache": "примеры/relats/cache/relats/f698cba2dd08a01e882cb25d3c209c70b5d44fed255e7a236919e8b17b870054.bin",
+      "bytes": 721422,
+      "mime": "image/png",
+      "sha256": "8da0e20cde68b3971a8454db7a80b65d838b93eb4344c5d0410a39f575763895"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/floating/revitex-vsc25.jpg",
+      "cache": "примеры/relats/cache/relats/fbd7ecf7a6154c4b892b45c33c4a3a3bbf399b2274cfb02755b06fdd81982063.bin",
+      "bytes": 5904,
+      "mime": "image/jpeg",
+      "sha256": "276ee11168bc2474095a157e3572ed5c27561bcfb5f15996b2d29ceda60bdba4"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/industries/ovens.svg",
+      "cache": "примеры/relats/cache/relats/fcd459d7744376778f7a71f37d6762096d6eb668c45a6d64236077a9e9090598.bin",
+      "bytes": 1937,
+      "mime": "image/svg+xml",
+      "sha256": "d8f057f2bd2945962e59dbdd36e6918d0a2657ddb53c6e8e969ae857aed79a14"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/truck/heat-reflection.svg",
+      "cache": "примеры/relats/cache/relats/fef9453b283496a8893d3b0f437bb76722a0485d572e3c82d8cb4b1878516780.bin",
+      "bytes": 1240,
+      "mime": "image/svg+xml",
+      "sha256": "a36368aadd78a0effe232701c7ad06fe99fe25a06050e06a4c2956fc6e22cf0a"
+    },
+    {
+      "url": "https://toptier.relats.com/wp-content/themes/relats/img/popups/revitex-vsctf/mask.png",
+      "cache": "примеры/relats/cache/relats/ff229c976b638b10e5b35fc686f60da10d128b684614a5f46d507301bd315383.bin",
+      "bytes": 552080,
+      "mime": "image/png",
+      "sha256": "3b0da5e00bd770ba135d2182a27c2a583cd77153b2dff741fcd4e0afcad84320"
+    }
+  ],
+  "htmlVideos": [
+    {
+      "section": "hero",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/hero/hero.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/hero/hero.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "hero",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/hero/hero.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/hero/hero-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-right.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-right.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-left.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-right.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-right.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-left.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-right.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-right.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/top-right-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-left-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-right.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/center-right-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-left.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-left-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "intro",
+      "attributes": {
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-right.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/intro/bottom-right-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "revitex",
+      "attributes": {
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/revitex/busbar.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/revitex/busbar.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "revitex",
+      "attributes": {
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/revitex/busbar.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/revitex/busbar-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/self-closing.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/self-closing.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/self-closing.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/self-closing-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/construction-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/hybrid-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/buses-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/railway-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "industries",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/industries/agriculture-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "periflex",
+      "attributes": {
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/periflex/periflex.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/periflex/periflex.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "periflex",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/periflex/periflex.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/periflex/periflex-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "truck",
+      "attributes": {
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/truck/truck.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/truck/truck.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "truck",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/truck/truck.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/truck/truck-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "combo",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "loop": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/combo/sustainability.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/uploads/2026/06/Relats-BPM_V02.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "combo",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "muted": "",
+        "playsinline": "",
+        "poster": "https://toptier.relats.com/wp-content/themes/relats/videos/combo/sustainability.jpg",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/uploads/2026/06/Relats-BPM_V02.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "animation",
+      "attributes": {
+        "muted": "",
+        "playsinline": "",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/jointheride/cable.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    },
+    {
+      "section": "animation",
+      "attributes": {
+        "autoplay-onscroll": "",
+        "muted": "",
+        "playsinline": "",
+        "preload": "auto"
+      },
+      "sources": [
+        {
+          "data-src": "https://toptier.relats.com/wp-content/themes/relats/videos/jointheride/cable-mobile.mp4",
+          "type": "video/mp4"
+        }
+      ]
+    }
+  ],
+  "htmlCounts": {
+    "images": 198,
+    "videos": 48,
+    "canvas": 0,
+    "lottie": 0,
+    "preloadMain": 0,
+    "preloadSecondary": 0
+  },
+  "sourceFiles": {
+    "index.html": "примеры/relats/cache/relats/6802ce5cf72a757d3cebbafe1676b5492fa2483f83c1f8859ef30433273885fc.bin",
+    "app.js": "примеры/relats/cache/relats/768c1f52445eda2917d900578048a1d39157d01b88d8365960409ff1afd80f28.bin",
+    "vendor.js": "примеры/relats/cache/relats/8705ceff47af0a6b581f66911e20cc8ab9dc8bfe157fc9945806bdbdf2132832.bin",
+    "style.css": "примеры/relats/cache/relats/dc91c227fdca250f24d9db2ccb293f249bedffa7ef634598786254d8760ac88b.bin"
+  }
+}

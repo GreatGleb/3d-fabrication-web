@@ -1,0 +1,41 @@
+@font-face {
+  font-family: 'Ubuntu Sans';
+  src: url('assets/fonts/UbuntuSans-Variable.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.hero h1,
+.section h2,
+.service h3,
+.step b,
+.cta h2,
+.modal h2,
+.gallery-main h1,
+.variant-card h2,
+.logo {
+  font-family: 'Ubuntu Sans', Arial, sans-serif;
+}
+
+.hero:after {
+  background: radial-gradient(ellipse at 72% 45%, #284361 0%, #182a3e 38%, #111a23 76%);
+  opacity: .9;
+  mix-blend-mode: screen;
+}
+
+.variant-studio .hero:after {
+  background: radial-gradient(ellipse at 74% 45%, #b8c9de 0%, #dce4ed 42%, #e8edf2 78%);
+  opacity: .85;
+  mix-blend-mode: multiply;
+}
+
+.variant-balanced .hero:after {
+  background: radial-gradient(ellipse at 78% 42%, #2673b5 0%, #1b4b78 45%, #11243b 82%);
+}
+
+@media (max-width: 560px) {
+  .hero:after {
+    inset: 64% 0 0;
+  }
+}

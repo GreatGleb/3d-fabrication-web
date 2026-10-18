@@ -1,0 +1,22 @@
+{
+  "lunar-aiqme": {
+    "upload_two_stl": "pass",
+    "submit_without_payment": "pass",
+    "admin_confirms_price": "pass",
+    "start_unpaid": "pass",
+    "partial_balance_display": "pass",
+    "private_download": "pass",
+    "page_errors": [],
+    "browser": "isolated bundled Chromium; user Chrome untouched"
+  },
+  "laravel-orders-aiqme": {
+    "upload_two_stl": "pass",
+    "submit_without_payment": "pass",
+    "admin_confirms_price": "pass",
+    "start_unpaid": "pass",
+    "partial_balance_display": "pass",
+    "private_download": "pass",
+    "page_errors": [],
+    "browser": "isolated bundled Chromium; user Chrome untouched"
+  }
+}

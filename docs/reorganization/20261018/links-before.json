@@ -1,0 +1,1717 @@
+{
+ "markdown_files": 156,
+ "checked": 1952,
+ "broken": [],
+ "frozen_snapshot_prefixes": [
+  "docs/planning/run/reconciliations/",
+  "legacy-landing/archive/project-history/",
+  "archive/project-history/"
+ ],
+ "frozen_broken": [
+  {
+   "file": "archive/project-history/before-reorganization-README.md",
+   "target": "docs/design/relats-study/index.html",
+   "reason": "missing"
+  },
+  {
+   "file": "archive/project-history/before-reorganization-README.md",
+   "target": "docs/design/relats-study/motion-recipes.md",
+   "reason": "missing"
+  },
+  {
+   "file": "archive/project-history/before-reorganization-README.md",
+   "target": "design-previews/animation-v1/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-for-owner.md",
+   "target": "../../AGENTS.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "../../AGENTS.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/03.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/08.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/09.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/07.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/10.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/11.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/06.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/12.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/13.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/16.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/18.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/18.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/24.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/25.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/requirements.md",
+   "target": "../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/requirements.md",
+   "target": "../materials/client/e4e2afb0-5a1c-477f-bf15-78adbc14ba1b.jpeg",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/requirements.md",
+   "target": "planning/questions-for-owner.md#в-002-кто-должен-подтверждать-окончательную-цену-перед-оплатой",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/requirements.md",
+   "target": "../references/aiqme-prototype/20261015-214335/manifest.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-120316/requirements.md",
+   "target": "prototype-browser.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-for-owner.md",
+   "target": "../../AGENTS.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "../../AGENTS.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/03.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/08.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/09.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/07.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/10.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/11.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/06.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/12.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/13.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/24.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/25.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/01.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/02.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/03.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/04.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/05.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/06.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/07.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/08.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/09.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/10.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/11.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/12.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/13.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/24.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/25.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/26.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/planning/run/PLAN.md",
+   "target": "sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/requirements.md",
+   "target": "../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/requirements.md",
+   "target": "../materials/client/e4e2afb0-5a1c-477f-bf15-78adbc14ba1b.jpeg",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/requirements.md",
+   "target": "../references/aiqme-prototype/20261015-214335/manifest.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261016-122352-accept-layer30/docs/requirements.md",
+   "target": "prototype-browser.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/prototype-audit-20261016/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/requirements.md#принятые-решения-после-аудита-прототипа",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/reorganization/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/github-pages-v2.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/local-server.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/prototype-browser.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "design-previews/animation-v1/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "design-previews/animation-v2/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/reorganization/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "tools/planning/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "materials/client/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/reorganization/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/design/relats-study/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/design/relats-study/motion-recipes.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/design/aiqme-motion-plan.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/README.md",
+   "target": "docs/design/aiqme-motion-v2.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "../materials/client/e4e2afb0-5a1c-477f-bf15-78adbc14ba1b.jpeg",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "planning/questions-for-owner.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "prototype-audit-20261016/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "prototype-audit-20261016/visual-and-responsive.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "prototype-audit-20261016/forms.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "local-server.md#проверка-пригодности-flask--16-октября-2026",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "prototype-audit-20261016/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "lunar-vs-laravel-comparison-20261017.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "planning/questions-for-owner.md#в-002-кто-должен-подтверждать-окончательную-цену-перед-оплатой",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "../references/aiqme-prototype/20261015-214335/manifest.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "prototype-audit-20261016/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/requirements.md",
+   "target": "prototype-browser.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/docs/tools-planning-README.md",
+   "target": "../../docs/prototype-browser.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md#перепроверка-решений-перед-обновлением-плана",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../prototype-audit-20261016/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-for-owner.md",
+   "target": "../../AGENTS.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md#перепроверка-решений-перед-обновлением-плана",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/reconciliations/20261016-122352-accept-layer30/acceptance.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../prototype-audit-20261016/README.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md#принятые-решения-после-аудита-прототипа",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md#согласованный-состав-админки-и-упрощения",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md#todo--после-текущего-релиза",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md#оценка-lunar--17-октября",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/client/правки",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../materials/reorganization-request.txt",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "../../AGENTS.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/03.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/08.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/09.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/07.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/10.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/11.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/06.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/12.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/13.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/16.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/15.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/14.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/18.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/17.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/27.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/28.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/18.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/19.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/23.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/20.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/21.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/22.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/24.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/25.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/planning/questions-map.md",
+   "target": "run/sections/29.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/PLAN.md",
+   "target": "../../requirements.md#перепроверка-решений-перед-обновлением-плана",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/PLAN.md",
+   "target": "reconciliations/20261016-122352-accept-layer30/acceptance.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/PLAN.md",
+   "target": "../../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/PLAN.md",
+   "target": "../questions-for-owner.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/PLAN.md",
+   "target": "../questions-map.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/16.md",
+   "target": "../../../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/16.md",
+   "target": "../../questions-for-owner.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/16.md",
+   "target": "../reconciliations/20261016-122352-accept-layer30/acceptance.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/18.md",
+   "target": "../../../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/18.md",
+   "target": "../../questions-for-owner.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/18.md",
+   "target": "../reconciliations/20261016-122352-accept-layer30/acceptance.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/19.md",
+   "target": "../../../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/19.md",
+   "target": "../../questions-for-owner.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/19.md",
+   "target": "../reconciliations/20261016-122352-accept-layer30/acceptance.json",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/30.md",
+   "target": "../../../requirements.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/30.md",
+   "target": "../../questions-for-owner.md",
+   "reason": "missing"
+  },
+  {
+   "file": "docs/planning/run/reconciliations/20261018-edition2-baseline/run/sections/30.md",
+   "target": "../reconciliations/20261016-122352-accept-layer30/acceptance.json",
+   "reason": "missing"
+  }
+ ]
+}

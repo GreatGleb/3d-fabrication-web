@@ -1,0 +1,5 @@
+{"step":"submitted","order_id":1,"balance":{"total":12000,"paid":0,"due":12000,"overpaid":0,"payment_state":"unpaid"},"production":"review"}
+{"step":"confirmed","order_id":1,"balance":{"total":15000,"paid":0,"due":15000,"overpaid":0,"payment_state":"unpaid"},"production":"ready"}
+{"step":"advance","order_id":1,"balance":{"total":15000,"paid":4000,"due":11000,"overpaid":0,"payment_state":"partial"},"production":"ready"}
+{"step":"production_with_debt","order_id":1,"balance":{"total":15000,"paid":4000,"due":11000,"overpaid":0,"payment_state":"partial"},"production":"in-production"}
+{"step":"balance_paid","order_id":1,"balance":{"total":15000,"paid":15000,"due":0,"overpaid":0,"payment_state":"paid"},"production":"in-production"}

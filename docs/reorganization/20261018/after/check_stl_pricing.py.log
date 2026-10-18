@@ -1,0 +1,2 @@
+$ STL_TEST_DIRECTORY=github-pages python3 legacy-landing/scripts/check_stl_pricing.py
+STL geometry, invalid files, pricing, drop, clear, responsive layout and quick calculator passed.

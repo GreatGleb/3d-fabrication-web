@@ -1,0 +1,80 @@
+--- Lunar OrderWorkflow
++++ Plain OrderWorkflow
+@@ -2,13 +2,13 @@
+ 
+ namespace App\Services;
+ 
++use App\Models\Order;
+ use App\Models\PaymentRequest;
+ use App\Models\User;
+ use Illuminate\Auth\Access\AuthorizationException;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Str;
+ use Illuminate\Validation\ValidationException;
+-use Lunar\Models\Order;
+ 
+ /** Shared application boundary for HTTP, console and a future Telegram adapter. */
+ class OrderWorkflow
+@@ -32,13 +32,13 @@
+ 
+         return DB::transaction(function () use ($admin, $orderId, $unitPrices, $reason, $agreement) {
+             $order = $this->locked($orderId);
+-            $state = $order->production;
++            $state = $order;
+             $this->require(! $state->started_at && $state->state !== 'cancelled', 'Changes are locked after production starts or cancellation.');
+             $this->require(trim($reason) !== '' && trim($agreement) !== '', 'Reason and customer agreement reference are required.');
+             $this->require(! PaymentRequest::whereOrderId($orderId)->whereState('pending')->exists(), 'Resolve pending payment requests before changing price.');
+             $lines = $order->lines;
+             $this->require(count($unitPrices) === $lines->count(), 'Every line needs a price.');
+-            $before = $lines->mapWithKeys(fn ($line) => [$line->id => $line->unit_price->value])->all();
++            $before = $lines->mapWithKeys(fn ($line) => [$line->id => $line->unit_price])->all();
+             $total = 0;
+             foreach ($lines as $line) {
+                 $unit = $unitPrices[$line->id] ?? null;
+@@ -68,7 +68,7 @@
+ 
+         return DB::transaction(function () use ($orderId, $amount) {
+             $order = $this->locked($orderId);
+-            $this->require($order->production->confirmed_at && $order->production->state !== 'cancelled', 'Confirmed active order required.');
++            $this->require($order->confirmed_at && $order->state !== 'cancelled', 'Confirmed active order required.');
+             $reserved = PaymentRequest::whereOrderId($orderId)->whereState('pending')->sum('amount');
+             $this->require($amount > 0 && $amount <= $this->balance($order)['due'] - $reserved, 'Amount exceeds unreserved balance.');
+ 
+@@ -112,7 +112,7 @@
+ 
+                 return;
+             }
+-            $this->require($order->production->state !== 'cancelled', 'Late payment on cancelled order requires reconciliation.');
++            $this->require($order->state !== 'cancelled', 'Late payment on cancelled order requires reconciliation.');
+             $this->require($request->amount <= $this->balance($order)['due'], 'Overpayment requires reconciliation.');
+             $transaction = $order->transactions()->create([
+                 'type' => 'capture', 'success' => true, 'driver' => $driver,
+@@ -128,8 +128,8 @@
+         $this->admin($admin);
+         DB::transaction(function () use ($orderId) {
+             $order = $this->locked($orderId);
+-            $this->require($order->production->confirmed_at && $order->production->state === 'ready', 'Price must be confirmed and production not started/cancelled.');
+-            $order->production->update(['state' => 'in-production', 'started_at' => now()]);
++            $this->require($order->confirmed_at && $order->state === 'ready', 'Price must be confirmed and production not started/cancelled.');
++            $order->update(['state' => 'in-production', 'started_at' => now()]);
+         });
+     }
+ 
+@@ -139,7 +139,7 @@
+         DB::transaction(function () use ($orderId) {
+             $order = $this->locked($orderId);
+             $this->require(! PaymentRequest::whereOrderId($orderId)->whereState('pending')->exists(), 'Resolve pending payment requests first.');
+-            $order->production->update(['state' => 'cancelled']);
++            $order->update(['state' => 'cancelled']);
+             $order->update(['status' => 'cancelled']);
+         });
+     }
+@@ -149,7 +149,7 @@
+         $paid = (int) $order->transactions()->whereType('capture')->whereSuccess(true)->sum('amount');
+         $refund = (int) $order->transactions()->whereType('refund')->whereSuccess(true)->sum('amount');
+         $net = $paid - $refund;
+-        $total = $order->total->value;
++        $total = $order->total;
+ 
+         return ['total' => $total, 'paid' => $net, 'due' => max(0, $total - $net), 'overpaid' => max(0, $net - $total), 'payment_state' => $net >= $total ? 'paid' : ($net > 0 ? 'partial' : 'unpaid')];
+     }

@@ -1,0 +1,437 @@
+{
+  "date": "2026-09-29",
+  "externalBlocked": [],
+  "errors": [
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+    "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22"
+  ],
+  "libraries": {
+    "scrollTrigger": "3.11.5",
+    "lenis": "1.0.34",
+    "options": {
+      "smoothWheel": true,
+      "syncTouch": false,
+      "syncTouchLerp": 0.075,
+      "touchInertiaMultiplier": 35,
+      "lerp": 0.1,
+      "infinite": false,
+      "gestureOrientation": "vertical",
+      "orientation": "vertical",
+      "touchMultiplier": 1,
+      "wheelMultiplier": 1,
+      "normalizeWheel": false,
+      "autoResize": true
+    }
+  },
+  "scrub": {
+    "revitex": [
+      {
+        "scroll": 4873,
+        "progress": 0.20047619047619047,
+        "time": 0,
+        "duration": 33.266667,
+        "expected": 6.669174669999999,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            12.627
+          ]
+        ]
+      },
+      {
+        "scroll": 7393,
+        "progress": 0.6004761904761905,
+        "time": 0,
+        "duration": 33.266667,
+        "expected": 19.97584147,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            12.627
+          ]
+        ]
+      },
+      {
+        "scroll": 4873,
+        "progress": 0.20047619047619047,
+        "time": 0,
+        "duration": 33.266667,
+        "expected": 6.669174669999999,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            12.627
+          ]
+        ]
+      }
+    ],
+    "industries": [
+      {
+        "scroll": 15493,
+        "progress": 0.20055555555555554,
+        "time": 0,
+        "duration": 5.733333,
+        "expected": 1.1498517849999998,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            5.733333
+          ]
+        ]
+      },
+      {
+        "scroll": 17653,
+        "progress": 0.6005555555555555,
+        "time": 0,
+        "duration": 5.733333,
+        "expected": 3.443184985,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            5.733333
+          ]
+        ]
+      },
+      {
+        "scroll": 15493,
+        "progress": 0.20055555555555554,
+        "time": 0,
+        "duration": 5.733333,
+        "expected": 1.1498517849999998,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            5.733333
+          ]
+        ]
+      }
+    ],
+    "periflex": [
+      {
+        "scroll": 35023,
+        "progress": 0.20074074074074075,
+        "time": 0,
+        "duration": 9,
+        "expected": 1.8066666666666666,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            9
+          ]
+        ]
+      },
+      {
+        "scroll": 36643,
+        "progress": 0.6007407407407407,
+        "time": 0,
+        "duration": 9,
+        "expected": 5.406666666666666,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            9
+          ]
+        ]
+      },
+      {
+        "scroll": 35023,
+        "progress": 0.20074074074074075,
+        "time": 0,
+        "duration": 9,
+        "expected": 1.8066666666666666,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            9
+          ]
+        ]
+      }
+    ],
+    "truck": [
+      {
+        "scroll": 48613,
+        "progress": 0.20033333333333334,
+        "time": 0,
+        "duration": 7.233333,
+        "expected": 1.449077711,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            7.233333
+          ]
+        ]
+      },
+      {
+        "scroll": 52213,
+        "progress": 0.6003333333333334,
+        "time": 0,
+        "duration": 7.233333,
+        "expected": 4.342410911,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            7.233333
+          ]
+        ]
+      },
+      {
+        "scroll": 48613,
+        "progress": 0.20033333333333334,
+        "time": 0,
+        "duration": 7.233333,
+        "expected": 1.449077711,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            7.233333
+          ]
+        ]
+      }
+    ],
+    "animation": [
+      {
+        "scroll": 58639,
+        "progress": 0.20333333333333334,
+        "time": 0,
+        "duration": 10.866667,
+        "expected": 2.2095556233333333,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            10.866667
+          ]
+        ]
+      },
+      {
+        "scroll": 58999,
+        "progress": 0.6033333333333334,
+        "time": 0,
+        "duration": 10.866667,
+        "expected": 6.556222423333334,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            10.866667
+          ]
+        ]
+      },
+      {
+        "scroll": 58639,
+        "progress": 0.20333333333333334,
+        "time": 0,
+        "duration": 10.866667,
+        "expected": 2.2095556233333333,
+        "readyState": 4,
+        "paused": true,
+        "seeking": false,
+        "seekable": [
+          [
+            0,
+            0
+          ]
+        ],
+        "buffered": [
+          [
+            0,
+            10.866667
+          ]
+        ]
+      }
+    ]
+  },
+  "composition": {
+    "intro": [
+      {
+        "text": "",
+        "transform": "matrix(0.9265, 0, 0, 0.9265, 0, -0.6219)",
+        "clip": "none"
+      },
+      {
+        "text": "",
+        "transform": "matrix(0.6815, 0, 0, 0.6815, 0, -19.8873)",
+        "clip": "none"
+      }
+    ],
+    "about": [
+      {
+        "text": "100,000,000",
+        "transform": "none",
+        "clip": "none"
+      },
+      {
+        "text": "131,300,000",
+        "transform": "none",
+        "clip": "none"
+      }
+    ]
+  },
+  "tabBefore": 20710,
+  "tabAfter": {
+    "scroll": 24310,
+    "marker": 24309.984375
+  },
+  "popupOpen": {
+    "display": "flex",
+    "role": null,
+    "ariaModal": null,
+    "active": "BODY"
+  },
+  "popupAfterEscape": "flex",
+  "popupAfterClose": "none",
+  "headerHover": {
+    "transform": "matrix(1, 0, 0, 1, 308.766, 6)",
+    "width": "129px"
+  },
+  "beforeResize": {
+    "desktop": true,
+    "desktopNodes": 22,
+    "mobileNodes": 0
+  },
+  "afterResize": {
+    "width": 390,
+    "desktop": true,
+    "desktopNodes": 22,
+    "mobileNodes": 0,
+    "overflow": false
+  },
+  "noJS": {
+    "display": "block",
+    "position": "fixed",
+    "zIndex": "100"
+  }
+}

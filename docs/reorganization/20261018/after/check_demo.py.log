@@ -1,0 +1,2 @@
+$ python3 legacy-landing/scripts/check_demo.py
+Demo build passed under /aiqme-preview/ at 390, 768, 1440 px; no API requests

@@ -1,0 +1,66 @@
+/* Shared by every V2 page; loaded after the scene styles. */
+.site-header{position:sticky;top:0;z-index:50}
+.menu-button{width:44px;height:44px;flex-shrink:0}
+html:not(.js-enabled) .menu-button{display:none}
+html:not(.js-enabled) .site-header{position:relative}
+.primary-navigation a[aria-current=page]{color:var(--blue)}
+.field input,.field select,.field textarea{font-size:16px}
+.calculator-results dd{min-width:0}
+.calculator-results dl>div:first-child dd{max-width:100%}
+.lead-step h3,.lead-complete h3{scroll-margin-top:100px}
+.text-link{max-width:100%;min-height:44px;overflow-wrap:anywhere}
+.text-link span{flex-shrink:0}
+.portal-status{border-radius:8px}
+
+/* Process steps read as a sequence, without the inherited top/side frames. */
+.process-grid{gap:32px}
+.process-step,.process-step:first-child{padding:0;border:0}
+.process-step>span{display:block;font-size:32px;line-height:1;font-weight:500}
+.process-step h3{margin:18px 0 10px;line-height:1.25}
+.process-step p{max-width:none;line-height:1.6}
+@media(max-width:980px){
+ .process-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}
+}
+@media(max-width:600px){
+ .process-grid{grid-template-columns:1fr;gap:30px;margin-top:32px}
+ .process-step{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:16px;align-content:start}
+ .process-step>span{grid-column:1;grid-row:1/3;font-size:28px}
+ .process-step h3{grid-column:2;margin:0 0 8px;font-size:20px}
+ .process-step p{grid-column:2;margin:0}
+}
+
+@media(max-width:980px){
+ html.menu-open,html.menu-open body{overflow:hidden}
+ .js-enabled .primary-navigation{flex-wrap:nowrap;align-content:normal}
+ .js-enabled .primary-navigation>*{flex-shrink:0}
+ .js-enabled .primary-navigation.open{
+  max-height:calc(100vh - 68px);
+  max-height:calc(100dvh - 68px);
+  overflow-y:auto;overscroll-behavior:contain;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+ }
+}
+/* Keep the layout breakpoint in sync with the full-width submit button. */
+@media(max-width:700px){
+ .quick-calculator-controls{flex-direction:column;align-items:stretch}
+ .quick-calculator-controls .field{flex:none;width:100%}
+ .quick-calculator-controls .button{align-self:stretch;min-height:50px}
+}
+@media(max-width:600px){
+ .footer-links{gap:4px 30px}
+ .footer-links a{display:flex;align-items:center;min-height:44px}
+ .footer-contact a{display:flex;align-items:center;min-height:44px}
+ .calculator-form,.calculator-results{padding:22px 20px}
+ .lead-actions .button{min-width:0}
+ .lead-heading h2{font-size:clamp(36px,9vw,48px)}
+ .portal-project h3{overflow-wrap:anywhere}
+}
+@media(max-width:360px){
+ .page-home .hero{padding-top:32px}
+ .page-home .hero h1{font-size:44px}
+ .page-home .hero-description{font-size:16px;line-height:1.5}
+ .page-home .hero-actions .button{flex-basis:100%}
+ .v2-controls{align-items:flex-end}
+ .v2-controls>span{max-width:60%;line-height:1.5}
+ .v2-controls button{flex-shrink:0}
+}

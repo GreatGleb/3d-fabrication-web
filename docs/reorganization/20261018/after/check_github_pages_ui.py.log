@@ -1,0 +1,19 @@
+$ python3 legacy-landing/scripts/check_github_pages_ui.py
+Layout and menu: 320x568, five pages
+Layout and menu: 360x640, five pages
+Layout and menu: 390x667, five pages
+Layout and menu: 390x844, five pages
+Layout and menu: 600x800, five pages
+Layout and menu: 601x800, five pages
+Layout and menu: 650x800, five pages
+Layout and menu: 700x800, five pages
+Layout and menu: 701x800, five pages
+Layout and menu: 768x1024, five pages
+Layout and menu: 844x390, five pages
+Layout and menu: 981x800, five pages
+Layout and menu: 1024x768, five pages
+Layout and menu: 1440x900, five pages
+Form steps and completion: 320x568
+Form steps and completion: 390x844
+Form steps and completion: 844x390
+PASS: package layouts, menu, forms, calculator, portal, scene fit, CTA, fallbacks; no JS/HTTP errors.

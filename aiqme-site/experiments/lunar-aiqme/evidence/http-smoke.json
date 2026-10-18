@@ -1,0 +1,6 @@
+{
+  "login_and_partial_order": "passed",
+  "two_private_stl_links": 2,
+  "private_download": "passed",
+  "browser": "not used; real local HTTP with cookies and CSRF"
+}

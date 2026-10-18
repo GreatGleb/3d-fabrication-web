@@ -1,0 +1,87 @@
+PHP Warning:  PHP Startup: Unable to load dynamic library '/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so' (tried: /home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so (libpq.so.5: cannot open shared object file: No such file or directory), /usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so.so (/usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+PHP Warning:  PHP Startup: Unable to load dynamic library '/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so' (tried: /home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so (libpq.so.5: cannot open shared object file: No such file or directory), /usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so.so (/usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+./composer.json has been updated
+Running composer update laravel/boost
+Loading composer repositories with package information
+Updating dependencies
+Lock file operations: 4 installs, 0 updates, 0 removals
+  - Locking laravel/boost (v2.10.3)
+  - Locking laravel/mcp (v1.0.2)
+  - Locking laravel/roster (v1.0.0)
+  - Locking symfony/yaml (v8.1.9)
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Package operations: 4 installs, 0 updates, 0 removals
+  - Downloading symfony/yaml (v8.1.9)
+  - Downloading laravel/roster (v1.0.0)
+  - Downloading laravel/mcp (v1.0.2)
+  - Downloading laravel/boost (v2.10.3)
+ 0/4 [>---------------------------]   0%
+ 1/4 [=======>--------------------]  25%
+ 2/4 [==============>-------------]  50%
+ 3/4 [=====================>------]  75%
+ 4/4 [============================] 100%
+  - Installing symfony/yaml (v8.1.9): Extracting archive
+  - Installing laravel/roster (v1.0.0): Extracting archive
+  - Installing laravel/mcp (v1.0.2): Extracting archive
+  - Installing laravel/boost (v2.10.3): Extracting archive
+ 0/4 [>---------------------------]   0%
+ 4/4 [============================] 100%
+Generating optimized autoload files
+> Illuminate\Foundation\ComposerScripts::postAutoloadDump
+> @php artisan package:discover --ansi
+PHP Warning:  PHP Startup: Unable to load dynamic library '/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so' (tried: /home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so (libpq.so.5: cannot open shared object file: No such file or directory), /usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so.so (/usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+PHP Warning:  PHP Startup: Unable to load dynamic library '/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so' (tried: /home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so (libpq.so.5: cannot open shared object file: No such file or directory), /usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so.so (/usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+
+ INFO Discovering packages. 
+
+ anourvalar/eloquent-serialize .. DONE
+ awcodes/filament-badgeable-column .. DONE
+ awcodes/shout .. DONE
+ barryvdh/laravel-dompdf .. DONE
+ blade-ui-kit/blade-heroicons .. DONE
+ blade-ui-kit/blade-icons .. DONE
+ filament/actions .. DONE
+ filament/filament .. DONE
+ filament/forms .. DONE
+ filament/infolists .. DONE
+ filament/notifications .. DONE
+ filament/query-builder .. DONE
+ filament/schemas .. DONE
+ filament/support .. DONE
+ filament/tables .. DONE
+ filament/widgets .. DONE
+ kirschbaum-development/eloquent-power-joins .. DONE
+ laravel/boost .. DONE
+ laravel/mcp .. DONE
+ laravel/pail .. DONE
+ laravel/pao .. DONE
+ laravel/roster .. DONE
+ laravel/scout .. DONE
+ laravel/tinker .. DONE
+ leandrocfe/filament-apex-charts .. DONE
+ livewire/livewire .. DONE
+ lunarphp/core .. DONE
+ lunarphp/lunar .. DONE
+ lunarphp/nestedset .. DONE
+ lunarphp/stripe .. DONE
+ nesbot/carbon .. DONE
+ nunomaduro/collision .. DONE
+ nunomaduro/termwind .. DONE
+ ryangjchandler/blade-capture-directive .. DONE
+ spatie/laravel-activitylog .. DONE
+ spatie/laravel-blink .. DONE
+ spatie/laravel-medialibrary .. DONE
+ spatie/laravel-permission .. DONE
+ spatie/php-structure-discoverer .. DONE
+ technikermathe/blade-lucide-icons .. DONE
+
+112 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+> @php artisan vendor:publish --tag=laravel-assets --ansi --force
+PHP Warning:  PHP Startup: Unable to load dynamic library '/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so' (tried: /home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so (libpq.so.5: cannot open shared object file: No such file or directory), /usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so.so (/usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pdo_pgsql.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+PHP Warning:  PHP Startup: Unable to load dynamic library '/home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so' (tried: /home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so (libpq.so.5: cannot open shared object file: No such file or directory), /usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so.so (/usr/lib/php/20240924//home/greatgleb/PycharmProjects/3D_website/prototypes/lunar-aiqme/runtime/usr/lib/php/20240924/pgsql.so.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+
+ INFO No publishable resources for tag [laravel-assets]. 
+
+No security vulnerability advisories found.

@@ -1,0 +1,1 @@
+PASS: check_pages, check_demo, check_ui against isolated animated build.

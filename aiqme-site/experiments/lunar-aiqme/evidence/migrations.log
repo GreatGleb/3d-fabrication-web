@@ -1,0 +1,157 @@
+
+ INFO Preparing database. 
+
+ Creating migration table .. 7.16ms DONE
+
+ INFO Running migrations. 
+
+ 0001_01_01_000000_create_users_table .. 13.97ms DONE
+ 0001_01_01_000001_create_cache_table .. 6.53ms DONE
+ 0001_01_01_000002_create_jobs_table .. 11.39ms DONE
+ 2021_07_29_100000_create_channels_table .. 8.87ms DONE
+ 2021_07_29_100001_create_languages_table .. 6.28ms DONE
+ 2021_07_29_100002_create_channelables_table .. 7.23ms DONE
+ 2021_07_29_100003_create_currencies_table .. 8.27ms DONE
+ 2021_07_29_100004_create_attribute_groups_table .. 6.85ms DONE
+ 2021_07_29_100005_create_attributes_table .. 7.80ms DONE
+ 2021_07_29_100006_create_attributables_table .. 5.12ms DONE
+ 2021_07_29_100010_create_product_types_table .. 3.51ms DONE
+ 2021_07_29_100011_create_tax_classes_table .. 3.43ms DONE
+ 2021_07_29_100012_create_tax_zones_table .. 4.64ms DONE
+ 2021_07_29_100020_create_products_table .. 4.98ms DONE
+ 2021_07_29_100025_create_product_associations_table .. 8.86ms DONE
+ 2021_07_29_100030_create_product_variants_table .. 32.83ms DONE
+ 2021_07_29_100040_create_customer_groups_table .. 5.47ms DONE
+ 2021_07_29_100041_create_customer_group_product_table .. 13.60ms DONE
+ 2021_07_29_100041_create_customers_table .. 5.00ms DONE
+ 2021_07_29_100042_create_customer_customer_group_table .. 8.50ms DONE
+ 2021_07_29_100042_create_customer_user_table .. 6.05ms DONE
+ 2021_07_29_100050_create_prices_table .. 7.70ms DONE
+ 2021_07_30_100000_create_countries_table .. 4.75ms DONE
+ 2021_07_30_100001_create_states_table .. 7.42ms DONE
+ 2021_07_30_100002_create_addresses_table .. 7.33ms DONE
+ 2021_07_30_100003_create_tax_zone_countries_table .. 6.38ms DONE
+ 2021_07_30_100004_create_tax_zone_states_table .. 6.01ms DONE
+ 2021_07_30_100005_create_tax_zone_postcodes_table .. 6.87ms DONE
+ 2021_07_30_100006_create_tax_zone_customer_groups_table .. 6.75ms DONE
+ 2021_07_30_100007_create_tax_rates_table .. 7.11ms DONE
+ 2021_07_30_100008_create_tax_rate_amounts_table .. 7.19ms DONE
+ 2021_08_10_101547_create_media_table .. 6.63ms DONE
+ 2021_08_10_102000_create_collection_groups_table .. 5.06ms DONE
+ 2021_08_10_103000_create_collections_table .. 6.61ms DONE
+ 2021_08_10_103001_create_collection_product_table .. 8.21ms DONE
+ 2021_08_10_103002_create_collection_customer_group_table .. 9.42ms DONE
+ 2021_08_17_142630_create_activity_log_table .. 7.14ms DONE
+ 2021_08_19_110000_create_staff_table .. 7.62ms DONE
+ 2021_09_09_100000_create_product_options_table .. 4.04ms DONE
+ 2021_09_09_100001_create_product_option_values_table .. 5.69ms DONE
+ 2021_09_09_100010_create_product_option_value_product_variant_table  11.24ms DONE
+ 2021_09_10_100000_create_tags_table .. 3.71ms DONE
+ 2021_09_10_100001_create_taggables_table .. 5.08ms DONE
+ 2021_09_29_100000_create_urls_table .. 10.24ms DONE
+ 2021_10_01_090000_create_orders_table .. 17.88ms DONE
+ 2021_10_01_090001_create_order_lines_table .. 21.81ms DONE
+ 2021_10_01_090002_create_order_addresses_table .. 7.23ms DONE
+ 2021_10_01_090003_create_transactions_table .. 9.91ms DONE
+ 2021_10_01_100000_create_carts_table .. 12.52ms DONE
+ 2021_10_01_100001_create_cart_addresses_table .. 9.52ms DONE
+ 2021_10_01_100001_create_cart_lines_table .. 5.50ms DONE
+ 2022_01_12_100000_add_columns_to_attributes_table .. 4.98ms DONE
+ 2022_01_12_100001_add_attribute_data_to_product_variants_table . 2.57ms DONE
+ 2022_01_12_100002_add_default_column_to_tax_classes_table .. 3.27ms DONE
+ 2022_01_18_100000_add_starts_ends_at_to_channelables_table .. 3.30ms DONE
+ 2022_01_18_100001_add_customer_id_to_orders_table .. 3.63ms DONE
+ 2022_03_11_100000_remove_formatting_columns_from_currencies_table  2.67ms DONE
+ 2022_03_17_100000_add_fields_to_transactions_table .. 7.29ms DONE
+ 2022_03_29_100000_update_quantity_on_cart_lines_table .. 3.25ms DONE
+ 2022_03_30_100000_update_quantity_on_order_lines_table .. 5.11ms DONE
+ 2022_05_10_100000_fix_last_four_on_transactions_table .. 4.18ms DONE
+ 2022_05_19_100000_add_attributes_to_customers_table .. 1.64ms DONE
+ 2022_06_29_100000_create_assets_table .. 2.41ms DONE
+ 2022_07_15_100000_set_last_four_to_nullable_on_transactions .. 5.17ms DONE
+ 2022_07_23_215417_add_handle_position_to_product_options_table . 4.10ms DONE
+ 2022_07_23_215418_add_position_to_product_option_values_table .. 2.05ms DONE
+ 2022_08_09_100000_create_media_variant_table .. 4.79ms DONE
+ 2022_08_09_100001_create_brands_table .. 4.02ms DONE
+ 2022_08_09_100002_add_brand_id_to_products_table .. 7.83ms DONE
+ 2022_09_05_100000_add_account_ref_to_customers_table .. 2.92ms DONE
+ 2022_09_08_100000_add_position_to_media_product_variant_table .. 3.10ms DONE
+ 2022_11_13_110447_update_prices_on_prices_table .. 4.82ms DONE
+ 2022_11_13_111734_update_prices_on_orders_table .. 21.64ms DONE
+ 2022_11_13_111744_update_prices_on_order_lines_table .. 21.49ms DONE
+ 2022_11_18_100000_create_discounts_table .. 8.19ms DONE
+ 2022_11_18_100005_create_cart_line_discount_table .. 4.69ms DONE
+ 2022_11_18_100010_create_brand_discount_table .. 11.24ms DONE
+ 2022_11_18_100015_create_customer_group_discount_table .. 14.93ms DONE
+ 2022_11_18_100020_create_discount_collections_table .. 10.57ms DONE
+ 2022_11_18_100030_create_discount_purchasables_table .. 12.00ms DONE
+ 2022_12_09_100000_add_new_customer_flag_to_orders_table .. 9.52ms DONE
+ 2023_03_03_100001_add_discount_breakdown_to_orders_table .. 2.48ms DONE
+ 2023_03_03_100001_add_max_uses_per_user_to_discounts_table .. 8.96ms DONE
+ 2023_03_13_100030_create_discount_user_table .. 5.81ms DONE
+ 2023_04_19_100000_add_shipping_breakdown_to_orders_table .. 10.09ms DONE
+ 2023_05_20_100000_add_customer_id_to_carts_table .. 2.47ms DONE
+ 2023_05_26_100000_add_label_to_product_options_table .. 2.13ms DONE
+ 2023_05_31_100000_create_permission_tables .. 26.94ms DONE
+ 2023_06_07_100000_add_cart_id_to_orders_table .. 5.23ms DONE
+ 2023_08_16_100013_add_attributes_to_brands_table .. 2.69ms DONE
+ 2023_09_21_100000_set_section_to_nullable_on_attributes .. 10.67ms DONE
+ 2023_10_06_100010_add_type_to_brand_discount_table .. 12.07ms DONE
+ 2023_10_06_100010_add_type_to_collection_discount_table .. 7.42ms DONE
+ 2023_12_18_100000_add_quantity_increment_min_quantity_to_product_variants_table  11.30ms DONE
+ 2024_01_04_100013_add_attributes_to_customer_groups_table .. 4.38ms DONE
+ 2024_01_11_100000_add_description_to_attributes_table .. 10.03ms DONE
+ 2024_01_16_100000_create_product_product_option_table .. 11.29ms DONE
+ 2024_01_16_100010_update_product_option_relations .. 3.26ms DONE
+ 2024_01_16_100020_remove_position_from_product_options_table .. 4.14ms DONE
+ 2024_01_16_100030_add_and_set_shared_to_product_options_table .. 8.15ms DONE
+ 2024_01_24_100000_update_product_option_handle_fk .. 3.39ms DONE
+ 2024_01_29_100000_update_nullable_currency_on_prices_table .. 8.80ms DONE
+ 2024_01_31_100000_update_tier_to_min_quantity_on_prices_table .. 9.66ms DONE
+ 2024_03_15_100000_remap_polymorphic_relations .. 369.83ms DONE
+ 2024_03_26_100000_create_brand_collection_table .. 13.69ms DONE
+ 2024_04_23_100000_add_soft_deletes_to_carts_table .. 2.40ms DONE
+ 2024_05_25_100000_update_collection_group_handle_unique .. 9.13ms DONE
+ 2024_07_23_100000_add_fingerprint_to_orders_table .. 10.52ms DONE
+ 2024_07_31_100000_create_stripe_payment_intents_table .. 14.59ms DONE
+ 2024_11_25_110000_rename_firstname_column_on_staff_table .. 2.16ms DONE
+ 2024_11_25_110001_rename_lastname_column_on_staff_table .. 9.73ms DONE
+ 2025_02_07_100000_create_customer_discount_table .. 15.33ms DONE
+ 2025_02_14_100000_add_tax_identifier_to_addresses_table .. 2.60ms DONE
+ 2025_02_14_100010_add_tax_identifier_to_order_addresses_table .. 9.37ms DONE
+ 2025_02_14_100020_add_tax_identifier_to_cart_addresses_table .. 2.23ms DONE
+ 2025_02_14_100030_rename_vat_no_at_customers_table .. 7.63ms DONE
+ 2025_04_28_100000_add_two_factor_columns_to_staff_table .. 8.55ms DONE
+ 2025_06_18_100000_add_sync_prices_to_currencies_table .. 11.13ms DONE
+ 2025_06_18_100000_rename_discount_purchasables_table .. 11.90ms DONE
+ 2025_06_20_100000_rename_two_factor_columns_on_staff_table .. 8.75ms DONE
+ 2025_08_05_083800_update_delivery_instructions_columns .. 11.11ms DONE
+ 2025_08_14_164000_switch_to_jsonb .. 126.01ms DONE
+ 2025_10_29_084000_add_missing_indexes_to_tables .. 14.37ms DONE
+ 2025_11_12_005200_add_meta_to_product_options .. 8.60ms DONE
+ 2025_12_14_215636_update_weight_unit_default_on_product_variants_table  7.60ms DONE
+ 2026_03_21_204650_set_card_type_to_nullable_on_transactions .. 3.87ms DONE
+ 2026_04_25_100000_add_tax_zone_id_to_carts_table .. 10.98ms DONE
+ 2026_04_30_100000_add_unique_lunar_product_product_option .. 13.37ms DONE
+ 2026_08_26_100000_make_order_lines_purchasable_morph_nullable . 10.34ms DONE
+
+   TypeError 
+
+  Lunar\Admin\LunarPanelManager::getPanel(): Return value must be of type Filament\Panel, null returned
+
+  at vendor/lunarphp/lunar/src/LunarPanelManager.php:216
+    212▕     }
+    213▕ 
+    214▕     public function getPanel(): Panel
+    215▕     {
+  ➜ 216▕         return Filament::getPanel($this->panelId);
+    217▕     }
+    218▕ 
+    219▕     public function forceTwoFactorAuth(bool $state = true): self
+    220▕     {
+
+      [2m+25 vendor frames [22m
+
+  26  artisan:16
+      Illuminate\Foundation\Application::handleCommand()
+

@@ -1,0 +1,54 @@
+{
+  "baselineFilesUnchanged": 96,
+  "views": [
+    {
+      "width": 1440,
+      "height": 900,
+      "reduce": false,
+      "javascript": true,
+      "pinned": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "reduce": false,
+      "javascript": true,
+      "pinned": false
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "reduce": false,
+      "javascript": true,
+      "pinned": false
+    },
+    {
+      "width": 1440,
+      "height": 600,
+      "reduce": false,
+      "javascript": true,
+      "pinned": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "reduce": true,
+      "javascript": true,
+      "pinned": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "reduce": false,
+      "javascript": false,
+      "pinned": false
+    }
+  ],
+  "sceneStates": [
+    "Сканирование",
+    "CAD-модель",
+    "Готовая деталь",
+    "Сканирование"
+  ],
+  "comparison": "passed"
+}

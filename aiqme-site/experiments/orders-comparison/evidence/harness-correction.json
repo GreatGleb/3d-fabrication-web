@@ -1,0 +1,8 @@
+{
+  "excluded_runs": [
+    "lunar-aiqme-first",
+    "laravel-orders-aiqme-first"
+  ],
+  "reason": "Copy loop accidentally preserved Lunar comparison database name in plain configuration, creating test-only DDL contention. Corrected independent .env/phpunit names before comparison; not attributed to either framework.",
+  "protected_original_database": "aiqme_probe and aiqme_probe_test not targeted"
+}

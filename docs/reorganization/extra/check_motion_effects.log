@@ -1,0 +1,62 @@
+Checking 1440px
+Checking 768px
+Checking 390px
+[
+  {
+    "width": 1440,
+    "heroLift": 73,
+    "liftPixels": {
+      "#services .section-heading": 64,
+      ".service-card": 64,
+      "#process .section-heading": 64,
+      "#projects .section-heading": 64,
+      ".project-card": 64,
+      ".about-copy": 64
+    },
+    "arrowTransform": "matrix(1, 0, 0, 1, 8, -5)",
+    "caseStates": [
+      "Сканирование",
+      "CAD-модель",
+      "Готовая деталь"
+    ],
+    "stickyHeader": true
+  },
+  {
+    "width": 768,
+    "heroLift": 70,
+    "liftPixels": {
+      "#services .section-heading": 64,
+      ".service-card": 64,
+      "#process .section-heading": 64,
+      "#projects .section-heading": 64,
+      ".project-card": 64,
+      ".about-copy": 64
+    },
+    "arrowTransform": "matrix(1, 0, 0, 1, 8, -5)",
+    "caseStates": [
+      "Сканирование",
+      "CAD-модель",
+      "Готовая деталь"
+    ],
+    "stickyHeader": true
+  },
+  {
+    "width": 390,
+    "heroLift": 68,
+    "liftPixels": {
+      "#services .section-heading": 64,
+      ".service-card": 64,
+      "#process .section-heading": 64,
+      "#projects .section-heading": 64,
+      ".project-card": 64,
+      ".about-copy": 64
+    },
+    "arrowTransform": "matrix(1, 0, 0, 1, 8, -5)",
+    "caseStates": [
+      "Сканирование",
+      "CAD-модель",
+      "Готовая деталь"
+    ],
+    "stickyHeader": true
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "installation": "https://docs.lunarphp.com/1.x/getting-started/setup/installation.md",
+  "orders": "https://docs.lunarphp.com/1.x/reference/orders.md",
+  "models": "https://docs.lunarphp.com/1.x/extending/models.md",
+  "carts": "https://docs.lunarphp.com/1.x/extending/carts.md",
+  "admin": "https://docs.lunarphp.com/1.x/admin/extending/order-management.md",
+  "stripe": "https://docs.lunarphp.com/1.x/addons/payments/stripe.md",
+  "payments": "https://docs.lunarphp.com/1.x/extending/payments.md",
+  "boost": "https://laravel.com/framework/docs/boost"
+}

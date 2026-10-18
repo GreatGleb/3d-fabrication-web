@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "scripts": {"build": "esbuild entry.js --bundle --minify --format=iife --global-name=AIQMEThree --outfile=../../site/assets/vendor/stl-loader.js"},
+  "dependencies": {"three": "0.186.1"},
+  "devDependencies": {"esbuild": "0.28.2"}
+}

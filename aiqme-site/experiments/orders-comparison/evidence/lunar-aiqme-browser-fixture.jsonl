@@ -1,0 +1,3 @@
+{"step":"submitted","order_id":5,"balance":{"total":12000,"paid":0,"due":12000,"overpaid":0,"payment_state":"unpaid"},"production":"review"}
+{"step":"confirmed","order_id":5,"balance":{"total":15000,"paid":0,"due":15000,"overpaid":0,"payment_state":"unpaid"},"production":"ready"}
+{"step":"advance","order_id":5,"balance":{"total":15000,"paid":4000,"due":11000,"overpaid":0,"payment_state":"partial"},"production":"ready"}

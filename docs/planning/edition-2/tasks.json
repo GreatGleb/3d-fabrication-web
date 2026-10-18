@@ -1,0 +1,490 @@
+{
+  "schema": "aiqme-implementation-tasks/1",
+  "edition": "docs/planning/edition-2/README.md",
+  "created": "2026-10-18",
+  "status": "planned_not_started",
+  "rules": [
+    "Задачи выполняются по порядку; следующая начинается только после выполнения критериев завершения предыдущей или явной отметки о блокировке.",
+    "Каждая задача — одна рабочая сессия Codex. После часа без заметного прогресса — остановиться, описать препятствие и предложить более простой способ.",
+    "Приложение — только в aiqme-site/ (каталог aiqme-site/experiments/ — эталонный эксперимент, не изменять). Не изменять legacy-landing/ (включая instance/ и github-pages/), baseline, docs/customer/client, корневой AGENTS.md.",
+    "Не публиковать, не делать push, не арендовать сервер, не вызывать внешние сервисы на уровне L. Уровни T и P — только с выданными доступами и явным разрешением.",
+    "Отсутствующие реквизиты, доступы и секреты не заменять вымышленными рабочими значениями. Мок не закрывает уровень T.",
+    "Решения D-xx применяются в варианте по умолчанию из decisions.md; отклонение — только по новому указанию пользователя.",
+    "Каждая задача завершает работу записью в aiqme-site/docs/progress.md: что сделано, какие проверки запущены и их вывод, что не проверено."
+  ],
+  "tasks": [
+    {
+      "id": "W-01",
+      "title": "Каркас приложения и инструменты",
+      "track": "L",
+      "slice": "S1",
+      "depends": [],
+      "inputs": ["aiqme-site/experiments/lunar-aiqme/app/composer.json", "aiqme-site/experiments/lunar-aiqme/app/composer.lock", "aiqme-site/experiments/lunar-aiqme/bin/php", "aiqme-site/experiments/lunar-aiqme/app/boost.json", "docs/planning/edition-2/02-architecture.md"],
+      "result": "Laravel-приложение aiqme-site/ с Lunar 1.5.0, Livewire 3.8.10, Stripe SDK 16.6.0 и версиями из composer.lock эксперимента; без отдельного Git внутри aiqme-site/ (весь корень — публичный репозиторий 3d-fabrication-web); docker-compose.dev.yml (PostgreSQL 17, Mailpit); Boost для Codex; bin/check; команда aiqme:make-admin.",
+      "touches": ["aiqme-site/ (новый)", "aiqme-site/.codex/config.toml", "aiqme-site/docker-compose.dev.yml", "aiqme-site/bin/check"],
+      "done": [
+        "composer install воспроизводит версии эксперимента; отличия объяснены в progress.md",
+        "Миграции Lunar и Laravel проходят на пустой БД",
+        "Панель Lunar доступна только при AIQME_LUNAR_PANEL=true; в production-конфигурации маршрута /lunar нет",
+        "aiqme:make-admin создаёт единственного администратора; регистрация через HTTP is_admin не выставляет",
+        "Отдельный git init в aiqme-site/ не выполняется: весь корень публикуется в публичный репозиторий 3d-fabrication-web, git commit/push — только по указанию пользователя; .env, storage, vendor, node_modules исключены в .gitignore, секретов в коде нет",
+        "Boost установлен с проектным .codex/config.toml; корневой AGENTS.md не изменён"
+      ],
+      "checks": ["bin/check зелёный", "тест: маршрут /lunar отсутствует при выключенном флаге", "тест: POST регистрации с is_admin=1 не даёт прав"],
+      "constraints": ["Не обновлять версии без проверки совместимости", "Не копировать .env, фикстуры и LocalTestAdapter эксперимента"],
+      "unknowns": ["D-02", "D-14"],
+      "trace": {"old_T": ["T-005", "T-008", "T-010"], "R": ["R-009"], "Q": ["Q-29-02"]}
+    },
+    {
+      "id": "W-02",
+      "title": "Локали, маршруты и SEO-каркас",
+      "track": "L",
+      "slice": "S1",
+      "depends": ["W-01"],
+      "inputs": ["docs/customer-prototype/audit-20261016/routes.md", "docs/customer-prototype/evidence/audit-20261016/route-manifest.json", "docs/planning/edition-2/04-content-seo.md"],
+      "result": "Таблица маршрутов LT/EN с локализованными сегментами по прототипу; / → 301 /lt/; /ru/ только для администратора; компонент SEO-head (title, description, canonical, hreflang, robots); 404/500 на обеих локалях; переключатель языка по альтернативам сущности; sitemap.xml и robots.txt на заглушечных данных.",
+      "touches": ["aiqme-site/routes/", "aiqme-site/app/Http/Middleware/", "aiqme-site/app/Support/Seo/", "aiqme-site/lang/"],
+      "done": [
+        "Все пары публичных маршрутов прототипа (кроме исключённых /developer/) отвечают через общие шаблоны-заготовки",
+        "Неизвестный URL — 404, не главная",
+        "/ru/... без входа администратора — 404; с входом — noindex в заголовке и meta",
+        "hreflang выводится только для существующих альтернатив; x-default → LT"
+      ],
+      "checks": ["Feature-тесты статусов для всех маршрутов из route-manifest (без админки и кабинета)", "тест /ru/ для гостя и администратора", "валидация sitemap.xml"],
+      "constraints": ["Не сохранять старые URL github-pages", "Ссылки — обычные <a href>"],
+      "unknowns": [],
+      "trace": {"old_T": ["T-030", "T-035"], "R": ["R-001", "R-030"], "Q": ["Q-08-02", "Q-08-03"], "AC": ["AC-08-01", "AC-08-02", "AC-08-09"]}
+    },
+    {
+      "id": "W-03",
+      "title": "Дизайн-оболочка по прототипу",
+      "track": "L",
+      "slice": "S1",
+      "depends": ["W-02"],
+      "inputs": ["docs/customer-prototype/audit-20261016/visual-and-responsive.md", "docs/customer-prototype/evidence/audit-20261016/ (style.css, DOM, verified-route-screens.json)", "legacy-landing/design-previews/animation-v2/shared/app.js", "legacy-landing/design-previews/animation-v2/shared/responsive.css", "docs/planning/edition-2/07-design.md"],
+      "result": "Blade-компоненты шапки, второго ряда CTA, мобильного меню, подвала, хлебных крошек, кнопок, карточек, форм, модальных окон, таблиц, пустых состояний, заглушки, cookie-плашки; CSS прототипа с токенами и брейкпоинтами; Arial-стек; исправления overflow и aria-expanded.",
+      "touches": ["aiqme-site/resources/views/components/", "aiqme-site/resources/css/", "aiqme-site/resources/js/menu.js"],
+      "done": [
+        "Шапка и подвал совпадают с эталонными кадрами 1440/768/390 при ручном сравнении; расхождения перечислены",
+        "Escape закрывает меню и выставляет aria-expanded=false, фокус возвращается",
+        "Ширина документа равна окну на 320/390/768/1024/1440 для оболочки",
+        "Демо-надписи прототипа отсутствуют"
+      ],
+      "checks": ["bin/browser-check: overflow, меню, фокус", "скриншоты оболочки в aiqme-site/docs/verification/"],
+      "constraints": ["Эффекты V2 не переносить", "Не включать озвучивание и системные флаги доступности"],
+      "unknowns": ["D-11"],
+      "trace": {"old_T": ["T-003", "T-030"], "R": ["R-002", "R-003"], "AC": ["AC-09-03", "AC-09-06", "AC-10-03"], "audit": ["F-39", "F-46"]}
+    },
+    {
+      "id": "W-04",
+      "title": "Модель контента и ContentService",
+      "track": "L",
+      "slice": "S1",
+      "depends": ["W-02"],
+      "inputs": ["docs/planning/edition-2/04-content-seo.md", "aiqme-site/experiments/lunar-aiqme/app/app/Services/ContentPublisher.php", "docs/customer-prototype/evidence/audit-20261016/data-from-source.json"],
+      "result": "Таблицы content_items/translations/revisions/ui_texts, типы контента §4.1, публикация по локали, проверка ревизии, заглушки разделов, медиабиблиотека (spatie/medialibrary, WebP-варианты), журнал публикации (activitylog), сидер исходного контента из прототипа по D-11.",
+      "touches": ["aiqme-site/app/Domain/Content/", "aiqme-site/app/Domain/Audit/", "aiqme-site/database/migrations/", "aiqme-site/database/seeders/"],
+      "done": [
+        "ContentService — единственная точка записи контента; права — только администратор",
+        "Публикация LT не публикует EN; устаревшая ревизия отклоняется",
+        "Импортированы тексты услуг, главной, о нас, FAQ, 3 статей; демо-товары, новости, бренды, цены не импортированы; проекты и политики — по D-11",
+        "Журнал фиксирует публикацию и снятие с публикации с каналом"
+      ],
+      "checks": ["Unit/Feature: публикация по локали, заглушки, ревизии, санитизация разметки", "тест: неадминистратор не может опубликовать через сервис"],
+      "constraints": ["Без конструктора страниц", "Произвольный HTML/JS запрещён"],
+      "unknowns": ["D-11"],
+      "trace": {"old_T": ["T-026", "T-027", "T-031"], "R": ["R-004", "R-005", "R-006", "R-018", "R-025", "R-026", "R-030"], "Q": ["Q-04-05", "Q-04-06", "Q-15-02"], "AC": ["AC-15-06", "AC-15-07", "AC-15-08"]}
+    },
+    {
+      "id": "W-05",
+      "title": "Публичные страницы I: главная, услуги, о нас, контакты, FAQ, политики",
+      "track": "L",
+      "slice": "S1",
+      "depends": ["W-03", "W-04"],
+      "inputs": ["docs/planning/edition-2/01-scope.md", "docs/customer-prototype/audit-20261016/screen-inventory.md", "legacy-landing/design-previews/animation-v2/ (видеоконтроллер, gear.js)", "docs/planning/edition-2/07-design.md"],
+      "result": "Серверные страницы главной, списка и 6 страниц услуг, о нас, контактов (форма без серверной обработки до W-09), FAQ, 4 политик на LT/EN из контента; hero-видео с паузой и reduced-motion; ленты брендов/новостей с заглушкой; решение о сцене «СКАН → CAD → ДЕТАЛЬ».",
+      "touches": ["aiqme-site/resources/views/public/", "aiqme-site/resources/js/hero-video.js", "aiqme-site/resources/js/tickers.js", "aiqme-site/app/Http/Controllers/Public/"],
+      "done": [
+        "Страницы совпадают с эталонными кадрами по композиции; расхождения перечислены",
+        "Светлые иллюстрации гравировки и обучения загружаются",
+        "SEO-поля переводов применяются в title/description",
+        "В progress.md записано, найден ли в композиции прототипа блок для сцены «СКАН → CAD → ДЕТАЛЬ»; без такого блока сцена не выводится, крыльчатки нет"
+      ],
+      "checks": ["SEO-тесты маршрутов", "overflow LT/EN на всех ширинах", "reduced-motion: видео не запускается, ленты статичны"],
+      "constraints": ["Медиа без подтверждённых прав — только заглушки или с подписью источника как в прототипе"],
+      "unknowns": ["D-11"],
+      "trace": {"old_T": ["T-030", "T-031"], "R": ["R-001", "R-002", "R-004", "R-006", "R-025", "R-026"], "audit": ["F-37", "F-40", "F-41", "F-45", "F-47"]}
+    },
+    {
+      "id": "W-06",
+      "title": "Публичные страницы II: проекты, информация, новости, обучение, поиск, каталог",
+      "track": "L",
+      "slice": "S1",
+      "depends": ["W-05"],
+      "inputs": ["docs/planning/edition-2/01-scope.md", "docs/customer-prototype/audit-20261016/features.md (F-02…F-06, F-36, F-38)"],
+      "result": "Проекты с фильтрами и карточкой (EN-тексты из EN-перевода); информация/библиотека/новости с вкладками, поиском, категорией и заглушкой новостей; список обучения; серверный поиск по опубликованному контенту; товары: заглушка, после публикации — список, фильтры, сортировка, карточка, сравнение до 4, корзина с пустым состоянием; бренды на главной.",
+      "touches": ["aiqme-site/resources/views/public/", "aiqme-site/app/Http/Controllers/Public/", "aiqme-site/app/Domain/Content/Search.php"],
+      "done": [
+        "Без опубликованных товаров/новостей/брендов показывается согласованная заглушка; после публикации — контент без изменения кода",
+        "EN-страница проекта без EN-перевода — 404 и отсутствует в списках",
+        "Покупка товара недоступна; «Запросить предложение» ведёт в контактную форму с предзаполнением",
+        "Поиск не находит черновики и материалы другой локали"
+      ],
+      "checks": ["Feature-тесты заглушек, фильтров, сравнения (≤4), поиска", "браузерная проверка overflow каталога ≤600 px"],
+      "constraints": ["Демо-ассортимент не импортировать", "Не добавлять функций каталога сверх прототипа"],
+      "unknowns": ["D-11", "D-12"],
+      "trace": {"old_T": ["T-030", "T-031"], "R": ["R-004", "R-005", "R-006", "R-030"], "Q": ["Q-08-01"], "audit": ["F-02", "F-03", "F-04", "F-05", "F-06", "F-36", "F-38"]}
+    },
+    {
+      "id": "W-07",
+      "title": "Вход, регистрация, восстановление и профиль",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-03"],
+      "inputs": ["docs/customer-prototype/audit-20261016/forms.md (auth-form, address-form)", "docs/planning/edition-2/06-security-files.md"],
+      "result": "Экраны входа, регистрации и восстановления по прототипу с реальной логикой; письмо сброса через очередь (Mailpit локально); сессии в БД; ограничение попыток; вкладка «Addresses & company»; вход администратора и защита /admin, /ru/.",
+      "touches": ["aiqme-site/app/Http/Controllers/Auth/", "aiqme-site/resources/views/account/", "aiqme-site/app/Mail/"],
+      "done": [
+        "Сброс пароля: нейтральный ответ, одноразовый токен со сроком, письмо в Mailpit, старые сессии завершаются",
+        "Выход инвалидирует сессию; скопированная cookie после выхода не работает",
+        "Профиль клиента сохраняется на сервере и подставляется в форму заявки"
+      ],
+      "checks": ["Feature: вход/ошибка/throttle, регистрация без прав, сброс, logout", "тест изоляции профиля двух клиентов"],
+      "constraints": ["MFA и подтверждение почты не добавлять"],
+      "unknowns": ["D-15"],
+      "trace": {"old_T": ["T-013", "T-017"], "R": ["R-010", "R-011", "R-012"], "Q": ["Q-14-01", "Q-14-02", "Q-20-01"], "AC": ["AC-14-01", "AC-14-02", "AC-14-03", "AC-20-03", "AC-20-04"], "audit": ["F-10", "F-11", "F-13"]}
+    },
+    {
+      "id": "W-08",
+      "title": "Админка: оболочка и редакторы контента",
+      "track": "L",
+      "slice": "S1",
+      "depends": ["W-04", "W-07"],
+      "inputs": ["docs/customer-prototype/audit-20261016/screens-and-scenarios.md#администрирование", "docs/customer-prototype/audit-20261016/forms.md (content-edit-form, product-edit-form, category-form)", "docs/planning/edition-2/01-scope.md#14-админка"],
+      "result": "Оболочка админки в оформлении прототипа (без переключателя ролей), Livewire-редакторы услуг, проектов, страниц, статей/новостей, обучения, товаров, брендов, категорий, FAQ, текстов интерфейса и переводов LT/EN/RU, медиабиблиотека, публикация по языкам, журнал; заготовка Overview.",
+      "touches": ["aiqme-site/app/Livewire/Admin/", "aiqme-site/resources/views/admin/"],
+      "done": [
+        "Каждый тип контента создаётся, редактируется, публикуется и снимается с публикации по языкам",
+        "Конфликт ревизии показывает сообщение, введённый текст не теряется",
+        "Админка без overflow на 390 px",
+        "Действия неадминистратора — 404"
+      ],
+      "checks": ["Livewire-тесты редакторов", "браузерная проверка админки 390/1440"],
+      "constraints": ["Вкладки Permissions, Telegram-имитатор и CSV не создавать"],
+      "unknowns": [],
+      "trace": {"old_T": ["T-025", "T-026"], "R": ["R-017", "R-018"], "Q": ["Q-02-05", "Q-15-01", "Q-15-02"], "audit": ["F-28", "F-29", "F-30", "F-43", "F-44"]}
+    },
+    {
+      "id": "W-09",
+      "title": "Формы обращений, обучение, письма и outbox",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-04", "W-05"],
+      "inputs": ["docs/customer-prototype/audit-20261016/forms.md (contact-form, training-form)", "legacy-landing/design-previews/animation-v2/shared/lead.js", "docs/planning/edition-2/05-integrations.md"],
+      "result": "Серверная обработка контактной формы (несколько вложений, приватное хранение), регистрации на обучение, предзаполнения из калькулятора и товара; honeypot и throttle; письмо на info@aiqme.com через очередь; таблица integration_events и повтор недоставленных событий; список заявок в админке.",
+      "touches": ["aiqme-site/app/Domain/Forms/", "aiqme-site/app/Domain/Integrations/IntegrationEvents.php", "aiqme-site/resources/views/public/contact*", "aiqme-site/app/Livewire/Admin/Requests*"],
+      "done": [
+        "Валидная форма создаёт запись, событие и письмо в Mailpit; невалидная — ничего",
+        "Сбой почты не отменяет заявку и виден в админке",
+        "Тексты успеха описывают фактический результат (без «демо»)"
+      ],
+      "checks": ["Feature-тесты форм, вложений, лимитов, honeypot", "тест: отказ mail-транспорта → заявка сохранена, событие в повторе"],
+      "constraints": ["Писем клиенту не отправлять", "Вложения не прикладывать к письму"],
+      "unknowns": ["D-15"],
+      "trace": {"old_T": ["T-016", "T-017", "T-012"], "R": ["R-007", "R-008", "R-023"], "Q": ["Q-01-03", "Q-02-01", "Q-10-02", "Q-16-01"], "AC": ["AC-16-01", "AC-16-02", "AC-16-05"], "audit": ["F-07", "F-08", "F-09"]}
+    },
+    {
+      "id": "W-10",
+      "title": "Калькулятор в браузере",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-03"],
+      "inputs": ["legacy-landing/site/assets/calculator.js", "legacy-landing/site/assets/vendor/stl-loader.js", "legacy-landing/tools/stl/", "docs/customer-prototype/audit-20261016/screens-and-scenarios.md#калькулятор-и-оформление-производственного-заказа", "legacy-landing/scripts/check_stl_pricing.py (как образец проверок)"],
+      "result": "JS-модуль калькулятора на ядре calculator.js в 5-шаговом интерфейсе прототипа: несколько STL, EUR, единицы, масштаб с подтверждением, количество, материал, заполнение, пожелания без влияния на цену, просмотр three.js с работой без WebGL, ветка специалиста; Node-тесты ядра на корпусе фикстур.",
+      "touches": ["aiqme-site/resources/js/calculator/", "aiqme-site/resources/views/public/calculator*", "aiqme-site/tests/js/", "aiqme-site/tests/fixtures/stl/"],
+      "done": [
+        "Контрольный пример 1 см³ PLA → 1,24 г, 5,124 EUR воспроизводится",
+        "Открытый тетраэдр даёт явное предупреждение",
+        "Без WebGL расчёт и отправка доступны",
+        "Поздний результат анализа старого файла не перезаписывает новый",
+        "Файл 25 МиБ не блокирует интерфейс без индикации; при заметной блокировке разбор вынесен в Web Worker"
+      ],
+      "checks": ["Node-тесты ядра (корпус §9.2)", "браузерная проверка 5 шагов, ошибок формата и лимитов на 390 и 1440"],
+      "constraints": ["Только STL", "Не заменять формулу объёма демо-формулой габаритов", "Цена — предварительная оценка"],
+      "unknowns": ["D-08", "D-09"],
+      "trace": {"old_T": ["T-018", "T-019"], "R": ["R-013"], "Q": ["Q-02-03", "Q-03-03", "Q-11-01", "Q-11-04", "Q-11-05", "Q-10-03"], "AC": ["AC-11-01", "AC-11-02", "AC-11-04", "AC-11-10", "AC-10-11"], "audit": ["F-16", "F-17", "F-18", "F-48"]}
+    },
+    {
+      "id": "W-11",
+      "title": "Серверный анализ STL и настройки калькулятора",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-10", "W-08"],
+      "inputs": ["aiqme-site/resources/js/calculator/", "aiqme-site/tests/fixtures/stl/", "docs/planning/edition-2/03-orders-payments.md#31-от-stl-до-заказа"],
+      "result": "StlAnalyzer на PHP (binary/ASCII, лимиты, объём, габариты, предупреждения) с паритетом с JS; EstimateService с платой за заказ и за файл и снимком настроек; экран настроек калькулятора в админке; настройки отдаются в JS.",
+      "touches": ["aiqme-site/app/Domain/Pricing/", "aiqme-site/app/Livewire/Admin/CalculatorSettings*"],
+      "done": [
+        "Паритет JS ↔ PHP на всём корпусе (допуск 1e-9 относительный)",
+        "Лимиты проверяются до полного разбора; пиковая память на 25 МиБ / 500 000 треугольников записана в progress.md",
+        "Тарифы помечены в админке как «не подтверждено», пока не изменены администратором"
+      ],
+      "checks": ["Unit-тесты анализатора", "тест паритета", "Livewire-тест настроек"],
+      "constraints": ["Демо-цены технологий и скидки прототипа не переносить"],
+      "unknowns": ["D-08", "D-09"],
+      "trace": {"old_T": ["T-018", "T-019"], "R": ["R-013"], "Q": ["Q-11-02", "Q-11-05", "Q-17-02", "Q-22-04"], "AC": ["AC-11-05", "AC-11-06", "AC-11-07", "AC-22-03"]}
+    },
+    {
+      "id": "W-12",
+      "title": "Отправка заявки на изготовление",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-11", "W-09", "W-07"],
+      "inputs": ["aiqme-site/experiments/lunar-aiqme/app/app/Services/BasketService.php", "aiqme-site/experiments/lunar-aiqme/app/app/Services/RequestCartValidator.php", "aiqme-site/experiments/lunar-aiqme/app/app/Models/StlPart.php", "aiqme-site/experiments/orders-comparison/shared/Tests/", "docs/planning/edition-2/03-orders-payments.md"],
+      "result": "OrderSubmission: multipart-приём, StlFile в приватном хранилище, корзина Lunar → заказ через валидатор (гость и клиент), порядковый номер, токен отправки, гостевой токен, страница подтверждения и гостевая страница-заготовка, письмо на info@aiqme.com, события для Sheets.",
+      "touches": ["aiqme-site/app/Domain/Orders/", "aiqme-site/app/Models/StlFile.php", "aiqme-site/app/Models/StlPart.php", "aiqme-site/app/Http/Controllers/Public/OrderRequest*"],
+      "done": [
+        "Перенесены и адаптированы тесты отправки и изоляции из эксперимента",
+        "Двойная отправка — один заказ; параллельные — разные номера",
+        "Сбой после записи файла не оставляет сирот",
+        "Цена строки — серверная оценка; клиентская сумма игнорируется"
+      ],
+      "checks": ["Feature-тесты §9.2 «Заявка» и «Права»", "браузерный сквозной сценарий гостя до подтверждения"],
+      "constraints": ["Не переносить StlIntake::unit и LocalTestAdapter", "Lunar vendor не редактировать"],
+      "unknowns": ["D-10"],
+      "trace": {"old_T": ["T-015", "T-020", "T-021"], "R": ["R-014"], "Q": ["Q-04-01", "Q-07-01", "Q-11-06", "Q-18-01", "Q-18-02", "Q-19-03", "Q-20-02"], "AC": ["AC-12-01", "AC-12-04", "AC-14-05", "AC-14-06", "AC-18-03", "AC-19-05", "AC-20-06"], "audit": ["F-20"]}
+    },
+    {
+      "id": "W-13",
+      "title": "Правила заказа: цена, производство, отмена",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-12"],
+      "inputs": ["aiqme-site/experiments/lunar-aiqme/app/app/Services/OrderWorkflow.php", "aiqme-site/experiments/orders-comparison/evidence/trace-parity.json", "docs/planning/edition-2/02-architecture.md#26-что-переносится-из-эксперимента-и-с-какими-исправлениями", "docs/planning/edition-2/03-orders-payments.md#34-производство-и-передача"],
+      "result": "OrderWorkflow: подтверждение и изменение цены с основанием, строка доставки, стадии производства, трек, отмена с отменой платёжных запросов, сообщения администратора и ответы клиента, журнал; консольные команды поверх тех же сервисов.",
+      "touches": ["aiqme-site/app/Domain/Orders/", "aiqme-site/app/Domain/Audit/"],
+      "done": [
+        "Перенесены тесты подтверждения, ревизий, производства без оплаты, блокировки после старта, отмены без возврата",
+        "Переходы только вперёд; shipped требует трека; самовывоз ready → completed",
+        "HTTP и консоль используют одни правила (тест)"
+      ],
+      "checks": ["Feature-тесты §9.2 «Цена и производство»"],
+      "constraints": ["Автоматических напоминаний и закрытия нет", "Частичного выполнения нет"],
+      "unknowns": ["D-06", "D-07"],
+      "trace": {"old_T": ["T-021"], "R": ["R-014", "R-017"], "Q": ["Q-02-04", "Q-06-03", "Q-12-01", "Q-12-02", "Q-12-03", "Q-12-04", "Q-12-05"], "AC": ["AC-12-02", "AC-12-03", "AC-12-06", "AC-12-08", "AC-12-09", "AC-12-12"], "audit": ["F-24", "F-25", "F-26", "F-27"]}
+    },
+    {
+      "id": "W-14",
+      "title": "Админка: обзор, заказы, клиенты",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-13", "W-08"],
+      "inputs": ["docs/planning/edition-2/01-scope.md#14-админка", "docs/customer-prototype/evidence/audit-20261016/ (admin orders/overview/customers DOM)"],
+      "result": "Overview с метриками и предупреждениями; список и поиск заказов; карточка заказа со всеми действиями §1.4 (без оплаты — до W-16); лист задания Bambu; копирование ссылки клиенту; клиенты и карточка клиента; ссылка на Google Таблицу из настроек.",
+      "touches": ["aiqme-site/app/Livewire/Admin/Orders*", "aiqme-site/app/Livewire/Admin/Customers*", "aiqme-site/app/Livewire/Admin/Overview*"],
+      "done": [
+        "Все действия вызывают OrderWorkflow; в компонентах нет бизнес-правил",
+        "Скачивание STL администратором через защищённую выдачу",
+        "Опасные действия (отмена, изменение цены) спрашивают подтверждение"
+      ],
+      "checks": ["Livewire-тесты действий и прав", "браузерная проверка карточки заказа 390/1440"],
+      "constraints": ["Без массовых операций и CSV"],
+      "unknowns": [],
+      "trace": {"old_T": ["T-025"], "R": ["R-017"], "Q": ["Q-15-03", "Q-15-04", "Q-15-06"], "AC": ["AC-15-01", "AC-15-04", "AC-15-15"], "audit": ["F-24", "F-26", "F-31"]}
+    },
+    {
+      "id": "W-15",
+      "title": "Кабинет клиента и гостевая страница заказа",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-13", "W-07"],
+      "inputs": ["docs/customer-prototype/audit-20261016/screens-and-scenarios.md#вход-и-кабинет", "docs/planning/edition-2/01-scope.md#13-вход-и-кабинет-клиента"],
+      "result": "Overview, Orders, карточка заказа (стадии, оплата, долг, трек, ответы клиента, повторный заказ), Saved models (скачать, пересчитать, удалить), гостевая страница по токену; места для оплаты (W-16) и счетов (W-17).",
+      "touches": ["aiqme-site/resources/views/account/", "aiqme-site/app/Http/Controllers/Account/"],
+      "done": [
+        "Клиент видит только свои заказы и модели; гость — только свой заказ",
+        "Удаление модели, связанной с заказом, не удаляет файл заказа",
+        "Повторный заказ загружает модели в калькулятор с текущими тарифами",
+        "Нет overflow на 390 px"
+      ],
+      "checks": ["Feature-тесты изоляции (клиент A/B/гость, прямые URL, HEAD/Range)", "браузерная проверка кабинета"],
+      "constraints": ["Персональную скидку не реализовывать"],
+      "unknowns": ["D-10"],
+      "trace": {"old_T": ["T-024"], "R": ["R-012"], "Q": ["Q-02-02", "Q-14-03", "Q-14-05", "Q-14-07", "Q-20-08"], "AC": ["AC-14-04", "AC-14-09", "AC-14-10", "AC-20-01", "AC-20-13"], "audit": ["F-12", "F-14", "F-15", "F-22"]}
+    },
+    {
+      "id": "W-24",
+      "title": "Демо-сборка для GitHub Pages (только фронтенд)",
+      "track": "L",
+      "slice": "S2",
+      "depends": ["W-06", "W-10", "W-14", "W-15"],
+      "inputs": ["docs/planning/edition-2/01-scope.md#16-демо-сборка-для-github-pages", "docs/planning/edition-2/08-operations.md#87-демо-сборка-для-github-pages-рекомендация", "docs/customer-prototype/evidence/audit-20261016/route-manifest.json", "legacy-landing/scripts/build_github_pages_v2.py (как образец упаковки статического пакета)", "legacy-landing/scripts/check_github_pages_ui.py (как образец проверок)"],
+      "result": "Команда aiqme:demo-export (обёртка bin/demo-build) рендерит те же Blade-шаблоны на демо-данных в статическую папку aiqme-site/demo/ для GitHub Pages (https://greatgleb.github.io/3d-fabrication-web/aiqme-site/demo/): публичные страницы LT/EN с заглушками, калькулятор в браузере, формы, вход, кабинет и админка без бэкенда; на каждой странице явная пометка «ДЕМО». Не заменяет полноценный сайт на сервере; публикация — отдельным разрешением.",
+      "touches": ["aiqme-site/app/Console/Commands/DemoExport.php", "aiqme-site/database/seeders/DemoSeeder.php", "aiqme-site/resources/js/demo.js", "aiqme-site/bin/demo-build", "aiqme-site/demo/ (готовая сборка в Git, её раздаёт Pages)"],
+      "done": [
+        "Сборка работает без PHP-сервера и БД у зрителя: папка открывается через python3 -m http.server под подкаталогом /3d-fabrication-web/aiqme-site/demo/, все внутренние ссылки и ресурсы учитывают этот базовый путь",
+        "Присутствуют все публичные маршруты LT/EN из route-manifest, кроме исключённых в §1.5; контент — заглушки и демо-данные, без реальных данных клиентов",
+        "На каждой HTML-странице видимая пометка «ДЕМО» на языке страницы, meta robots noindex и пояснение, что это не рабочий сайт",
+        "Калькулятор STL полностью работает в браузере (загрузка, параметры, оценка); «отправить заявку» показывает демо-сообщение",
+        "Формы, вход, регистрация, кабинет и админка открываются на демо-данных; отправка и действия не делают запросов к API и сообщают, что данные не сохраняются",
+        "В выводе нет секретов, .env, персональных данных, переписки и материалов заказчика из docs/",
+        "Демо-режим недоступен в production-конфигурации сервера; запуск сборки не меняет рабочую БД"
+      ],
+      "checks": ["браузерная проверка демо-папки: все страницы отвечают 200, нет JS-ошибок, нет запросов вне статических файлов того же origin", "тест калькулятора на кубе 10 мм (объём 1 см³, габариты 10×10×10), как в legacy-landing/scripts/check_stl_pricing.py", "скрипт: пометка «ДЕМО» и noindex на каждой HTML-странице", "поиск секретов, e-mail клиентов и путей docs/customer в выводе"],
+      "constraints": ["Не дублировать шаблоны: демо рендерится из тех же Blade-компонентов, отличаются только данные и обработчики форм", "Не заменяет полноценный сайт на сервере и не считается выполнением серверных функций", "Не публиковать: commit и push папки aiqme-site/demo/ — только по явному разрешению пользователя"],
+      "unknowns": ["D-16"],
+      "trace": {"R": ["R-041"]}
+    },
+    {
+      "id": "W-16",
+      "title": "Платёжные запросы и Stripe (локальный уровень)",
+      "track": "L",
+      "slice": "S3",
+      "depends": ["W-13", "W-15"],
+      "inputs": ["aiqme-site/experiments/orders-comparison/shared/Payments/StripeInstallments.php", "aiqme-site/experiments/orders-comparison/shared/Tests/StripeInstallmentsTest.php", "aiqme-site/experiments/orders-comparison/shared/Tests/AcceptanceTest.php", "docs/planning/edition-2/03-orders-payments.md#33-платёжные-запросы-и-stripe"],
+      "result": "PaymentRequestService, страница оплаты с Payment Element, StripeInstallments с вызовом вне транзакции, webhook-обработчик с аномалиями needs_review, отмена запроса, проверка статуса, запись charge.refunded; действия в админке; мок SDK и подписанные фикстуры.",
+      "touches": ["aiqme-site/app/Domain/Payments/", "aiqme-site/app/Http/Controllers/Webhooks/StripeController.php", "aiqme-site/resources/views/public/checkout*"],
+      "done": [
+        "Перенесены 6 Stripe-тестов и платёжные тесты эксперимента; добавлены тесты на исправления §2.6",
+        "Ни одного HTTP-вызова внутри DB::transaction (тест-проверка или статический поиск)",
+        "Live-событие отклоняется в нерабочей среде"
+      ],
+      "checks": ["Feature-тесты §9.2 «Оплата»"],
+      "constraints": ["Без реальных ключей; запросов к Stripe нет", "Manual capture не использовать", "Кнопки возврата нет"],
+      "unknowns": ["D-06", "D-07"],
+      "trace": {"old_T": ["T-022"], "R": ["R-015"], "Q": ["Q-13-01", "Q-13-02", "Q-13-03", "Q-13-06", "Q-28-02", "Q-28-03"], "AC": ["AC-13-01", "AC-13-02", "AC-13-03", "AC-13-04", "AC-13-05", "AC-13-06", "AC-13-07", "AC-18-07", "AC-20-09"], "audit": ["F-21"]}
+    },
+    {
+      "id": "W-17",
+      "title": "Автоматические счета",
+      "track": "L",
+      "slice": "S3",
+      "depends": ["W-16", "W-08"],
+      "inputs": ["docs/planning/edition-2/03-orders-payments.md#35-счета"],
+      "result": "Настройки продавца, VAT и нумерации; InvoiceService с выдачей номера в транзакции, снимком реквизитов и PDF (dompdf, LT/EN); триггер по D-04 (по умолчанию — полная оплата); блокировка без реквизитов; скачивание в кабинете, гостевой странице и админке.",
+      "touches": ["aiqme-site/app/Domain/Invoices/", "aiqme-site/resources/views/invoices/", "aiqme-site/app/Livewire/Admin/Settings*"],
+      "done": [
+        "Без реквизитов счёт не выпускается, в админке предупреждение",
+        "Номер не дублируется при повторе события и параллельной обработке",
+        "PDF содержит литовские символы корректно; внешние ресурсы не загружаются",
+        "Время генерации PDF записано в progress.md"
+      ],
+      "checks": ["Feature-тесты §9.2 «Счета»"],
+      "constraints": ["Демо-НДС 21 % не использовать", "Тестовые реквизиты только в тестах, с пометкой TEST"],
+      "unknowns": ["D-04", "D-05"],
+      "trace": {"old_T": ["T-023"], "R": ["R-016", "R-039"], "Q": ["Q-13-04", "Q-13-05", "Q-18-02"], "AC": ["AC-13-10", "AC-13-11", "AC-13-12", "AC-18-09", "AC-22-05", "AC-22-06"], "audit": ["F-23"]}
+    },
+    {
+      "id": "W-18",
+      "title": "Google Таблицы (локальный уровень)",
+      "track": "L",
+      "slice": "S3",
+      "depends": ["W-16", "W-09"],
+      "inputs": ["docs/planning/edition-2/05-integrations.md#53-google-таблицы"],
+      "result": "SheetsClient (интерфейс + реализация на google/auth и HTTP-клиенте + фейк), SheetsProjector для Orders/Requests/Contacts/Payments/Events с upsert по ключу и RAW, очередь sheets с одним писателем, команда пересборки, статус в Integrations.",
+      "touches": ["aiqme-site/app/Domain/Integrations/Sheets/", "aiqme-site/config/aiqme.php"],
+      "done": [
+        "Все события §5.1 отражаются в фейковой таблице с английскими заголовками",
+        "Повтор и параллельные задания не дублируют строки",
+        "Без настроенного ключа события копятся и не теряются; админка показывает «не подключено»"
+      ],
+      "checks": ["Feature-тесты §9.2 «Sheets»"],
+      "constraints": ["Обратной синхронизации нет", "Реальных запросов к Google нет"],
+      "unknowns": [],
+      "trace": {"old_T": ["T-029"], "R": ["R-022", "R-023", "R-024", "R-029"], "Q": ["Q-02-06", "Q-16-03", "Q-16-04", "Q-16-06"], "AC": ["AC-16-11", "AC-16-12", "AC-16-14", "AC-16-15", "AC-16-18"], "audit": ["F-32"]}
+    },
+    {
+      "id": "W-19",
+      "title": "Telegram-бот контента (локальный уровень)",
+      "track": "L",
+      "slice": "S3",
+      "depends": ["W-08"],
+      "inputs": ["docs/planning/edition-2/04-content-seo.md#45-telegram-бот-контент", "docs/customer-prototype/audit-20261016/screens-and-scenarios.md#telegram"],
+      "result": "Webhook с secret_token, привязка одноразовым кодом, дедупликация update_id, диалог редактирования всех типов контента через ContentService, медиа ≤20 МБ, публикация по языкам, конфликт ревизии; экран привязки в Integrations; тесты на фикстурах апдейтов.",
+      "touches": ["aiqme-site/app/Domain/Integrations/Telegram/", "aiqme-site/app/Http/Controllers/Webhooks/TelegramController.php"],
+      "done": [
+        "Правка из бота видна в вебе и наоборот",
+        "Чужой отправитель не получает данных",
+        "Заказы и клиенты через бот недоступны"
+      ],
+      "checks": ["Feature-тесты §9.2 «Telegram»"],
+      "constraints": ["Без реального токена и запросов к Telegram", "Удаление записей через бот не делать"],
+      "unknowns": [],
+      "trace": {"old_T": ["T-028"], "R": ["R-020", "R-021", "R-040"], "Q": ["Q-06-04", "Q-15-05", "Q-16-05"], "AC": ["AC-15-10", "AC-15-12", "AC-16-07", "AC-16-09", "AC-19-16"], "audit": ["F-33", "F-34"]}
+    },
+    {
+      "id": "W-20",
+      "title": "Эксплуатационный пакет и измерения",
+      "track": "L",
+      "slice": "S4",
+      "depends": ["W-17", "W-18", "W-19"],
+      "inputs": ["docs/planning/edition-2/08-operations.md"],
+      "result": "docker-compose.prod.yml (app, web, worker, scheduler, db), конфигурация nginx и пример для общего прокси, .env.example, скрипты резервной копии и восстановления с манифестом sha256, health-check, ротация логов, runbook развёртывания; измерения ресурсов AIQME для подбора сервера; проверка восстановления локально.",
+      "touches": ["aiqme-site/docker/", "aiqme-site/bin/backup", "aiqme-site/bin/restore", "aiqme-site/docs/operations.md"],
+      "done": [
+        "Локальный запуск prod-compose проходит сквозной сценарий 2 из §9.3 на моках",
+        "Копия → восстановление на чистую БД → хеши файлов совпадают",
+        "Строка требований AIQME к серверу (RAM, vCPU, диск, рост) записана с методом измерения"
+      ],
+      "checks": ["bin/check", "проверка восстановления", "в образе нет instance/, фикстур, .env"],
+      "constraints": ["Сервер не арендовать", "Не придумывать нагрузку другого проекта"],
+      "unknowns": ["D-01", "D-02", "D-03", "D-13"],
+      "trace": {"old_T": ["T-033", "T-034", "T-036"], "R": ["R-009"], "Q": ["Q-04-04", "Q-17-01", "Q-21-01", "Q-21-02", "Q-22-01", "Q-22-02"], "AC": ["AC-17-07", "AC-21-10", "AC-22-09", "AC-22-10", "AC-23-14", "AC-23-15"]}
+    },
+    {
+      "id": "W-21",
+      "title": "Итоговая локальная проверка и передача",
+      "track": "L",
+      "slice": "S4",
+      "depends": ["W-20"],
+      "inputs": ["docs/planning/edition-2/09-verification.md", "docs/customer-prototype/evidence/audit-20261016/verified-route-screens.json"],
+      "result": "Отчёт aiqme-site/docs/verification/local-release.md: все тесты §9.2, сквозные сценарии §9.3 на уровне L, матрица маршрутов LT/EN/RU × 6 размеров, Lighthouse, ручное сравнение с эталонными кадрами, контролируемая поломка для ключевых тестов, стоп-лист §9.5; инструкция для заказчика и разработчика.",
+      "touches": ["aiqme-site/docs/verification/", "aiqme-site/docs/handover.md"],
+      "done": [
+        "Стоп-лист §9.5 пройден на уровне L",
+        "Все функции имеют статус L-готово или явную причину",
+        "Список того, что требует уровней T и P, с нужными доступами"
+      ],
+      "checks": ["bin/check", "bin/browser-check", "Lighthouse CLI"],
+      "constraints": ["Не публиковать", "Результаты моков не называть интеграцией"],
+      "unknowns": [],
+      "trace": {"old_T": ["T-037", "T-040"], "R": ["R-001", "R-002", "R-007", "R-010", "R-011", "R-012", "R-013", "R-014", "R-015", "R-016", "R-017", "R-018", "R-020", "R-021", "R-022", "R-023", "R-024", "R-030"], "Q": ["Q-04-08", "Q-09-02", "Q-10-01", "Q-24-01"], "AC": ["AC-24", "V-24-34"]}
+    },
+    {
+      "id": "W-22",
+      "title": "Тестовые подключения (Stripe test, тестовая таблица, тестовый бот, почта)",
+      "track": "T",
+      "slice": "S5",
+      "depends": ["W-21"],
+      "inputs": ["aiqme-site/docs/verification/local-release.md", "docs/planning/edition-2/05-integrations.md"],
+      "result": "Для каждого доступного подключения — реальный тестовый вызов и запись в aiqme-site/docs/verification/test-connections.md: Stripe test mode (успех, отказ, 3DS, аванс + остаток, повтор события, возврат в Dashboard), тестовая Google-таблица, тестовый бот (привязка, правка, медиа), тестовая отправка письма на разрешённый адрес.",
+      "touches": ["aiqme-site/.env (локально, не в Git)", "aiqme-site/docs/verification/"],
+      "done": [
+        "Каждое подключение отмечено T-готово с датой и идентификатором тестового объекта либо «нет доступа»",
+        "Отсутствие одного доступа не останавливает проверку других"
+      ],
+      "checks": ["Сквозной сценарий 2 §9.3 в Stripe test mode через stripe listen"],
+      "constraints": ["Только тестовые ключи и тестовые адресаты", "Секреты не попадают в Git и отчёты", "Письмо на info@aiqme.com — только по разрешению владельца"],
+      "unknowns": ["D-15"],
+      "trace": {"old_T": ["T-037"], "R": ["R-008", "R-015", "R-020", "R-021", "R-022"], "Q": ["Q-24-03"]}
+    },
+    {
+      "id": "W-23",
+      "title": "Рабочий запуск",
+      "track": "P",
+      "slice": "S5",
+      "depends": ["W-22"],
+      "inputs": ["aiqme-site/docs/operations.md", "docs/planning/edition-2/decisions.md"],
+      "result": "Арендованный сервер по D-01, развёрнутое приложение, aiqme.com с TLS без поломки почты, live-ключи Stripe и webhook, реальные реквизиты и нумерация, рабочие таблица и бот, внешняя копия, контрольный сценарий; запуск — только по явному разрешению.",
+      "touches": ["сервер", "DNS aiqme.com", "аккаунты Stripe/Google/Telegram/почты владельца"],
+      "done": [
+        "Решения D-01, D-04, D-05, D-13, D-15 приняты и записаны",
+        "Стоп-лист §9.5 пройден в рабочей среде",
+        "Откат кода проверен на рабочей БД без потери данных"
+      ],
+      "checks": ["Контрольный сценарий после развёртывания", "проверка внешней копии и восстановления"],
+      "constraints": ["Не выполнять без явного разрешения пользователя", "DNS почты не менять"],
+      "unknowns": ["D-01", "D-02", "D-03", "D-04", "D-05", "D-13", "D-14", "D-15"],
+      "trace": {"old_T": ["T-035", "T-038", "T-039"], "R": ["R-009", "R-016"], "Q": ["Q-04-07", "Q-23-01", "Q-23-03", "Q-20-05"], "AC": ["AC-23-03", "AC-23-11", "AC-23-12"]}
+    }
+  ]
+}

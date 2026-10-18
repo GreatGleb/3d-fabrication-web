@@ -1,0 +1,58 @@
+# Корень публикуется в ПУБЛИЧНЫЙ репозиторий GreatGleb/3d-fabrication-web.
+# Всё приватное и чужое должно быть исключено здесь ДО первого git add.
+# Прежний лендинг открывается на Pages из папки сборки:
+# https://greatgleb.github.io/3d-fabrication-web/legacy-landing/github-pages/
+
+# --- Материалы заказчика (приватно) ---
+/docs/customer/
+/docs/customer-prototype/audit-20261016/
+/docs/customer-prototype/evidence/
+/docs/customer-prototype/source-backup-20261016/
+
+# Исторический 30-слойный цикл планирования: задания, состояние и снимки цитируют материалы заказчика
+/docs/planning/run/
+
+# Полные манифесты реорганизации: перечень всех файлов, включая приватные каталоги
+/docs/reorganization/20261018/manifest-*.json.gz
+
+# --- Приватные данные и снимки ---
+# Локальный Flask: база и вложения (не читать, не публиковать)
+/legacy-landing/instance/
+# Полные снимки рабочего пространства: содержат instance/, .git и материалы заказчика
+/legacy-landing/archive/reorganization-*/
+
+# --- Чужой контент (авторские права третьих лиц) ---
+/legacy-landing/references/relats/cache/
+/docs/research/references/behance-videos/
+
+# --- Секреты и окружение ---
+.env
+.env.*
+!.env.example
+
+# --- Генерируемое и зависимости ---
+# Готовая сборка legacy-landing/github-pages/ НЕ исключена: Pages раздаёт её из репозитория.
+/legacy-landing/build/
+node_modules/
+# Не исключать vendor/ целиком: legacy-landing/site/assets/vendor/ и github-pages/assets/vendor/ — часть сайта.
+/aiqme-site/vendor/
+/aiqme-site/experiments/*/app/vendor/
+
+# Runtime и кэши экспериментов и будущего приложения
+/aiqme-site/experiments/lunar-aiqme/runtime/
+/aiqme-site/experiments/*/app/.codex/
+/aiqme-site/experiments/*/app/storage/app/private/
+/aiqme-site/experiments/*/app/storage/framework/
+/aiqme-site/experiments/*/app/storage/logs/
+/aiqme-site/experiments/*/app/bootstrap/cache/
+/aiqme-site/storage/app/private/
+/aiqme-site/storage/framework/
+/aiqme-site/storage/logs/
+/aiqme-site/bootstrap/cache/
+/aiqme-site/build/
+.phpunit.result.cache
+.phpunit.cache/
+
+# Python
+__pycache__/
+*.py[cod]

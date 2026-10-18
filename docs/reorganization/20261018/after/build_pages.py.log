@@ -1,0 +1,2 @@
+$ python3 legacy-landing/scripts/build_pages.py
+Built 1 locale(s), 5 pages in /home/greatgleb/PycharmProjects/3D_website/legacy-landing/build/server (server)

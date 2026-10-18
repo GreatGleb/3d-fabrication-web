@@ -1,0 +1,97 @@
+[
+  [
+    "menu_escape_focus",
+    {
+      "tag": "A",
+      "text": "Услуги",
+      "visible": false
+    }
+  ],
+  [
+    "step2_position",
+    {
+      "x": 39,
+      "y": 223.484375,
+      "width": 312,
+      "height": 31
+    }
+  ],
+  [
+    "step3_position",
+    {
+      "x": 39,
+      "y": 223.484375,
+      "width": 312,
+      "height": 31
+    }
+  ],
+  [
+    "complete_label",
+    "Шаг 3 из 3 · Как с вами связаться?"
+  ],
+  [
+    "complete_focus",
+    {
+      "tag": "BODY",
+      "text": "\n\n  \n    \n      \n    \n    \n      \n    \n    \n      Услуги\n      Процесс\n      Проекты\n      О нас\n   ",
+      "visible": true
+    }
+  ],
+  [
+    "tints",
+    [
+      {
+        "class": "hero",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "capabilities",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "quick-calculator",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "section services-section",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "section process-section",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "section projects-section",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "section about-section",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "section info-section",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "section lead-section",
+        "tint": "#edf3fb"
+      },
+      {
+        "class": "contact-banner",
+        "tint": ""
+      }
+    ]
+  ],
+  [
+    "broken_anchors",
+    []
+  ],
+  [
+    "corrected_density_error",
+    "Укажите плотность больше 0 и не больше 30 г/см³."
+  ],
+  [
+    "invalid_result_panel",
+    "КАЛЬКУЛЯТОР 3D-МОДЕЛИ\n\nРезультат анализа"
+  ]
+]

@@ -1,0 +1,16 @@
+$ python3 scripts/check_pages.py
+{
+  "status": "passed",
+  "prefix": "/aiqme-preview/",
+  "routes": [
+    "",
+    "projektai/",
+    "kontaktai/",
+    "calculator/"
+  ],
+  "viewports": [
+    390,
+    768,
+    1440
+  ]
+}

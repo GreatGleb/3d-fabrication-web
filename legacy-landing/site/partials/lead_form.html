@@ -1,0 +1,51 @@
+<section class="section lead-section" id="contact-form" aria-labelledby="lead-title">
+  <div class="shell">
+    <div class="lead-card">
+      <div class="lead-heading"><p class="eyebrow">{{lead_eyebrow}}</p><h2 id="lead-title">{{lead_title}}</h2><p>{{lead_intro}}</p></div>
+      <p class="lead-demo-notice">{{lead_demo_notice}}</p>
+      <div class="lead-progress" aria-label="{{lead_progress_label}}"><span class="active" aria-current="step"></span><span></span><span></span></div>
+      <p class="lead-step-label" id="lead-step-label" aria-live="polite"></p>
+      <form id="lead-form" data-step-label="{{lead_step_label}}" data-error-description="{{lead_error_description}}" data-error-quantity="{{lead_error_quantity}}" novalidate enctype="multipart/form-data"
+        data-demo-complete-title="{{lead_demo_complete_title}}" data-demo-complete-text="{{lead_demo_complete_text}}"
+        data-error-required="{{lead_error_required}}" data-error-email="{{lead_error_email}}"
+        data-error-file="{{lead_error_file}}" data-error-fields="{{lead_error_fields}}" data-error-server="{{lead_error_server}}"
+        data-error-limit="{{lead_error_limit}}" data-success="{{lead_success}}">
+        <div class="lead-step" data-step="0">
+          <h3 tabindex="-1">{{lead_service_question}}</h3>
+          <div class="lead-service-grid">
+            <label><input type="radio" name="service" value="scan" required><span>{{service_scan_title}}</span></label>
+            <label><input type="radio" name="service" value="model"><span>{{service_model_title}}</span></label>
+            <label><input type="radio" name="service" value="polymer"><span>{{service_print_title}}</span></label>
+            <label><input type="radio" name="service" value="metal"><span>{{service_metal_title}}</span></label>
+            <label><input type="radio" name="service" value="cnc"><span>{{service_cnc_title}}</span></label>
+            <label><input type="radio" name="service" value="unsure"><span>{{lead_service_unsure}}</span></label>
+          </div>
+          <div class="lead-actions"><button class="button button-primary lead-next" type="button">{{lead_next}} <span aria-hidden="true">→</span></button></div>
+        </div>
+        <div class="lead-step" data-step="1" hidden>
+          <h3 tabindex="-1">{{lead_task_question}}</h3>
+          <div class="lead-fields">
+            <div class="field"><label for="lead-message">{{lead_message_label}}</label><textarea id="lead-message" name="message" rows="5" maxlength="3000" minlength="10" placeholder="{{lead_message_placeholder}}" required></textarea></div>
+            <div class="field"><label for="lead-quantity">{{lead_quantity_label}}</label><input id="lead-quantity" name="quantity" type="number" min="1" max="10000" step="1" inputmode="numeric" placeholder="{{lead_quantity_placeholder}}"></div>
+            <div class="field"><label for="lead-attachment">{{lead_file_label}}</label><input id="lead-attachment" name="attachment" type="file" data-file-choose="{{file_choose}}" data-file-empty="{{file_empty}}" data-file-remove="{{file_remove}}" accept=".jpg,.jpeg,.png,.webp,.pdf,.stl,.obj,.step,.stp"><small>{{lead_file_hint}}</small></div>
+          </div>
+          <div class="lead-actions"><button class="button button-outline lead-back" type="button">{{lead_back}}</button><button class="button button-primary lead-next" type="button">{{lead_next}} <span aria-hidden="true">→</span></button></div>
+        </div>
+        <div class="lead-step" data-step="2" hidden>
+          <h3 tabindex="-1">{{lead_contact_question}}</h3>
+          <div class="lead-fields lead-contact-fields">
+            <div class="field"><label for="lead-name">{{lead_name_label}}</label><input id="lead-name" name="name" type="text" autocomplete="name" maxlength="120" required></div>
+            <div class="field"><label for="lead-email">{{lead_email_label}}</label><input id="lead-email" name="email" type="email" autocomplete="email" maxlength="254" required></div>
+            <div class="field"><label for="lead-phone">{{lead_phone_label}}</label><input id="lead-phone" name="phone" type="tel" autocomplete="tel" maxlength="80"><small>{{lead_phone_hint}}</small></div>
+          </div>
+          <div class="lead-honeypot" aria-hidden="true"><label for="lead-website">Website</label><input id="lead-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+          <p class="lead-privacy">{{lead_privacy}}</p>
+          <div class="lead-actions"><button class="button button-outline lead-back" type="button">{{lead_back}}</button><button class="button button-primary" type="submit">{{lead_submit}} <span aria-hidden="true">↗</span></button></div>
+        </div>
+        <p class="lead-status" id="lead-status" role="status" aria-live="polite" hidden></p>
+      </form>
+      <div class="lead-complete" id="lead-complete" hidden><div class="lead-complete-mark" aria-hidden="true">✓</div><h3 id="lead-complete-title" tabindex="-1">{{lead_complete_title}}</h3><p id="lead-complete-text">{{lead_complete_text}}</p><a class="lead-demo-mail" href="{{mailto_href}}">{{lead_demo_mail}}</a></div>
+      <noscript><p class="lead-noscript">{{lead_noscript}} <a href="mailto:info@aiqme.eu">info@aiqme.eu</a>.</p></noscript>
+    </div>
+  </div>
+</section>

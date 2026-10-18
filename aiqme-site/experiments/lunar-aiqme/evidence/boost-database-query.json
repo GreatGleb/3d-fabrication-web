@@ -1,0 +1,29 @@
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": {
+    "resultType": "complete",
+    "content": [
+      {
+        "type": "text",
+        "text": "[{\"table_count\":82}]"
+      }
+    ],
+    "isError": false,
+    "_meta": {
+      "io.modelcontextprotocol/serverInfo": {
+        "name": "Laravel Boost",
+        "version": "0.0.1",
+        "icons": [
+          {
+            "src": "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgNDEgNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGNsaXAtcGF0aD0idXJsKCNmKSI+CjxyZWN0IHRyYW5zZm9ybT0idHJhbnNsYXRlKC4yNzczNCkiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0idXJsKCNhKSIvPgo8ZyBmaWx0ZXI9InVybCgjZSkiPgo8ZWxsaXBzZSBjeD0iMi43NzczIiBjeT0iMi44MTI1IiByeD0iMjAiIHJ5PSIxOS42ODgiIGZpbGw9IiNFRkIwRjkiLz4KPC9nPgo8ZyBmaWx0ZXI9InVybCgjZCkiPgo8ZWxsaXBzZSBjeD0iMzAuOTAyIiBjeT0iMzEuNTYyIiByeD0iMjMuNzUiIHJ5PSIyMy40MzgiIGZpbGw9IiNCMjlGRjQiLz4KPC9nPgo8bWFzayBpZD0iYiIgeD0iMCIgeT0iMjAiIHdpZHRoPSI0MSIgaGVpZ2h0PSIyMCIgc3R5bGU9Im1hc2stdHlwZTphbHBoYSIgbWFza1VuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxyZWN0IHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIC0xIC4yNzczNCA0MCkiIHdpZHRoPSI0MCIgaGVpZ2h0PSIyMCIgZmlsbD0iI0Q5RDlEOSIvPgo8L21hc2s+CjxnIG1hc2s9InVybCgjYikiPgo8ZyBmaWx0ZXI9InVybCgjYykiPgo8ZWxsaXBzZSBjeD0iMTAuOTAyIiBjeT0iMjcuODEyIiByeD0iMjAiIHJ5PSIxOS42ODgiIGZpbGw9IiNEOEY4RUYiLz4KPC9nPgo8L2c+CjxyZWN0IHg9IjkuNzAwNCIgeT0iOS40MjMxIiB3aWR0aD0iMTUuMzg1IiBoZWlnaHQ9IjE1LjM4NSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjMuODQ2MiIvPgo8cmVjdCB4PSIxNC4wMjgiIHk9IjEzLjc1IiB3aWR0aD0iMTguMjY5IiBoZWlnaHQ9IjE4LjI2OSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9Ii45NjE1NCIvPgo8cmVjdCB4PSIxNi45MTEiIHk9IjE2LjYzNSIgd2lkdGg9IjEyLjUiIGhlaWdodD0iMTIuNSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9Ii45NjE1NCIvPgo8L2c+CjxkZWZzPgo8ZmlsdGVyIGlkPSJlIiB4PSItMzUuOTczIiB5PSItMzUuNjI1IiB3aWR0aD0iNzcuNSIgaGVpZ2h0PSI3Ni44NzUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiIgZmlsdGVyVW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPGZlRmxvb2QgZmxvb2Qtb3BhY2l0eT0iMCIgcmVzdWx0PSJCYWNrZ3JvdW5kSW1hZ2VGaXgiLz4KPGZlQmxlbmQgaW49IlNvdXJjZUdyYXBoaWMiIGluMj0iQmFja2dyb3VuZEltYWdlRml4IiByZXN1bHQ9InNoYXBlIi8+CjxmZUdhdXNzaWFuQmx1ciByZXN1bHQ9ImVmZmVjdDFfZm9yZWdyb3VuZEJsdXJfMV8xMDI3IiBzdGREZXZpYXRpb249IjkuMzc1Ii8+CjwvZmlsdGVyPgo8ZmlsdGVyIGlkPSJkIiB4PSItMTEuNTk4IiB5PSItMTAuNjI1IiB3aWR0aD0iODUiIGhlaWdodD0iODQuMzc1IiBjb2xvci1pbnRlcnBvbGF0aW9uLWZpbHRlcnM9InNSR0IiIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxmZUZsb29kIGZsb29kLW9wYWNpdHk9IjAiIHJlc3VsdD0iQmFja2dyb3VuZEltYWdlRml4Ii8+CjxmZUJsZW5kIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9IkJhY2tncm91bmRJbWFnZUZpeCIgcmVzdWx0PSJzaGFwZSIvPgo8ZmVHYXVzc2lhbkJsdXIgcmVzdWx0PSJlZmZlY3QxX2ZvcmVncm91bmRCbHVyXzFfMTAyNyIgc3RkRGV2aWF0aW9uPSI5LjM3NSIvPgo8L2ZpbHRlcj4KPGZpbHRlciBpZD0iYyIgeD0iLTI3Ljg0OCIgeT0iLTEwLjYyNSIgd2lkdGg9Ijc3LjUiIGhlaWdodD0iNzYuODc1IiBjb2xvci1pbnRlcnBvbGF0aW9uLWZpbHRlcnM9InNSR0IiIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxmZUZsb29kIGZsb29kLW9wYWNpdHk9IjAiIHJlc3VsdD0iQmFja2dyb3VuZEltYWdlRml4Ii8+CjxmZUJsZW5kIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9IkJhY2tncm91bmRJbWFnZUZpeCIgcmVzdWx0PSJzaGFwZSIvPgo8ZmVHYXVzc2lhbkJsdXIgcmVzdWx0PSJlZmZlY3QxX2ZvcmVncm91bmRCbHVyXzFfMTAyNyIgc3RkRGV2aWF0aW9uPSI5LjM3NSIvPgo8L2ZpbHRlcj4KPHJhZGlhbEdyYWRpZW50IGlkPSJhIiBjeD0iMCIgY3k9IjAiIHI9IjEiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjAgMjApIHNjYWxlKDIwKSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjRUVFNkY0IiBvZmZzZXQ9IjAiLz4KPHN0b3Agc3RvcC1jb2xvcj0iI0RCRTBGNiIgb2Zmc2V0PSIxIi8+CjwvcmFkaWFsR3JhZGllbnQ+CjxjbGlwUGF0aCBpZD0iZiI+CjxyZWN0IHRyYW5zZm9ybT0idHJhbnNsYXRlKC4yNzczNCkiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2ZmZiIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+Cjwvc3ZnPgo=",
+            "mimeType": "image/svg+xml",
+            "sizes": [
+              "40x40"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

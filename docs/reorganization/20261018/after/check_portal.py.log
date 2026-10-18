@@ -1,0 +1,5 @@
+$ python3 legacy-landing/scripts/check_portal.py
+Traceback (most recent call last):
+  File "/home/greatgleb/PycharmProjects/3D_website/legacy-landing/scripts/check_portal.py", line 11, in <module>
+    from werkzeug.security import generate_password_hash
+ModuleNotFoundError: No module named 'werkzeug'

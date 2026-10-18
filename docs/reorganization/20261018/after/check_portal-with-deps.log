@@ -1,0 +1,25 @@
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /login/ HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/portal.js HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/site.css HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/images/logo-dark.png HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /api/session HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/fonts/UbuntuSans-Variable.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/favicon.svg HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "POST /api/login HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /api/projects HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /api/files/1 HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "POST /api/logout HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/images/excel-hero.png HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/app.js HTTP/1.1" 304 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/site.css HTTP/1.1" 304 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/images/logo-dark.png HTTP/1.1" 304 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/vendor/stl-loader.js HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/calculator.js HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/lead.js HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/images/excel-scan.png HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:12] "GET /assets/favicon.svg HTTP/1.1" 304 -
+127.0.0.1 - - [18/Oct/2026 19:07:13] "GET /api/session HTTP/1.1" 200 -
+127.0.0.1 - - [18/Oct/2026 19:07:13] "POST /api/leads HTTP/1.1" 201 -
+{"status": "passed", "checks": ["CSRF", "login", "rate limit", "logout", "project isolation", "file isolation", "lead storage", "browser cabinet", "browser form"]}

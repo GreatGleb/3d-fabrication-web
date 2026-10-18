@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+proto_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PHP_INI_SCAN_DIR="/etc/php/8.4/cli/conf.d:$proto_root/runtime/conf"
+export LD_LIBRARY_PATH="$proto_root/runtime/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
+exec /usr/bin/php "$@"

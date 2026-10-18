@@ -1,34 +1,55 @@
-# AIQME — от фотографии или детали до результата
+# AIQME — рабочее пространство
 
-**[Открыть сайт →](https://greatgleb.github.io/3d-fabrication-web/)**
+Точка входа после реорганизации 18 октября 2026. Строим новый сайт AIQME по прототипу заказчика; прежний статический лендинг сохранён и публикуется, но больше не развивается. [Текущий объём и решения](docs/requirements.md) имеют приоритет над старыми планами.
 
-AIQME помогает превратить идею, фотографию или физический образец в цифровую 3D-модель и готовую деталь. Проект объединяет моделирование, 3D-сканирование, печать и CNC-обработку, чтобы подобрать способ изготовления под конкретную задачу.
+## Структура
 
-## Что мы делаем
+| Путь | Назначение и статус |
+|---|---|
+| [`aiqme-site/`](aiqme-site/README.md) | Новый сайт (Laravel + Lunar). **Пока пуст**, кроме README; `experiments/` — эксперимент сравнения заказов с Lunar и без него. |
+| [`docs/`](docs/requirements.md) | Вся документация: требования, план, прототип заказчика, исследования, дизайн, материалы заказчика, отчёты. |
+| [`legacy-landing/`](legacy-landing/README.md) | Прежний статический лендинг V2 со всем для сборки: `site/`, `server/`, `instance/`, `design-previews/`, `build/`, `scripts/`, `tools/`, `github-pages/` (свой `.git`), `archive/`, `references/relats/`. |
 
-- **3D-моделирование** — создаём модели по фотографиям, чертежам и другим исходным данным. Для точной геометрии уточняем размеры и дополнительные ракурсы.
-- **3D-сканирование** — оцифровываем физические объекты для дальнейшей работы с их формой.
-- **Полимерная 3D-печать** — изготавливаем прототипы и детали с учётом их назначения.
-- **Металлическая 3D-печать** — подбираем материал и технологию после оценки модели и требований к изделию.
-- **CNC-обработка и гравировка** — работаем с задачами, для которых подходит механическая обработка.
+### Документация
 
-## Как проходит работа
+| Путь | Что внутри |
+|---|---|
+| [docs/requirements.md](docs/requirements.md) | Согласованный объём, принятые решения, неизвестные данные и доступы |
+| [docs/planning/edition-2/](docs/planning/edition-2/README.md) | Действующий план: [задачи W-01…W-24](docs/planning/edition-2/tasks.md) ([tasks.json](docs/planning/edition-2/tasks.json)), [решения D-01…D-16](docs/planning/edition-2/decisions.md) |
+| [docs/planning/](docs/planning/questions-for-owner.md) | [Опросник (72 ответа)](docs/planning/questions-for-owner.md), [карта вопросов](docs/planning/questions-map.md), исторический 30-слойный цикл `run/` и [его инструмент](docs/planning/workflow/README.md) |
+| [docs/customer-prototype/](docs/customer-prototype/README.md) | Аудит прототипа, доказательства (снимки, DOM, CSS/JS), распакованный архив исходников 16.10 — **только локально, в публичный репозиторий не входят**; [доступ через Chrome](docs/customer-prototype/prototype-browser.md) |
+| [docs/customer/](docs/customer/README.md) | ТЗ и переписка заказчика, исходные требования, Excel-макет. **Только локально.** Переписку не переписывать |
+| [docs/research/](docs/research/lunar-vs-laravel-comparison-20261017.md) | [Сравнение Lunar](docs/research/lunar-vs-laravel-comparison-20261017.md), [первая оценка Lunar](docs/research/lunar-evaluation-20261017.md), [референсы](docs/research/references/README.md) |
+| [docs/design/](docs/design/relats-study/README.md) | Дизайн-исследования: Relats, планы движения, аудиты V1/V2 |
+| [docs/legacy-landing/](docs/legacy-landing/github-pages-v2.md) | [Публикация V2](docs/legacy-landing/github-pages-v2.md), [локальный Flask](docs/legacy-landing/local-server.md) |
+| [docs/reorganization/](docs/reorganization/20261018/README.md) | Отчёты реорганизаций [18.10](docs/reorganization/20261018/README.md) и [15.10](docs/reorganization/README.md) |
 
-1. **Обсуждаем задачу.** Можно начать с описания и одной фотографии. Чертёж, размеры, 3D-файл или сама деталь помогут точнее определить следующий шаг.
-2. **Выбираем подход.** Определяем, нужны ли моделирование, сканирование, изготовление или сочетание нескольких технологий.
-3. **Готовим модель.** Уточняем геометрию, недостающие данные и формат результата.
-4. **Передаём результат.** Это может быть цифровая модель, изготовленная деталь или оба результата — по договорённости.
+## Публикации
 
-## Примеры задач
+- **Прежний лендинг:** **https://greatgleb.github.io/3d-fabrication-web/legacy-landing/github-pages/** — сборка лежит в `legacy-landing/github-pages/` того же репозитория `GreatGleb/3d-fabrication-web`, Pages раздаёт её из этой папки. Старый адрес https://greatgleb.github.io/3d-fabrication-web/ и старые глубокие ссылки переадресуются корневыми `index.html` и `404.html`. [Подробнее и порядок перехода](docs/legacy-landing/github-pages-v2.md).
+- **Демо нового сайта:** место для будущей демо-сборки для GitHub Pages (только фронтенд, пометка «демо», [задача W-24](docs/planning/edition-2/tasks.md#w-24)). Пока не создана. По умолчанию будет лежать в `aiqme-site/demo/` этого же репозитория: https://greatgleb.github.io/3d-fabrication-web/aiqme-site/demo/ ([D-16](docs/planning/edition-2/decisions.md#d-16)).
+- **Рабочий сайт:** серверное развёртывание по плану; сервер не арендован, домен не подключён.
 
-- Восстановление конической шестерни: от сканирования исходной детали до CAD-модели и печати из нейлона.
-- Сканирование крыльчатки компрессора и подготовка параметрической модели.
-- Создание вставки в консоль BMW.
-- Работа с панелью Siemens Simatic.
+## Прежний лендинг: сборка и проверки
 
-## С чего начать
+Из корня (скрипты не зависят от текущего каталога). Python 3; для браузерных проверок — `legacy-landing/requirements-dev.txt` и Google Chrome.
 
-Расскажите, что нужно получить и как будет использоваться деталь. Приложите доступные фотографии, размеры или модель. Если технология пока не выбрана, поможем определить подходящий вариант.
+```bash
+git -C legacy-landing/github-pages status --short   # сначала сохранить незакоммиченное (после перехода — git status в корне)
+python3 legacy-landing/scripts/build_github_pages_v2.py
+STL_TEST_DIRECTORY=github-pages python3 legacy-landing/scripts/check_stl_pricing.py
+python3 legacy-landing/scripts/check_github_pages_ui.py
+python3 -m http.server 8830 --bind 127.0.0.1 --directory legacy-landing/github-pages
+```
 
-**Почта:** [info@aiqme.eu](mailto:info@aiqme.eu)  
-**Телефон:** [+370 688 84 084](tel:+37068884084)
+Готовая V2: http://127.0.0.1:8830/ . Сборка ничего не публикует; на Pages сайт появится после commit и push папки `legacy-landing/github-pages/` (https://greatgleb.github.io/3d-fabrication-web/legacy-landing/github-pages/). Остальные сборки, сравнения V1/V2 и Flask — в [README лендинга](legacy-landing/README.md). `check_motion_preview.py` и `check_motion_v2.py` по-прежнему падают на сверке исторического манифеста `site/index.html`; это известная прежняя проблема, не повреждение.
+
+## Прочее
+
+- Прототип заказчика смотрите через Chrome пользователя по [инструкции](docs/customer-prototype/prototype-browser.md): `python3 docs/customer-prototype/tools/capture_prototype_chrome.py`. **Озвучивание и системные флаги доступности не включать.**
+- Эксперименты: `python3 aiqme-site/experiments/orders-comparison/bin/compare.py` (нужен запущенный контейнер PostgreSQL эксперимента; [подробнее](aiqme-site/experiments/orders-comparison/README.md)).
+- Тесты инструмента планирования: `python3 -m unittest discover -s docs/planning/workflow -p 'test_plan_workflow.py'`.
+
+## Git
+
+Корень пока **не** Git-репозиторий; единственный репозиторий — `legacy-landing/github-pages/.git` (клон `GreatGleb/3d-fabrication-web`). Решено публиковать весь корень в этот же **публичный** репозиторий. Поэтому корневой [.gitignore](.gitignore) исключает всё приватное и чужое: материалы заказчика (`docs/customer/`, аудит, снимки и исходники прототипа), исторический цикл `docs/planning/run/`, `instance/`, снимки-архивы, `.env`, копию сайта Relats и видео Behance, зависимости и runtime. Требования, план редакции 2 и опросник публикуются. Переход выполняет пользователь: перенести `.git` публикации в корень, проверить `git ls-files` до commit, затем push. [Пошагово](docs/legacy-landing/github-pages-v2.md#переход-на-общий-репозиторий-один-раз-выполняет-пользователь).

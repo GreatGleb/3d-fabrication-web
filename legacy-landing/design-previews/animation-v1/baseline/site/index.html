@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{home_description}}">
+  <meta name="theme-color" content="#f7f9fc">
+  <title>{{home_title}}</title>
+  <link rel="icon" href="{{asset_root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{asset_root}}site.css">
+  <script defer src="{{asset_root}}app.js"></script>
+  <script defer src="{{asset_root}}calculator.js"></script>
+  <script defer src="{{asset_root}}lead.js"></script>
+</head>
+<body class="page-home">
+{{header}}
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-visual" aria-hidden="true"><img src="{{asset_root}}images/excel-hero.png" width="602" height="308" alt=""></div>
+    <div class="shell hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">{{hero_eyebrow}}</p>
+        <h1 id="hero-title">{{hero_title_first}}<br><span>{{hero_title_second}}</span></h1>
+        <p class="hero-description">{{hero_description}}</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="{{contact_href}}">{{hero_primary}} <span aria-hidden="true">↗</span></a>
+          <a class="button button-outline" href="{{projects_href}}">{{hero_secondary}} <span aria-hidden="true">→</span></a>
+        </div>
+        <p class="hero-note"><span class="note-dot" aria-hidden="true"></span>{{hero_note}}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="capabilities" aria-label="{{capabilities_label}}">
+    <div class="shell capability-grid">
+      <div class="capability"><span>{{capability_one_label}}</span><strong>{{capability_one_title}}</strong><p>{{capability_one_text}}</p></div>
+      <div class="capability"><span>{{capability_two_label}}</span><strong>{{capability_two_title}}</strong><p>{{capability_two_text}}</p></div>
+      <div class="capability"><span>{{capability_three_label}}</span><strong>{{capability_three_title}}</strong><p>{{capability_three_text}}</p></div>
+    </div>
+  </section>
+
+  <section class="quick-calculator" id="quick-calculator" aria-labelledby="quick-calculator-title">
+    <div class="shell quick-calculator-layout">
+      <div><p class="eyebrow">{{calculator_eyebrow}}</p><h2 id="quick-calculator-title">{{quick_calculator_title}}</h2><p>{{quick_calculator_intro}}</p><a class="text-link" href="{{calculator_href}}">{{quick_calculator_full}} <span aria-hidden="true">↗</span></a></div>
+      <form id="quick-stl-calculator" class="quick-calculator-form" novalidate
+        data-error-file="{{calculator_error_file}}" data-error-size="{{calculator_error_size}}"
+        data-error-format="{{calculator_error_format}}" data-error-volume="{{calculator_error_volume}}"
+        data-processing="{{calculator_processing}}">
+        <div class="field"><label for="quick-stl-file">{{calculator_file_label}}</label><input id="quick-stl-file" type="file" data-file-choose="{{file_choose}}" data-file-empty="{{file_empty}}" data-file-remove="{{file_remove}}" accept=".stl,model/stl,application/sla"><small>{{calculator_file_hint}}</small></div>
+        <div class="quick-calculator-controls"><div class="field"><label for="quick-stl-unit">{{calculator_unit_label}}</label><select id="quick-stl-unit"><option value="mm">{{calculator_unit_mm}}</option><option value="cm">{{calculator_unit_cm}}</option><option value="inch">{{calculator_unit_inch}}</option></select></div><button class="button button-primary" type="submit">{{quick_calculator_submit}} <span aria-hidden="true">↗</span></button></div>
+        <p id="quick-calculator-status" class="calculator-status" role="status" hidden></p>
+        <div id="quick-calculator-result" class="quick-calculator-result" hidden><div><span>{{calculator_result_dimensions}}</span><strong id="quick-result-dimensions"></strong></div><div><span>{{calculator_result_volume}}</span><strong id="quick-result-volume"></strong></div></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="section services-section" id="services" aria-labelledby="services-title">
+    <div class="shell">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">{{services_eyebrow}}</p><h2 id="services-title">{{services_title}}</h2></div>
+        <p class="section-intro">{{services_intro}}</p>
+      </div>
+      <div class="service-grid">
+        <article class="service-card">
+          <div class="service-image"><img src="{{asset_root}}images/excel-scan.png" width="227" height="107" alt="{{scan_image_alt}}" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">{{service_scan_label}}</span><h3>{{service_scan_title}}</h3><p>{{service_scan_description}}</p><a class="text-link" href="{{contact_href}}">{{service_link}} <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="{{asset_root}}images/excel-model.png" width="228" height="107" alt="{{model_image_alt}}" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">{{service_model_label}}</span><h3>{{service_model_title}}</h3><p>{{service_model_description}}</p><a class="text-link" href="{{contact_href}}">{{service_link}} <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="{{asset_root}}images/excel-print.png" width="230" height="107" alt="{{print_image_alt}}" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">{{service_print_label}}</span><h3>{{service_print_title}}</h3><p>{{service_print_description}}</p><a class="text-link" href="{{contact_href}}">{{service_link}} <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="{{asset_root}}images/excel-metal.png" width="353" height="102" alt="{{metal_image_alt}}" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">{{service_metal_label}}</span><h3>{{service_metal_title}}</h3><p>{{service_metal_description}}</p><a class="text-link" href="{{contact_href}}">{{service_link}} <span aria-hidden="true">↗</span></a></div>
+        </article>
+        <article class="service-card">
+          <div class="service-image"><img src="{{asset_root}}images/excel-cnc.png" width="353" height="102" alt="{{cnc_image_alt}}" loading="lazy"></div>
+          <div class="service-content"><span class="card-number">{{service_cnc_label}}</span><h3>{{service_cnc_title}}</h3><p>{{service_cnc_description}}</p><a class="text-link" href="{{contact_href}}">{{service_link}} <span aria-hidden="true">↗</span></a></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section process-section" id="process" aria-labelledby="process-title">
+    <div class="shell">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">{{process_eyebrow}}</p><h2 id="process-title">{{process_title}}</h2></div>
+        <p class="section-intro">{{process_intro}}</p>
+      </div>
+      <div class="process-line" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="process-grid">
+        <article class="process-step"><span>01</span><h3>{{process_one_title}}</h3><p>{{process_one_text}}</p></article>
+        <article class="process-step"><span>02</span><h3>{{process_two_title}}</h3><p>{{process_two_text}}</p></article>
+        <article class="process-step"><span>03</span><h3>{{process_three_title}}</h3><p>{{process_three_text}}</p></article>
+        <article class="process-step"><span>04</span><h3>{{process_four_title}}</h3><p>{{process_four_text}}</p></article>
+      </div>
+    </div>
+    <div class="process-visual-band"><div class="shell">
+      <p class="eyebrow">{{process_visual_eyebrow}}</p>
+      <div class="process-illustration" aria-hidden="true"><img src="{{asset_root}}images/excel-process.png" width="715" height="91" alt="" loading="lazy"></div>
+      <div class="process-visual-labels">
+        <div><strong>01 / {{process_visual_capture}}</strong><p>{{process_visual_capture_text}}</p></div>
+        <div><strong>02 / {{process_visual_engineer}}</strong><p>{{process_visual_engineer_text}}</p></div>
+        <div><strong>03 / {{process_visual_produce}}</strong><p>{{process_visual_produce_text}}</p></div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="section projects-section" id="projects" aria-labelledby="projects-title">
+    <div class="shell">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">{{projects_eyebrow}}</p><h2 id="projects-title">{{projects_title}}</h2></div>
+        <p class="section-intro">{{projects_intro}}</p>
+      </div>
+      <div class="project-grid">
+        <article class="project-card"><a href="{{projects_href}}#impeller"><div class="project-image"><img src="{{asset_root}}images/impeller.jpg" width="1200" height="900" alt="{{project_impeller_alt}}" loading="lazy"></div><div class="project-content"><span>{{project_impeller_tag}}</span><h3>{{project_impeller_title}} <span aria-hidden="true">↗</span></h3><p>{{project_impeller_text}}</p></div></a></article>
+        <article class="project-card"><a href="{{projects_href}}#bmw"><div class="project-image"><img src="{{asset_root}}images/bmw-console.jpg" width="1000" height="1200" alt="{{project_bmw_alt}}" loading="lazy"></div><div class="project-content"><span>{{project_bmw_tag}}</span><h3>{{project_bmw_title}} <span aria-hidden="true">↗</span></h3><p>{{project_bmw_text}}</p></div></a></article>
+        <article class="project-card"><a href="{{projects_href}}#siemens"><div class="project-image"><img src="{{asset_root}}images/siemens-panel.jpg" width="950" height="1000" alt="{{project_siemens_alt}}" loading="lazy"></div><div class="project-content"><span>{{project_siemens_tag}}</span><h3>{{project_siemens_title}} <span aria-hidden="true">↗</span></h3><p>{{project_siemens_text}}</p></div></a></article>
+      </div>
+      <div class="section-bottom"><a class="button button-outline" href="{{projects_href}}">{{projects_all}} <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+
+  <section class="section about-section" id="about" aria-labelledby="about-title">
+    <div class="shell about-grid">
+      <div class="about-photo"><img src="{{asset_root}}images/bust.jpg" width="599" height="805" alt="{{project_bust_alt}}" loading="lazy"></div>
+      <div class="about-copy"><p class="eyebrow">{{about_eyebrow}}</p><h2 id="about-title">{{about_title}}</h2><p>{{about_text}}</p><blockquote>{{about_quote}}</blockquote></div>
+    </div>
+  </section>
+
+  <section class="section info-section" id="information" aria-labelledby="info-title">
+    <div class="shell">
+      <div class="section-heading split-heading"><div><p class="eyebrow">{{information_eyebrow}}</p><h2 id="info-title">{{information_title}}</h2></div><p class="section-intro">{{information_intro}}</p></div>
+      <div class="info-grid">
+        <article><span>01</span><h3>{{info_one_title}}</h3><p>{{info_one_text}}</p></article>
+        <article><span>02</span><h3>{{info_two_title}}</h3><p>{{info_two_text}}</p></article>
+        <article><span>03</span><h3>{{info_three_title}}</h3><p>{{info_three_text}}</p></article>
+      </div>
+    </div>
+  </section>
+
+  {{lead_form}}
+  <section class="contact-banner" aria-labelledby="banner-title"><div class="shell banner-inner"><div><h2 id="banner-title">{{contact_banner_title}}</h2><p>{{contact_banner_text}}</p></div><a class="button button-white" href="#contact-form">{{contact_banner_cta}} <span aria-hidden="true">↗</span></a></div></section>
+</main>
+{{footer}}
+</body>
+</html>

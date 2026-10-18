@@ -1,0 +1,27 @@
+{
+ "database": "aiqme_plain_comparison",
+ "lunar_class_present": false,
+ "tables": [
+ "basket_lines",
+ "baskets",
+ "cache",
+ "cache_locks",
+ "failed_jobs",
+ "job_batches",
+ "jobs",
+ "migrations",
+ "order_lines",
+ "orders",
+ "password_reset_tokens",
+ "payment_events",
+ "payment_requests",
+ "price_revisions",
+ "probe_contents",
+ "sessions",
+ "stl_parts",
+ "transactions",
+ "users"
+ ],
+ "table_count": 19,
+ "column_count": 138
+}

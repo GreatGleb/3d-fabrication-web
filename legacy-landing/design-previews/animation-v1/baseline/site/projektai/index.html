@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{projects_page_description}}"><meta name="theme-color" content="#f7f9fc">
+  <title>{{projects_page_title}}</title>
+  <link rel="icon" href="{{asset_root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{asset_root}}site.css"><script defer src="{{asset_root}}app.js"></script>
+</head>
+<body class="page-projects">
+{{header}}
+<main id="main">
+  <section class="interior-hero"><div class="shell"><p class="eyebrow">{{projects_page_eyebrow}}</p><h1>{{projects_page_heading}}</h1><p>{{projects_page_intro}}</p></div></section>
+  <section class="section project-list" aria-label="{{nav_projects}}">
+    <div class="shell">
+      <article class="case" id="impeller"><div class="case-image"><img src="{{asset_root}}images/impeller.jpg" width="1200" height="900" alt="{{project_impeller_alt}}"></div><div class="case-copy"><span>{{project_impeller_tag}}</span><h2>{{project_impeller_title}}</h2><p>{{project_impeller_text}}</p></div></article>
+      <article class="case" id="bmw"><div class="case-image"><img src="{{asset_root}}images/bmw-console.jpg" width="1000" height="1200" alt="{{project_bmw_alt}}" loading="lazy"></div><div class="case-copy"><span>{{project_bmw_tag}}</span><h2>{{project_bmw_title}}</h2><p>{{project_bmw_text}}</p></div></article>
+      <article class="case" id="siemens"><div class="case-image"><img src="{{asset_root}}images/siemens-panel.jpg" width="950" height="1000" alt="{{project_siemens_alt}}" loading="lazy"></div><div class="case-copy"><span>{{project_siemens_tag}}</span><h2>{{project_siemens_title}}</h2><p>{{project_siemens_text}}</p></div></article>
+      <article class="case" id="gear"><div class="case-image"><img src="{{asset_root}}images/gear.jpg" width="1000" height="1200" alt="{{project_gear_alt}}" loading="lazy"></div><div class="case-copy"><span>{{project_gear_tag}}</span><h2>{{project_gear_title}}</h2><p>{{project_gear_text}}</p></div></article>
+      <article class="case" id="bust"><div class="case-image"><img src="{{asset_root}}images/bust.jpg" width="599" height="805" alt="{{project_bust_alt}}" loading="lazy"></div><div class="case-copy"><span>{{project_bust_tag}}</span><h2>{{project_bust_title}}</h2><p>{{project_bust_text}}</p></div></article>
+    </div>
+  </section>
+  <section class="contact-banner" aria-labelledby="banner-title"><div class="shell banner-inner"><div><h2 id="banner-title">{{projects_cta_title}}</h2><p>{{projects_cta_text}}</p></div><a class="button button-white" href="{{contact_href}}">{{contact_banner_cta}} <span aria-hidden="true">↗</span></a></div></section>
+</main>
+{{footer}}
+</body>
+</html>

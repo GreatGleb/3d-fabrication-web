@@ -1,0 +1,18 @@
+Generating optimized autoload files
+> Illuminate\Foundation\ComposerScripts::postAutoloadDump
+> @php artisan package:discover --ansi
+
+ INFO Discovering packages. 
+
+ laravel/boost .. DONE
+ laravel/mcp .. DONE
+ laravel/pail .. DONE
+ laravel/pao .. DONE
+ laravel/roster .. DONE
+ laravel/tinker .. DONE
+ livewire/livewire .. DONE
+ nesbot/carbon .. DONE
+ nunomaduro/collision .. DONE
+ nunomaduro/termwind .. DONE
+
+Generated optimized autoload files containing 7899 classes

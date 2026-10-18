@@ -1,0 +1,44 @@
+name: Publish AIQME demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build static demo
+        run: python3 scripts/build_pages.py --mode demo
+      - name: Verify Pages artifact
+        run: |
+          test -f build/demo/index.html
+          test -f build/demo/.nojekyll
+          test -f build/demo/assets/demo/projects.json
+          test ! -e build/demo/instance
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/demo
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

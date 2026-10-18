@@ -1,0 +1,18 @@
+
+ INFO Publishing [lunar] assets. 
+
+ Copying file [vendor/lunarphp/core/config/cart.php] to [config/lunar/cart.php]  DONE
+ Copying file [vendor/lunarphp/core/config/cart_session.php] to [config/lunar/cart_session.php]  DONE
+ Copying file [vendor/lunarphp/core/config/database.php] to [config/lunar/database.php]  DONE
+ Copying file [vendor/lunarphp/core/config/discounts.php] to [config/lunar/discounts.php]  DONE
+ Copying file [vendor/lunarphp/core/config/media.php] to [config/lunar/media.php]  DONE
+ Copying file [vendor/lunarphp/core/config/orders.php] to [config/lunar/orders.php]  DONE
+ Copying file [vendor/lunarphp/core/config/payments.php] to [config/lunar/payments.php]  DONE
+ Copying file [vendor/lunarphp/core/config/pricing.php] to [config/lunar/pricing.php]  DONE
+ Copying file [vendor/lunarphp/core/config/products.php] to [config/lunar/products.php]  DONE
+ Copying file [vendor/lunarphp/core/config/search.php] to [config/lunar/search.php]  DONE
+ Copying file [vendor/lunarphp/core/config/shipping.php] to [config/lunar/shipping.php]  DONE
+ Copying file [vendor/lunarphp/core/config/taxes.php] to [config/lunar/taxes.php]  DONE
+ Copying file [vendor/lunarphp/core/config/urls.php] to [config/lunar/urls.php]  DONE
+ Copying file [vendor/lunarphp/lunar/config/panel.php] to [config/lunar/panel.php]  DONE
+

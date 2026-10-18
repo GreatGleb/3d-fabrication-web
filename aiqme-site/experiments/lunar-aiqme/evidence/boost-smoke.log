@@ -1,0 +1,6 @@
+['application-info', 'browser-logs', 'database-connections', 'database-query', 'database-schema', 'get-absolute-url', 'last-error', 'read-log-entries', 'record-rule', 'search-docs']
+application-info error= False
+database-schema error= False
+get-absolute-url error= False
+database-query error= False
+search-docs error= False

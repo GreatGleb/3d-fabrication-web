@@ -1,0 +1,9 @@
+$ python3 scripts/check_motion_v2.py
+Traceback (most recent call last):
+  File "/home/greatgleb/PycharmProjects/3D_website/scripts/check_motion_v2.py", line 56, in <module>
+    if __name__=='__main__':check()
+                            ^^^^^^^
+  File "/home/greatgleb/PycharmProjects/3D_website/scripts/check_motion_v2.py", line 9, in check
+    assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, name
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: site/index.html

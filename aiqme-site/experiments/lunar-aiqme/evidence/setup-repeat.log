@@ -1,0 +1,111 @@
+runtime/packages/libpq5_16.15-0ubuntu0.24.04.1_amd64.deb: OK
+runtime/packages/php8.4-bcmath_8.4.26-1+ubuntu24.04.1+deb.sury.org+1_amd64.deb: OK
+runtime/packages/php8.4-gd_8.4.26-1+ubuntu24.04.1+deb.sury.org+1_amd64.deb: OK
+runtime/packages/php8.4-intl_8.4.26-1+ubuntu24.04.1+deb.sury.org+1_amd64.deb: OK
+runtime/packages/php8.4-pgsql_8.4.26-1+ubuntu24.04.1+deb.sury.org+1_amd64.deb: OK
+runtime/packages/php8.4-sqlite3_8.4.26-1+ubuntu24.04.1+deb.sury.org+1_amd64.deb: OK
+runtime/packages/php8.4-zip_8.4.26-1+ubuntu24.04.1+deb.sury.org+1_amd64.deb: OK
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Nothing to install, update or remove
+Generating optimized autoload files
+> Illuminate\Foundation\ComposerScripts::postAutoloadDump
+> @php artisan package:discover --ansi
+
+ INFO Discovering packages. 
+
+ anourvalar/eloquent-serialize .. DONE
+ awcodes/filament-badgeable-column .. DONE
+ awcodes/shout .. DONE
+ barryvdh/laravel-dompdf .. DONE
+ blade-ui-kit/blade-heroicons .. DONE
+ blade-ui-kit/blade-icons .. DONE
+ filament/actions .. DONE
+ filament/filament .. DONE
+ filament/forms .. DONE
+ filament/infolists .. DONE
+ filament/notifications .. DONE
+ filament/query-builder .. DONE
+ filament/schemas .. DONE
+ filament/support .. DONE
+ filament/tables .. DONE
+ filament/widgets .. DONE
+ kirschbaum-development/eloquent-power-joins .. DONE
+ laravel/boost .. DONE
+ laravel/mcp .. DONE
+ laravel/pail .. DONE
+ laravel/pao .. DONE
+ laravel/roster .. DONE
+ laravel/scout .. DONE
+ laravel/tinker .. DONE
+ leandrocfe/filament-apex-charts .. DONE
+ livewire/livewire .. DONE
+ lunarphp/core .. DONE
+ lunarphp/lunar .. DONE
+ lunarphp/nestedset .. DONE
+ lunarphp/stripe .. DONE
+ nesbot/carbon .. DONE
+ nunomaduro/collision .. DONE
+ nunomaduro/termwind .. DONE
+ ryangjchandler/blade-capture-directive .. DONE
+ spatie/laravel-activitylog .. DONE
+ spatie/laravel-blink .. DONE
+ spatie/laravel-medialibrary .. DONE
+ spatie/laravel-permission .. DONE
+ spatie/php-structure-discoverer .. DONE
+ technikermathe/blade-lucide-icons .. DONE
+
+112 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+
+ INFO Nothing to migrate. 
+
+
+ INFO Seeding database. 
+
+ ⇂ public/js/filament/forms/components/builder.js 
+ ⇂ public/js/filament/forms/components/checkbox-list.js 
+ ⇂ public/js/filament/forms/components/code-editor.js 
+ ⇂ public/js/filament/forms/components/color-picker.js 
+ ⇂ public/js/filament/forms/components/date-time-picker.js 
+ ⇂ public/js/filament/forms/components/file-upload.js 
+ ⇂ public/js/filament/forms/components/key-value.js 
+ ⇂ public/js/filament/forms/components/markdown-editor.js 
+ ⇂ public/js/filament/forms/components/repeater.js 
+ ⇂ public/js/filament/forms/components/rich-editor.js 
+ ⇂ public/js/filament/forms/components/select.js 
+ ⇂ public/js/filament/forms/components/slider.js 
+ ⇂ public/js/filament/forms/components/tags-input.js 
+ ⇂ public/js/filament/forms/components/textarea.js 
+ ⇂ public/js/filament/forms/components/text-input/password-reveal.js 
+ ⇂ public/js/filament/forms/components/toggle-buttons.js 
+ ⇂ public/js/filament/schemas/components/actions.js 
+ ⇂ public/js/filament/schemas/components/tabs.js 
+ ⇂ public/js/filament/schemas/components/wizard.js 
+ ⇂ public/js/filament/tables/components/columns/checkbox.js 
+ ⇂ public/js/filament/tables/components/columns/select.js 
+ ⇂ public/js/filament/tables/components/columns/text-input.js 
+ ⇂ public/js/filament/tables/components/columns/toggle.js 
+ ⇂ public/js/filament/widgets/components/chart.js 
+ ⇂ public/js/filament/widgets/components/stats-overview/stat/chart.js 
+ ⇂ public/js/app/components/apexcharts.js 
+ ⇂ public/fonts/filament/filament/inter/index.css 
+ ⇂ public/fonts/filament/filament/inter/inter-cyrillic-ext-wght-normal-SP7Z6XGK.woff2 
+ ⇂ public/fonts/filament/filament/inter/inter-cyrillic-wght-normal-DR6K5BQD.woff2 
+ ⇂ public/fonts/filament/filament/inter/inter-greek-ext-wght-normal-A2J6H3EX.woff2 
+ ⇂ public/fonts/filament/filament/inter/inter-greek-wght-normal-ZABHMKQG.woff2 
+ ⇂ public/fonts/filament/filament/inter/inter-latin-ext-wght-normal-ZIT2UBIY.woff2 
+ ⇂ public/fonts/filament/filament/inter/inter-latin-wght-normal-DIHYUR35.woff2 
+ ⇂ public/fonts/filament/filament/inter/inter-vietnamese-wght-normal-VWEHJHBA.woff2 
+ ⇂ public/js/filament/actions/actions.js 
+ ⇂ public/js/filament/filament/app.js 
+ ⇂ public/js/filament/filament/echo.js 
+ ⇂ public/js/filament/notifications/notifications.js 
+ ⇂ public/js/filament/schemas/schemas.js 
+ ⇂ public/js/filament/support/support.js 
+ ⇂ public/js/filament/tables/tables.js 
+ ⇂ public/css/lunarphp/panel/lunar-panel.css 
+ ⇂ public/css/filament/filament/app.css 
+
+ INFO Successfully published assets! 
+

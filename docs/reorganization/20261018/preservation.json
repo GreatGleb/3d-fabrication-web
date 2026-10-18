@@ -1,0 +1,455 @@
+{
+ "method": "manifest-C (pre-move, after before-checks) vs manifest after; path mapped through moves.json; sha256 for files, stat (size, mtime_ns, inode) for instance/",
+ "pre_move_entries": 37526,
+ "post_move_entries": 37730,
+ "identical": 37444,
+ "identical_rewritten_by_builds_new_inode": {
+  "legacy-landing/build": 248
+ },
+ "instance_unchanged_stat_only": 3,
+ "instance_changed": [],
+ "missing": [
+  "tests/__pycache__/test_plan_workflow.cpython-312.pyc"
+ ],
+ "missing_reason": "tests/__pycache__ — orphaned bytecode of the moved test, deleted intentionally (present in backup)",
+ "changed_by_kind": {
+  "root file": 1,
+  "document links/paths": 49,
+  "script path fix": 14,
+  "python cache": 1,
+  "git stat cache (.git/index)": 1,
+  "phpunit cache": 2,
+  "runtime config with absolute paths": 10
+ },
+ "changed": [
+  {
+   "from": ".gitignore",
+   "to": ".gitignore",
+   "kind": "root file"
+  },
+  {
+   "from": "AGENTS.md",
+   "to": "AGENTS.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "README.md",
+   "to": "README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "archive/README.md",
+   "to": "legacy-landing/archive/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "archive/retired-checks/check_project_v2.py",
+   "to": "legacy-landing/archive/retired-checks/check_project_v2.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "design-previews/animation-v1/README.md",
+   "to": "legacy-landing/design-previews/animation-v1/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "design-previews/animation-v2/README.md",
+   "to": "legacy-landing/design-previews/animation-v2/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/github-pages-v2.md",
+   "to": "docs/legacy-landing/github-pages-v2.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/local-server.md",
+   "to": "docs/legacy-landing/local-server.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/lunar-evaluation-20261017.md",
+   "to": "docs/research/lunar-evaluation-20261017.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/lunar-vs-laravel-comparison-20261017.md",
+   "to": "docs/research/lunar-vs-laravel-comparison-20261017.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-browser.md",
+   "to": "docs/customer-prototype/prototype-browser.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/requirements.md",
+   "to": "docs/requirements.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/design/aiqme-motion-plan.md",
+   "to": "docs/design/aiqme-motion-plan.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/design/aiqme-motion-v2.md",
+   "to": "docs/design/aiqme-motion-v2.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/design/animation-v1/README.md",
+   "to": "docs/design/animation-v1/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/design/behance-video-selection/README.md",
+   "to": "docs/design/behance-video-selection/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/design/relats-study/README.md",
+   "to": "docs/design/relats-study/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/design/relats-study/inspect_assets.py",
+   "to": "docs/design/relats-study/inspect_assets.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "docs/design/relats-study/inspect_browser.py",
+   "to": "docs/design/relats-study/inspect_browser.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "docs/design/relats-study/inspect_interactions.py",
+   "to": "docs/design/relats-study/inspect_interactions.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "docs/design/relats-study/test_archive_ranges.py",
+   "to": "docs/design/relats-study/test_archive_ranges.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "docs/design/relats-study/__pycache__/test_archive_ranges.cpython-312.pyc",
+   "to": "docs/design/relats-study/__pycache__/test_archive_ranges.cpython-312.pyc",
+   "kind": "python cache"
+  },
+  {
+   "from": "docs/planning/questions-for-owner.md",
+   "to": "docs/planning/questions-for-owner.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/questions-map.md",
+   "to": "docs/planning/questions-map.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/01-scope.md",
+   "to": "docs/planning/edition-2/01-scope.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/02-architecture.md",
+   "to": "docs/planning/edition-2/02-architecture.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/07-design.md",
+   "to": "docs/planning/edition-2/07-design.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/08-operations.md",
+   "to": "docs/planning/edition-2/08-operations.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/09-verification.md",
+   "to": "docs/planning/edition-2/09-verification.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/README.md",
+   "to": "docs/planning/edition-2/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/changes.md",
+   "to": "docs/planning/edition-2/changes.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/decisions.md",
+   "to": "docs/planning/edition-2/decisions.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/tasks.json",
+   "to": "docs/planning/edition-2/tasks.json",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/tasks.md",
+   "to": "docs/planning/edition-2/tasks.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/planning/edition-2/traceability.md",
+   "to": "docs/planning/edition-2/traceability.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/README.md",
+   "to": "docs/customer-prototype/audit-20261016/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/backend-and-integrations.md",
+   "to": "docs/customer-prototype/audit-20261016/backend-and-integrations.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/features.md",
+   "to": "docs/customer-prototype/audit-20261016/features.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/forms.md",
+   "to": "docs/customer-prototype/audit-20261016/forms.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/requirements-and-reuse.md",
+   "to": "docs/customer-prototype/audit-20261016/requirements-and-reuse.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/routes.md",
+   "to": "docs/customer-prototype/audit-20261016/routes.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/screen-inventory.md",
+   "to": "docs/customer-prototype/audit-20261016/screen-inventory.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/screens-and-scenarios.md",
+   "to": "docs/customer-prototype/audit-20261016/screens-and-scenarios.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/prototype-audit-20261016/visual-and-responsive.md",
+   "to": "docs/customer-prototype/audit-20261016/visual-and-responsive.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "docs/reorganization/README.md",
+   "to": "docs/reorganization/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "github-pages/.git/index",
+   "to": "legacy-landing/github-pages/.git/index",
+   "kind": "git stat cache (.git/index)"
+  },
+  {
+   "from": "materials/README.md",
+   "to": "docs/customer/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "materials/client/README.md",
+   "to": "docs/customer/client/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "prototypes/laravel-orders-aiqme/README.md",
+   "to": "aiqme-site/experiments/laravel-orders-aiqme/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "prototypes/laravel-orders-aiqme/app/.phpunit.result.cache",
+   "to": "aiqme-site/experiments/laravel-orders-aiqme/app/.phpunit.result.cache",
+   "kind": "phpunit cache"
+  },
+  {
+   "from": "prototypes/laravel-orders-aiqme/app/.codex/config.toml",
+   "to": "aiqme-site/experiments/laravel-orders-aiqme/app/.codex/config.toml",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/README.md",
+   "to": "aiqme-site/experiments/lunar-aiqme/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/app/.phpunit.result.cache",
+   "to": "aiqme-site/experiments/lunar-aiqme/app/.phpunit.result.cache",
+   "kind": "phpunit cache"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/app/.codex/config.toml",
+   "to": "aiqme-site/experiments/lunar-aiqme/app/.codex/config.toml",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/bcmath.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/bcmath.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/gd.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/gd.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/intl.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/intl.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/pdo_pgsql.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/pdo_pgsql.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/pdo_sqlite.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/pdo_sqlite.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/pgsql.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/pgsql.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/sqlite3.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/sqlite3.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/lunar-aiqme/runtime/conf/zip.ini",
+   "to": "aiqme-site/experiments/lunar-aiqme/runtime/conf/zip.ini",
+   "kind": "runtime config with absolute paths"
+  },
+  {
+   "from": "prototypes/orders-comparison/README.md",
+   "to": "aiqme-site/experiments/orders-comparison/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "prototypes/orders-comparison/bin/setup.sh",
+   "to": "aiqme-site/experiments/orders-comparison/bin/setup.sh",
+   "kind": "script path fix"
+  },
+  {
+   "from": "references/README.md",
+   "to": "docs/research/references/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "references/aiqme-prototype/audit-20261016/README.md",
+   "to": "docs/customer-prototype/evidence/audit-20261016/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "references/relats/README.md",
+   "to": "legacy-landing/references/relats/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "scripts/capture_prototype_chrome.py",
+   "to": "docs/customer-prototype/tools/capture_prototype_chrome.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "scripts/check_gear_v2.py",
+   "to": "legacy-landing/scripts/check_gear_v2.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "scripts/check_motion_effects.py",
+   "to": "legacy-landing/scripts/check_motion_effects.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "scripts/check_motion_preview.py",
+   "to": "legacy-landing/scripts/check_motion_preview.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "scripts/check_pages.py",
+   "to": "legacy-landing/scripts/check_pages.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "scripts/extract_excel_assets.py",
+   "to": "legacy-landing/scripts/extract_excel_assets.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "scripts/plan_workflow.py",
+   "to": "docs/planning/workflow/plan_workflow.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "tests/test_plan_workflow.py",
+   "to": "docs/planning/workflow/test_plan_workflow.py",
+   "kind": "script path fix"
+  },
+  {
+   "from": "tools/planning/README.md",
+   "to": "docs/planning/workflow/README.md",
+   "kind": "document links/paths"
+  },
+  {
+   "from": "tools/planning/layers.json",
+   "to": "docs/planning/workflow/layers.json",
+   "kind": "document links/paths"
+  }
+ ],
+ "added_by_kind": {
+  "new document or tool": 4,
+  "Laravel compiled views (runtime cache, recompiled for new path)": 18,
+  "unpacked prototype archive": 180,
+  "python cache": 3
+ },
+ "added": [
+  "aiqme-site/README.md",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/06efcda274768c38d8bc30b1568e5832.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/33fc2a73919d004403adff82d7db3823.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/5c53d62a6768fccd3b1a3608108945fd.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/8bf9fa18d86451dae1774d78a24eb2a2.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/97676219c3de058de882dd05bfdaba9f.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/c0609926164387a616aec892d5b20930.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/ea53445ccb30e1110516b0b2456dd699.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/fb840604818109ffc5930e5cb053bae9.php",
+  "aiqme-site/experiments/laravel-orders-aiqme/app/storage/framework/views/fbfb83afd8baa793a3a0d1a3cba07353.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/26f31058d0684464b588553969036e83.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/3ff734bdd94dc157e858c6aad88a1b1f.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/499400a99dae3d7cbbee28ab66ca086a.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/7c2905e9edc82f350e1148844ee4a576.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/818bfc8f42863e4c52438c7820c8cf35.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/99682e274a4bea3d82e56071398f9fd6.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/a219e1ec83aa0825ccba7b74b78f7f58.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/d842f37ada4e32b9725ad312b3f0e2b7.php",
+  "aiqme-site/experiments/lunar-aiqme/app/storage/framework/views/ef7e54beab0b677f56f0e42c0407f1de.php",
+  "docs/customer-prototype/README.md",
+  "docs/planning/workflow/__pycache__/plan_workflow.cpython-312.pyc",
+  "docs/planning/workflow/__pycache__/render_tasks.cpython-312.pyc",
+  "docs/planning/workflow/__pycache__/test_plan_workflow.cpython-312.pyc",
+  "docs/planning/workflow/render_tasks.py",
+  "legacy-landing/README.md"
+ ],
+ "changed_between_initial_manifest_and_premove": [
+  "github-pages/.git/index",
+  "prototypes/laravel-orders-aiqme/app/.phpunit.result.cache",
+  "prototypes/lunar-aiqme/app/.phpunit.result.cache"
+ ],
+ "note": "baseline/, docs/customer/client/ and instance/ are not in the changed list"
+}

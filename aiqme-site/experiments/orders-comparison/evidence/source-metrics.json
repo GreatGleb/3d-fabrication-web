@@ -1,0 +1,425 @@
+{
+  "lunar-aiqme": {
+    "groups": {
+      "order_rules": {
+        "tokens": 1943,
+        "code_bytes": 8613,
+        "files": 3
+      },
+      "basket": {
+        "tokens": 829,
+        "code_bytes": 3172,
+        "files": 2
+      },
+      "models": {
+        "tokens": 485,
+        "code_bytes": 2501,
+        "files": 4
+      },
+      "schema": {
+        "tokens": 729,
+        "code_bytes": 3143,
+        "files": 3
+      },
+      "wiring": {
+        "tokens": 986,
+        "code_bytes": 4810,
+        "files": 4
+      },
+      "optional_native_admin": {
+        "tokens": 625,
+        "code_bytes": 2494,
+        "files": 1
+      }
+    },
+    "files": {
+      "app/Services/OrderWorkflow.php": {
+        "group": "order_rules",
+        "tokens": 1538,
+        "code_bytes": 6666,
+        "file_bytes": 8965,
+        "physical_lines": 182
+      },
+      "app/Services/ContentPublisher.php": {
+        "group": "order_rules",
+        "tokens": 239,
+        "code_bytes": 1073,
+        "file_bytes": 1490,
+        "physical_lines": 36
+      },
+      "app/Payments/LocalTestAdapter.php": {
+        "group": "order_rules",
+        "tokens": 166,
+        "code_bytes": 874,
+        "file_bytes": 1145,
+        "physical_lines": 33
+      },
+      "app/Services/BasketService.php": {
+        "group": "basket",
+        "tokens": 699,
+        "code_bytes": 2592,
+        "file_bytes": 3364,
+        "physical_lines": 85
+      },
+      "app/Services/RequestCartValidator.php": {
+        "group": "basket",
+        "tokens": 130,
+        "code_bytes": 580,
+        "file_bytes": 851,
+        "physical_lines": 25
+      },
+      "app/Models/PaymentRequest.php": {
+        "group": "models",
+        "tokens": 19,
+        "code_bytes": 118,
+        "file_bytes": 139,
+        "physical_lines": 10
+      },
+      "app/Models/ProductionState.php": {
+        "group": "models",
+        "tokens": 32,
+        "code_bytes": 189,
+        "file_bytes": 224,
+        "physical_lines": 12
+      },
+      "app/Models/StlPart.php": {
+        "group": "models",
+        "tokens": 345,
+        "code_bytes": 1562,
+        "file_bytes": 2237,
+        "physical_lines": 98
+      },
+      "app/Models/User.php": {
+        "group": "models",
+        "tokens": 89,
+        "code_bytes": 632,
+        "file_bytes": 954,
+        "physical_lines": 34
+      },
+      "database/migrations/2026_10_17_081539_create_aiqme_probe_tables.php": {
+        "group": "schema",
+        "tokens": 551,
+        "code_bytes": 2295,
+        "file_bytes": 3035,
+        "physical_lines": 70
+      },
+      "database/migrations/2026_10_17_082128_create_probe_contents_table.php": {
+        "group": "schema",
+        "tokens": 94,
+        "code_bytes": 446,
+        "file_bytes": 595,
+        "physical_lines": 24
+      },
+      "database/migrations/2026_10_17_090100_add_installment_intents.php": {
+        "group": "schema",
+        "tokens": 84,
+        "code_bytes": 402,
+        "file_bytes": 482,
+        "physical_lines": 18
+      },
+      "app/Providers/AppServiceProvider.php": {
+        "group": "wiring",
+        "tokens": 238,
+        "code_bytes": 1353,
+        "file_bytes": 1608,
+        "physical_lines": 40
+      },
+      "app/Http/Controllers/ProbeOrderController.php": {
+        "group": "wiring",
+        "tokens": 340,
+        "code_bytes": 1583,
+        "file_bytes": 1888,
+        "physical_lines": 49
+      },
+      "routes/web.php": {
+        "group": "wiring",
+        "tokens": 394,
+        "code_bytes": 1803,
+        "file_bytes": 1967,
+        "physical_lines": 39
+      },
+      "config/comparison.php": {
+        "group": "wiring",
+        "tokens": 14,
+        "code_bytes": 71,
+        "file_bytes": 73,
+        "physical_lines": 2
+      },
+      "app/Admin/ManufacturingOrderExtension.php": {
+        "group": "optional_native_admin",
+        "tokens": 625,
+        "code_bytes": 2494,
+        "file_bytes": 3184,
+        "physical_lines": 60
+      }
+    },
+    "production_packages": 140,
+    "all_packages": 177,
+    "laravel_version": "v13.37.0"
+  },
+  "laravel-orders-aiqme": {
+    "groups": {
+      "order_rules": {
+        "tokens": 1923,
+        "code_bytes": 8501,
+        "files": 3
+      },
+      "basket": {
+        "tokens": 784,
+        "code_bytes": 2870,
+        "files": 1
+      },
+      "models": {
+        "tokens": 491,
+        "code_bytes": 2691,
+        "files": 8
+      },
+      "schema": {
+        "tokens": 1136,
+        "code_bytes": 4732,
+        "files": 4
+      },
+      "wiring": {
+        "tokens": 740,
+        "code_bytes": 3507,
+        "files": 4
+      },
+      "optional_native_admin": {
+        "tokens": 0,
+        "code_bytes": 0,
+        "files": 0
+      }
+    },
+    "files": {
+      "app/Services/OrderWorkflow.php": {
+        "group": "order_rules",
+        "tokens": 1518,
+        "code_bytes": 6554,
+        "file_bytes": 8853,
+        "physical_lines": 182
+      },
+      "app/Services/ContentPublisher.php": {
+        "group": "order_rules",
+        "tokens": 239,
+        "code_bytes": 1073,
+        "file_bytes": 1490,
+        "physical_lines": 36
+      },
+      "app/Payments/LocalTestAdapter.php": {
+        "group": "order_rules",
+        "tokens": 166,
+        "code_bytes": 874,
+        "file_bytes": 1145,
+        "physical_lines": 33
+      },
+      "app/Services/BasketService.php": {
+        "group": "basket",
+        "tokens": 784,
+        "code_bytes": 2870,
+        "file_bytes": 3740,
+        "physical_lines": 85
+      },
+      "app/Models/Basket.php": {
+        "group": "models",
+        "tokens": 46,
+        "code_bytes": 246,
+        "file_bytes": 298,
+        "physical_lines": 16
+      },
+      "app/Models/BasketLine.php": {
+        "group": "models",
+        "tokens": 43,
+        "code_bytes": 251,
+        "file_bytes": 304,
+        "physical_lines": 16
+      },
+      "app/Models/Order.php": {
+        "group": "models",
+        "tokens": 154,
+        "code_bytes": 745,
+        "file_bytes": 938,
+        "physical_lines": 39
+      },
+      "app/Models/OrderLine.php": {
+        "group": "models",
+        "tokens": 79,
+        "code_bytes": 404,
+        "file_bytes": 503,
+        "physical_lines": 23
+      },
+      "app/Models/PaymentRequest.php": {
+        "group": "models",
+        "tokens": 19,
+        "code_bytes": 118,
+        "file_bytes": 139,
+        "physical_lines": 10
+      },
+      "app/Models/StlPart.php": {
+        "group": "models",
+        "tokens": 28,
+        "code_bytes": 151,
+        "file_bytes": 183,
+        "physical_lines": 12
+      },
+      "app/Models/Transaction.php": {
+        "group": "models",
+        "tokens": 40,
+        "code_bytes": 216,
+        "file_bytes": 257,
+        "physical_lines": 12
+      },
+      "app/Models/User.php": {
+        "group": "models",
+        "tokens": 82,
+        "code_bytes": 560,
+        "file_bytes": 877,
+        "physical_lines": 33
+      },
+      "database/migrations/2026_10_17_081539_create_aiqme_probe_tables.php": {
+        "group": "schema",
+        "tokens": 795,
+        "code_bytes": 3225,
+        "file_bytes": 4363,
+        "physical_lines": 101
+      },
+      "database/migrations/2026_10_17_082128_create_probe_contents_table.php": {
+        "group": "schema",
+        "tokens": 94,
+        "code_bytes": 446,
+        "file_bytes": 595,
+        "physical_lines": 24
+      },
+      "database/migrations/2026_10_17_090000_create_baskets.php": {
+        "group": "schema",
+        "tokens": 163,
+        "code_bytes": 659,
+        "file_bytes": 890,
+        "physical_lines": 31
+      },
+      "database/migrations/2026_10_17_090100_add_installment_intents.php": {
+        "group": "schema",
+        "tokens": 84,
+        "code_bytes": 402,
+        "file_bytes": 482,
+        "physical_lines": 18
+      },
+      "app/Providers/AppServiceProvider.php": {
+        "group": "wiring",
+        "tokens": 58,
+        "code_bytes": 344,
+        "file_bytes": 417,
+        "physical_lines": 20
+      },
+      "app/Http/Controllers/ProbeOrderController.php": {
+        "group": "wiring",
+        "tokens": 340,
+        "code_bytes": 1581,
+        "file_bytes": 1886,
+        "physical_lines": 49
+      },
+      "routes/web.php": {
+        "group": "wiring",
+        "tokens": 328,
+        "code_bytes": 1514,
+        "file_bytes": 1653,
+        "physical_lines": 31
+      },
+      "config/comparison.php": {
+        "group": "wiring",
+        "tokens": 14,
+        "code_bytes": 68,
+        "file_bytes": 70,
+        "physical_lines": 2
+      }
+    },
+    "production_packages": 78,
+    "all_packages": 116,
+    "laravel_version": "v13.37.0"
+  },
+  "shared_production_files": {
+    "shared/Bindings.php": {
+      "tokens": 91,
+      "code_bytes": 548,
+      "file_bytes": 690,
+      "physical_lines": 23
+    },
+    "shared/Console/Demo.php": {
+      "tokens": 466,
+      "code_bytes": 2025,
+      "file_bytes": 2491,
+      "physical_lines": 54
+    },
+    "shared/Console/Inventory.php": {
+      "tokens": 102,
+      "code_bytes": 713,
+      "file_bytes": 804,
+      "physical_lines": 20
+    },
+    "shared/Http/WorkspaceController.php": {
+      "tokens": 689,
+      "code_bytes": 2930,
+      "file_bytes": 3575,
+      "physical_lines": 95
+    },
+    "shared/Payments/StripeInstallments.php": {
+      "tokens": 531,
+      "code_bytes": 2912,
+      "file_bytes": 3512,
+      "physical_lines": 57
+    },
+    "shared/ReadModel.php": {
+      "tokens": 75,
+      "code_bytes": 355,
+      "file_bytes": 465,
+      "physical_lines": 23
+    },
+    "shared/StlIntake.php": {
+      "tokens": 289,
+      "code_bytes": 1217,
+      "file_bytes": 1498,
+      "physical_lines": 33
+    },
+    "shared/routes.php": {
+      "tokens": 245,
+      "code_bytes": 1251,
+      "file_bytes": 1336,
+      "physical_lines": 18
+    },
+    "shared/views/basket.blade.php": {
+      "tokens": 1,
+      "code_bytes": 1578,
+      "file_bytes": 1578,
+      "physical_lines": 15
+    },
+    "shared/views/customers.blade.php": {
+      "tokens": 1,
+      "code_bytes": 375,
+      "file_bytes": 375,
+      "physical_lines": 5
+    },
+    "shared/views/layout.blade.php": {
+      "tokens": 1,
+      "code_bytes": 1227,
+      "file_bytes": 1227,
+      "physical_lines": 7
+    },
+    "shared/views/login.blade.php": {
+      "tokens": 1,
+      "code_bytes": 477,
+      "file_bytes": 477,
+      "physical_lines": 7
+    },
+    "shared/views/order.blade.php": {
+      "tokens": 1,
+      "code_bytes": 2250,
+      "file_bytes": 2250,
+      "physical_lines": 21
+    },
+    "shared/views/orders.blade.php": {
+      "tokens": 1,
+      "code_bytes": 798,
+      "file_bytes": 798,
+      "physical_lines": 8
+    }
+  }
+}

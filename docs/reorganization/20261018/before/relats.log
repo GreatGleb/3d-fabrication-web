@@ -1,0 +1,10 @@
+test_bounded_open_and_suffix (__main__.VideoRanges.test_bounded_open_and_suffix) ... ok
+test_full_file (__main__.VideoRanges.test_full_file) ... ok
+test_head_has_no_body (__main__.VideoRanges.test_head_has_no_body) ... ok
+test_unsatisfiable (__main__.VideoRanges.test_unsatisfiable) ... ok
+test_unsupported_range_is_ignored (__main__.VideoRanges.test_unsupported_range_is_ignored) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.513s
+
+OK

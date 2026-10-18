@@ -1,0 +1,7 @@
+libpq5=16.15-0ubuntu0.24.04.1
+php8.4-bcmath=8.4.26-1+ubuntu24.04.1+deb.sury.org+1
+php8.4-gd=8.4.26-1+ubuntu24.04.1+deb.sury.org+1
+php8.4-intl=8.4.26-1+ubuntu24.04.1+deb.sury.org+1
+php8.4-pgsql=8.4.26-1+ubuntu24.04.1+deb.sury.org+1
+php8.4-sqlite3=8.4.26-1+ubuntu24.04.1+deb.sury.org+1
+php8.4-zip=8.4.26-1+ubuntu24.04.1+deb.sury.org+1

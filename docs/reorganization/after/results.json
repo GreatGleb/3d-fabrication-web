@@ -1,0 +1,62 @@
+[
+  {
+    "command": "python3 scripts/build_pages.py",
+    "exit": 0,
+    "log": "build_pages.py.log"
+  },
+  {
+    "command": "python3 scripts/build_pages.py --mode demo",
+    "exit": 0,
+    "log": "build_pages.py-demo.log"
+  },
+  {
+    "command": "python3 scripts/build_motion_preview.py",
+    "exit": 0,
+    "log": "build_motion_preview.py.log"
+  },
+  {
+    "command": "python3 scripts/build_motion_v2.py",
+    "exit": 0,
+    "log": "build_motion_v2.py.log"
+  },
+  {
+    "command": "python3 scripts/build_github_pages_v2.py",
+    "exit": 0,
+    "log": "build_github_pages_v2.py.log"
+  },
+  {
+    "command": "STL_TEST_DIRECTORY=github-pages python3 scripts/check_stl_pricing.py",
+    "exit": 0,
+    "log": "check_stl_pricing.py.log"
+  },
+  {
+    "command": "python3 scripts/check_github_pages_ui.py",
+    "exit": 0,
+    "log": "check_github_pages_ui.py.log"
+  },
+  {
+    "command": "python3 scripts/check_pages.py",
+    "exit": 0,
+    "log": "check_pages.py.log"
+  },
+  {
+    "command": "python3 scripts/check_demo.py",
+    "exit": 0,
+    "log": "check_demo.py.log"
+  },
+  {
+    "command": "python3 scripts/check_portal.py",
+    "exit": 1,
+    "log": "check_portal.py.log"
+  },
+  {
+    "command": "python3 scripts/check_motion_preview.py",
+    "exit": 1,
+    "log": "check_motion_preview.py.log"
+  },
+  {
+    "command": "python3 scripts/check_motion_v2.py",
+    "exit": 1,
+    "log": "check_motion_v2.py.log"
+  }
+]

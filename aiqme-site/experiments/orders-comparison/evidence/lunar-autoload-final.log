@@ -1,0 +1,48 @@
+Generating optimized autoload files
+> Illuminate\Foundation\ComposerScripts::postAutoloadDump
+> @php artisan package:discover --ansi
+
+ INFO Discovering packages. 
+
+ anourvalar/eloquent-serialize .. DONE
+ awcodes/filament-badgeable-column .. DONE
+ awcodes/shout .. DONE
+ barryvdh/laravel-dompdf .. DONE
+ blade-ui-kit/blade-heroicons .. DONE
+ blade-ui-kit/blade-icons .. DONE
+ filament/actions .. DONE
+ filament/filament .. DONE
+ filament/forms .. DONE
+ filament/infolists .. DONE
+ filament/notifications .. DONE
+ filament/query-builder .. DONE
+ filament/schemas .. DONE
+ filament/support .. DONE
+ filament/tables .. DONE
+ filament/widgets .. DONE
+ kirschbaum-development/eloquent-power-joins .. DONE
+ laravel/boost .. DONE
+ laravel/mcp .. DONE
+ laravel/pail .. DONE
+ laravel/pao .. DONE
+ laravel/roster .. DONE
+ laravel/scout .. DONE
+ laravel/tinker .. DONE
+ leandrocfe/filament-apex-charts .. DONE
+ livewire/livewire .. DONE
+ lunarphp/core .. DONE
+ lunarphp/lunar .. DONE
+ lunarphp/nestedset .. DONE
+ lunarphp/stripe .. DONE
+ nesbot/carbon .. DONE
+ nunomaduro/collision .. DONE
+ nunomaduro/termwind .. DONE
+ ryangjchandler/blade-capture-directive .. DONE
+ spatie/laravel-activitylog .. DONE
+ spatie/laravel-blink .. DONE
+ spatie/laravel-medialibrary .. DONE
+ spatie/laravel-permission .. DONE
+ spatie/php-structure-discoverer .. DONE
+ technikermathe/blade-lucide-icons .. DONE
+
+Generated optimized autoload files containing 10879 classes

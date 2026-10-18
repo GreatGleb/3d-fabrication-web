@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{contact_page_description}}"><meta name="theme-color" content="#f7f9fc">
+  <title>{{contact_page_title}}</title>
+  <link rel="icon" href="{{asset_root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{asset_root}}site.css"><script defer src="{{asset_root}}app.js"></script><script defer src="{{asset_root}}lead.js"></script>
+</head>
+<body class="page-contact">
+{{header}}
+<main id="main">
+  <section class="interior-hero contact-hero"><div class="shell"><p class="eyebrow">{{contact_page_eyebrow}}</p><h1>{{contact_page_heading}}</h1><p>{{contact_page_intro}}</p></div></section>
+  <section class="section contact-section"><div class="shell contact-layout">
+    <div class="contact-methods">
+      <article class="contact-method"><span>{{contact_email_kicker}}</span><h2>{{contact_email_title}}</h2><p>{{contact_email_text}}</p><a class="contact-value" href="mailto:info@aiqme.eu">info@aiqme.eu ↗</a><a class="button button-primary" href="{{mailto_href}}">{{contact_email_button}} <span aria-hidden="true">↗</span></a></article>
+      <article class="contact-method"><span>{{contact_phone_kicker}}</span><h2>{{contact_phone_title}}</h2><p>{{contact_phone_text}}</p><a class="contact-value" href="tel:+37068884084">+370 688 84 084 ↗</a></article>
+    </div>
+    <aside class="contact-aside"><p class="eyebrow">{{information_eyebrow}}</p><h2>{{contact_expect_title}}</h2><ol><li>{{contact_expect_one}}</li><li>{{contact_expect_two}}</li><li>{{contact_expect_three}}</li></ol><p class="contact-note">{{contact_no_form}}</p></aside>
+  </div></section>
+  {{lead_form}}
+</main>
+{{footer}}
+</body>
+</html>

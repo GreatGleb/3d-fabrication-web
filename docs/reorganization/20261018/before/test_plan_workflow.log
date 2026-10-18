@@ -1,0 +1,18 @@
+test_concurrent_run_is_rejected (tests.test_plan_workflow.WorkflowTests.test_concurrent_run_is_rejected) ... ok
+test_detect_extension_without_path_entry (tests.test_plan_workflow.WorkflowTests.test_detect_extension_without_path_entry) ... ok
+test_economy_reviews_at_checkpoint_and_final (tests.test_plan_workflow.WorkflowTests.test_economy_reviews_at_checkpoint_and_final) ... ok
+test_explicit_executable_has_priority (tests.test_plan_workflow.WorkflowTests.test_explicit_executable_has_priority) ... ok
+test_full_cycle_and_resume_without_duplicate_sessions (tests.test_plan_workflow.WorkflowTests.test_full_cycle_and_resume_without_duplicate_sessions) ... ok
+test_nonzero_cli_does_not_accept_candidate (tests.test_plan_workflow.WorkflowTests.test_nonzero_cli_does_not_accept_candidate) ... ok
+test_preview_no_model_calls (tests.test_plan_workflow.WorkflowTests.test_preview_no_model_calls) ... ok
+test_rejection_and_feedback_across_restart (tests.test_plan_workflow.WorkflowTests.test_rejection_and_feedback_across_restart) ... ok
+test_source_drift_stops_resume (tests.test_plan_workflow.WorkflowTests.test_source_drift_stops_resume) ... ok
+test_superseded_cycle_is_not_rendered_or_run (tests.test_plan_workflow.WorkflowTests.test_superseded_cycle_is_not_rendered_or_run) ... ok
+test_timeout_preserves_checkpoint (tests.test_plan_workflow.WorkflowTests.test_timeout_preserves_checkpoint) ... ok
+test_token_threshold_does_not_accept_unreviewed_result (tests.test_plan_workflow.WorkflowTests.test_token_threshold_does_not_accept_unreviewed_result) ... ok
+test_validation_and_issue_history (tests.test_plan_workflow.WorkflowTests.test_validation_and_issue_history) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 9.194s
+
+OK

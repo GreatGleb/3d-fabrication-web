@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{calculator_page_description}}"><meta name="theme-color" content="#f7f9fc">
+  <title>{{calculator_page_title}}</title>
+  <link rel="icon" href="{{asset_root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{asset_root}}site.css">
+  <script defer src="{{asset_root}}app.js"></script>
+  <script defer src="{{asset_root}}vendor/stl-loader.js"></script>
+  <script defer src="{{asset_root}}calculator.js"></script>
+</head>
+<body class="page-calculator">
+{{header}}
+<main id="main">
+  <section class="interior-hero calculator-hero"><div class="shell"><p class="eyebrow">{{calculator_eyebrow}}</p><h1>{{calculator_heading}}</h1><p>{{calculator_intro}}</p></div></section>
+  <section class="section calculator-section"><div class="shell calculator-layout">
+    <form class="calculator-form" id="stl-calculator" novalidate data-price-per-gram="0.10" data-base-setup-fee="5"
+      data-error-file="{{calculator_error_file}}"
+      data-error-size="{{calculator_error_size}}"
+      data-error-format="{{calculator_error_format}}"
+      data-error-volume="{{calculator_error_volume}}"
+      data-error-density="{{calculator_error_density}}"
+      data-error-quantity="{{calculator_error_quantity}}"
+      data-processing="{{calculator_processing}}">
+      <div class="field" id="drop-zone"><p>{{calculator_drop_hint}}</p><label for="stl-upload">{{calculator_file_label}}</label><input id="stl-upload" type="file" data-file-choose="{{file_choose}}" data-file-empty="{{file_empty}}" data-file-remove="{{file_remove}}" name="model" accept=".stl,model/stl,application/sla"><small>{{calculator_file_hint}}</small></div>
+      <div class="calculator-fields">
+        <div class="field"><label for="material-select">{{calculator_material}}</label><select id="material-select"><option value="PLA">PLA — 1.24 г/см³</option><option value="ABS">ABS — 1.04 г/см³</option><option value="PETG">PETG — 1.27 г/см³</option></select></div>
+        <div class="field"><label for="infill-slider">{{calculator_infill}} <output id="infill-value" for="infill-slider">20%</output></label><input id="infill-slider" type="range" min="0" max="100" step="1" value="20"></div>
+        <div class="field"><label for="stl-unit">{{calculator_unit_label}}</label><select id="stl-unit" name="unit"><option value="mm">{{calculator_unit_mm}}</option><option value="cm">{{calculator_unit_cm}}</option><option value="inch">{{calculator_unit_inch}}</option></select></div>
+        <div class="field"><label for="stl-density">{{calculator_density_label}}</label><input id="stl-density" name="density" type="number" inputmode="decimal" min="0.01" max="30" step="any" placeholder="1.24"><small>{{calculator_density_hint}}</small></div>
+        <div class="field"><label for="stl-quantity">{{calculator_quantity_label}}</label><input id="stl-quantity" name="quantity" type="number" inputmode="numeric" min="1" max="10000" step="1" value="1" required></div>
+      </div>
+      <button class="button button-primary" type="submit">{{calculator_submit}} <span aria-hidden="true">↗</span></button>
+      <progress id="calculator-loading" aria-label="{{calculator_processing}}" hidden></progress>
+      <p class="calculator-status" id="calculator-status" role="status" aria-live="polite" hidden></p>
+    </form>
+    <aside class="calculator-results" id="calculator-results" aria-labelledby="calculator-result-title">
+      <p class="eyebrow">{{calculator_eyebrow}}</p><h2 id="calculator-result-title">{{calculator_result_title}}</h2>
+      <p class="calculator-empty" data-invalid="{{calculator_invalid_result}}" id="calculator-empty">{{calculator_empty}}</p>
+      <div id="calculator-values" hidden>
+        <dl>
+          <div><dt>{{calculator_result_file}}</dt><dd id="result-file"></dd></div>
+          <div><dt>{{calculator_result_triangles}}</dt><dd id="result-triangles"></dd></div>
+          <div><dt>{{calculator_result_dimensions}}</dt><dd id="result-dimensions"><span id="dim-x"></span> × <span id="dim-y"></span> × <span id="dim-z"></span></dd></div>
+          <div><dt>{{calculator_result_volume}}</dt><dd id="result-volume"><span id="volume-val"></span></dd></div>
+          <div><dt>{{calculator_result_mass}}</dt><dd id="result-mass"><span id="weight-val"></span></dd></div>
+          <div><dt>{{calculator_price}}</dt><dd id="price-val"></dd></div>
+        </dl>
+        <p class="result-hint">{{calculator_result_mass_hint}}</p>
+        <p class="result-warning" id="result-warning">{{calculator_warning}}</p>
+      </div>
+    </aside>
+  </div></section>
+  <section class="contact-banner" aria-labelledby="banner-title"><div class="shell banner-inner"><div><h2 id="banner-title">{{calculator_more_title}}</h2><p>{{calculator_more_text}}</p></div><a class="button button-white" href="{{contact_href}}">{{calculator_more_cta}} <span aria-hidden="true">↗</span></a></div></section>
+</main>
+{{footer}}
+</body>
+</html>

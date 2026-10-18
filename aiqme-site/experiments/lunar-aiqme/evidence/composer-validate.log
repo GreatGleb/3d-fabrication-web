@@ -1,0 +1,4 @@
+./composer.json is valid, but with a few warnings
+See https://getcomposer.org/doc/04-schema.md for details on the schema
+# General warnings
+- require.lunarphp/lunar : exact version constraints (1.5.0) should be avoided if the package follows semantic versioning

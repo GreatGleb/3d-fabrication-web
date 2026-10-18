@@ -1,0 +1,20 @@
+{
+  "lunar-aiqme": {
+    "exit_code": 0,
+    "database": "aiqme_lunar_comparison_test",
+    "test_seconds": 20.417,
+    "tests": 38,
+    "assertions": 144,
+    "failures": 0,
+    "errors": 0
+  },
+  "laravel-orders-aiqme": {
+    "exit_code": 0,
+    "database": "aiqme_plain_comparison_test",
+    "test_seconds": 3.93,
+    "tests": 38,
+    "assertions": 144,
+    "failures": 0,
+    "errors": 0
+  }
+}
