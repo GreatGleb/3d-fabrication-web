@@ -102,7 +102,9 @@ class LocaleRoutesTest extends TestCase
 
         $this->assertSame([], PageHead::hreflang($response->getContent()), 'RU нет в hreflang');
         $this->assertSame(route('ru.services'), PageHead::canonical($response->getContent()));
-        $this->assertStringNotContainsString('href="'.config('app.url').'/ru', str_replace(route('ru.services').'"', '', $response->getContent()));
+        // RU нет в переключателе (§4.3): он ведёт на LT; ссылки шапки и подвала на /ru остаются внутри RU для администратора.
+        $this->assertStringContainsString('<a href="'.route('lt.services').'" hreflang="lt"', $response->getContent());
+        $this->assertStringNotContainsString('hreflang="ru"', $response->getContent());
         $this->actingAs($admin)->get('/ru')->assertOk()->assertSee('From your idea or part to a finished solution.');
     }
 
@@ -155,8 +157,8 @@ class LocaleRoutesTest extends TestCase
 
     public function test_language_switcher_links_to_the_same_page_in_the_other_locale(): void
     {
-        $this->get('/lt/paslaugos/')->assertSee('<a href="'.route('en.services').'" hreflang="en" aria-label="Switch to English">', escape: false);
-        $this->get('/en/services')->assertSee('<a href="'.route('lt.services').'" hreflang="lt" aria-label="Keisti į lietuvių kalbą">', escape: false);
+        $this->get('/lt/paslaugos/')->assertSee('<a href="'.route('en.services').'" hreflang="en" aria-label="Switch to English"', escape: false);
+        $this->get('/en/services')->assertSee('<a href="'.route('lt.services').'" hreflang="lt" aria-label="Keisti į lietuvių kalbą"', escape: false);
         $this->get('/en/missing')->assertSee('<a href="'.route('lt.home').'" hreflang="lt"', escape: false);
     }
 
@@ -165,7 +167,7 @@ class LocaleRoutesTest extends TestCase
         foreach (['/lt', '/en/faq/', '/lt/nera-tokio'] as $path) {
             preg_match_all('~href="([^"]+)"~', $this->get($path)->getContent(), $matches);
             $this->assertNotEmpty($matches[1]);
-            foreach ($matches[1] as $href) {
+            foreach (array_filter($matches[1], fn (string $href): bool => $href !== '#main') as $href) {
                 $this->assertStringStartsWith(config('app.url').'/', $href);
                 $this->assertStringEndsNotWith('/', $href);
             }

@@ -1,0 +1,18 @@
+/* Исправления оболочки прототипа (§7.2): ширина документа = окну, меню на коротком экране (приёмы V2 shared/responsive.css). */
+body{overflow-wrap:break-word}
+main,.wrap>*,.grid>*,.split>*,.catalog>*{min-width:0}
+.search-overlay[hidden]{display:none}
+
+@media(max-width:900px){
+ html.menu-open,html.menu-open body{overflow:hidden}
+ .nav.open{max-height:calc(100vh - 75px);max-height:calc(100dvh - 75px);overflow-y:auto;overscroll-behavior:contain}
+}
+@media(max-width:600px){
+ .nav.open{max-height:calc(100vh - 68px);max-height:calc(100dvh - 68px)}
+}
+
+/* В подвале три группы, а не четыре прототипа (группа служебных ссылок удалена, D-21): на ≤900 px третья группа
+   остаётся в ряду, а не переносится на место удалённой. */
+@media(max-width:900px){
+ .footer-top>div:last-child{grid-column:auto}
+}

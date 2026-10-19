@@ -13,5 +13,8 @@ abstract class TestCase extends BaseTestCase
 
         // Тесты не ходят во внешние сервисы (rules, D-20): запрос без Http::fake падает.
         Http::preventStrayRequests();
+
+        // Страницы рендерятся без собранных ресурсов (bin/check собирает Vite после PHPUnit).
+        $this->withoutVite();
     }
 }

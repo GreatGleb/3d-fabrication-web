@@ -1,0 +1,537 @@
+#!/usr/bin/env python3
+"""Браузерная проверка aiqme-site (W-03, §9.1): Python Playwright, bundled Chromium (не Chrome пользователя).
+
+Запуск: aiqme-site/bin/browser-check [путь …]   (без путей — все GET-страницы /lt и /en из route:list и две 404)
+
+Подготовка: своя БД aiqme_browser dev-PostgreSQL — migrate:fresh, сидеры контента, данные tests/browser/,
+администратор (aiqme:make-admin --password-stdin, D-29) и клиент со случайными паролями на каждый запуск.
+Сервер — bin/php -S на фиксированном порту PORT (занят — отказ до старта); QUEUE_CONNECTION=sync.
+Запросы к любым хостам, кроме проверяемого, прерываются и перечисляются в отчёте (D-20).
+
+Проверки: самопроверка детекторов на синтетической странице; ширина документа = окну на 320/390/768/1024/1440;
+сверка getComputedStyle с §7.1 на 1440/768/390; меню ≤900 px (Escape, aria-expanded, фокус, Tab, щелчок вне);
+стиль фокуса; cookie-плашка; нарушения CSP и ошибки в консоли; ответы 4xx/5xx на ресурсы; маркеры D-21
+(законные совпадения — только tests/fixtures/marker-allowlist.json: список {"page": "/lt/…", "phrase": "точная фраза",
+"reason": "почему это не демо-надпись"}); кадры в размерах verified-route-screens.json
+и отчёт «наш кадр рядом с эталоном» в игнорируемом build/verification/browser-check/.
+Страницы кабинета, админки и /ru/ — «пропущено: вход появится в W-07».
+"""
+import html
+import json
+import os
+import re
+import secrets
+import shutil
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+from urllib.request import urlopen
+
+from playwright.sync_api import sync_playwright
+
+APP = Path(__file__).resolve().parents[1]
+REPO = APP.parent
+PORT = 8791
+HOST = f'127.0.0.1:{PORT}'
+BASE = f'http://{HOST}'
+DATABASE = 'aiqme_browser'
+OUT = APP / 'build' / 'verification' / 'browser-check'
+ALLOWLIST = APP / 'tests' / 'fixtures' / 'marker-allowlist.json'
+EVIDENCE = REPO / 'docs' / 'customer-prototype' / 'evidence' / 'audit-20261016'
+# Сидеры контента по порядку (W-04 добавит свой); данные задач — tests/browser/.
+CONTENT_SEEDERS: list[str] = []
+BROWSER_SEEDER = 'Tests\\browser\\BrowserDataSeeder'
+NOT_FOUND_PAGES = ['/lt/nera-tokio', '/en/missing-page']
+SKIPPED_LOGIN = 'пропущено: вход появится в W-07'
+
+WIDTHS = [320, 390, 768, 1024, 1440]
+STYLE_WIDTHS = [1440, 768, 390]
+SHOTS = {'desktop': (1440, 1000), 'tablet': (768, 1024), 'phone': (390, 844)}  # размеры verified-route-screens.json
+
+# Маркеры служебных демо-надписей, заметок автора и плановых пометок каталога (D-21), без учёта регистра.
+MARKERS = ['demo', 'demonstr', 'illustrativ', 'iliustr', 'prototyp', 'prototip', 'example', 'pavyzd', 'sample',
+           'not been provided', 'nepateikt', 'fictional', 'išgalvot', 'will appear here', 'čia bus',
+           'planned range', 'planuojam', 'to be confirmed', 'tikslinam', 'official representation', 'atstovavim']
+MARKER_ATTRIBUTES = ['placeholder', 'aria-label', 'title', 'alt', 'value']
+
+
+def log(message):
+    print(message, flush=True)
+
+
+def run(args, *, env=None, stdin=None, check=True):
+    result = subprocess.run(args, cwd=APP, env=env, input=stdin, text=True, capture_output=True)
+    if check and result.returncode != 0:
+        sys.exit(f'FAIL: {" ".join(args[:4])}…: код {result.returncode}\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}')
+    return result
+
+
+# ---------- подготовка ----------
+
+def browser_env():
+    env = dict(os.environ)
+    env.update({'DB_DATABASE': DATABASE, 'QUEUE_CONNECTION': 'sync', 'APP_URL': BASE, 'APP_ENV': 'local',
+                'APP_DEBUG': 'false'})
+    return env
+
+
+def node_env():
+    env = dict(os.environ)
+    nvm = sorted(Path.home().glob('.nvm/versions/node/v*/bin'), key=lambda p: [int(x) for x in p.parent.name[1:].split('.')])
+    if nvm:
+        env['PATH'] = f'{nvm[-1]}:{env["PATH"]}'
+    return env
+
+
+def port_in_use():
+    with socket.socket() as sock:
+        return sock.connect_ex(('127.0.0.1', PORT)) == 0
+
+
+def prepare(env):
+    if (APP / 'bootstrap' / 'cache' / 'config.php').exists():
+        sys.exit('FAIL: есть bootstrap/cache/config.php — переменные окружения (DB_DATABASE) не подействуют; bin/php artisan config:clear')
+    run(['docker', 'compose', '-f', 'docker-compose.dev.yml', 'up', '-d', '--wait', 'postgres'])
+    exists = run(['docker', 'compose', '-f', 'docker-compose.dev.yml', 'exec', '-T', 'postgres', 'psql', '-U', 'aiqme', '-d', 'aiqme',
+                  '-tAc', f"SELECT 1 FROM pg_database WHERE datname = '{DATABASE}'"]).stdout.strip()
+    if exists != '1':
+        run(['docker', 'compose', '-f', 'docker-compose.dev.yml', 'exec', '-T', 'postgres', 'createdb', '-U', 'aiqme', DATABASE])
+    # migrate:fresh стирает БД: убеждаемся, что приложение действительно смотрит в aiqme_browser.
+    database = run(['bin/php', 'artisan', 'config:show', 'database.connections.pgsql.database'], env=env).stdout.split()
+    if not database or database[-1] != DATABASE:
+        sys.exit(f'FAIL: приложение подключено не к {DATABASE}: {" ".join(database)}')
+    run(['bin/php', 'artisan', 'migrate:fresh', '--force', '--no-interaction'], env=env)
+    for seeder in CONTENT_SEEDERS:
+        run(['bin/php', 'artisan', 'db:seed', f'--class={seeder}', '--force', '--no-interaction'], env=env)
+
+    admin_password = secrets.token_urlsafe(24)
+    client_password = secrets.token_urlsafe(24)
+    run(['bin/php', 'artisan', 'aiqme:make-admin', 'admin@aiqme.test', '--name=AIQME', '--password-stdin', '--no-interaction'],
+        env=env, stdin=admin_password + '\n')
+    seeded = run(['bin/php', 'artisan', 'db:seed', f'--class={BROWSER_SEEDER}', '--force', '--no-interaction'],
+                 env={**env, 'BROWSER_CLIENT_PASSWORD': client_password}).stdout
+    client = re.search(r'client-\d+@aiqme\.test', seeded)
+    if not client:
+        sys.exit('FAIL: сидер tests/browser не создал клиента')
+    # Пароли остаются только в памяти процесса: вход через форму добавит W-07.
+    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password)}
+
+
+def build_assets():
+    result = subprocess.run(['npm', 'run', 'build', '--silent'], cwd=APP, env=node_env(), text=True, capture_output=True)
+    if result.returncode != 0:
+        sys.exit(f'FAIL: npm run build\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}')
+
+
+def start_server(env):
+    if port_in_use():
+        sys.exit(f'FAIL: порт {PORT} занят — bin/browser-check работает только на нём; освободите порт')
+    server = subprocess.Popen(
+        # Как artisan serve: роутер Laravel берёт public/ из рабочего каталога.
+        [str(APP / 'bin' / 'php'), '-S', HOST, str(APP / 'vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php')],
+        cwd=APP / 'public', env={**env, 'PHP_CLI_SERVER_WORKERS': '4'}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    for _ in range(100):
+        try:
+            urlopen(BASE + '/up', timeout=1)
+            return server
+        except OSError:
+            time.sleep(0.1)
+    server.kill()
+    sys.exit('FAIL: сервер не ответил на /up')
+
+
+def pages_from_routes(env):
+    routes = json.loads(run(['bin/php', 'artisan', 'route:list', '--json', '--method=GET'], env=env).stdout)
+    public, skipped = [], []
+    for route in routes:
+        uri = route['uri']
+        if '{' in uri:
+            continue
+        first = uri.split('/')[0]
+        if first in ('lt', 'en'):
+            public.append('/' + uri)
+        elif first == 'ru':
+            skipped.append('/' + uri)
+    return sorted(set(public)) + NOT_FOUND_PAGES, sorted(set(skipped))
+
+
+# ---------- проверки в браузере ----------
+
+class Report:
+    def __init__(self):
+        self.failures, self.notes, self.passed = [], [], 0
+        self.external = set()
+
+    def check(self, ok, message):
+        if ok:
+            self.passed += 1
+        else:
+            self.failures.append(message)
+        return ok
+
+
+def load_allowlist():
+    entries = json.loads(ALLOWLIST.read_text(encoding='utf-8'))
+    for entry in entries:
+        if not (entry.get('page') and entry.get('phrase') and entry.get('reason')):
+            sys.exit(f'FAIL: запись marker-allowlist.json без page/phrase/reason: {entry}')
+    return entries
+
+
+def marker_hits(page, path, allowlist):
+    """Совпадения маркеров D-21 в видимом тексте и атрибутах; разрешённое — только фраза из allowlist этой страницы."""
+    strings = page.evaluate("""(attributes) => {
+        const texts = document.body.innerText.split('\\n').map((line) => line.trim()).filter(Boolean);
+        for (const element of document.querySelectorAll('*')) {
+            for (const name of attributes) {
+                const value = name === 'value' && 'value' in element && element.tagName !== 'LI' ? element.value : element.getAttribute(name);
+                if (value) texts.push(`[${name}] ${value}`);
+            }
+        }
+        return texts;
+    }""", MARKER_ATTRIBUTES)
+    allowed = [entry['phrase'] for entry in allowlist if entry['page'] == path]
+    hits = []
+    for text in strings:
+        lower = text.lower()
+        for marker in MARKERS:
+            for match in re.finditer(re.escape(marker), lower):
+                covered = any(
+                    start <= match.start() and match.end() <= start + len(phrase)
+                    for phrase in allowed
+                    for start in [m.start() for m in re.finditer(re.escape(phrase.lower()), lower)]
+                )
+                if not covered:
+                    hits.append(f'«{marker}» в «{text[:160]}»')
+    return sorted(set(hits))
+
+
+def document_fits(page):
+    return page.evaluate('[document.documentElement.scrollWidth, document.documentElement.clientWidth]')
+
+
+def expected_styles(width):
+    """Значения §7.1 из CSS прототипа (поздние media-блоки перекрывают ранние) для страниц оболочки."""
+    phone, menu, compact = width <= 600, width <= 900, width <= 1150
+    h1 = 37 if phone else min(max(36, width * 0.04), 56)  # .page-top h1: clamp(36px,4vw,56px); ≤600 — 37px
+    return {
+        'font': 'Arial, Helvetica, sans-serif',
+        'body_size': 14 if phone else 15,
+        'h1_size': h1,
+        'head_main': 68 if phone else 75 if menu else 82,
+        'head_sub': 38 if phone else 39,
+        'wrap_padding': 20 if phone else 28 if compact else 48,
+    }
+
+
+STYLE_PROBE = """() => {
+    const css = (selector, property) => { const el = document.querySelector(selector); return el ? getComputedStyle(el)[property] : null; };
+    const root = getComputedStyle(document.documentElement);
+    const h1 = document.querySelector('main h1');
+    const h1s = h1 && getComputedStyle(h1);
+    const visible = (el) => el && el.offsetParent !== null;
+    return {
+        tokens: Object.fromEntries(['--blue', '--ink', '--muted', '--line', '--soft', '--dark'].map((n) => [n, root.getPropertyValue(n).trim().toLowerCase()])),
+        bodyFont: css('body', 'fontFamily'), bodySize: parseFloat(css('body', 'fontSize')), bodyLine: parseFloat(css('body', 'lineHeight')),
+        bodyColor: css('body', 'color'),
+        h1: h1s && {font: h1s.fontFamily, size: parseFloat(h1s.fontSize), weight: h1s.fontWeight, line: parseFloat(h1s.lineHeight), spacing: parseFloat(h1s.letterSpacing)},
+        headMain: document.querySelector('.head-main').getBoundingClientRect().height,
+        logo: document.querySelector('.header .logo').getBoundingClientRect().height,
+        headSub: document.querySelector('.head-sub').getBoundingClientRect().height,
+        wrapPadding: [parseFloat(css('.head-main', 'paddingLeft')), parseFloat(css('.head-main', 'paddingRight'))],
+        wrapMax: css('.head-main', 'maxWidth'),
+        ctaColor: visible(document.querySelector('.cta-link')) ? css('.cta-link', 'color') : null,
+        headerBorder: css('.header', 'borderBottomColor'),
+        pageTopBackground: css('.page-top', 'backgroundColor'),
+        pageTopText: document.querySelector('.page-top p') ? css('.page-top p', 'color') : null,
+        footerBackground: css('.footer', 'backgroundColor'),
+        buttons: [...document.querySelectorAll('.btn:not(.small)')].filter(visible).map((b) => [b.getBoundingClientRect().height, getComputedStyle(b).borderRadius]),
+    };
+}"""
+
+TOKENS = {'--blue': '#0867ff', '--ink': '#11171e', '--muted': '#64717e', '--line': '#dce2e8', '--soft': '#f3f6f9', '--dark': '#0a1119'}
+
+
+def check_styles(report, page, path, width):
+    expected = expected_styles(width)
+    got = page.evaluate(STYLE_PROBE)
+    where = f'{path} @{width}'
+    near = lambda a, b: a is not None and abs(a - b) <= 2  # noqa: E731 — допуск ±2 px (§7.1)
+    report.check(got['tokens'] == TOKENS, f'{where}: токены {got["tokens"]}')
+    report.check(got['bodyFont'] == expected['font'], f'{where}: шрифт body {got["bodyFont"]}')
+    report.check(near(got['bodySize'], expected['body_size']), f'{where}: размер body {got["bodySize"]} ≠ {expected["body_size"]}')
+    report.check(near(got['bodyLine'], expected['body_size'] * 1.6), f'{where}: line-height body {got["bodyLine"]}')
+    report.check(got['bodyColor'] == 'rgb(17, 23, 30)', f'{where}: цвет текста {got["bodyColor"]}')
+    h1 = got['h1']
+    if report.check(h1 is not None, f'{where}: нет h1 в main'):
+        report.check(h1['font'] == expected['font'], f'{where}: шрифт h1 {h1["font"]}')
+        report.check(near(h1['size'], expected['h1_size']), f'{where}: размер h1 {h1["size"]} ≠ {expected["h1_size"]:.1f}')
+        report.check(h1['weight'] == '500', f'{where}: вес h1 {h1["weight"]}')
+        report.check(near(h1['line'], h1['size'] * 1.12), f'{where}: line-height h1 {h1["line"]}')
+        report.check(abs(h1['spacing'] - h1['size'] * -0.045) <= 0.1, f'{where}: letter-spacing h1 {h1["spacing"]}')
+    report.check(near(got['headMain'], expected['head_main']), f'{where}: высота шапки {got["headMain"]} ≠ {expected["head_main"]}')
+    report.check(0 < got['logo'] <= got['headMain'], f'{where}: логотип {got["logo"]}px не помещается в шапку')
+    report.check(near(got['headSub'], expected['head_sub']), f'{where}: высота второго ряда {got["headSub"]} ≠ {expected["head_sub"]}')
+    report.check(all(near(p, expected['wrap_padding']) for p in got['wrapPadding']), f'{where}: поля контейнера {got["wrapPadding"]} ≠ {expected["wrap_padding"]}')
+    report.check(got['wrapMax'] == '1320px', f'{where}: ширина контейнера {got["wrapMax"]}')
+    report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
+    report.check(got['headerBorder'] == 'rgb(220, 226, 232)', f'{where}: линия шапки {got["headerBorder"]}')
+    report.check(got['pageTopBackground'] in (None, 'rgb(243, 246, 249)'), f'{where}: фон page-top {got["pageTopBackground"]}')
+    report.check(got['pageTopText'] in (None, 'rgb(100, 113, 126)'), f'{where}: цвет вводного текста {got["pageTopText"]}')
+    report.check(got['footerBackground'] == 'rgb(255, 255, 255)', f'{where}: подвал не светлый {got["footerBackground"]}')
+    for height, radius in got['buttons']:
+        report.check(height >= 48 and radius == '3px', f'{where}: кнопка {height}px, радиус {radius}')
+
+
+def check_focus_style(report, page, path):
+    page.keyboard.press('Tab')
+    focus = page.evaluate("""() => { const el = document.activeElement; const s = getComputedStyle(el);
+        return {cls: el.className, style: s.outlineStyle, width: s.outlineWidth, offset: s.outlineOffset, top: el.getBoundingClientRect().top}; }""")
+    report.check(focus['cls'] == 'skip', f'{path}: первый Tab не на ссылке «к содержимому» ({focus["cls"]})')
+    report.check((focus['style'], focus['width'], focus['offset']) == ('solid', '3px', '4px'), f'{path}: стиль фокуса {focus}')
+    report.check(focus['top'] >= 0, f'{path}: ссылка «к содержимому» не видна при фокусе')
+
+
+def check_menu(report, page, path, width, height):
+    where = f'{path} @{width}'
+    button, nav = page.locator('.menu-btn'), page.locator('#main-nav')
+    expanded = lambda: button.get_attribute('aria-expanded')  # noqa: E731
+    if width > 900:
+        report.check(not button.is_visible() and nav.is_visible(), f'{where}: на широком экране меню должно быть строкой')
+        return
+    report.check(button.is_visible() and not nav.is_visible(), f'{where}: меню не свёрнуто')
+    button.focus()
+    page.keyboard.press('Enter')
+    report.check(expanded() == 'true' and nav.is_visible(), f'{where}: Enter не открыл меню')
+    report.check(page.evaluate("getComputedStyle(document.documentElement).overflowY") == 'hidden', f'{where}: фон прокручивается при открытом меню')
+    box = nav.bounding_box()
+    report.check(box['y'] + box['height'] <= height + 1 or nav.evaluate('(e) => e.scrollHeight > e.clientHeight'),
+                 f'{where}: меню выходит за экран без своей прокрутки')
+    links = nav.locator('a').count()
+    page.keyboard.press('Shift+Tab')
+    report.check(page.evaluate("document.activeElement === document.querySelector('#main-nav a:last-of-type')"), f'{where}: Shift+Tab с кнопки не на последний пункт')
+    page.keyboard.press('Tab')
+    report.check(page.evaluate("document.activeElement.classList.contains('menu-btn')"), f'{where}: Tab с последнего пункта не на кнопку')
+    page.keyboard.press('Tab')
+    report.check(page.evaluate("document.activeElement === document.querySelector('#main-nav a')"), f'{where}: Tab с кнопки не на первый пункт')
+    for _ in range(links):
+        page.keyboard.press('Tab')
+    report.check(page.evaluate("document.activeElement.classList.contains('menu-btn')"), f'{where}: Tab ушёл из открытого меню')
+    page.keyboard.press('Escape')
+    report.check(expanded() == 'false', f'{where}: после Escape aria-expanded={expanded()} (F-46)')
+    report.check(not nav.is_visible(), f'{where}: Escape не закрыл меню')
+    report.check(page.evaluate("document.activeElement.classList.contains('menu-btn')"), f'{where}: после Escape фокус не на кнопке меню')
+    report.check(page.evaluate("getComputedStyle(document.documentElement).overflowY") != 'hidden', f'{where}: после закрытия фон заблокирован')
+    button.click()
+    page.mouse.click(5, height - 5)
+    report.check(expanded() == 'false' and not nav.is_visible(), f'{where}: щелчок вне меню не закрыл его')
+
+
+def check_cookie(report, page, path):
+    cookie = page.locator('.cookie')
+    if not report.check(cookie.is_visible(), f'{path}: cookie-плашка не показана при первом визите'):
+        return
+    cookie.locator('[data-cookie-accept]').click()
+    report.check(cookie.count() == 0, f'{path}: плашка не скрылась после «Tik būtini»')
+    page.reload()
+    report.check(not page.locator('.cookie').is_visible(), f'{path}: плашка вернулась после подтверждения')
+
+
+SELF_TEST_PATH = '/__browser-check-self-test'
+
+
+def self_test(report, browser, csp, assets):
+    """Детекторы ловят нарушения: маркер, CSP, переполнение; модальное окно — на настоящем JS приложения."""
+    context = browser.new_context(viewport={'width': 390, 'height': 844})
+    page = context.new_page()
+    console = []
+    page.on('console', lambda message: console.append(message.text))
+    body = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">{assets}</head><body>
+<main id="main"><h1>Demonstration website</h1><p style="width:1200px">wide</p>
+<script>window.inlineRan = true;</script>
+<button id="opener" data-modal-open="dialog">Open</button><a href="#x" id="outside">Outside</a>
+<div class="search-overlay" id="dialog" data-modal hidden><section class="search-panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+<button type="button" data-modal-close aria-label="Close">×</button><h2 id="dialog-title">Title</h2>
+<input name="first" aria-label="First"><button type="button" id="last">Last</button></section></div></main></body></html>"""
+    page.route(BASE + SELF_TEST_PATH, lambda route: route.fulfill(status=200, body=body,
+               headers={'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': csp}))
+    page.goto(BASE + SELF_TEST_PATH)
+    page.wait_for_load_state('networkidle')
+    scroll, client = document_fits(page)
+    report.check(scroll > client, 'самопроверка: переполнение документа не обнаружено')
+    report.check(any('Content Security Policy' in text for text in console) and not page.evaluate('window.inlineRan === true'),
+                 'самопроверка: inline-скрипт без nonce не заблокирован CSP или нарушение не видно в консоли')
+    report.check(any('demonstr' in hit for hit in marker_hits(page, SELF_TEST_PATH, [])), 'самопроверка: маркер «Demonstration» не найден')
+    report.check(marker_hits(page, SELF_TEST_PATH, [{'page': SELF_TEST_PATH, 'phrase': 'Demonstration website'}]) == [],
+                 'самопроверка: точная фраза из allowlist не разрешила совпадение')
+
+    page.locator('#opener').click()
+    dialog = page.locator('#dialog')
+    report.check(dialog.is_visible(), 'модальное окно: не открылось')
+    report.check(page.evaluate("document.activeElement.matches('[data-modal-close]')"), 'модальное окно: фокус не внутри')
+    report.check(page.evaluate("document.querySelector('main').inert === true"), 'модальное окно: фон не inert')
+    page.locator('#last').focus()
+    page.keyboard.press('Tab')
+    report.check(page.evaluate("document.activeElement.matches('[data-modal-close]')"), 'модальное окно: Tab вышел из окна')
+    page.keyboard.press('Shift+Tab')
+    report.check(page.evaluate("document.activeElement.id === 'last'"), 'модальное окно: Shift+Tab вышел из окна')
+    page.keyboard.press('Escape')
+    report.check(not dialog.is_visible(), 'модальное окно: Escape не закрыл')
+    report.check(page.evaluate("document.activeElement.id === 'opener'"), 'модальное окно: фокус не вернулся на кнопку')
+    report.check(page.evaluate("document.querySelector('main').inert === false"), 'модальное окно: фон остался inert')
+    page.locator('#opener').click()
+    page.mouse.click(5, 5)
+    report.check(not dialog.is_visible(), 'модальное окно: щелчок по фону не закрыл')
+    context.close()
+
+
+def evidence_shot(path, device):
+    """Кадр эталона для пути (по verified-route-screens.json); None — эталона нет."""
+    index = EVIDENCE / 'verified-route-screens.json'
+    if not index.exists():
+        return None
+    prototype_path = path.rstrip('/') + '/'
+    for entry in json.loads(index.read_text()):
+        if entry['path'] == prototype_path and entry['device'] == device:
+            shot = EVIDENCE / entry['file']
+            return shot if shot.exists() else None
+    return None
+
+
+def main():
+    os.chdir(APP)
+    arguments = [a for a in sys.argv[1:] if not a.startswith('-')]
+    env = browser_env()
+    log('== подготовка БД aiqme_browser')
+    prepare(env)
+    log('== сборка Vite')
+    build_assets()
+    pages, skipped_ru = pages_from_routes(env)
+    if arguments:
+        pages = arguments
+    allowlist = load_allowlist()
+    log(f'== сервер {BASE} (bin/php -S)')
+    server = start_server(env)
+    report = Report()
+    OUT.mkdir(parents=True, exist_ok=True)
+    shots_dir = OUT / 'shots'
+    shutil.rmtree(shots_dir, ignore_errors=True)
+    shots_dir.mkdir()
+    rows = []
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            csp = urlopen(BASE + '/lt').headers['Content-Security-Policy']
+            manifest = json.loads((APP / 'public' / 'build' / 'manifest.json').read_text())
+            assets = ''.join(f'<link rel="stylesheet" href="/build/{css}">' for css in manifest['resources/js/app.js'].get('css', []))
+            assets += f'<link rel="stylesheet" href="/build/{manifest["resources/css/app.css"]["file"]}">'
+            assets += f'<script type="module" src="/build/{manifest["resources/js/app.js"]["file"]}"></script>'
+
+            log('== самопроверка детекторов и модального окна')
+            self_test(report, browser, csp, assets)
+
+            def new_page(width, height):
+                context = browser.new_context(viewport={'width': width, 'height': height})
+
+                def guard(route):
+                    host = route.request.url.split('/')[2] if '://' in route.request.url else ''
+                    if host != HOST and not route.request.url.startswith(('data:', 'blob:')):
+                        report.external.add(route.request.url)
+                        return route.abort()
+                    return route.continue_()
+
+                context.route('**/*', guard)
+                page = context.new_page()
+                problems = []
+                # «Failed to load resource» дублирует ответы ≥400, их ловит обработчик response (без самой страницы 404).
+                page.on('console', lambda m: problems.append(f'console {m.type}: {m.text}')
+                        if (m.type in ('error', 'warning') or 'Content Security Policy' in m.text)
+                        and not m.text.startswith('Failed to load resource') else None)
+                page.on('pageerror', lambda error: problems.append(f'pageerror: {error}'))
+                page.on('response', lambda r: problems.append(f'{r.status} {r.url}') if r.status >= 400 and r.request.resource_type != 'document' else None)
+                return context, page, problems
+
+            log(f'== страницы: {len(pages)}')
+            for path in pages:
+                expect_status = 404 if path in NOT_FOUND_PAGES else 200
+                for width in WIDTHS:
+                    height = {320: 568, 390: 844, 768: 1024, 1024: 768, 1440: 1000}[width]
+                    context, page, problems = new_page(width, height)
+                    response = page.goto(BASE + path, wait_until='networkidle')
+                    where = f'{path} @{width}'
+                    report.check(response.status == expect_status, f'{where}: HTTP {response.status}')
+                    scroll, client = document_fits(page)
+                    report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+                    if width in STYLE_WIDTHS:
+                        check_styles(report, page, path, width)
+                    if width in (390, 1440):
+                        for hit in marker_hits(page, path, allowlist):
+                            report.check(False, f'{where}: маркер {hit}')
+                    if width == 1440:
+                        check_focus_style(report, page, path)
+                        page.reload(wait_until='networkidle')
+                        check_cookie(report, page, path)
+                    if path in ('/lt', '/en', NOT_FOUND_PAGES[0]) and width <= 900 or width == 1440:
+                        page.reload(wait_until='networkidle')
+                        check_menu(report, page, path, width, height)
+                    for problem in problems:
+                        report.check(False, f'{where}: {problem}')
+                    context.close()
+
+                row = {'path': path, 'shots': {}}
+                for device, (width, height) in SHOTS.items():
+                    context, page, _ = new_page(width, height)
+                    page.goto(BASE + path, wait_until='networkidle')
+                    file = shots_dir / f'{path.strip("/").replace("/", "__") or "root"}-{device}.png'
+                    page.screenshot(path=str(file))
+                    row['shots'][device] = (file, evidence_shot(path, device))
+                    context.close()
+                rows.append(row)
+                log(f'   {path}: ok' if not report.failures else f'   {path}: ошибок всего {len(report.failures)}')
+            browser.close()
+    finally:
+        server.terminate()
+        server.wait()
+
+    write_report(report, pages, skipped_ru, rows)
+    if report.failures:
+        log(f'\nbin/browser-check: FAIL ({len(report.failures)})')
+        for failure in report.failures[:200]:
+            log(' - ' + failure)
+        sys.exit(1)
+    log(f'\nbin/browser-check: OK ({report.passed} проверок)')
+
+
+def write_report(report, pages, skipped_ru, rows):
+    have_evidence = (EVIDENCE / 'verified-route-screens.json').exists()
+    lines = [
+        f'# bin/browser-check — {time.strftime("%Y-%m-%d %H:%M")}', '',
+        f'- Итог: {"FAIL" if report.failures else "OK"}; проверок пройдено {report.passed}, ошибок {len(report.failures)}.',
+        f'- Страницы ({len(pages)}): ' + ', '.join(pages),
+        f'- {SKIPPED_LOGIN}: кабинет, админка и /ru/ ({len(skipped_ru)} адресов /ru).',
+        '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'),
+        '- Кадры рядом с эталоном: ' + ('report.html' if have_evidence else 'не проверено (нет эталона)')
+        + '; ручной просмотр — ждёт проверки пользователем.', '',
+    ] + [f'- FAIL {failure}' for failure in report.failures]
+    (OUT / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+    cells = []
+    for row in rows:
+        cells.append(f'<h2>{html.escape(row["path"])}</h2><table><tr><th>Размер</th><th>Наш кадр</th><th>Эталон прототипа</th></tr>')
+        for device, (ours, reference) in row['shots'].items():
+            ref = f'<img src="{reference.as_uri()}">' if reference else 'не проверено (нет эталона)'
+            cells.append(f'<tr><td>{device}</td><td><img src="{ours.relative_to(OUT)}"></td><td>{ref}</td></tr>')
+        cells.append('</table>')
+    (OUT / 'report.html').write_text(
+        '<!DOCTYPE html><meta charset="utf-8"><title>AIQME: наш кадр рядом с эталоном</title>'
+        '<style>img{max-width:640px;border:1px solid #ccc;vertical-align:top}td{vertical-align:top}</style>'
+        '<p>Эталон не копируется: ссылки на локальные файлы evidence/. Ручной просмотр — ждёт проверки пользователем.</p>'
+        + ''.join(cells), encoding='utf-8')
+    log(f'Отчёт: {OUT / "summary.md"}, {OUT / "report.html"}')
+
+
+if __name__ == '__main__':
+    main()

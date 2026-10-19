@@ -212,3 +212,114 @@ OK    удалённая отладка Chrome выключена (DevToolsActiv
   `/home/greatgleb/.nvm/versions/node/v22.23.1/bin/node`. Экспорт `NODE_BINARY` для PHPUnit и `node --test` — задача W-10, здесь не добавлены.
 - Проверка: `aiqme-site/bin/check` без изменения PATH (`which node` → `/usr/bin/node`) → `bin/check: OK`; PHPUnit 232 теста,
   160 passed, 72 skipped (пропуски — как выше), Pint passed, Vite build OK.
+
+## W-03 «Дизайн-оболочка по прототипу» — 2026-10-19, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки; ручной визуальный просмотр — **ждёт проверки пользователем**). Агент не делал commit/push.
+
+### Что сделано
+
+- **CSS прототипа** (D-19, §7.1): `resources/css/prototype/style.css` — `style.css` прототипа (evidence `3b84c155….css`),
+  правило в строке, порядок каскада исходника сохранён (поздние media-блоки и светлый подвал перекрывают ранние).
+  Очистка: удалён класс демо-строки шапки `.demo-strip` (2 правила); фото `engineering.jpg` у `.hero-art` удалено
+  (остаётся градиент), у `.split-image` заменено нейтральным фоном `#e9edf1`; других `url()` в CSS нет.
+  `resources/css/shell.css` — исправления §7.2 (`min-width: 0`, переносы, блокировка фона и прокрутка меню на коротком
+  экране — приёмы V2 `shared/responsive.css`; `[hidden]` у модального окна; третья группа подвала в ряду на ≤900 px).
+  `app.css` больше **не импортирует Tailwind**: его preflight (сброс `h4`, списков, рамок) менял бы вид прототипа,
+  утилиты оболочке не нужны; плагин `@tailwindcss/vite` в `vite.config.js` оставлен без изменений.
+- **Логотип** (D-25): копии `legacy-landing/site/assets/images/logo-dark.png`, `logo-light.png` → `public/images/`
+  (176 и 252 КБ; `legacy-landing/` не менялся). В шапке и подвале — `logo-dark.png` (оба фона белые); `logo-light.png`
+  скопирован по D-25, в оболочке не используется.
+- **Blade-компоненты** (`resources/views/components/`): `layout` (подключает `@vite`, шапку, подвал, cookie-плашку,
+  `main#main[tabindex=-1]`, `theme-color` прототипа), `header` (логотип, 7 пунктов, поиск, LT/EN, корзина, кнопка меню;
+  активный пункт — текущая страница и вложенные `<locale>.<page>.…`, `aria-current`), `header-cta` (второй ряд),
+  `footer`, `breadcrumbs`, `page-top` (pageTop прототипа: крошки, ярлык «AIQME», h1, вводный текст), `button`, `card`,
+  `field` (input/textarea/select, ошибка под полем с `aria-invalid`/`aria-describedby`, `old()`, пароль не возвращается),
+  `modal` (разметка `.search-overlay > .search-panel[role=dialog]`), `table` (`.data-table` с собственной прокруткой),
+  `empty`, `placeholder` («Informacija ruošiama» · «Information is being prepared»), `cookie-notice`, `status`
+  (постоянный блок статуса §7.2: `.notice`, `role=status|alert`, по умолчанию `session('status')`), `line-icon`
+  (иконки прототипа; имя `x-icon` занято blade-icons из Filament). Мобильное меню — тот же `nav#main-nav` с кнопкой.
+- **Тексты оболочки** `lang/lt|en/shell.php` — из видимого текста шапки/подвала/cookie-плашки `verified-route-screens/lt|en/dom.html`
+  и `t('LT','EN')` app.js. Не перенесены (D-21): «/ DEMONSTRACINĖ SVETAINĖ» · «/ DEMONSTRATION WEBSITE», «· Demonstracinis
+  prototipas» · «· Demonstration prototype» в подвале, `<noscript>` целиком, первое предложение cookie-плашки, группа
+  «Prototipo aplinkos» · «Prototype workspaces» со всеми ссылками, ярлык «AIQME / DEMO» и «Demo dialog» модального окна.
+- **JS**: `resources/js/menu.js` — механизм V2 `shared/app.js` на разметке прототипа (aria-expanded синхронно с видом,
+  в том числе после Escape — F-46; возврат фокуса; Tab по кругу кнопка ↔ пункты — кнопка в DOM после ссылок, поэтому
+  цикл явный; блокировка фона; щелчок вне и смена брейкпоинта закрывают). `resources/js/modal.js` — `data-modal-open`,
+  Escape/фон/крестик закрывают, ловушка Tab, `inert` фона, возврат фокуса. Cookie-плашка — в `app.js`.
+- **`SecurityHeaders`** (§6.6), глобальный middleware: CSP enforce — `default-src 'self'`; `script-src 'self' 'nonce-…' 'unsafe-eval'`;
+  `style-src` и `style-src-elem 'self' 'nonce-…'`; `style-src-attr 'unsafe-inline'`; `img-src 'self' data:`;
+  `frame-ancestors 'none'`; `object-src 'none'`; `base-uri 'self'`; `form-action 'self'`; nonce — новый на каждый ответ,
+  передаётся `Vite::useCspNonce()` (Livewire берёт его через `Vite::cspNonce()`); `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: same-origin`. Действует и на 404/500, редирект, sitemap, robots.
+- **Страницы**: заготовка `pages/static` выводит `page-top` (на главной без крошек; вводный текст — description страницы,
+  если он есть в `lang/*/pages.php`); 404/500 — разметка `notFound()` прототипа (`page-top` + `.empty` + кнопка).
+- **`bin/browser-check`** (Python Playwright, bundled Chromium) и `tests/browser/` (`ClientFactory` — e-mail
+  `client-####@aiqme.test`, имя без маркеров; `BrowserDataSeeder` запускается по имени класса). Подробно —
+  `docs/verification/w03-design-shell.md`. Порт фиксированный **8791** (занят — отказ до старта); сервер
+  `bin/php -S` с роутером Laravel (рабочий каталог `public/`, как `artisan serve`), окружение `DB_DATABASE=aiqme_browser`,
+  `QUEUE_CONNECTION=sync`, `APP_URL=http://127.0.0.1:8791` (иначе ссылки и ресурсы шли бы на `localhost:8000` из `.env`),
+  `APP_DEBUG=false`. Перед `migrate:fresh` скрипт отказывается при `bootstrap/cache/config.php` и проверяет
+  `config:show database.connections.pgsql.database == aiqme_browser`; БД создаётся `createdb` в контейнере, если её нет.
+  Пароли администратора и клиента — `secrets.token_urlsafe` на каждый запуск, только в памяти (stdin/переменная окружения
+  подпроцесса). Пути страниц — аргументами (`bin/browser-check /lt /en/services`), без аргументов — все GET `/lt|/en` из
+  `route:list` + две 404. Отчёт — `build/verification/browser-check/` (`summary.md`, `report.html`, `shots/`).
+- **`tests/fixtures/marker-allowlist.json`** — пустой список (совпадений нет); формат записи `{"page", "phrase", "reason"}`
+  описан в шапке `bin/browser-check`; запись разрешает маркер, только если точная фраза покрывает совпадение на этой странице.
+- **Тесты (изменены)**: `tests/TestCase.php` — `withoutVite()` (PHPUnit идёт до сборки Vite в `bin/check`; в чистом клоне
+  манифеста нет). `LocaleRoutesTest` (W-02): ссылка «к содержимому» `#main` исключена из проверки абсолютных ссылок;
+  переключатель проверяется без закрывающей `>` (у ссылки теперь класс прототипа `icon-btn lang`); на `/ru` вместо
+  «нет ссылок на /ru, кроме canonical» — «переключатель ведёт на LT, `hreflang="ru"` нет» (§4.3: RU нет в публичном
+  переключателе; навигация шапки администратора на `/ru` остаётся внутри RU).
+
+### Решения по неопределённому (простейший вариант)
+
+- **Значка кабинета в шапке нет** до W-07 (маршрута кабинета ещё нет; мёртвая ссылка хуже). W-07 добавляет его.
+- **Поиск в шапке** — обычная ссылка на страницу поиска (`/lt/paieska` · `/en/search`); модальное окно поиска — W-06 (§1.2).
+- **Cookie-плашка**: текст — второе предложение прототипа «Analitika ir reklamos sekimas nenaudojami.» · «No analytics or
+  advertising tracking is used.», кнопки «Tik būtini» · «Essential only» и «Nustatymai» · «Settings» (ссылка на страницу
+  cookies). Отметка о подтверждении — `localStorage` (`aiqme-cookie-notice`), без cookie. Плашка выводится с `hidden`
+  и показывается скриптом (без JS не показывается — она только информирует). Всплывающее «Pasirinkimas išsaugotas…» не перенесено.
+- **Подвал**: «© {текущий год} AIQME» (в прототипе «© 2026 AIQME · Demonstracinis prototipas»).
+- **Модальное окно**: ярлык «AIQME / DEMO» прототипа → «AIQME»; доступное имя — заголовок окна (`aria-labelledby`)
+  вместо «Demonstracinis langas» · «Demo dialog».
+- Ошибка поля — `<small>` под полем без нового цвета (в CSS прототипа стиля ошибки поля нет).
+- Демо-классы в CSS: удалён только `.demo-strip`; классы Telegram-имитации (`.phone-shell`, `.tg-*`, `.bubble`) и другие
+  оставлены как CSS страниц следующих задач.
+- Dev-сервер Vite (`npm run dev`) политикой CSP не разрешён — страницы проверяются на собранных ресурсах (`npm run build`).
+
+### Проверки (запущены в этой сессии)
+
+- `aiqme-site/bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **249 тестов, 177 passed, 72 skipped**
+  (пропуски — прежние W-02), Vite build OK (`node: ~/.nvm/versions/node/v22.23.1/bin/node`).
+- Новые Feature-тесты: `SecurityHeadersTest` (заголовки на странице, 404, `/ru` гостю, 301, sitemap, robots, 500 и `/ru`
+  администратора; CSP enforce, не Report-Only; nonce в `script-src`/`style-src`/`style-src-elem`, нет `'unsafe-inline'`
+  в них, `style-src-attr 'unsafe-inline'`; nonce новый на каждый ответ и равен `Vite::cspNonce()`), `ShellTest` (нет надписей
+  оболочки D-21, в том числе «Prototipo aplinkos»/«Prototype workspaces» и ссылок группы, на LT/EN, страницах и 404;
+  пункты меню, активный пункт, инструменты, второй ряд LT/EN; подвал; cookie-плашка без выбора аналитики; логотип —
+  побайтная копия файлов legacy; `page-top`; CSS без `url(` и «demo», токены, светлый подвал после тёмного, без Tailwind),
+  `ShellComponentsTest` (поле с ошибкой и `old`, select/textarea с экранированием, блок статуса и `session('status')`,
+  модальное окно, кнопки, карточка, таблица, пустое состояние, заглушка LT/EN).
+- **Тесты ловят поломки** (временные мутации, откачены): `'unsafe-inline'` в `script-src` → падает тест CSP;
+  «Demonstracinis prototipas» в подвале → падают 2 теста `ShellTest`.
+- **`bin/browser-check`** (без аргументов) → **OK, 3336 проверок**, 40 страниц, ≈ 5 мин; чужих хостов нет; `/ru` (19) —
+  «пропущено: вход появится в W-07». Контрольные поломки (каждая поймана, откачена): демо-строка в шапке → маркеры
+  «demo»/«demonstr»; Escape без смены `aria-expanded` → «после Escape aria-expanded=true (F-46)» и «фон заблокирован»;
+  inline `<script>` без nonce → нарушение CSP в консоли; элемент 2000 px → «документ шире окна»; `width/height` у логотипа
+  → «логотип не помещается в шапку» (эту ошибку я сначала допустил сам и нашёл по кадрам — после этого добавлена проверка).
+- Кадры 1440×1000, 768×1024, 390×844 всех 40 страниц и `report.html` рядом с эталоном `evidence/` — в
+  `build/verification/browser-check/`. Я сравнил `/lt/paslaugos` (desktop, phone) и `/en/faq` с эталоном: шапка, второй
+  ряд, `page-top`, подвал совпадают по виду (отличия — нет значка кабинета и демо-строки, как решено выше).
+  **Ручной просмотр остальных кадров — ждёт проверки пользователем.**
+- `git status --porcelain aiqme-site`: новые файлы в `app/`, `bin/`, `docs/`, `lang/`, `public/images/` (2 PNG < 1 МБ),
+  `resources/`, `tests/`; `.env`, ключей, `.codex/`, `.mcp.json` нет; `experiments/` не изменён.
+
+### Не проверено / для следующих задач
+
+- Значения hero §7.1 (h1 `clamp(54px, 5.1vw, 82px)`, абзац 21 px, `#c2cad4`) — hero появится в W-05; сверка порядка блоков — W-05.
+- Размеры h2/h3 не сверяются: на страницах оболочки их нет (только h1 `page-top`).
+- Модальное окно проверено на синтетической странице самопроверки с собранным JS приложения; на страницах — с W-06/W-09.
+- Вход администратора и клиента через форму — W-07 (пароли уже создаются, но не используются).
+- Livewire на страницах ещё нет: nonce для `@livewireScripts` берётся из `Vite::cspNonce()` (проверено чтением
+  `FrontendAssets::nonce()` и тестом равенства nonce), в браузере — после появления компонентов.
+- Реальные устройства, Safari/Firefox, Lighthouse — не в W-03.
