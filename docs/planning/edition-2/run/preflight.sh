@@ -33,6 +33,10 @@ if [ -f "$LOG" ]; then
   fi
 fi
 
+# Вариант «г» (как ночь Flexiron: учётная запись и вход пользователя, этот checkout) задаёт night-run.sh
+# переменной AIQME_D39=g; она важнее строки в progress.md.
+if [ "${AIQME_D39:-}" = "g" ]; then VARIANT="g"; fi
+
 main() {
 echo "## Предпроверка $(date '+%Y-%m-%d %H:%M')"
 echo
@@ -40,7 +44,7 @@ if [ "$VARIANT" = "conflict" ]; then
   fail "D-39: в progress.md есть обе строки «D-39: вариант б» и «D-39: вариант в» — оставьте одну"
   VARIANT="default"
 else
-  echo "D-39: вариант ${VARIANT} (default — по умолчанию, b — «б», v — «в»)"
+  echo "D-39: вариант ${VARIANT} (default — по умолчанию, b — «б», v — «в», g — «г», как ночь Flexiron)"
 fi
 
 # 1. Docker доступен.
@@ -58,6 +62,14 @@ fi
 
 # 4. Нет ключа с доступом к GitHub (D-28). accept-new — чтобы у новой учётной записи без known_hosts
 #    не было «Host key verification failed», которое ключ не проверяет.
+if [ "$VARIANT" = "g" ]; then
+  # Свой ключ пользователя есть — проверяется, что push отключён на время ночи (night-run.sh).
+  if [ "$(git remote get-url --push origin 2>/dev/null)" = "no-push://aiqme-night" ]; then
+    ok "push отключён на время ночи (remote.origin.pushurl)"
+  else
+    fail "push не отключён: запускайте ночь через run/night-run.sh (D-39 г)"
+  fi
+else
 SSH_OUT="$(ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com 2>&1)"
 if printf '%s' "$SSH_OUT" | grep -q 'successfully authenticated'; then
   fail "ssh git@github.com: приветствие GitHub — ключ с доступом, остановка (D-28)"
@@ -66,10 +78,13 @@ elif printf '%s' "$SSH_OUT" | grep -q 'Permission denied'; then
 else
   fail "ssh git@github.com: ожидался отказ «Permission denied», получено: ${SSH_OUT}"
 fi
+fi
 
 # 5. gh не авторизован (если установлен).
 if command -v gh >/dev/null 2>&1; then
-  if gh auth status >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1 && [ "$VARIANT" = "g" ]; then
+    warn "gh auth status: вход выполнен — агенту gh запрещён (D-39 г)"
+  elif gh auth status >/dev/null 2>&1; then
     fail "gh auth status: вход выполнен — токен GitHub доступен (D-28)"
   else
     ok "gh auth status: вход не выполнен"
@@ -102,8 +117,8 @@ else
 fi
 
 # 8. В копии нет instance/ и archive/ (D-39; снимается вариантом в).
-if [ "$VARIANT" = "v" ]; then
-  ok "legacy-landing без instance и archive: снято вариантом D-39 в"
+if [ "$VARIANT" = "v" ] || [ "$VARIANT" = "g" ]; then
+  ok "legacy-landing без instance и archive: снято вариантом D-39 ${VARIANT} (чтение instance/ агенту запрещено)"
 elif ls legacy-landing | grep -qxE 'instance|archive'; then
   fail "legacy-landing содержит instance или archive: рабочая копия не подготовлена по D-39"
 else
@@ -136,7 +151,7 @@ fi
 if which node npm >/dev/null 2>&1; then ok "which node npm"; else fail "which node npm: node/npm не в PATH сессии"; fi
 
 # 12. Удалённая отладка Chrome (D-30): только предупреждение, не остановка. CDP агенту запрещён всегда.
-if [ "$VARIANT" = "v" ]; then
+if [ "$VARIANT" = "v" ] || [ "$VARIANT" = "g" ]; then
   DTAP="$HOME/.config/google-chrome/DevToolsActivePort"
   DTAP_ERR="$(LC_ALL=C ls "$DTAP" 2>&1 >/dev/null)"
   if [ -z "$DTAP_ERR" ]; then

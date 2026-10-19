@@ -648,3 +648,11 @@ Cloudflare Workers/Pages/Queues/Browser Run, Supabase Auth/DB/Storage/RLS/RPC, F
 - Обе строки «D-39: вариант б» и «D-39: вариант в» одновременно — FAIL предпроверки, а не молчаливый выбор «в» (D-39, `run/prepare-aiqme-run.sh`).
 - В `touches` W-16 добавлены `routes/`, `SecurityHeaders.php` (CSP Stripe), `config/services.php` и `.env.example`, `app/Providers/`, `resources/views/admin/`, `lang/`.
 - Allow-правило `Bash(bash docs/planning/edition-2/run/preflight.sh)` подтверждено пользователем (D-28).
+
+### Ночной прогон как во Flexiron (19.10)
+
+Выбор пользователя: прогон из этого checkout под своей учётной записью и с её входом Claude Code, а не в отдельной `aiqme-run`.
+- D-39 — вариант «г» (действующий), D-28 — `bypassPermissions` с запретами, D-18 — коммит оркестратора на каждую задачу; `rules[3]` переписано.
+- Новые `run/night-run.sh` (чистое дерево, ветка `auto/night-*`, push отключён на ночь) и `run/night.py` (очередь L-задач, проверка путей и `bin/check`, коммит или stash).
+- `run/preflight.sh`: вариант «г» проверяет отключённый push вместо ключа и rootless Docker.
+- Проверено 19.10 на клоне с подменённым агентом: принятая задача коммитится, задача с правкой вне `aiqme-site/` уходит в stash, причина — в `progress.md`, push восстанавливается.
