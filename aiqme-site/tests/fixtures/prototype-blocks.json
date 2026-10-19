@@ -296,5 +296,69 @@
    ]
   },
   "section.cta-band"
+ ],
+ "/lt/mokymai": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.gap"
+   ]
+  }
+ ],
+ "/en/training": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.gap"
+   ]
+  }
+ ],
+ "/en/library/file-guide": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "article.article"
+   ]
+  }
+ ],
+ "/en/library/material-selection": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "article.article"
+   ]
+  }
+ ],
+ "/en/library/scan-to-cad": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "article.article"
+   ]
+  }
+ ],
+ "/lt/biblioteka/file-guide": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "article.article"
+   ]
+  }
+ ],
+ "/lt/biblioteka/material-selection": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "article.article"
+   ]
+  }
+ ],
+ "/lt/biblioteka/scan-to-cad": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "article.article"
+   ]
+  }
  ]
 }

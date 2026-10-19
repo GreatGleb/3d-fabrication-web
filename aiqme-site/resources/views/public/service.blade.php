@@ -36,7 +36,7 @@
             </div>
         </div>
         @if ($key === 'training')
-            @include('public.partials.training-topics')
+            @include('public.partials.training-topics', ['trainingSlug' => $service->slug])
         @endif
         @if ($home)
             <section class="section">

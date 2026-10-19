@@ -5,18 +5,22 @@ namespace App\Http\Controllers\Public;
 use App\Domain\Content\ContentType;
 use App\Domain\Content\Models\ContentTranslation;
 use App\Domain\Content\PublishedContent;
+use App\Domain\Content\Search;
 use App\Http\Controllers\Controller;
-use App\Support\Seo\StaticPages;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Публичные страницы W-05 (§1.2): главная, список услуг, «О нас», контакты, FAQ и политики. Тексты — опубликованный
- * контент своей локали (§4.2); пока page_text страницы не опубликован — заглушка «Informacija ruošiama» (D-11).
+ * Публичные страницы (§1.2): главная, список услуг, «О нас», контакты, FAQ, политики (W-05), обучение и поиск (W-06).
+ * Тексты — опубликованный контент своей локали (§4.2); пока page_text страницы не опубликован — заглушка
+ * «Informacija ruošiama» (D-11).
  */
 class PageController extends Controller
 {
+    use PageSeo;
+
     /** Сколько последних новостей показывает лента главной. */
     private const HOME_NEWS = 6;
 
@@ -90,6 +94,33 @@ class PageController extends Controller
         ]);
     }
 
+    /** Обучение (§1.2): опубликованные темы и даты (training) или заглушка, вводная панель — page_text training. */
+    public function training(): View
+    {
+        $locale = app()->getLocale();
+        $training = $this->content->page('training', $locale);
+
+        return view('public.training', [
+            ...$this->seo('training', $training, $training?->title, $training?->field('intro_text')),
+            'training' => $training,
+            'trainings' => $this->content->list(ContentType::Training, $locale),
+            'trainingSlug' => $this->content->list(ContentType::Service, $locale)
+                ->first(fn (ContentTranslation $service): bool => $service->item->key === 'training')?->slug,
+        ]);
+    }
+
+    /** Поиск по сайту (§1.2, F-02): серверный, по опубликованному контенту текущей локали; noindex. */
+    public function search(Request $request, Search $search): View
+    {
+        $query = Str::squish((string) $request->query('q', ''));
+
+        return view('public.search', [
+            ...$this->seo('search', null, null, null),
+            'query' => $query,
+            'results' => $search->find($query, app()->getLocale()),
+        ]);
+    }
+
     /** Политики — черновики до публикации реального текста (D-11): до этого заглушка без демо-текста. */
     public function policy(string $page): View
     {
@@ -99,24 +130,5 @@ class PageController extends Controller
             ...$this->seo($page, $policy, $policy?->title, $policy?->field('intro')),
             'policy' => $policy,
         ]);
-    }
-
-    /**
-     * Заголовок, описание и адреса страницы (§4.4): SEO-поля перевода, иначе заголовок и вводный абзац страницы,
-     * иначе общее описание сайта. Перенос строки заголовка в <title> — пробел (§7.2).
-     *
-     * @return array{page: string, heading: string, seoTitle: string, description: string, languages: array<string, string>}
-     */
-    private function seo(string $page, ?ContentTranslation $translation, ?string $heading, ?string $intro): array
-    {
-        $heading ??= __('pages.'.$page.'.title');
-
-        return [
-            'page' => $page,
-            'heading' => $heading,
-            'seoTitle' => Str::squish($translation?->seo_title ?: $heading),
-            'description' => Str::squish($translation?->seo_description ?: ($intro ?: __('pages.default_description'))),
-            'languages' => StaticPages::alternates($page),
-        ];
     }
 }

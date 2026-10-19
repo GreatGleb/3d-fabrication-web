@@ -4,6 +4,7 @@ namespace App\Domain\Content;
 
 use App\Domain\Content\Models\ContentItem;
 use App\Domain\Content\Models\ContentTranslation;
+use App\Support\Seo\StaticPages;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +81,24 @@ final class PublishedContent
         };
 
         return Route::has($locale.'.'.$section) ? route($locale.'.'.$section) : route($locale.'.home');
+    }
+
+    /**
+     * Опубликованные LT/EN-версии карточки сущности для hreflang, переключателя и sitemap (§4.4): locale => URL.
+     *
+     * @return array<string, string>
+     */
+    public function alternates(ContentItem $item): array
+    {
+        $urls = [];
+        foreach (StaticPages::PUBLIC_LOCALES as $locale) {
+            $translation = $item->translation($locale);
+            if ($translation?->isPublished() && $translation->slug !== null) {
+                $urls[$locale] = route($locale.'.'.$item->type->detailPage().'.show', ['slug' => $translation->slug]);
+            }
+        }
+
+        return $urls;
     }
 
     /**

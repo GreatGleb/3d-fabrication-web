@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domain\Content\ContentType;
-use App\Domain\Content\Models\ContentItem;
 use App\Domain\Content\Models\ContentTranslation;
 use App\Domain\Content\PublishedContent;
 use App\Http\Controllers\Controller;
-use App\Support\Seo\StaticPages;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 
@@ -34,7 +32,7 @@ class ServiceController extends Controller
             'seoTitle' => Str::squish($service->seo_title ?: $service->title),
             'description' => Str::squish($service->seo_description ?: ($service->field('short') ?: __('pages.default_description'))),
             'image' => $illustration?->getUrl($illustration->hasGeneratedConversion('w1600') ? 'w1600' : ''),
-            'languages' => self::alternates($item),
+            'languages' => $this->content->alternates($item),
             'switchUrl' => $this->content->switchUrl($item, $locale === 'lt' ? 'en' : 'lt'),
             'home' => $this->content->page('home', $locale),
             'project' => $this->content->list(ContentType::Project, $locale)->load('item.media')
@@ -42,24 +40,7 @@ class ServiceController extends Controller
             'questions' => $this->content->list(ContentType::FaqItem, $locale, ['group' => $key])
                 ->concat($this->content->list(ContentType::FaqItem, $locale, ['group' => 'services'])),
             'training' => $key === 'training' ? $this->content->page('training', $locale) : null,
+            'trainings' => $key === 'training' ? $this->content->list(ContentType::Training, $locale) : collect(),
         ]);
-    }
-
-    /**
-     * Опубликованные LT/EN-версии услуги для hreflang и переключателя (§4.4).
-     *
-     * @return array<string, string>
-     */
-    public static function alternates(ContentItem $item): array
-    {
-        $urls = [];
-        foreach (StaticPages::PUBLIC_LOCALES as $locale) {
-            $translation = $item->translation($locale);
-            if ($translation?->isPublished() && $translation->slug !== null) {
-                $urls[$locale] = route($locale.'.services.show', ['slug' => $translation->slug]);
-            }
-        }
-
-        return $urls;
     }
 }

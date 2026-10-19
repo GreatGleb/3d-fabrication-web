@@ -78,5 +78,95 @@
   "page": "/en/faq",
   "phrase": "FDM suits many prototypes",
   "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
+ },
+ {
+  "page": "/lt/projektai",
+  "phrase": "Nuo užduoties iki rezultato: inžinerinių sprendimų pavyzdžiai.",
+  "reason": "Вводный текст проектов по таблице 2 D-21 (W-06): законное совпадение «pavyzd» названо в самой таблице."
+ },
+ {
+  "page": "/en/projects",
+  "phrase": "From task to result: engineering solution examples.",
+  "reason": "Вводный текст проектов по таблице 2 D-21 (W-06): нейтральная EN-надпись, законное совпадение «examples» названо в самой таблице."
+ },
+ {
+  "page": "/lt/biblioteka/material-selection",
+  "phrase": "Naujam sprendimui verta numatyti prototipo bandymą",
+  "reason": "Опубликованный текст статьи прототипа (W-04, дословно): «prototipo bandymas» — этап работы, а не пометка демо (D-21)."
+ },
+ {
+  "page": "/en/library/material-selection",
+  "phrase": "plan a prototype trial",
+  "reason": "Опубликованный текст статьи прототипа (W-04, дословно): «prototype trial» — этап работы, а не пометка демо (D-21)."
+ },
+ {
+  "page": "/lt/paieska?q=3D",
+  "phrase": "Prototipai, funkcinės detalės ir mažos serijos.",
+  "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
+ },
+ {
+  "page": "/en/search?q=3D",
+  "phrase": "Prototypes, functional components and small batches.",
+  "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
+ },
+ {
+  "page": "/lt/paslaugos/3d-skenavimas",
+  "phrase": "Pritaikymo pavyzdys",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/en/services/3d-scanning",
+  "phrase": "Application example",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/lt/paslaugos/3d-modeliavimas",
+  "phrase": "Pritaikymo pavyzdys",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/en/services/3d-modelling",
+  "phrase": "Application example",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/lt/paslaugos/3d-spausdinimas",
+  "phrase": "Pritaikymo pavyzdys",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/en/services/3d-printing",
+  "phrase": "Application example",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/lt/paslaugos/frezavimas",
+  "phrase": "Pritaikymo pavyzdys",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/en/services/cnc-machining",
+  "phrase": "Application example",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/lt/paslaugos/graviravimas",
+  "phrase": "Pritaikymo pavyzdys",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/en/services/engraving",
+  "phrase": "Application example",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/lt/paslaugos/3d-modeliavimo-mokymai",
+  "phrase": "Pritaikymo pavyzdys",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/en/services/3d-modelling-training",
+  "phrase": "Application example",
+  "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
  }
 ]

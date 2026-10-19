@@ -22,6 +22,10 @@ W-05 (публичные страницы): страницы услуг — из
 main в том же порядке, кроме исключений D-21/условных блоков и tests/fixtures/text-allowlist.json ({"page", "phrase",
 "reason"}); медиа или заглушка отрисованы; reduced-motion: видео hero и ленты брендов/новостей на данных фабрик
 tests/browser/ (ролик hero создаёт ffmpeg во временном каталоге; без ffmpeg — «не проверено»).
+
+W-06: проекты, информация, библиотека, новости, обучение, поиск и карточки проектов и статей — на данных фабрик tests/browser/
+(1 проект LT+EN, связанный с услугами modelling и scanning, 1 обучение, новости W-05); карточки — из sitemap.xml; поиск
+проверяется и с запросом (SEARCH_PAGES). Сверка текста — также 3 статьи и обучение (prototype-blocks.json).
 """
 import html
 import json
@@ -55,6 +59,8 @@ EVIDENCE = REPO / 'docs' / 'customer-prototype' / 'evidence' / 'audit-20261016'
 CONTENT_SEEDERS: list[str] = ['Database\\Seeders\\PrototypeContentSeeder']
 BROWSER_SEEDER = 'Tests\\browser\\BrowserDataSeeder'
 NOT_FOUND_PAGES = ['/lt/nera-tokio', '/en/missing-page']
+# Поиск с результатами и без (W-06): страница поиска без запроса — из route:list.
+SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 SKIPPED_LOGIN = 'пропущено: вход появится в W-07'
 
 WIDTHS = [320, 390, 768, 1024, 1440]
@@ -401,6 +407,33 @@ def check_cookie(report, page, path):
     report.check(not page.locator('.cookie').is_visible(), f'{path}: плашка вернулась после подтверждения')
 
 
+def check_search_modal(report, new_page, path, width, height):
+    """Поиск в шапке (searchPanel прототипа): окно, фокус в поле, живые результаты сервера, Escape и возврат фокуса."""
+    where = f'{path} @{width} поиск'
+    context, page, problems = new_page(width, height)
+    page.goto(BASE + path, wait_until='networkidle')
+    link = page.locator('.tools a[data-modal-open="search-modal"]')
+    link.click()
+    modal = page.locator('#search-modal')
+    report.check(modal.is_visible() and page.url.rstrip('/') == BASE + path, f'{where}: окно не открылось или ушли со страницы')
+    report.check(page.evaluate("document.activeElement.id === 'search-modal-input'"), f'{where}: фокус не в поле поиска')
+    page.keyboard.type('model')
+    try:
+        page.wait_for_selector('#search-modal-results a.search-result', timeout=5000)
+        names = page.locator('#search-modal-results a.search-result strong').all_inner_texts()
+        report.check(any('model' in name.lower() for name in names), f'{where}: результаты без «model»: {names}')
+    except Exception:  # noqa: BLE001 — таймаут ожидания и есть провал проверки
+        report.check(False, f'{where}: результаты не появились')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+    page.keyboard.press('Escape')
+    report.check(not modal.is_visible(), f'{where}: Escape не закрыл окно')
+    report.check(page.evaluate("document.activeElement.matches('.tools a[data-modal-open]')"), f'{where}: фокус не вернулся на кнопку поиска')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 # ---------- W-05: порядок блоков, тексты эталона, медиа, движение ----------
 
 BLOCKS_PROBE = """() => {
@@ -452,6 +485,9 @@ D21_REPLACEMENTS = [
     ('Suprantu, kad tai demonstracinė užklausa ir ji nebus siunčiama.', ''), ('I understand this is a demonstration enquiry and will not be sent.', ''),
     ('Peržiūrėti užklausos patvirtinimą', 'Siųsti užklausą'), ('Preview enquiry confirmation', 'Send enquiry'),
     ('DEMONSTRACINIS TVARKARAŠTIS', ''), ('ILLUSTRATIVE SCHEDULE', ''),
+    # Таблица 2 (W-06): заметка автора в карточке статьи удалена, первое предложение осталось.
+    (' Techniniai gamintojų dokumentai ir jų vertimai čia nepridedami, kol nėra pateikti.', ''),
+    (' Manufacturer technical documents and translations are not added until provided.', ''),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда).
@@ -511,8 +547,8 @@ def reference_phrases(path, has_project):
                 parent = node['parent']
                 if parent_rule is None or (parent['tag'] == parent_rule[0] and parent['cls'] == parent_rule[1]):
                     return True
-        if not has_project and 'project-card' in node['cls']:
-            return True  # пример — карточка опубликованного проекта, без него не выводится (§4.1)
+        if 'project-card' in node['cls']:
+            return True  # пример — карточка опубликованного проекта (данные, а не шаблон); без него не выводится (§4.1)
         if not has_project and node['tag'] == 'div' and node['cls'] == {'section-head'} and re.search(r'/(paslaugos|services)/', path):
             siblings = [c for c in node['parent']['children'] if isinstance(c, dict)]
             index = siblings.index(node)
@@ -723,7 +759,7 @@ def main():
     blocks = json.loads(BLOCKS.read_text(encoding='utf-8'))
     log(f'== сервер {BASE} (bin/php -S)')
     server = start_server(env)
-    pages = arguments or sorted(set(pages[:-len(NOT_FOUND_PAGES)] + pages_from_sitemap())) + NOT_FOUND_PAGES
+    pages = arguments or sorted(set(pages[:-len(NOT_FOUND_PAGES)] + pages_from_sitemap())) + SEARCH_PAGES + NOT_FOUND_PAGES
     report = Report()
     OUT.mkdir(parents=True, exist_ok=True)
     shots_dir = OUT / 'shots'
@@ -798,6 +834,9 @@ def main():
 
                 if path in ('/lt', '/en'):
                     check_motion(report, browser, new_page, path, accounts['hero_video'])
+                if path in ('/en', '/lt/paieska?q=3D'):
+                    for width, height in ((390, 844), (1440, 1000)):
+                        check_search_modal(report, new_page, path, width, height)
 
                 row = {'path': path, 'shots': {}}
                 for device, (width, height) in SHOTS.items():

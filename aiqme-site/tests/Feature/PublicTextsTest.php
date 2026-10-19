@@ -11,7 +11,7 @@ use Tests\browser\ContentFactory;
 use Tests\Support\Html;
 use Tests\TestCase;
 
-/** Тексты страниц W-05: таблица 1 D-21 на отрендеренных страницах и отсутствие LT-строк ui_text на EN-страницах (§7.2). */
+/** Тексты страниц W-05/W-06: таблица 1 D-21 на отрендеренных страницах и отсутствие LT-строк ui_text на EN-страницах (§7.2). */
 class PublicTextsTest extends TestCase
 {
     use RefreshDatabase;
@@ -19,10 +19,14 @@ class PublicTextsTest extends TestCase
     private const PAGES = [
         'lt' => ['/lt', '/lt/paslaugos', '/lt/apie-mus', '/lt/kontaktai', '/lt/duk', '/lt/paslaugos/3d-skenavimas', '/lt/paslaugos/3d-modeliavimas',
             '/lt/paslaugos/3d-spausdinimas', '/lt/paslaugos/frezavimas', '/lt/paslaugos/graviravimas', '/lt/paslaugos/3d-modeliavimo-mokymai',
-            '/lt/privatumas', '/lt/slapukai', '/lt/pristatymas', '/lt/grazinimas'],
+            '/lt/privatumas', '/lt/slapukai', '/lt/pristatymas', '/lt/grazinimas',
+            '/lt/projektai', '/lt/projektai/laikiklio-atkurimas', '/lt/informacija', '/lt/biblioteka', '/lt/naujienos',
+            '/lt/biblioteka/file-guide', '/lt/mokymai', '/lt/paieska', '/lt/paieska?q=3D', '/lt/paieska?q=zzzz'],
         'en' => ['/en', '/en/services', '/en/about', '/en/contact', '/en/faq', '/en/services/3d-scanning', '/en/services/3d-modelling',
             '/en/services/3d-printing', '/en/services/cnc-machining', '/en/services/engraving', '/en/services/3d-modelling-training',
-            '/en/privacy', '/en/cookies', '/en/delivery', '/en/returns'],
+            '/en/privacy', '/en/cookies', '/en/delivery', '/en/returns',
+            '/en/projects', '/en/projects/bracket-reconstruction', '/en/information', '/en/library', '/en/news',
+            '/en/library/file-guide', '/en/training', '/en/search', '/en/search?q=3D', '/en/search?q=zzzz'],
     ];
 
     protected function setUp(): void
@@ -31,8 +35,9 @@ class PublicTextsTest extends TestCase
         $this->seed(PrototypeContentSeeder::class);
         $admin = User::factory()->create()->forceFill(['is_admin' => true]);
         $admin->save();
-        // С лентами: aria-label брендов и тексты лент тоже проверяются.
+        // С лентами, проектом и обучением (W-06): их тексты и подписи тоже проверяются.
         ContentFactory::as($admin)->homeTickers();
+        ContentFactory::as($admin)->publicSections();
     }
 
     /** Видимый текст страницы и значения атрибутов, которые читает пользователь или экранный диктор. */
@@ -58,7 +63,13 @@ class PublicTextsTest extends TestCase
                     $this->assertStringNotContainsString($source, $text, $path.': исходная фраза D-21');
                 }
             }
-            foreach (['Planuojami prekių ženklai', 'Planned technology brands', 'DEMONSTRACINIS TVARKARAŠTIS', 'ILLUSTRATIVE SCHEDULE'] as $source) {
+            // Таблица 2 D-21 (заметки автора в шаблонах W-05/W-06).
+            foreach (['Planuojami prekių ženklai', 'Planned technology brands', 'DEMONSTRACINIS TVARKARAŠTIS', 'ILLUSTRATIVE SCHEDULE',
+                'Visi šiame puslapyje rodomi projektai', 'demonstraciniai inžinerinių', 'Demonstracinis pavyzdys', 'nepatvirtintas atliktas projektas',
+                'Techniniai gamintojų dokumentai ir jų vertimai', 'Manufacturer technical documents and translations',
+                'Gamintojų instrukcijos ir techninių duomenų lapai', 'Manufacturer manuals and technical data sheets',
+                'Registruotis į demonstracinį mokymą', 'Register for a demo session', 'DEMONSTRACINĖ ILIUSTRACIJA', 'ILLUSTRATIVE IMAGE',
+                'DEMONSTRACINIS PAVYZDYS', 'ILLUSTRATIVE EXAMPLE'] as $source) {
                 $this->assertStringNotContainsString($source, $text, $path);
             }
         }

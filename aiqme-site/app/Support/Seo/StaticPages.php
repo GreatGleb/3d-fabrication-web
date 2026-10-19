@@ -15,7 +15,8 @@ final class StaticPages
 
     /**
      * page => [сегмент LT, сегмент EN, в sitemap]. Не в sitemap: поиск (noindex, §4.4) и разделы, которые
-     * до наполнения — заглушки или пустое состояние (§4.4): товары, проекты, новости, корзина, сравнение, политики.
+     * до наполнения — заглушки или пустое состояние (§4.4): товары, корзина, сравнение; политики, проекты, новости и
+     * обучение SitemapController добавляет на локалях, где в них есть публикации.
      *
      * @var array<string, array{0: string, 1: string, 2: bool}>
      */
@@ -33,7 +34,7 @@ final class StaticPages
         'cart' => ['krepselis', 'cart', false],
         'compare' => ['palyginimas', 'compare', false],
         'faq' => ['duk', 'faq', true],
-        'training' => ['mokymai', 'training', true],
+        'training' => ['mokymai', 'training', false],
         'search' => ['paieska', 'search', false],
         'privacy' => ['privatumas', 'privacy', false],
         'cookies' => ['slapukai', 'cookies', false],

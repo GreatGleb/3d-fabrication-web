@@ -1,7 +1,7 @@
 <?php
 
 // Page titles and descriptions — from the prototype <h1> and meta description (verified-route-screens/<page>/dom.html).
-// Demo descriptions (policies, quote, projects) are replaced by the general site description (D-21).
+// Demo descriptions (policies, quote) are replaced by the general site description; the projects intro is per D-21 table 2.
 return [
     'default_description' => 'AIQME — one partner from challenge to product.',
     'home' => ['title' => 'From your idea or part to a finished solution.'],
@@ -13,7 +13,10 @@ return [
         'title' => 'Equipment. Materials. Possibilities.',
         'description' => 'Find a solution for your task. We help you choose, even when the technical terms are unfamiliar.',
     ],
-    'projects' => ['title' => 'Projects'],
+    'projects' => [
+        'title' => 'Projects',
+        'description' => 'From task to result: engineering solution examples.',
+    ],
     'information' => [
         'title' => 'Knowledge that helps you create.',
         'description' => 'Clear explanations of processes, materials and preparing for manufacturing.',

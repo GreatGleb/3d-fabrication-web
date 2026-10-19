@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Audit\Channel;
+use App\Domain\Content\ContentService;
+use App\Domain\Content\ContentType;
+use App\Domain\Content\Models\ContentItem;
 use App\Models\User;
 use Database\Seeders\PrototypeContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,7 +15,8 @@ use Tests\TestCase;
 
 /**
  * Адреса прототипа против таблицы §4.6 (04-content-seo.md): статические страницы, 301 и строки с 404 (W-02); адреса
- * услуг со slug из БД после сидера W-04 — 200 на своей локали, 404 со slug другой локали (W-05).
+ * услуг со slug из БД после сидера W-04 — 200 на своей локали, 404 со slug другой локали (W-05); статьи по адресу
+ * библиотеки — 200, их дубли в /informacija/, /naujienos/ — 404, демо-проекты — 404, пока черновики, 200 после публикации (W-06).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -22,7 +27,6 @@ class PrototypeRoutesTest extends TestCase
 
     /** Строки §4.6, которые проверяют другие задачи (адреса сущностей, кабинет, админка). */
     private const LATER_ROWS = [
-        6 => 'W-06: демо-проекты — черновики сидера W-04',
         10 => 'W-07/W-15: кабинет',
         11 => 'W-07: вход, регистрация, восстановление',
         13 => 'W-08, W-26, W-11, W-14, W-17, W-18: вкладки админки',
@@ -66,9 +70,10 @@ class PrototypeRoutesTest extends TestCase
         match ($row) {
             1 => $this->get($path)->assertStatus(301)->assertRedirect(route('lt.home')),
             2 => $this->assertPublicPage($path),
-            // Slug другой локали — 404 при опубликованных услугах (без сидера 404 ничего бы не доказывал).
-            3 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
-            4, 5, 7, 8, 9, 12 => $this->get($path)->assertNotFound(),
+            // Slug другой локали и дубли статей — 404 при опубликованных услугах и статьях (без сидера 404 ничего бы не доказывал).
+            3, 4 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
+            5, 7, 8, 9, 12 => $this->get($path)->assertNotFound(),
+            6 => $this->assertDraftProjectUntilPublished($path),
             14 => $this->assertNotFoundForGuestAndAdmin($path),
             default => $this->fail('строка '.$row.' §4.6 без проверки: '.$path),
         };
@@ -78,9 +83,6 @@ class PrototypeRoutesTest extends TestCase
     {
         $plainPath = strtok($path, '?');
         $segments = array_values(array_filter(explode('/', $plainPath)));
-        if (count($segments) > 2 && ! in_array($segments[1], ['paslaugos', 'services'], true)) {
-            $this->markTestSkipped('строка 2 §4.6, адрес статьи — W-06');
-        }
         if (count($segments) > 2) {
             $this->seed(PrototypeContentSeeder::class);
         }
@@ -91,6 +93,21 @@ class PrototypeRoutesTest extends TestCase
         // canonical — адрес route() без завершающего «/» и без query; адрес со «/» отдаёт то же содержимое.
         $this->assertSame(config('app.url').rtrim($plainPath, '/'), PageHead::canonical($withSlash->getContent()));
         $this->assertSame($withoutSlash->getContent(), $withSlash->getContent());
+    }
+
+    /** Демо-проект D-11: черновик сидера — 404; после публикации своей локали — 200 по тому же адресу. */
+    private function assertDraftProjectUntilPublished(string $path): void
+    {
+        $this->seed(PrototypeContentSeeder::class);
+        $this->get($path)->assertNotFound();
+
+        [, $locale, , $slug] = explode('/', rtrim($path, '/'));
+        $project = ContentItem::where('type', ContentType::Project)->where('key', $slug)->firstOrFail();
+        $admin = User::factory()->create()->forceFill(['is_admin' => true]);
+        $admin->save();
+        app(ContentService::class)->publish($admin, $project, $locale, $project->translation($locale)->revision, Channel::Web);
+
+        $this->get($path)->assertOk();
     }
 
     private function assertNotFoundForGuestAndAdmin(string $path): void

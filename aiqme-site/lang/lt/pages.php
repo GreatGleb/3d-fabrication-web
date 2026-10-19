@@ -1,7 +1,7 @@
 <?php
 
 // Заголовки и описания страниц — из <h1> и meta description прототипа (verified-route-screens/<страница>/dom.html).
-// Демо-описания (политики, калькулятор, проекты) заменены общим описанием сайта (D-21).
+// Демо-описания (политики, калькулятор) заменены общим описанием сайта; вводный текст проектов — по таблице 2 D-21.
 return [
     'default_description' => 'AIQME — vienas partneris nuo užduoties iki produkto.',
     'home' => ['title' => 'Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo.'],
@@ -13,7 +13,10 @@ return [
         'title' => 'Įranga. Medžiagos. Galimybės.',
         'description' => 'Raskite sprendimą pagal savo užduotį. Pasirinkti padėsime ir tuomet, kai techniniai terminai dar nepažįstami.',
     ],
-    'projects' => ['title' => 'Projektai'],
+    'projects' => [
+        'title' => 'Projektai',
+        'description' => 'Nuo užduoties iki rezultato: inžinerinių sprendimų pavyzdžiai.',
+    ],
     'information' => [
         'title' => 'Žinios, kurios padeda kurti.',
         'description' => 'Aiškūs paaiškinimai apie procesus, medžiagas ir pasiruošimą gamybai.',

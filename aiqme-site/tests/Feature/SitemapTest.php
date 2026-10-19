@@ -77,7 +77,7 @@ class SitemapTest extends TestCase
     {
         $locs = array_keys($this->sitemap());
         $excluded = ['/ru', '/paskyra', '/account', '/administravimas', '/admin', '/paieska', '/search',
-            '/produktai', '/products', '/naujienos', '/news', '/projektai', '/projects', '/privatumas', '/privacy'];
+            '/produktai', '/products', '/naujienos', '/news', '/projektai', '/projects', '/mokymai', '/training', '/privatumas', '/privacy'];
 
         foreach ($locs as $loc) {
             $path = substr($loc, strlen(config('app.url')));
