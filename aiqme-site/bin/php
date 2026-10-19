@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# PHP 8.4 для aiqme-site: системный /usr/bin/php + расширения (bcmath, gd, intl, pdo_pgsql, pgsql, zip)
+# из runtime эксперимента aiqme-site/experiments/lunar-aiqme/runtime (только чтение) и лимиты §6.4 из bin/php.d/.
+# Локальная зависимость машины; на сервере её заменяет образ PHP-FPM (W-20).
+set -euo pipefail
+bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+runtime="$(cd "$bin_dir/../experiments/lunar-aiqme/runtime" && pwd)"
+export PHP_INI_SCAN_DIR="/etc/php/8.4/cli/conf.d:$runtime/conf:$bin_dir/php.d"
+export LD_LIBRARY_PATH="$runtime/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
+exec /usr/bin/php "$@"

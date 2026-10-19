@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Полная проверка aiqme-site (W-01 и далее): стиль, тесты, границы репозитория и конфигурации.
+# Запуск: aiqme-site/bin/check (из любого каталога). Нужен Docker для PostgreSQL из docker-compose.dev.yml.
+set -euo pipefail
+app_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(cd "$app_root/.." && pwd)"
+cd "$app_root"
+
+step() { printf '\n== %s\n' "$1"; }
+fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
+
+step 'bin/php: расширения'
+modules="$(bin/php -m)"
+for extension in bcmath intl gd pdo_pgsql pgsql zip; do
+    grep -qx "$extension" <<<"$modules" || fail "bin/php без расширения $extension"
+done
+echo 'OK bcmath intl gd pdo_pgsql pgsql zip'
+
+step 'experiments/ не изменён'
+experiments_status="$(git -C "$repo_root" status --porcelain -- aiqme-site/experiments)"
+[[ -z "$experiments_status" ]] || fail "изменения в aiqme-site/experiments:"$'\n'"$experiments_status"
+echo OK
+
+step 'Git: приватное и генерируемое исключено'
+for path in .env storage/app/probe.txt storage/app/private/probe.stl storage/app/public/probe.jpg \
+    public/build/manifest.json public/storage vendor/autoload.php node_modules/vite .codex/config.toml .mcp.json build/probe; do
+    git -C "$repo_root" check-ignore -q "aiqme-site/$path" || fail "не исключено Git: aiqme-site/$path"
+done
+for path in .mcp.json .codex .env; do
+    [[ -z "$(git -C "$repo_root" ls-files -- "aiqme-site/$path")" ]] || fail "отслеживается Git: aiqme-site/$path"
+done
+echo OK
+
+step 'docker-compose.dev.yml: порты только на 127.0.0.1'
+docker compose -f docker-compose.dev.yml config --format json | python3 -c '
+import json, sys
+services = json.load(sys.stdin)["services"]
+bad, count = [], 0
+for name, service in services.items():
+    for port in service.get("ports", []):
+        count += 1
+        if port.get("host_ip") != "127.0.0.1":
+            bad.append(f"{name}: {port}")
+if bad or count == 0:
+    sys.exit("порты без host_ip 127.0.0.1: " + "; ".join(bad) if bad else "в compose нет портов")
+print(f"OK {count} записей ports")
+'
+
+step 'Зависимости: lunarphp/stripe не установлен'
+python3 - <<'PY'
+import json, sys
+lock = json.load(open('composer.lock'))
+names = {p['name']: p['version'] for p in lock['packages'] + lock['packages-dev']}
+expected = {'lunarphp/core': '1.5.0', 'livewire/livewire': 'v3.8.10', 'stripe/stripe-php': 'v16.6.0',
+            'laravel/framework': 'v13.37.0', 'filament/filament': 'v4.15.2', 'laravel/boost': 'v2.10.3'}
+if 'lunarphp/stripe' in names:
+    sys.exit('lunarphp/stripe в composer.lock')
+wrong = {k: names.get(k) for k, v in expected.items() if names.get(k) != v}
+if wrong:
+    sys.exit(f'версии отличаются от плана: {wrong}')
+print('OK', ', '.join(f'{k} {v}' for k, v in expected.items()))
+PY
+
+step 'Pint (--test)'
+bin/php vendor/bin/pint --test
+
+step 'PostgreSQL dev'
+docker compose -f docker-compose.dev.yml up -d --wait postgres >/dev/null
+echo OK
+
+step 'PHPUnit'
+bin/php artisan test --compact </dev/null
+
+step 'Vite build'
+npm run build --silent >/dev/null
+[[ -f public/build/manifest.json ]] || fail 'нет public/build/manifest.json'
+echo OK
+
+printf '\nbin/check: OK\n'

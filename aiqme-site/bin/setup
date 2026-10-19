@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Локальная подготовка aiqme-site после клонирования (идемпотентно).
+# storage/framework, storage/logs и bootstrap/cache исключены корневым .gitignore целиком,
+# поэтому в клоне их нет — без них не работают package:discover и компиляция Blade.
+set -euo pipefail
+app_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$app_root"
+
+mkdir -p bootstrap/cache storage/logs storage/framework/{cache/data,sessions,testing,views} \
+    storage/app/private storage/app/public
+
+[[ -f .env ]] || cp .env.example .env
+bin/php /usr/local/bin/composer install --no-interaction
+grep -q '^APP_KEY=base64:' .env || bin/php artisan key:generate --no-interaction
+npm ci --no-audit --no-fund
+docker compose -f docker-compose.dev.yml up -d --wait
+bin/php artisan migrate --no-interaction
+echo 'Готово. Администратор: bin/php artisan aiqme:make-admin <email> (D-29). Boost MCP: bin/boost-install.'
