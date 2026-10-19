@@ -1,0 +1,1403 @@
+{
+  "_about": "Тексты прототипа заказчика (D-19), извлечены один раз (W-04) из evidence/audit-20261016: data-from-source.json и видимого текста verified-route-screens/*/dom.html. Только тексты: без разметки, медиа и персональных данных. Публикуемые тексты изменены только по таблице 1 D-21; черновики (published=false) — дословно. Перевод строки в тексте — перенос строки заголовка прототипа.",
+  "items": [
+    {
+      "type": "page_text",
+      "key": "home",
+      "position": 0,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo.",
+          "slug": null,
+          "fields": {
+            "hero_eyebrow": "3D ENGINEERING & TECHNOLOGY",
+            "hero_title": "Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo",
+            "hero_text": "Skenuojame, projektuojame ir koordinuojame gamybą. Vienas partneris visam procesui — nuo pirmo klausimo iki patikrinto rezultato.",
+            "hero_stages": [
+              "SKENUOTI",
+              "PROJEKTUOTI",
+              "GAMINTI"
+            ],
+            "help_eyebrow": "01 / PRADĖKIME NUO JŪSŲ",
+            "help_title": "Kuo galime padėti?",
+            "scenarios": [
+              {
+                "title": "Turiu detalę, bet neturiu brėžinio.",
+                "text": "Atkursime jos formą, parengsime modelį ir suderinsime gamybą."
+              },
+              {
+                "title": "Turiu failą. Reikia pagaminti.",
+                "text": "Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite kainą."
+              },
+              {
+                "title": "Noriu gaminti pats.",
+                "text": "Padėsime pasirinkti įrangą, medžiagas ir reikalingus mokymus."
+              }
+            ],
+            "process_eyebrow": "02 / DARBO EIGA",
+            "process_title": "Viena užduotis.\nAiškus kelias iki rezultato.",
+            "process_text": "AIQME koordinuoja visą procesą, prireikus įtraukdama gamybos partnerius. Jums nereikia patiems derinti skirtingų tiekėjų.",
+            "process_steps": [
+              {
+                "title": "Jūsų užduotis",
+                "text": "Atsiųskite failą, eskizą, detalės nuotrauką ar pačią detalę. Pakonsultuosime, kaip geriausia ją pagaminti, ir suderinsime kainą bei terminą."
+              },
+              {
+                "title": "Suderintas sprendimas",
+                "text": "Nuskenuosime arba išmatuosime detalę ir paruošime skaitmeninį failą gamybai."
+              },
+              {
+                "title": "Patikrinta gamyba",
+                "text": "Prieš gamybą darbuotojas patikrina modelį ir parametrus. Koordinuojame sutartų darbų vykdymą."
+              },
+              {
+                "title": "Rezultatas jums",
+                "text": "Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti."
+              }
+            ],
+            "services_eyebrow": "03 / PASLAUGOS",
+            "services_title": "Tinkamas procesas.\nJūsų užduočiai.",
+            "services_text": "Sujungiame skaitmeninį modelį ir fizinę gamybą. Pasirinkite vieną paslaugą arba patikėkite mums visą darbų seką.",
+            "partners_eyebrow": "04 / PARTNERIAI IR TECHNOLOGIJOS",
+            "partners_title": "Partneriai ir prekių ženklai.",
+            "equipment_eyebrow": "05 / ĮRANGA IR MEDŽIAGOS",
+            "equipment_title": "Technologijos, kurios\ndirba jums.",
+            "equipment_text": "Rinkitės įrangą, medžiagas ir programinę įrangą pagal tai, ką norite sukurti. Padėsime suprasti skirtumus ir suderinamumą.",
+            "news_eyebrow": "06 / NAUJIENOS IR ĮŽVALGOS",
+            "news_title": "Naujausi straipsniai.",
+            "cta_title": "Jūsų kitas žingsnis — paprastas.",
+            "cta_text": "Turite failą? Įkelkite. Turite idėją? Pasikalbėkime."
+          }
+        },
+        "en": {
+          "title": "From your idea or part to a finished solution.",
+          "slug": null,
+          "fields": {
+            "hero_eyebrow": "3D ENGINEERING & TECHNOLOGY",
+            "hero_title": "From your idea or part to a finished solution",
+            "hero_text": "Scanning, design and coordinated manufacturing. One partner for the whole process, from your first question to a checked result.",
+            "hero_stages": [
+              "SCAN",
+              "DESIGN",
+              "MANUFACTURE"
+            ],
+            "help_eyebrow": "01 / START WITH YOUR NEED",
+            "help_title": "How can we help?",
+            "scenarios": [
+              {
+                "title": "I have a part, but no drawing.",
+                "text": "We reconstruct its shape, prepare a model and plan production."
+              },
+              {
+                "title": "I have a file. I need it made.",
+                "text": "Upload your model, choose settings and review the price."
+              },
+              {
+                "title": "I want to make it myself.",
+                "text": "We help select equipment, materials and the training you need."
+              }
+            ],
+            "process_eyebrow": "02 / OUR PROCESS",
+            "process_title": "One challenge.\nA clear path to the result.",
+            "process_text": "AIQME coordinates the whole process, involving manufacturing partners when needed. You do not have to coordinate separate suppliers.",
+            "process_steps": [
+              {
+                "title": "Your challenge",
+                "text": "Send a file, sketch, photo or the part itself. We will advise on a suitable way to make it and agree the price and timing."
+              },
+              {
+                "title": "Agreed solution",
+                "text": "We will scan or measure the part and prepare a digital file for manufacturing."
+              },
+              {
+                "title": "Reviewed production",
+                "text": "Before production, a team member checks the model and settings. We coordinate the agreed work."
+              },
+              {
+                "title": "The result for you",
+                "text": "We check the result and prepare it for delivery or collection."
+              }
+            ],
+            "services_eyebrow": "03 / SERVICES",
+            "services_title": "The right process.\nFor your challenge.",
+            "services_text": "We connect digital models and physical production. Choose a service or let us coordinate the complete workflow.",
+            "partners_eyebrow": "04 / PARTNERS & TECHNOLOGY",
+            "partners_title": "Partners & technology brands.",
+            "equipment_eyebrow": "05 / EQUIPMENT & MATERIALS",
+            "equipment_title": "Technology that\nworks for you.",
+            "equipment_text": "Choose equipment, materials and software for what you want to create. We help clarify the differences and compatibility.",
+            "news_eyebrow": "06 / NEWS & INSIGHTS",
+            "news_title": "Latest articles.",
+            "cta_title": "Your next step is simple.",
+            "cta_text": "Have a file? Upload it. Have an idea? Let’s talk."
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "about",
+      "position": 0,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Inžinerija prasideda\nnuo supratimo.",
+          "slug": null,
+          "fields": {
+            "intro_eyebrow": "APIE AIQME",
+            "intro_title": "Sujungiame idėją,\nmodelį ir gamybą.",
+            "intro_paragraphs": [
+              "AIQME padeda įmonėms, kūrėjams, švietimo organizacijoms ir privatiems klientams įgyvendinti praktines užduotis. Vieniems reikia atkurti nebegaminamą detalę. Kitiems — patikrinti produkto idėją ar pasirinkti tinkamą įrangą.",
+              "Pradedame nuo paskirties: ką detalė turi atlikti, kokiomis sąlygomis ji dirbs ir kaip patikrinsime rezultatą. Tuomet deriname skenavimą, projektavimą, gamybą ir pristatymą.",
+              "Visą procesą koordinuoja AIQME, prireikus įtraukdama gamybos partnerius. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami."
+            ],
+            "panels": [
+              {
+                "title": "Suprantamas planas",
+                "text": "Įvardijame etapus, atsakomybes ir rezultatą, kurį gausite."
+              },
+              {
+                "title": "Žmogaus patikra",
+                "text": "Prieš gamybą tikriname modelį ir parametrus, prieš pristatymą — gaminį."
+              },
+              {
+                "title": "Aiški komunikacija",
+                "text": "Jei patikroje randame neatitikimą, pateikiame paaiškinimą ir pasirinkimus."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "Engineering starts\nwith understanding.",
+          "slug": null,
+          "fields": {
+            "intro_eyebrow": "ABOUT AIQME",
+            "intro_title": "Connecting your idea,\nmodel and production.",
+            "intro_paragraphs": [
+              "AIQME helps businesses, creators, education organisations and private customers solve practical challenges. Some need to reconstruct an unavailable part. Others want to test an idea or choose the right equipment.",
+              "We start with purpose: what the part must do, its operating conditions and how to verify the result. We then coordinate scanning, design, manufacturing and delivery.",
+              "AIQME coordinates the whole process, involving manufacturing partners when needed. We agree the scope clearly and seek approval before making changes."
+            ],
+            "panels": [
+              {
+                "title": "A clear plan",
+                "text": "We define the steps, responsibilities and what you will receive."
+              },
+              {
+                "title": "Human review",
+                "text": "We review the model and settings before production, and inspect the part before delivery."
+              },
+              {
+                "title": "Clear communication",
+                "text": "If review reveals an issue, we explain it and present the options."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "contact",
+      "position": 0,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Papasakokite, ką norite sukurti.",
+          "slug": null,
+          "fields": {
+            "heading": "Pasikalbėkime apie jūsų užduotį.",
+            "details": [
+              {
+                "label": "Telefonas:",
+                "value": "+370 688 84 084"
+              },
+              {
+                "label": "El. paštas:",
+                "value": "info@aiqme.com"
+              },
+              {
+                "label": "Adresas:",
+                "value": "Metalo g. 4, LT-02190 Vilnius (įvažiavimas iš J. Dobkevičiaus g.)"
+              },
+              {
+                "label": "Įmonės kodas:",
+                "value": "308110786"
+              },
+              {
+                "label": "PVM mokėtojo kodas:",
+                "value": "LT100020725810"
+              }
+            ],
+            "visit_note": "Atvykimą ir atsiėmimą suderinkite iš anksto.",
+            "form_title": "Projekto užklausa",
+            "form_note": "* — būtini laukai.",
+            "form_submit": "Siųsti užklausą"
+          }
+        },
+        "en": {
+          "title": "Tell us what you want to create.",
+          "slug": null,
+          "fields": {
+            "heading": "Let’s talk about your challenge.",
+            "details": [
+              {
+                "label": "Phone:",
+                "value": "+370 688 84 084"
+              },
+              {
+                "label": "Email:",
+                "value": "info@aiqme.com"
+              },
+              {
+                "label": "Address:",
+                "value": "Metalo g. 4, LT-02190 Vilnius (entrance from J. Dobkevičiaus St.)"
+              },
+              {
+                "label": "Company number:",
+                "value": "308110786"
+              },
+              {
+                "label": "VAT number:",
+                "value": "LT100020725810"
+              }
+            ],
+            "visit_note": "Please arrange visits and collection in advance.",
+            "form_title": "Project enquiry",
+            "form_note": "* — required fields.",
+            "form_submit": "Send enquiry"
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "training",
+      "position": 0,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Praktiniai 3D modeliavimo mokymai",
+          "slug": null,
+          "fields": {
+            "intro_title": "Programa jums arba jūsų komandai",
+            "intro_text": "Individualūs ir grupiniai mokymai: nuotoliniu būdu, AIQME patalpose arba kliento įmonėje. Temos, trukmė ir data derinamos."
+          }
+        },
+        "en": {
+          "title": "Practical 3D modelling training",
+          "slug": null,
+          "fields": {
+            "intro_title": "A programme for you or your team",
+            "intro_text": "Individual or group training: online, at AIQME or at your company. Topics, duration and date are agreed individually."
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "privacy",
+      "position": 0,
+      "published": false,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Privatumas ir failų saugojimas",
+          "slug": null,
+          "fields": {
+            "intro": "Demonstracinė informacijos vieta. Galutinis tekstas turi būti patvirtintas prieš tikrą paleidimą.",
+            "notice": "Tai nėra galutinės pardavimo sąlygos ar patvirtintas teisinis dokumentas.",
+            "sections": [
+              {
+                "heading": "Jūsų failai nėra vieši",
+                "text": "Šiame prototipe failai nesiunčiami. Tikroje sistemoje modeliai bus saugomi privačiai, naudojant prieigos patikrą ir trumpalaikes pasirašytas nuorodas. Vieši klientų failų URL draudžiami."
+              },
+              {
+                "heading": "Saugojimo terminai",
+                "text": "Administracijoje turi būti valdomi saugojimo terminai, ištrynimas, atsarginės kopijos ir prieigos istorija. Konkretūs terminai dar nepatvirtinti."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "Privacy & file retention",
+          "slug": null,
+          "fields": {
+            "intro": "Illustrative policy area. Final wording must be approved before launch.",
+            "notice": "This is not a final set of sales terms or an approved legal document.",
+            "sections": [
+              {
+                "heading": "Your files are not public",
+                "text": "Files are not uploaded in this prototype. The real system must store models privately with access checks and short-lived signed links. Public customer-file URLs are prohibited."
+              },
+              {
+                "heading": "Retention periods",
+                "text": "Administration must control retention periods, deletion, backups and access history. Specific periods are not yet approved."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "cookies",
+      "position": 0,
+      "published": false,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Slapukų pasirinkimai",
+          "slug": null,
+          "fields": {
+            "intro": "Demonstracinė informacijos vieta. Galutinis tekstas turi būti patvirtintas prieš tikrą paleidimą.",
+            "notice": "Tai nėra galutinės pardavimo sąlygos ar patvirtintas teisinis dokumentas.",
+            "sections": [
+              {
+                "heading": "Pasirinkite, ką leidžiate",
+                "text": "Ši demonstracija nenaudoja analitikos ar reklamos sekimo. Būtinoji sesijos saugykla išlaiko krepšelį, kalbą ir pasirinktus parametrus."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "Cookie preferences",
+          "slug": null,
+          "fields": {
+            "intro": "Illustrative policy area. Final wording must be approved before launch.",
+            "notice": "This is not a final set of sales terms or an approved legal document.",
+            "sections": [
+              {
+                "heading": "Choose what you allow",
+                "text": "This demo uses no analytics or advertising tracking. Essential session storage keeps the basket, language and chosen settings."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "delivery",
+      "position": 0,
+      "published": false,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Pristatymas ir atsiėmimas",
+          "slug": null,
+          "fields": {
+            "intro": "Demonstracinė informacijos vieta. Galutinis tekstas turi būti patvirtintas prieš tikrą paleidimą.",
+            "notice": "Tai nėra galutinės pardavimo sąlygos ar patvirtintas teisinis dokumentas.",
+            "sections": [
+              {
+                "heading": "Pristatymas visoje ES",
+                "text": "Tikslus gamybos ir pristatymo terminas nurodomas konkrečiame užsakyme. Siuntos lipdukas generuojamas, kai užsakymas paruoštas siųsti ir patvirtinti pakuotės duomenys. Klientas gauna sekimo informaciją."
+              },
+              {
+                "heading": "Atsiėmimas",
+                "text": "Atsiėmimas tik iš anksto apmokėjus, suderinus laiką ir vietą. Galutinis adresas dar tikslinamas."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "Delivery & collection",
+          "slug": null,
+          "fields": {
+            "intro": "Illustrative policy area. Final wording must be approved before launch.",
+            "notice": "This is not a final set of sales terms or an approved legal document.",
+            "sections": [
+              {
+                "heading": "Delivery throughout the EU",
+                "text": "Production and delivery timing is specified per order. Shipping labels are generated when the order is ready and package details are confirmed. The customer receives tracking information."
+              },
+              {
+                "heading": "Collection",
+                "text": "Collection requires prepayment and an agreed time and location. The final address is still unconfirmed."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "page_text",
+      "key": "returns",
+      "position": 0,
+      "published": false,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Grąžinimas ir neatitikimai",
+          "slug": null,
+          "fields": {
+            "intro": "Demonstracinė informacijos vieta. Galutinis tekstas turi būti patvirtintas prieš tikrą paleidimą.",
+            "notice": "Tai nėra galutinės pardavimo sąlygos ar patvirtintas teisinis dokumentas.",
+            "sections": [
+              {
+                "heading": "Kai rezultatas neatitinka užsakymo",
+                "text": "Numatyta forma neatitikimui aprašyti, nuotraukoms ir užsakymo numeriui pateikti. Darbuotojas įvertina informaciją ir pateikia sprendimą.\n\nPrieš paleidimą atskirai suderinti standartinių prekių, individualiai pagamintų gaminių, garantijų ir pinigų grąžinimo taisykles."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "Returns & discrepancies",
+          "slug": null,
+          "fields": {
+            "intro": "Illustrative policy area. Final wording must be approved before launch.",
+            "notice": "This is not a final set of sales terms or an approved legal document.",
+            "sections": [
+              {
+                "heading": "When the result differs from the order",
+                "text": "A form will accept an issue description, photos and order number. A team member reviews the information and proposes a resolution.\n\nBefore launch, agree separate rules for standard products, custom-made items, warranties and refunds."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "service",
+      "key": "scanning",
+      "position": 1,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "3D skenavimas",
+          "slug": "3d-skenavimas",
+          "fields": {
+            "short": "Tikra detalė tampa skaitmeniniu 3D modeliu.",
+            "label": "AIQME",
+            "benefits": [
+              "Objekto forma ir paviršius perkeliami į 3D modelį.",
+              "Duomenys paruošiami atkūrimui ar tolimesniam projektavimui.",
+              "Galima pristatyti detalę arba suderinti skenavimą vietoje."
+            ],
+            "description": "Kai turite detalę, bet neturite jos brėžinio, skenavimas padeda užfiksuoti jos formą. Duomenis paruošiame tolimesniam modeliavimui, atkūrimui ar palyginimui.",
+            "problems": [
+              "Nebegaminama ar nusidėvėjusi detalė",
+              "Sudėtinga forma, kurią sunku išmatuoti",
+              "Reikia išsaugoti objekto skaitmeninę kopiją"
+            ],
+            "provide": "Detalę arba jos nuotraukas, apytikslius matmenis ir paaiškinimą, kam bus naudojamas modelis. Skenavimą vietoje deriname pagal užduotį.",
+            "receive": "Sutvarkytą STL arba OBJ tinklelį: pašaliname nereikalingus duomenis, sutvarkome paviršius ir orientuojame pagal X, Y, Z ašis. Redaguojamas CAD modelis užsakomas papildomai."
+          }
+        },
+        "en": {
+          "title": "3D scanning",
+          "slug": "3d-scanning",
+          "fields": {
+            "short": "Turn a physical part into a digital 3D model.",
+            "label": "AIQME",
+            "benefits": [
+              "Capture an object’s shape and surface as a 3D model.",
+              "Prepare scan data for reconstruction or further design.",
+              "Send us the part or arrange on-site scanning."
+            ],
+            "description": "When you have a part but no drawing, scanning captures its shape. We prepare the data for modelling, reconstruction or comparison.",
+            "problems": [
+              "A discontinued or worn part",
+              "A complex shape that is hard to measure",
+              "A digital copy of a physical object"
+            ],
+            "provide": "The part or photos, approximate dimensions and the intended use of the model. On-site scanning can be arranged for the project.",
+            "receive": "A cleaned STL or OBJ mesh: unnecessary data removed, surfaces cleaned and orientation set along X, Y and Z. An editable CAD model is a separate scope."
+          }
+        }
+      }
+    },
+    {
+      "type": "service",
+      "key": "modelling",
+      "position": 2,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "3D modeliavimas ir detalių atkūrimas",
+          "slug": "3d-modeliavimas",
+          "fields": {
+            "short": "Nuo eskizo ar nusidėvėjusios detalės iki gamybai paruošto modelio.",
+            "label": "AIQME",
+            "benefits": [
+              "Atkuriame pažeistas, susidėvėjusias ar nebegaminamas detales.",
+              "Koreguojame esamų detalių geometriją ir konstrukciją.",
+              "Modelį pritaikome pasirinktai gamybos technologijai."
+            ],
+            "description": "Kuriame tikslius 3D modelius pagal brėžinius, nuotraukas ar skenavimo duomenis. Nuo paprastų detalių iki sudėtingų konstrukcijų – paruošiame sprendimus pagal individualius poreikius.",
+            "problems": [
+              "Atkuriame pažeistas, susidėvėjusias ar nebegaminamas detales.",
+              "Koreguojame esamų detalių geometriją ir konstrukciją.",
+              "Modelį pritaikome pasirinktai gamybos technologijai."
+            ],
+            "provide": "Eskizą, brėžinį, nuotraukas, skenavimo duomenis arba pačią detalę. Nurodykite svarbius matmenis, apkrovas ir sujungimus.",
+            "receive": "Suderintą 3D modelį ir sutarto formato failus. Prireikus parengiame brėžinį, prototipą bei gamybos planą."
+          }
+        },
+        "en": {
+          "title": "3D modelling & reverse engineering",
+          "slug": "3d-modelling",
+          "fields": {
+            "short": "From a sketch or worn part to a production-ready model.",
+            "label": "AIQME",
+            "benefits": [
+              "Reconstruct damaged, worn or discontinued parts.",
+              "Adjust the geometry and construction of existing parts.",
+              "Adapt the model to the selected manufacturing process."
+            ],
+            "description": "We create precise 3D models from drawings, photographs or scan data. From simple parts to complex assemblies, we prepare solutions for your specific needs.",
+            "problems": [
+              "Reconstruct damaged, worn or discontinued parts.",
+              "Adjust the geometry and construction of existing parts.",
+              "Adapt the model to the selected manufacturing process."
+            ],
+            "provide": "A sketch, drawing, photos, scan data or the physical part. Explain key dimensions, loads and connections.",
+            "receive": "An approved 3D model and agreed file formats. Drawings, a prototype and a manufacturing plan can be included."
+          }
+        }
+      }
+    },
+    {
+      "type": "service",
+      "key": "printing",
+      "position": 3,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "3D spausdinimas",
+          "slug": "3d-spausdinimas",
+          "fields": {
+            "short": "Prototipai, funkcinės detalės ir mažos serijos.",
+            "label": "VIENETINIAI GAMINIAI, PROTOTIPAI IR SERIJINĖ GAMYBA",
+            "benefits": [
+              "Vienetiniai gaminiai, prototipai ir serijinė gamyba.",
+              "Polimerų ir metalo sprendimai pagal detalės paskirtį.",
+              "Padedame pasirinkti medžiagą, procesą ir apdirbimą."
+            ],
+            "description": "Pagaminame fizinę detalę pagal 3D modelį. Parenkame procesą pagal paskirtį, paviršių, mechaninius poreikius ir kiekį — nuo plastikų iki metalo sprendimų.",
+            "problems": [
+              "Norite patikrinti naujo produkto formą",
+              "Reikia vienos detalės ar mažos serijos",
+              "Sudėtinga geometrija įprastai gamybai"
+            ],
+            "provide": "STL, STEP arba OBJ failą, kiekį, paskirtį ir norimą terminą. Jei modelio nėra, padėsime jį sukurti.",
+            "receive": "Pagamintas detales pagal suderintus parametrus. Prieš gamybą tikriname failą, o prieš pristatymą — rezultatą."
+          }
+        },
+        "en": {
+          "title": "3D printing",
+          "slug": "3d-printing",
+          "fields": {
+            "short": "Prototypes, functional components and small batches.",
+            "label": "ONE-OFF PARTS, PROTOTYPES & SERIES PRODUCTION",
+            "benefits": [
+              "One-off parts, prototypes and series production.",
+              "Polymer and metal solutions for the intended use.",
+              "Help choosing the material, process and finish."
+            ],
+            "description": "We produce a physical part from a 3D model. We select a process for the intended use, surface finish, mechanical needs and quantity, from polymers to metal solutions.",
+            "problems": [
+              "Testing the form of a new product",
+              "A one-off component or a small batch",
+              "Complex geometry for conventional manufacturing"
+            ],
+            "provide": "An STL, STEP or OBJ file, quantity, intended use and target date. If you do not have a model, we can help create one.",
+            "receive": "Parts manufactured to the agreed settings. A person reviews the file before production and the result before delivery."
+          }
+        }
+      }
+    },
+    {
+      "type": "service",
+      "key": "milling",
+      "position": 4,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Frezavimas",
+          "slug": "frezavimas",
+          "fields": {
+            "short": "Detalės iš ruošinio pagal jūsų modelį ar brėžinį.",
+            "label": "AIQME",
+            "benefits": [
+              "Gamyba pagal 3D modelį arba techninį brėžinį.",
+              "Laikikliai, įtaisai ir kitos funkcinės detalės.",
+              "Iš anksto suderiname medžiagą ir svarbius matmenis."
+            ],
+            "description": "Frezavimo metu medžiaga pašalinama iš ruošinio, kad būtų gauta reikiama forma. Suderiname medžiagą, svarbius matmenis, paviršius ir patikros kriterijus.",
+            "problems": [
+              "Reikia tvirtos funkcinės detalės",
+              "Svarbūs tikslūs sujungimai",
+              "Reikia pagaminti laikiklį ar gamybos įtaisą"
+            ],
+            "provide": "3D modelį ir, jei yra, brėžinį su tolerancijomis. Medžiagą, kiekį ir svarbių paviršių reikalavimus.",
+            "receive": "Pagamintas ir pagal sutartus kriterijus patikrintas detales. Visą darbų seką koordinuoja AIQME."
+          }
+        },
+        "en": {
+          "title": "CNC machining",
+          "slug": "cnc-machining",
+          "fields": {
+            "short": "Parts machined from stock to your model or drawing.",
+            "label": "AIQME",
+            "benefits": [
+              "Manufacturing from a 3D model or technical drawing.",
+              "Brackets, fixtures and other functional components.",
+              "Agree the material and critical dimensions in advance."
+            ],
+            "description": "Machining removes material from stock to create the required shape. We agree the material, critical dimensions, surfaces and inspection criteria.",
+            "problems": [
+              "A robust functional component",
+              "Precise mating features",
+              "A bracket or production fixture"
+            ],
+            "provide": "A 3D model and, where available, a toleranced drawing. Material, quantity and critical surface requirements.",
+            "receive": "Manufactured parts checked against agreed criteria. AIQME coordinates the complete workflow."
+          }
+        }
+      }
+    },
+    {
+      "type": "service",
+      "key": "engraving",
+      "position": 5,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Graviravimas",
+          "slug": "graviravimas",
+          "fields": {
+            "short": "Žymėjimas, užrašai ir individualios detalės.",
+            "label": "AIQME",
+            "benefits": [
+              "Užrašai, grafiniai elementai ir gaminių žymėjimas.",
+              "Padedame paruošti bei suderinti maketą.",
+              "Procesą parenkame pagal medžiagą ir norimą rezultatą."
+            ],
+            "description": "Padedame aiškiai pažymėti gaminius ar paruošti individualų užrašą. Technologiją ir rezultatą deriname pagal medžiagą ir naudojimo sąlygas.",
+            "problems": [
+              "Reikia ilgalaikio detalės žymėjimo",
+              "Norite užrašo ar grafinio elemento",
+              "Reikia vienodai pažymėti mažą seriją"
+            ],
+            "provide": "Vektorinį failą ar aiškų eskizą, matmenis, medžiagą ir graviravimo vietą.",
+            "receive": "Suderintą maketą ir pažymėtą gaminį. Prieš darbą patvirtiname užrašo išdėstymą."
+          }
+        },
+        "en": {
+          "title": "Engraving",
+          "slug": "engraving",
+          "fields": {
+            "short": "Markings, lettering and custom details.",
+            "label": "AIQME",
+            "benefits": [
+              "Lettering, graphic elements and product marking.",
+              "Help preparing and approving the artwork.",
+              "Select the process for the material and desired result."
+            ],
+            "description": "We help mark products clearly or create custom lettering. The process and finish are selected for the material and use conditions.",
+            "problems": [
+              "A lasting part marking",
+              "Lettering or a graphic element",
+              "Consistent marking across a small batch"
+            ],
+            "provide": "A vector file or clear sketch, dimensions, material and engraving location.",
+            "receive": "An approved layout and the marked item. The lettering position is confirmed before work begins."
+          }
+        }
+      }
+    },
+    {
+      "type": "service",
+      "key": "training",
+      "position": 6,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "3D modeliavimo mokymai",
+          "slug": "3d-modeliavimo-mokymai",
+          "fields": {
+            "short": "Praktiniai įgūdžiai jūsų idėjoms ir kasdieniam darbui.",
+            "label": "AIQME",
+            "benefits": [
+              "Individualūs arba grupiniai praktiniai mokymai.",
+              "Nuotoliniu būdu, AIQME patalpose ar jūsų įmonėje.",
+              "Programa pritaikoma patirčiai ir konkretiems darbams."
+            ],
+            "description": "Mokymus pritaikome pradinei patirčiai ir darbams, kuriuos norite atlikti. Mokomės nuosekliai: nuo eskizo iki modelio ir paruošimo gamybai.",
+            "problems": [
+              "Pradedate dirbti su 3D modeliavimu",
+              "Komandai reikia vienodo darbo proceso",
+              "Norite išmokti spręsti konkrečią užduotį"
+            ],
+            "provide": "Patirties lygį, tikslus, dalyvių skaičių ir patogų mokymosi būdą.",
+            "receive": "Praktines užduotis, sutartą mokymų programą ir grįžtamąjį ryšį. Individualiai arba grupėje; nuotoliniu būdu, AIQME patalpose ar jūsų įmonėje."
+          }
+        },
+        "en": {
+          "title": "3D modelling training",
+          "slug": "3d-modelling-training",
+          "fields": {
+            "short": "Practical skills for your ideas and daily work.",
+            "label": "AIQME",
+            "benefits": [
+              "Individual or group practical training.",
+              "Online, at AIQME or at your company.",
+              "A programme tailored to your experience and work."
+            ],
+            "description": "Training is adapted to your starting experience and the work you want to do. We progress from sketches to models and preparation for manufacturing.",
+            "problems": [
+              "Getting started with 3D modelling",
+              "A consistent workflow for your team",
+              "Learning to solve a specific design task"
+            ],
+            "provide": "Your experience, goals, number of participants and preferred learning format.",
+            "receive": "Practical exercises, an agreed training programme and feedback. Individual or group sessions; online, at AIQME or at your company."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "scanning-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "scanning"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar skenuotas failas iš karto tinkamas gamybai?",
+          "slug": null,
+          "fields": {
+            "answer": "Ne visada. Tinklelį gali reikėti atkurti kaip CAD modelį ir pritaikyti pasirinktai gamybos technologijai."
+          }
+        },
+        "en": {
+          "title": "Is a scan immediately ready for manufacturing?",
+          "slug": null,
+          "fields": {
+            "answer": "Not always. The mesh may need rebuilding as a CAD model and adapting to the manufacturing process."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "modelling-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "modelling"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar galima pradėti tik nuo nuotraukos?",
+          "slug": null,
+          "fields": {
+            "answer": "Taip, pirminiam aptarimui jos pakanka. Tiksliam atkūrimui reikės matmenų arba pačios detalės."
+          }
+        },
+        "en": {
+          "title": "Can we start from a photo?",
+          "slug": null,
+          "fields": {
+            "answer": "Yes, for the initial discussion. Accurate reconstruction needs dimensions or the physical part."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "printing-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "printing"
+      },
+      "translations": {
+        "lt": {
+          "title": "Kokią technologiją rinktis?",
+          "slug": null,
+          "fields": {
+            "answer": "FDM tinka daugeliui prototipų, SLA — smulkioms detalėms, SLS — sudėtingesniems polimerų gaminiams. Galutinį pasirinkimą lemia naudojimo sąlygos."
+          }
+        },
+        "en": {
+          "title": "Which process should I choose?",
+          "slug": null,
+          "fields": {
+            "answer": "FDM suits many prototypes, SLA supports fine detail and SLS suits complex polymer parts. The final choice depends on the use conditions."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "milling-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "milling"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar gaminate iš mano ruošinio?",
+          "slug": null,
+          "fields": {
+            "answer": "Galimybę įvertiname individualiai pagal medžiagos būklę, matmenis ir užduotį."
+          }
+        },
+        "en": {
+          "title": "Can you use my stock material?",
+          "slug": null,
+          "fields": {
+            "answer": "We assess this individually based on condition, dimensions and the job."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "engraving-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "engraving"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar galite padėti parengti maketą?",
+          "slug": null,
+          "fields": {
+            "answer": "Taip. Atsiųskite norimą tekstą, logotipą arba eskizą, o paruošimą įtrauksime į pasiūlymą."
+          }
+        },
+        "en": {
+          "title": "Can you prepare the layout?",
+          "slug": null,
+          "fields": {
+            "answer": "Yes. Send your text, logo or sketch and we will include preparation in the proposal."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "training-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "training"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar galite mokyti mūsų įmonėje?",
+          "slug": null,
+          "fields": {
+            "answer": "Taip, programą ir darbo vietų paruošimą aptariame iš anksto."
+          }
+        },
+        "en": {
+          "title": "Can you train our team on site?",
+          "slug": null,
+          "fields": {
+            "answer": "Yes, we agree the programme and workstation requirements in advance."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "services-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "services"
+      },
+      "translations": {
+        "lt": {
+          "title": "Nuo ko priklauso terminas?",
+          "slug": null,
+          "fields": {
+            "answer": "Nuo modelio būklės, proceso, kiekio ir konkretaus užsakymo apimties. Terminą patvirtiname pasiūlyme."
+          }
+        },
+        "en": {
+          "title": "What determines the lead time?",
+          "slug": null,
+          "fields": {
+            "answer": "The model condition, process, quantity and scope determine timing. We confirm the lead time in the proposal."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "general-1",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "group": "general"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar reikia paskyros, kad užsakyčiau?",
+          "slug": null,
+          "fields": {
+            "answer": "Ne. Galite užsakyti kaip svečias. Paskyroje galima sekti užsakymus ir išsaugoti modelius."
+          }
+        },
+        "en": {
+          "title": "Do I need an account to order?",
+          "slug": null,
+          "fields": {
+            "answer": "No. You can check out as a guest. An account supports order tracking and saved models."
+          }
+        }
+      }
+    },
+    {
+      "type": "faq_item",
+      "key": "general-2",
+      "position": 2,
+      "published": true,
+      "meta": {
+        "group": "general"
+      },
+      "translations": {
+        "lt": {
+          "title": "Ar galiu atsiimti vietoje?",
+          "slug": null,
+          "fields": {
+            "answer": "Taip, suderinus atsiėmimo vietą bei laiką."
+          }
+        },
+        "en": {
+          "title": "Can I collect in person?",
+          "slug": null,
+          "fields": {
+            "answer": "Yes, after agreement on the collection location and time."
+          }
+        }
+      }
+    },
+    {
+      "type": "article",
+      "key": "file-guide",
+      "position": 1,
+      "published": true,
+      "meta": {
+        "section": "library",
+        "category": "guides"
+      },
+      "translations": {
+        "lt": {
+          "title": "Kaip paruošti failą 3D spausdinimui?",
+          "slug": "file-guide",
+          "fields": {
+            "intro": "Nuo matavimo vienetų iki svarbių paviršių — ką verta patikrinti prieš pateikiant modelį.",
+            "sections": [
+              {
+                "heading": "Pradėkite nuo paskirties",
+                "text": "Nurodykite, kur detalė bus naudojama: patalpoje ar lauke, ar ji laikys apkrovą ir ar liesis su kitomis dalimis. Tai padeda parinkti medžiagą bei technologiją."
+              },
+              {
+                "heading": "Patikrinkite mastelį",
+                "text": "Eksportuodami STL ar OBJ užsirašykite matavimo vienetus. Peržiūroje palyginkite bent vieną žinomą matmenį. Nekeiskite mastelio vien tam, kad detalė tilptų į gamybos zoną."
+              },
+              {
+                "heading": "Pažymėkite svarbias vietas",
+                "text": "Pridėkite brėžinį ar nuotrauką su svarbiais matmenimis, skylėmis ir paviršiais. Automatinė kaina nepakeičia inžinerinio tinkamumo įvertinimo."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "How to prepare a file for 3D printing",
+          "slug": "file-guide",
+          "fields": {
+            "intro": "From measurement units to critical surfaces: what to check before submitting a model.",
+            "sections": [
+              {
+                "heading": "Start with the intended use",
+                "text": "Explain where the part will be used, whether it carries a load and whether it mates with other parts. This supports material and process selection."
+              },
+              {
+                "heading": "Check the scale",
+                "text": "Record the measurement units when exporting STL or OBJ. Compare at least one known dimension in the viewer. Do not scale a part simply to fit the build area."
+              },
+              {
+                "heading": "Identify critical features",
+                "text": "Add a drawing or photo identifying critical dimensions, holes and surfaces. An automatic price does not replace engineering suitability review."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "article",
+      "key": "material-selection",
+      "position": 2,
+      "published": true,
+      "meta": {
+        "section": "library",
+        "category": "materials"
+      },
+      "translations": {
+        "lt": {
+          "title": "Kaip pasirinkti medžiagą savo detalei?",
+          "slug": "material-selection",
+          "fields": {
+            "intro": "Pradėkite nuo naudojimo sąlygų, o ne nuo spalvos.",
+            "sections": [
+              {
+                "heading": "Kokio rezultato reikia?",
+                "text": "Vizualinis maketas ir apkrovą laikanti detalė turi skirtingus poreikius. Aprašykite temperatūrą, drėgmę, kontaktą su cheminėmis medžiagomis ir mechanines apkrovas."
+              },
+              {
+                "heading": "Ką pateikti užklausoje?",
+                "text": "Pateikite modelį, numatomą kiekį ir naudojimo aplinką. Jei turite ankstesnę detalę, pridėkite jos nuotrauką ir paaiškinkite, kas netenkino."
+              },
+              {
+                "heading": "Pirmas bandymas",
+                "text": "Naujam sprendimui verta numatyti prototipo bandymą realiomis sąlygomis ir suderinti priėmimo kriterijus prieš seriją."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "How to choose a material for your part",
+          "slug": "material-selection",
+          "fields": {
+            "intro": "Start with the conditions of use, not the colour.",
+            "sections": [
+              {
+                "heading": "What result do you need?",
+                "text": "A visual model and a load-bearing part have different needs. Describe temperature, moisture, chemical exposure and mechanical loads."
+              },
+              {
+                "heading": "What should the enquiry include?",
+                "text": "Provide the model, quantity and operating environment. If you have a previous part, add a photo and explain what did not work."
+              },
+              {
+                "heading": "An initial trial",
+                "text": "For a new solution, plan a prototype trial in realistic conditions and agree acceptance criteria before a batch."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "article",
+      "key": "scan-to-cad",
+      "position": 3,
+      "published": true,
+      "meta": {
+        "section": "library",
+        "category": "technology"
+      },
+      "translations": {
+        "lt": {
+          "title": "Skenuotas tinklelis ir CAD: kuo jie skiriasi?",
+          "slug": "scan-to-cad",
+          "fields": {
+            "intro": "Skenavimas užfiksuoja paviršių. Modeliavimas padeda paruošti konstrukciją tolimesniam darbui.",
+            "sections": [
+              {
+                "heading": "Tinklelis",
+                "text": "STL ir OBJ modeliuose paviršius dažniausiai aprašomas trikampiais. Toks failas patogus objekto formai peržiūrėti, tačiau ne visada lengvai redaguojamas."
+              },
+              {
+                "heading": "CAD modelis",
+                "text": "Atkuriant detalę apibrėžiamos konstrukcinės formos ir svarbūs matmenys. Taip galima sąmoningai keisti skyles, plokštumas ir tvirtinimus."
+              },
+              {
+                "heading": "Vienas darbo procesas",
+                "text": "AIQME suderina skenavimą, atkūrimą ir gamybos paruošimą, kad nereikėtų perduoti užduoties keliems atskiriems tiekėjams."
+              }
+            ]
+          }
+        },
+        "en": {
+          "title": "Scan mesh and CAD: what is the difference?",
+          "slug": "scan-to-cad",
+          "fields": {
+            "intro": "Scanning captures a surface. Modelling prepares a design for further work.",
+            "sections": [
+              {
+                "heading": "A mesh",
+                "text": "STL and OBJ surfaces are commonly represented by triangles. This is useful for viewing a shape but is not always easy to edit."
+              },
+              {
+                "heading": "A CAD model",
+                "text": "Reconstruction defines engineering features and important dimensions. Holes, planes and mounts can then be changed deliberately."
+              },
+              {
+                "heading": "One workflow",
+                "text": "AIQME coordinates scanning, reconstruction and manufacturing preparation so you do not need to hand the job between separate suppliers."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "project",
+      "key": "part-reconstruction",
+      "position": 1,
+      "published": false,
+      "meta": {
+        "services": [
+          "modelling"
+        ],
+        "application": "maintenance"
+      },
+      "translations": {
+        "lt": {
+          "title": "Sugedusi detalė. Nauja galimybė.",
+          "slug": "part-reconstruction",
+          "fields": {
+            "task": "Įrangos laikiklis pažeistas, o gamybinio brėžinio nėra. Reikia atkurti formą ir svarbias tvirtinimo vietas.",
+            "solution": "Skenavimo duomenys naudojami modelio atkūrimui. Tvirtinimo vietos tikslinamos pagal matmenis, o modelis paruošiamas suderintam gamybos procesui.",
+            "result": "Demonstracinis rezultatas: atkurtas CAD modelis ir detalės gamybos planas. Tai scenarijus, o ne patvirtintas AIQME atliktas darbas."
+          }
+        },
+        "en": {
+          "title": "A broken part. A new possibility.",
+          "slug": "part-reconstruction",
+          "fields": {
+            "task": "An equipment bracket is damaged and no drawing is available. Its shape and critical mounting features need reconstruction.",
+            "solution": "Scan data supports reconstruction. Mounting features are checked against dimensions and the model is prepared for the agreed process.",
+            "result": "Illustrative result: a reconstructed CAD model and manufacturing plan. This is a scenario, not a verified completed AIQME project."
+          }
+        }
+      }
+    },
+    {
+      "type": "project",
+      "key": "prototype",
+      "position": 2,
+      "published": false,
+      "meta": {
+        "services": [
+          "printing"
+        ],
+        "application": "development"
+      },
+      "translations": {
+        "lt": {
+          "title": "Idėja, kurią galima paimti į rankas.",
+          "slug": "prototype",
+          "fields": {
+            "task": "Prieš gaminant produktą reikia patikrinti jo formą, tvirtinimus ir surinkimą.",
+            "solution": "Sukuriamas modelis ir atspausdinamas bandomasis prototipas. Po peržiūros numatomi pakeitimai.",
+            "result": "Demonstracinis rezultatas: fizinis prototipas ir konkrečių pakeitimų sąrašas kitai versijai."
+          }
+        },
+        "en": {
+          "title": "An idea you can hold.",
+          "slug": "prototype",
+          "fields": {
+            "task": "A product needs its shape, mounts and assembly checked before production.",
+            "solution": "A model is created and a trial prototype printed. Changes are identified after review.",
+            "result": "Illustrative result: a physical prototype and an actionable list of changes for the next iteration."
+          }
+        }
+      }
+    },
+    {
+      "type": "project",
+      "key": "production-fixture",
+      "position": 3,
+      "published": false,
+      "meta": {
+        "services": [
+          "milling"
+        ],
+        "application": "manufacturing"
+      },
+      "translations": {
+        "lt": {
+          "title": "Įtaisas paprastesniam kasdieniam darbui.",
+          "slug": "production-fixture",
+          "fields": {
+            "task": "Darbuotojui reikia stabiliai laikyti detalę pasikartojančioje operacijoje.",
+            "solution": "Pagal darbo vietos matmenis projektuojamas laikiklis. Prieš gamybą patvirtinamos sąlyčio ir tvirtinimo vietos.",
+            "result": "Demonstracinis rezultatas: individualaus įtaiso konstrukcija ir sutarti patikros kriterijai."
+          }
+        },
+        "en": {
+          "title": "A fixture for easier daily work.",
+          "slug": "production-fixture",
+          "fields": {
+            "task": "An operator needs to hold a component securely during a repeated operation.",
+            "solution": "A fixture is designed around the workstation. Contact points and mounting features are approved before manufacture.",
+            "result": "Illustrative result: a custom fixture design and agreed inspection criteria."
+          }
+        }
+      }
+    },
+    {
+      "type": "category",
+      "key": "scanners",
+      "position": 1,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "3D skeneriai",
+          "slug": "scanners",
+          "fields": {}
+        },
+        "en": {
+          "title": "3D scanners",
+          "slug": "scanners",
+          "fields": {}
+        }
+      }
+    },
+    {
+      "type": "category",
+      "key": "printers",
+      "position": 2,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "3D spausdintuvai",
+          "slug": "printers",
+          "fields": {}
+        },
+        "en": {
+          "title": "3D printers",
+          "slug": "printers",
+          "fields": {}
+        }
+      }
+    },
+    {
+      "type": "category",
+      "key": "materials",
+      "position": 3,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Medžiagos",
+          "slug": "materials",
+          "fields": {}
+        },
+        "en": {
+          "title": "Materials",
+          "slug": "materials",
+          "fields": {}
+        }
+      }
+    },
+    {
+      "type": "category",
+      "key": "accessories",
+      "position": 4,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Dalys ir priedai",
+          "slug": "accessories",
+          "fields": {}
+        },
+        "en": {
+          "title": "Parts & accessories",
+          "slug": "accessories",
+          "fields": {}
+        }
+      }
+    },
+    {
+      "type": "category",
+      "key": "software",
+      "position": 5,
+      "published": true,
+      "meta": {},
+      "translations": {
+        "lt": {
+          "title": "Programinė įranga",
+          "slug": "software",
+          "fields": {}
+        },
+        "en": {
+          "title": "Software",
+          "slug": "software",
+          "fields": {}
+        }
+      }
+    },
+    {
+      "type": "training",
+      "key": "topic-1",
+      "position": 1,
+      "published": false,
+      "meta": {
+        "date": "2026-11-12",
+        "format": "online"
+      },
+      "translations": {
+        "lt": {
+          "title": "3D modeliavimo pradžia",
+          "slug": null,
+          "fields": {
+            "description": "Nuotoliniu būdu · grupė"
+          }
+        },
+        "en": {
+          "title": "Getting started with 3D modelling",
+          "slug": null,
+          "fields": {
+            "description": "Online · group"
+          }
+        }
+      }
+    },
+    {
+      "type": "training",
+      "key": "topic-2",
+      "position": 2,
+      "published": false,
+      "meta": {
+        "date": "2026-12-03",
+        "format": "aiqme"
+      },
+      "translations": {
+        "lt": {
+          "title": "Nuo skeno iki CAD modelio",
+          "slug": null,
+          "fields": {
+            "description": "AIQME patalpose · grupė"
+          }
+        },
+        "en": {
+          "title": "From a scan to a CAD model",
+          "slug": null,
+          "fields": {
+            "description": "At AIQME · group"
+          }
+        }
+      }
+    }
+  ]
+}

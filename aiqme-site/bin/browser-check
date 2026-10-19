@@ -40,8 +40,8 @@ DATABASE = 'aiqme_browser'
 OUT = APP / 'build' / 'verification' / 'browser-check'
 ALLOWLIST = APP / 'tests' / 'fixtures' / 'marker-allowlist.json'
 EVIDENCE = REPO / 'docs' / 'customer-prototype' / 'evidence' / 'audit-20261016'
-# Сидеры контента по порядку (W-04 добавит свой); данные задач — tests/browser/.
-CONTENT_SEEDERS: list[str] = []
+# Сидеры контента по порядку (исходный контент W-04); данные задач — tests/browser/
+CONTENT_SEEDERS: list[str] = ['Database\\Seeders\\PrototypeContentSeeder']
 BROWSER_SEEDER = 'Tests\\browser\\BrowserDataSeeder'
 NOT_FOUND_PAGES = ['/lt/nera-tokio', '/en/missing-page']
 SKIPPED_LOGIN = 'пропущено: вход появится в W-07'

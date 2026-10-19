@@ -323,3 +323,137 @@ OK    удалённая отладка Chrome выключена (DevToolsActiv
 - Livewire на страницах ещё нет: nonce для `@livewireScripts` берётся из `Vite::cspNonce()` (проверено чтением
   `FrontendAssets::nonce()` и тестом равенства nonce), в браузере — после появления компонентов.
 - Реальные устройства, Safari/Firefox, Lighthouse — не в W-03.
+
+## W-04 «Модель контента и ContentService» — 2026-10-19, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки; правки текстов D-21 — **ждут проверки пользователем**). Агент не делал commit/push.
+
+### Что сделано
+
+- **Таблицы** (`database/migrations/2026_10_19_100000_create_content_tables.php`): `content_items` (type, key, position,
+  `meta` — непереводимые атрибуты: группа FAQ, раздел/категория статьи, услуги и применение проекта, дата и формат обучения;
+  уникально `(type, key)`), `content_translations` (locale, title, slug, fields, SEO, `revision`, `published_revision`,
+  `published_at`; уникально `(content_item_id, locale)` и `(locale, type, slug)`), `content_revisions` (все версии с автором и
+  каналом), `ui_texts` (locale, key, value, revision). Таблицы `media` и `activity_log` уже создаёт Lunar — новых миграций
+  medialibrary/activitylog нет, новых пакетов нет.
+- **Модель публикации**: черновик — последняя строка `content_revisions`; столбцы `content_translations` — опубликованная
+  версия, которую видит сайт. Сохранение не меняет опубликованное; «Опубликовать» копирует последнюю версию в перевод своей
+  локали (другие локали не трогает); «Снять» обнуляет `published_at`; восстановление старой версии создаёт новую.
+- **`App\Domain\Content\ContentService`** — единственная точка записи: `createItem`, `updateItem`, `saveDraft`, `publish`,
+  `unpublish`, `restore`, `saveUiText`, `addMedia` и `import` (только для сидера, канал system). Каждый метод, кроме `import`,
+  проверяет `Gate::define('admin')` (AppServiceProvider: `is_admin`). Все изменения перевода и публикация принимают
+  ожидаемую ревизию; расхождение → `ValidationException` по `revision` с текстом `content.stale` (в вебе форма сохранит ввод).
+  Набор полей задан кодом (`ContentType::fields()`); у `page_text` — блоками, созданными сидером (новый блок не добавить —
+  без конструктора страниц); значения — только текст (строки и вложенные списки строк). slug — только у service, project,
+  article, product, category (`^[a-z0-9]+(-[a-z0-9]+)*$`), занятый slug на той же локали/типе при публикации отклоняется.
+- **`ContentType`** — типы §4.1: page_text, service, project, article, training, product, brand, category, faq_item.
+- **`PublishedContent`** (чтение для W-05/W-06): `list` (по порядку, отбор по `meta`), `find` по slug, `page` (на `/ru` без RU —
+  EN, §4.3), `showsPlaceholder` (заглушка, пока на локали нет публикации), `switchUrl` — переключатель языка для сущностей:
+  опубликованная альтернатива `route('<locale>.<раздел>.show', ['slug' => …])`, если такой маршрут есть, иначе список раздела
+  (статья раздела «новости» — список новостей, иначе библиотека), иначе главная другой локали.
+- **`Markup::html()`** — вывод длинных текстов: Markdown (`Str::markdown`, `html_input=escape`, `allow_unsafe_links=false`)
+  + белый список тегов `p br strong em ul ol li a`. HTML/JS из текста не исполняется.
+- **ui_text**: `UiTextLoader` оборачивает `translation.loader` (`AppServiceProvider::register`, `extend`): строки `lang/` +
+  поверх них `ui_texts` той же локали. Работает для любого `__()`, включая оболочку W-03; RU без значения → EN (файл + БД).
+  Ключ должен существовать в `lang/lt|en` (строка, не группа); `null` убирает переопределение; кеш переводчика сбрасывается.
+- **Медиа**: `ContentItem` — `HasMedia`; коллекции `images`, `video`, `video_mobile`, `video_poster`; WebP-варианты `w480`,
+  `w960`, `w1600` (`Fit::Max`, без увеличения) для изображений и постеров. `addMedia` — формат по сигнатуре (JPEG, PNG, WebP,
+  MP4; SVG и прочее отклоняются), имя файла UUID, `alt` на локаль и необязательный источник (текст + только http(s)-ссылка)
+  в custom properties. Диск — по умолчанию medialibrary (`public`, `storage/`, игнорируется Git).
+- **Журнал** `App\Domain\Audit\AuditLog` (activitylog, log_name `audit`) + `Channel` (web, telegram, stripe, system):
+  `content.published` / `content.unpublished` с каналом, локалью, ревизией, автором и переводом.
+- **`database/seeders/data/prototype-content.json`** (56 КБ, 36 элементов) — извлечён один раз скриптом
+  `build/w04/extract.py` (игнорируемый `build/`, в Git нет) из `data-from-source.json` и видимого текста `dom.html`
+  (стандартный `html.parser`, только чтение как текст). Только тексты: без разметки, атрибутов, ссылок, медиа.
+  - Опубликованы: page_text `home`, `about`, `contact`, `training` (вводная панель «Programa jums arba jūsų komandai…»),
+    6 услуг (title, slug своей локали, short, подпись, 3 пункта блока, описание, проблемы, provide, receive), 9 faq_item
+    (по одному в группе каждой услуги, `services` — «Nuo ko priklauso terminas?», `general` — 2 вопроса: аккаунт и самовывоз),
+    3 статьи (раздел `library`, slug = id, категория = cat, дата — момент импорта), 5 категорий (slug как в `?category=`).
+  - Черновики (дословно): 4 политики (page_text `privacy`, `cookies`, `delivery`, `returns`), 3 проекта (EN — из
+    `data-from-source.json`, а не LT-текст EN-страниц прототипа), 2 темы обучения (дата, формат, название, описание).
+  - Не импортированы: демо-товары, бренды, новости, цены, медиа и видео-ссылки третьих лиц, блок команды «О нас» (D-32).
+- **`PrototypeContentSeeder`** читает только этот JSON; `import()` создаёт лишь отсутствующие элементы `(type, key)` —
+  повторный запуск ничего не перезаписывает. Запуск: `bin/php artisan db:seed --class='Database\Seeders\PrototypeContentSeeder'`.
+  `bin/browser-check` теперь запускает его после `migrate:fresh` (`CONTENT_SEEDERS`).
+
+### Правки текстов по таблице 1 D-21 — ждут проверки пользователем
+
+Все — только в публикуемых элементах, LT и EN; остальное перенесено дословно. «Удалено» — фраза не перенесена.
+
+| Где | LT | EN | Действие |
+|---|---|---|---|
+| Главная, процесс, шаг 4 | «…atsiimti iš anksto apmokėjus.» → «Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.» | «…or prepaid collection.» → «We check the result and prepare it for delivery or collection.» | заменено |
+| Главная, hero | «Gamybos iliustracija ·» (вместе со ссылкой на видео третьего лица) | «Manufacturing illustration ·» | удалено |
+| Главная и «Услуги», блок услуг | «Demonstracinė iliustracija» (подписи 6 иллюстраций) | «Illustrative image» | удалено |
+| Главная | «Planuojami prekių ženklai. Partnerystės…», «Planuojamas asortimentas…», «Demonstraciniai AIQME informaciniai straipsniai.» | «Planned brands…», «Planned range…», «Illustrative AIQME informational articles.» | удалено |
+| «О нас» | «Demonstracinis vaizdas · tikros darbo aplinkos nuotraukos vieta» | «Illustrative image · placeholder for real workplace photography» | удалено |
+| «О нас» | блок «Žmonės už sprendimų» + текст | «The people behind the solutions» + текст | удалено (D-32) |
+| FAQ услуги обучения | «Viešai rodomos prototipo datos yra demonstracinės.» | «Public dates in this prototype are illustrative.» | удалено, первое предложение осталось |
+| Общий FAQ (аккаунт) | «…išsaugoti modelius ir taikyti administratoriaus nustatytą nuolaidą.» → «Paskyroje galima sekti užsakymus ir išsaugoti modelius.» | → «An account supports order tracking and saved models.» | заменено |
+| Общий FAQ (самовывоз) | → «Taip, suderinus atsiėmimo vietą bei laiką.» | → «Yes, after agreement on the collection location and time.» | заменено |
+| Контакты | notice «Demonstracinis prototipas. Kainos…» | «Demonstration prototype. Prices…» | удалено |
+| Контакты | строка «Darbo laikas: tikslinamas» | «Opening hours: to be confirmed» | удалено |
+| Контакты, форма | «Naudokite tik demonstracinius duomenis.» (осталось «* — būtini laukai.») | «Use demonstration data only.» («* — required fields.») | удалено |
+| Контакты, форма | «Failai niekur nesiunčiami…», флажок «Suprantu, kad tai demonstracinė užklausa…» | «Files are not sent anywhere…», «I understand this is a demonstration enquiry…» | удалено |
+| Контакты, форма | «Peržiūrėti užklausos patvirtinimą» → «Siųsti užklausą» | «Preview enquiry confirmation» → «Send enquiry» | заменено |
+
+### Решения по неопределённому (простейший вариант)
+
+- **Состав page_text** (блоки — W-05 выводит их): главная — eyebrow/заголовок/текст hero, 3 этапа, сценарии, процесс (общий
+  и для страниц услуг, §4.1), заголовки разделов, CTA-полоса (`cta_title`/`cta_text` — один источник; на «О нас» и «Услугах»
+  тот же текст); «О нас» — вводный блок и 3 панели; контакты — заголовок, реквизиты (подпись + значение), заметка о визите,
+  заголовок, вводная строка и кнопка формы (кнопка и вводная строка — в page_text, т. к. их правит таблица D-21; подписи полей
+  формы — дело W-09); обучение — вводная панель; политики — intro, notice, разделы (заголовок + текст, абзацы через пустую
+  строку). Надписи кнопок и ссылок страниц (кроме формы контактов), `<h1>` и вводный абзац page-top остаются в `lang/` (W-02,
+  W-05). `title` перевода page_text = `<h1>` страницы (для админки).
+- Синяя точка в конце h1 hero — декоративный `<span>`: в `hero_title` без точки. Перенос строки `<br>` в заголовках — `\n`.
+- Подпись блока услуги хранится без номера («AIQME», «VIENETINIAI GAMINIAI…»): номер «01 / » — порядок услуги.
+- Группа FAQ услуги — ключ услуги (`scanning`, …) из `data-from-source.json`, а не локализованный slug.
+- Кнопки политик («Išvalyti šios demonstracijos duomenis», «Leisti pasirenkamus (demo)», «Aprašyti neatitikimą») не перенесены:
+  это интерфейс, не текст политики.
+- `ui_text` применяется сразу при сохранении (без черновика), с той же проверкой ревизии.
+- Тексты ошибок сервиса (`lang/*/content.php`) в прототипе отсутствуют — короткие нейтральные: «Įrašas pakeistas kitame lange.
+  Atnaujinkite puslapį ir pakartokite.» · «Changed in another window. Reload the page and try again.»; «Netinkama reikšmė: :field.»
+  · «Invalid value: :field.»; «Toks adresas jau naudojamas.» · «This address is already in use.».
+- Удаления элементов в сервисе нет (в W-04 не требуется; удаление — веб-админка W-08/W-26).
+- Карточки сущностей ещё не существуют: `switchUrl` ждёт маршрутов `<locale>.<раздел>.show` с параметром `slug` (W-05/W-06/W-25).
+
+### Проверки (запущены в этой сессии)
+
+- `aiqme-site/bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **277 тестов, 205 passed, 72 skipped** (пропуски — прежние
+  W-02), Vite build OK.
+- Новые тесты: `ContentServiceTest` (12) — неадминистратор не может создать/изменить/опубликовать/снять/восстановить/
+  переопределить ui_text/добавить медиа и ничего не меняется; черновик не публикует; публикация LT не публикует EN и LT не
+  подставляется под EN; правка опубликованного не видна до повторной публикации; устаревшая ревизия отклоняется в
+  saveDraft/publish/unpublish без перезаписи; восстановление → новая версия; журнал публикации/снятия с каналом
+  telegram/web, локалью, автором; поля по типу, только текст, slug; блоки page_text фиксированы; занятый slug; заглушки по
+  локали и разделу; переключатель языка (временные маршруты `*.services.show` в тесте); RU page_text → EN.
+  `UiTextTest` (4) — значение из БД в шапке `/lt` (подвал со своим ключом не меняется), `/ru` администратора — EN-значение из
+  БД, не ключ; снятие переопределения и устаревшая ревизия; только существующие строковые ключи. `MarkupTest` (3, Unit) —
+  Markdown-подмножество; `<script>`, `<img onerror>`, атрибуты экранируются; `javascript:`/`data:` ссылки, изображения,
+  заголовки, код снимаются. `ContentMediaTest` (2) — PNG 2000×1000 → WebP 480/960/1600 (тип и ширина проверены `getimagesize`),
+  имя UUID, alt LT/EN, источник; SVG под `.png`, изображение в коллекции видео, неизвестная коллекция и `javascript:`-источник
+  отклоняются. `PrototypeContentSeederTest` (7) — список фраз теста совпадает с цитатами таблицы 1 в
+  `docs/planning/edition-2/decisions.md` (без плана — пропуск); в публикуемых элементах JSON нет исходных фраз D-21, слов
+  tikslinamas / to be confirmed, новые и остающиеся фразы есть; JSON без тегов, медиа, ссылок и `-demo`, сидер не читает
+  evidence; 6 услуг со slug прототипа и полями блока, 3 статьи библиотеки, 5 категорий, опубликованные страницы, без блока
+  команды; политики, проекты и обучение — черновики, дословно; FAQ: 9 вопросов на локали без повторов, группы по 1, general — 2;
+  повторный запуск ничего не перезаписывает (правка и снятие с публикации сохраняются).
+- **Тесты ловят поломки** (временные мутации, откачены, файлы сверены `cmp`): без проверки прав в `publish`; без проверки
+  ревизии; публикация всех локалей сразу; без загрузчика ui_text; демо-фраза возвращена в JSON; `import` перезаписывает;
+  дубль FAQ в general; канал журнала всегда `web` — каждая роняет свой тест.
+- `bin/php artisan migrate` + сидер дважды на dev-БД `aiqme`: «создано 36», затем ничего; 54 опубликованных перевода,
+  54 записи журнала (system).
+- `bin/browser-check /lt /en` → **OK (251 проверка)**; в `aiqme_browser` после прогона 36 элементов, 54 опубликованных перевода.
+  Шаблоны в W-04 не менялись — поиск маркеров по своим страницам не требуется (rules[7]); прогон подтверждает, что сидер
+  встроен в подготовку данных.
+- `git status --porcelain aiqme-site`: новые файлы — `app/Domain/`, миграция, сидер и JSON, `lang/*/content.php`, тесты;
+  изменены `AppServiceProvider.php`, `bin/browser-check`; бинарных медиа, `.env`, ключей нет; `experiments/` не изменён.
+
+### Не проверено / для следующих задач
+
+- Вывод контента на страницах (W-05/W-06), sitemap сущностей, маршруты карточек — в своих задачах; страницы пока показывают
+  заготовки W-02/W-03.
+- Видео: обработка MP4 (постер, мобильный вариант) — только приём по сигнатуре; конверсий видео нет (§4.4 — W-05/W-08).
+  Лимиты размера медиа (§6.4) применяет загрузка в админке (W-08).
+- Правки D-21 в таблице выше и выбор блоков page_text — **ждут проверки пользователем**.

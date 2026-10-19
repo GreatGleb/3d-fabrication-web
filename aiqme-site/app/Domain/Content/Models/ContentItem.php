@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Domain\Content\Models;
+
+use App\Domain\Content\ContentType;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+/**
+ * Элемент контента (§4.1): тип, ключ, порядок и непереводимые атрибуты meta (группа FAQ, раздел и категория статьи,
+ * связанные услуги проекта, дата и формат обучения). Пишется только через ContentService.
+ */
+#[Fillable(['type', 'key', 'position', 'meta'])]
+class ContentItem extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+
+    /** Коллекции медиа (назначение §4.1) => допустимые форматы файла. */
+    public const MEDIA_COLLECTIONS = [
+        'images' => ['jpg', 'png', 'webp'],
+        'video' => ['mp4'],
+        'video_mobile' => ['mp4'],
+        'video_poster' => ['jpg', 'png', 'webp'],
+    ];
+
+    /** Ширины WebP-вариантов изображений (§4.4). */
+    public const IMAGE_WIDTHS = [480, 960, 1600];
+
+    protected function casts(): array
+    {
+        return [
+            'type' => ContentType::class,
+            'meta' => 'array',
+        ];
+    }
+
+    /** @return HasMany<ContentTranslation, $this> */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(ContentTranslation::class);
+    }
+
+    public function translation(string $locale): ?ContentTranslation
+    {
+        return $this->translations->firstWhere('locale', $locale);
+    }
+
+    public function meta(string $name, mixed $default = null): mixed
+    {
+        return $this->meta[$name] ?? $default;
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        foreach (self::IMAGE_WIDTHS as $width) {
+            $this->addMediaConversion('w'.$width)
+                ->format('webp')
+                ->fit(Fit::Max, $width, $width * 4)
+                ->performOnCollections('images', 'video_poster');
+        }
+    }
+}
