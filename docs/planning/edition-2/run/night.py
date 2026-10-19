@@ -77,14 +77,23 @@ REVIEW_PROMPT = """Ты — приёмщик ночного прогона AIQME
 
 Автор выполнил задачу {id} «{title}» из docs/planning/edition-2/tasks.json. Реши, принять ли работу.
 Прочитай: rules в tasks.json, задачу {id} целиком (особенно done и checks) и то, на что она ссылается;
-изменения задачи — {diff} (git diff); вывод aiqme-site/bin/check — {check}; заметки автора — aiqme-site/docs/progress.md.
-Читай изменённые файлы в дереве, если diff недостаточно.
+изменения задачи — {diff} (git diff); вывод проверок (bin/check и, если есть, bin/browser-check) — {check};
+заметки автора — aiqme-site/docs/progress.md. Читай изменённые файлы в дереве, если diff недостаточно.
+
+Цель проекта: новый сайт AIQME, повторяющий прототип заказчика. Принцип плана — максимально просто, только то,
+что просил заказчик и показывает прототип (docs/requirements.md, 01-scope.md). Эталон прототипа — только
+сохранённые материалы rules[8]: docs/customer-prototype/evidence/audit-20261016/verified-route-screens/<страница>/
+(dom.html и скриншоты — их можно открыть и посмотреть), states-followup/, тексты t('LT','EN') в
+source-backup-20261016/AIQME-site/dist/app.js (только читать).
 
 Проверь по каждому критерию done: выполнен ли он на самом деле. Особенно ищи:
 - ложно-зелёные проверки: тест проходит и при неработающей функции, проверка заглушена или пропущена;
 - критерий объявлен выполненным в progress.md, но в коде его нет;
 - отступления от плана и решений D-xx, выдуманные тексты и значения вместо указанных планом;
-- нарушения rules (публичный репозиторий, секреты, медиа, демо-надписи).
+- расхождение с прототипом: тексты LT/EN не из эталона, блоки и порядок страницы не как в прототипе,
+  перенесённые демо-надписи и заметки автора (D-21, D-36);
+- лишнее: функции, страницы, настройки и зависимости, которых нет ни в задаче, ни в прототипе;
+- нарушения rules (публичный репозиторий, секреты, медиа третьих лиц).
 Не придирайся к стилю и к тому, чего задача не требует. Замечание — только с доказательством (файл и место).
 
 Последней строкой ответа выведи ровно один JSON-объект без разметки:
@@ -175,6 +184,7 @@ class Night:
         self.budget = int(args.weekly_tokens * args.night_share)
         self.fix_rounds = args.fix_rounds
         self.review = args.review
+        self.stop_slices = {x for x in args.stop_after_slice.split(",") if x}
         self.journal = out / "journal.jsonl"
         self.stats = out.parent / "review-stats.jsonl"
         self.blocked = set()
@@ -248,14 +258,28 @@ class Night:
         except (IndexError, json.JSONDecodeError):
             return None, tokens, "приёмщик не вернул JSON-вердикт"
 
-    def check(self, task):
-        check = ROOT / "aiqme-site/bin/check"
-        log = self.out / f"{task['id']}.check.log"
-        if not check.exists():
+    def check(self, task, rnd):
+        """bin/check и, когда он уже есть (с W-03), bin/browser-check — сверка вёрстки с прототипом (§9.1)."""
+        log = self.out / f"{task['id']}.check{rnd}.log"
+        site = ROOT / "aiqme-site"
+        if not (site / "bin/check").exists():
             log.write_text("aiqme-site/bin/check нет\n")
             return False, "aiqme-site/bin/check нет (его создаёт W-01)", log
-        code = run_limited([str(check)], 30 * 60, log=log, cwd=ROOT / "aiqme-site")
-        return code == 0, f"bin/check: {'зелёный' if code == 0 else 'красный' if code is not None else 'таймаут'}", log
+        parts = []
+        for name in ("check", "browser-check"):
+            script = site / "bin" / name
+            if not script.exists():
+                continue
+            part = self.out / f"{task['id']}.{name}{rnd}.log"
+            code = run_limited([str(script)], 30 * 60, log=part, cwd=site)
+            parts.append((name, code, part))
+            if code != 0:
+                break
+        log.write_text("".join(f"== bin/{n}: код {c}\n{p.read_text()}\n" for n, c, p in parts))
+        ok = all(c == 0 for _, c, _ in parts)
+        detail = ", ".join(f"bin/{n}: {'зелёный' if c == 0 else 'красный' if c is not None else 'таймаут'}"
+                           for n, c, _ in parts)
+        return ok, detail, log
 
     def stash(self, task, why):
         """Работа задачи — в stash; заметки progress.md остаются в ветке отдельным коммитом."""
@@ -299,9 +323,14 @@ class Night:
                 return "blocked", "изменены пути вне aiqme-site/: " + ", ".join(outside[:10]), cost
             if result.get("status") != "done":
                 return "blocked", result.get("reason") or "автор вернул blocked", cost
-            ok, detail, check_log = self.check(task)
+            ok, detail, check_log = self.check(task, rnd)
             if not ok:
-                return "blocked", detail, cost
+                if rnd == self.fix_rounds:
+                    return "blocked", detail, cost
+                findings = [{"criterion": "bin/check", "problem": f"{detail} после твоей работы",
+                             "where": f"вывод: {check_log} (последние строки — причина)"}]
+                self.note(task=tid, event=f"check{rnd}", detail=f"{detail} — на доработку")
+                continue
             if not self.reviewed(task):
                 return "accepted", detail + "; без приёмки", cost
             verdict, tokens, err = self.judge(task, rnd, check_log)
@@ -324,11 +353,20 @@ class Night:
     def run(self, tasks):
         done = done_tasks()
         branch = git("branch", "--show-current")
+        self.start_head = git("rev-parse", "HEAD")
+        prev_slice, worked_slices = None, set()
         self.note(event="budget", detail=f"потолок ночи {self.budget:_} токенов".replace("_", " "))
         for task in tasks:
             tid = task["id"]
             if (self.only and tid not in self.only) or tid in done:
+                prev_slice = task["slice"]
                 continue
+            # Остановка после этапа — только если этап дорабатывался этой ночью: следующая ночь идёт дальше сама.
+            if prev_slice in self.stop_slices and prev_slice in worked_slices and task["slice"] != prev_slice:
+                self.note(task=tid, event="stop", detail=f"этап {prev_slice} закончен этой ночью — посмотрите результат; "
+                          "следующий запуск продолжит со следующего этапа")
+                return 0
+            prev_slice = task["slice"]
             if task["track"] != "L":
                 self.note(task=tid, event="stop", detail=f"уровень {task['track']} — только с человеком (rules[1])")
                 return 0
@@ -345,6 +383,7 @@ class Night:
                 self.note(task=tid, event="stop", detail=(f"потолок токенов: потрачено {self.spent:_}, "
                           f"следующая задача ≈ {expected:_}, потолок {self.budget:_}").replace("_", " "))
                 return 0
+            worked_slices.add(task["slice"])
             self.note(task=tid, event="start", detail=task["title"])
             try:
                 outcome, detail, cost = self.one_task(task, branch)
@@ -371,6 +410,22 @@ class Night:
                 if r["event"] in ("committed", "blocked", "skipped", "stop") or r["event"].startswith("review"):
                     extra = f" (токены: {r['cost']})" if "cost" in r else ""
                     lines.append(f"- **{r.get('task', '')}** {r['event']}: {r.get('detail', '')}{extra}")
+        start = getattr(self, "start_head", None)
+        if start:
+            added = [l[1:].strip() for l in git("diff", start, "HEAD", "--", PROGRESS, check=False).splitlines()
+                     if l.startswith("+") and not l.startswith("+++")]
+            flagged = [l for l in added if re.search(r"ждёт проверки|не проверено|вопрос|догадк|не задан|в плане нет", l, re.I)]
+            if flagged:
+                flagged = list(dict.fromkeys(l.lstrip("-* ") for l in flagged))
+                lines += ["", "## Вам посмотреть (из progress.md этой ночи)", ""] + [f"- {l}" for l in flagged[:40]]
+        for out in sorted(self.out.glob("W-*.work*.stdout.json")):
+            try:
+                text = json.loads(out.read_text()).get("result", "")
+            except (json.JSONDecodeError, OSError):
+                continue
+            notes = WORK_RE.sub("", text).strip()
+            if notes:
+                lines += ["", f"## Итог автора {out.name.split('.stdout')[0]}", "", notes[-2500:]]
         lines += ["", "Заблокированная работа — в `git stash list` (night-blocked W-xx); подробности — progress.md и логи рядом.",
                   f"Вердикты приёмщика по всем ночам — `{self.stats}`."]
         (self.out / "СВОДКА.md").write_text("\n".join(lines) + "\n")
@@ -385,7 +440,8 @@ def main():
     ap.add_argument("--weekly-tokens", type=int, default=120_000_000, help="недельный лимит в учитываемых токенах")
     ap.add_argument("--night-share", type=float, default=0.15, help="доля недельного лимита на ночь")
     ap.add_argument("--review", default="all", help="приёмка: all, off или список задач через запятую")
-    ap.add_argument("--fix-rounds", type=int, default=1, help="доработок автора по замечаниям приёмщика")
+    ap.add_argument("--fix-rounds", type=int, default=1, help="доработок автора по замечаниям приёмщика и красным проверкам")
+    ap.add_argument("--stop-after-slice", default="S1", help="остановиться после этих этапов для просмотра (через запятую; пусто — не останавливаться)")
     ap.add_argument("--only", nargs="*", default=[], help="только эти задачи (пробный запуск, например W-01)")
     ap.add_argument("--dry-run", action="store_true", help="показать, что будет выполнено, без запуска")
     args = ap.parse_args()
