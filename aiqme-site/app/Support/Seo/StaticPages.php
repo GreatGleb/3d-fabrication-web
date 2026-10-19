@@ -41,6 +41,9 @@ final class StaticPages
         'returns' => ['grazinimas', 'returns', false],
     ];
 
+    /** Политики: в sitemap — только опубликованные на локали (D-11, W-05). */
+    public const POLICIES = ['privacy', 'cookies', 'delivery', 'returns'];
+
     /** Страницы с noindex (§4.4). */
     public const NOINDEX = ['search'];
 

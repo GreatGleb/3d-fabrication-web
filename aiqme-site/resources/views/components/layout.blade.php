@@ -1,6 +1,7 @@
 {{-- Общая страница: SEO-head (W-02), шапка, подвал и cookie-плашка оболочки (W-03). $languages — LT/EN-версии
-     этой страницы для переключателя; у noindex-страниц (поиск, /ru) hreflang не выводится. --}}
-@props(['title', 'description', 'canonical' => null, 'languages' => [], 'image' => null, 'noindex' => false])
+     этой страницы для переключателя; у noindex-страниц (поиск, /ru) hreflang не выводится. $switchUrl — адрес
+     переключателя, если версии другой локали нет (сущность ведёт на список раздела, §1.1). --}}
+@props(['title', 'description', 'canonical' => null, 'languages' => [], 'image' => null, 'noindex' => false, 'switchUrl' => null])
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
@@ -12,7 +13,7 @@
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
-<x-header :languages="$languages" />
+<x-header :languages="$languages" :switch-url="$switchUrl" />
 <main id="main" tabindex="-1">
 {{ $slot }}
 </main>

@@ -1,5 +1,7 @@
 import './menu';
 import './modal';
+import './hero-video';
+import './tickers';
 
 // Cookie-плашка (D-11): информационная; после «Tik būtini» · «Essential only» больше не показывается.
 const cookie = document.querySelector('.cookie');

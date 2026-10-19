@@ -15,6 +15,13 @@
 "reason": "почему это не демо-надпись"}); кадры в размерах verified-route-screens.json
 и отчёт «наш кадр рядом с эталоном» в игнорируемом build/verification/browser-check/.
 Страницы кабинета, админки и /ru/ — «пропущено: вход появится в W-07».
+
+W-05 (публичные страницы): страницы услуг — из sitemap.xml; hero, заголовки h2 и карточки услуг — getComputedStyle §7.1;
+порядок блоков — tests/fixtures/prototype-blocks.json (прямые дети main и div.wrap.page-content, без evidence/); каждая
+фраза видимого текста main эталона (verified-route-screens/<страница>/dom.html, если evidence/ есть локально) — в нашем
+main в том же порядке, кроме исключений D-21/условных блоков и tests/fixtures/text-allowlist.json ({"page", "phrase",
+"reason"}); медиа или заглушка отрисованы; reduced-motion: видео hero и ленты брендов/новостей на данных фабрик
+tests/browser/ (ролик hero создаёт ffmpeg во временном каталоге; без ffmpeg — «не проверено»).
 """
 import html
 import json
@@ -25,7 +32,9 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import time
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -39,6 +48,8 @@ BASE = f'http://{HOST}'
 DATABASE = 'aiqme_browser'
 OUT = APP / 'build' / 'verification' / 'browser-check'
 ALLOWLIST = APP / 'tests' / 'fixtures' / 'marker-allowlist.json'
+TEXT_ALLOWLIST = APP / 'tests' / 'fixtures' / 'text-allowlist.json'
+BLOCKS = APP / 'tests' / 'fixtures' / 'prototype-blocks.json'
 EVIDENCE = REPO / 'docs' / 'customer-prototype' / 'evidence' / 'audit-20261016'
 # Сидеры контента по порядку (исходный контент W-04); данные задач — tests/browser/
 CONTENT_SEEDERS: list[str] = ['Database\\Seeders\\PrototypeContentSeeder']
@@ -106,17 +117,36 @@ def prepare(env):
     for seeder in CONTENT_SEEDERS:
         run(['bin/php', 'artisan', 'db:seed', f'--class={seeder}', '--force', '--no-interaction'], env=env)
 
+    if not (APP / 'public' / 'storage').exists():
+        run(['bin/php', 'artisan', 'storage:link', '--no-interaction'], env=env)
+
     admin_password = secrets.token_urlsafe(24)
     client_password = secrets.token_urlsafe(24)
     run(['bin/php', 'artisan', 'aiqme:make-admin', 'admin@aiqme.test', '--name=AIQME', '--password-stdin', '--no-interaction'],
         env=env, stdin=admin_password + '\n')
+    media_dir = tempfile.TemporaryDirectory(prefix='aiqme-browser-media-')
+    hero = hero_media(Path(media_dir.name))
     seeded = run(['bin/php', 'artisan', 'db:seed', f'--class={BROWSER_SEEDER}', '--force', '--no-interaction'],
-                 env={**env, 'BROWSER_CLIENT_PASSWORD': client_password}).stdout
+                 env={**env, 'BROWSER_CLIENT_PASSWORD': client_password, **hero}).stdout
+    media_dir.cleanup()
     client = re.search(r'client-\d+@aiqme\.test', seeded)
     if not client:
         sys.exit('FAIL: сидер tests/browser не создал клиента')
     # Пароли остаются только в памяти процесса: вход через форму добавит W-07.
-    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password)}
+    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password), 'hero_video': bool(hero)}
+
+
+def hero_media(directory):
+    """Короткий настоящий ролик hero (2 с, H.264), мобильный вариант и постер — ffmpeg во временном каталоге (W-05)."""
+    if shutil.which('ffmpeg') is None:
+        return {}
+    files = {'BROWSER_HERO_VIDEO': directory / 'hero.mp4', 'BROWSER_HERO_VIDEO_MOBILE': directory / 'hero-mobile.mp4',
+             'BROWSER_HERO_POSTER': directory / 'poster.png'}
+    for key, size in (('BROWSER_HERO_VIDEO', '640x360'), ('BROWSER_HERO_VIDEO_MOBILE', '360x640')):
+        run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc2=duration=2:size={size}:rate=24', '-pix_fmt', 'yuv420p',
+             '-c:v', 'libx264', '-movflags', '+faststart', str(files[key])])
+    run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=1280x720', '-frames:v', '1', str(files['BROWSER_HERO_POSTER'])])
+    return {key: str(path) for key, path in files.items()}
 
 
 def build_assets():
@@ -140,6 +170,13 @@ def start_server(env):
             time.sleep(0.1)
     server.kill()
     sys.exit('FAIL: сервер не ответил на /up')
+
+
+def pages_from_sitemap():
+    """Адреса сущностей (страницы услуг) — из sitemap.xml: slug берутся из БД, а не из кода."""
+    xml = urlopen(BASE + '/sitemap.xml').read().decode()
+    paths = [loc.removeprefix(BASE) for loc in re.findall(r'<loc>([^<]+)</loc>', xml)]
+    return sorted(path for path in paths if path.count('/') > 2)
 
 
 def pages_from_routes(env):
@@ -172,11 +209,11 @@ class Report:
         return ok
 
 
-def load_allowlist():
-    entries = json.loads(ALLOWLIST.read_text(encoding='utf-8'))
+def load_allowlist(file=ALLOWLIST):
+    entries = json.loads(file.read_text(encoding='utf-8'))
     for entry in entries:
         if not (entry.get('page') and entry.get('phrase') and entry.get('reason')):
-            sys.exit(f'FAIL: запись marker-allowlist.json без page/phrase/reason: {entry}')
+            sys.exit(f'FAIL: запись {file.name} без page/phrase/reason: {entry}')
     return entries
 
 
@@ -248,6 +285,14 @@ STYLE_PROBE = """() => {
         pageTopText: document.querySelector('.page-top p') ? css('.page-top p', 'color') : null,
         footerBackground: css('.footer', 'backgroundColor'),
         buttons: [...document.querySelectorAll('.btn:not(.small)')].filter(visible).map((b) => [b.getBoundingClientRect().height, getComputedStyle(b).borderRadius]),
+        hero: !!document.querySelector('main .hero h1'),
+        heroText: document.querySelector('.hero p') && (() => { const s = getComputedStyle(document.querySelector('.hero p'));
+            return {size: parseFloat(s.fontSize), line: parseFloat(s.lineHeight), max: s.maxWidth, color: s.color}; })(),
+        h1Max: h1s && h1s.maxWidth,
+        h2: [...document.querySelectorAll('main h2')].filter(visible).map((h) => { const s = getComputedStyle(h);
+            return {text: h.textContent.trim().slice(0, 40), size: parseFloat(s.fontSize), weight: s.fontWeight, line: parseFloat(s.lineHeight), spacing: parseFloat(s.letterSpacing)}; }),
+        serviceCards: [...document.querySelectorAll('.service-feature-copy h3')].map((h) => { const s = getComputedStyle(h);
+            return {size: parseFloat(s.fontSize), weight: s.fontWeight, line: parseFloat(s.lineHeight), spacing: parseFloat(s.letterSpacing)}; }),
     };
 }"""
 
@@ -265,12 +310,29 @@ def check_styles(report, page, path, width):
     report.check(near(got['bodyLine'], expected['body_size'] * 1.6), f'{where}: line-height body {got["bodyLine"]}')
     report.check(got['bodyColor'] == 'rgb(17, 23, 30)', f'{where}: цвет текста {got["bodyColor"]}')
     h1 = got['h1']
+    # Hero (§7.1): h1 clamp(54px, 5.1vw, 82px), 1,06, −0,047em, max-width 950; абзац 21 px / 1,55, 650, #c2cad4; ≤700 — 52 и 18 px.
+    h1_size, h1_line, h1_spacing = expected['h1_size'], 1.12, -0.045
+    if got['hero']:
+        h1_size, h1_line, h1_spacing = (52 if width <= 700 else min(max(54, width * 0.051), 82)), 1.06, -0.047
+        report.check(got['h1Max'] == '950px', f'{where}: max-width h1 hero {got["h1Max"]}')
+        text = got['heroText']
+        if report.check(text is not None, f'{where}: нет абзаца hero'):
+            size = 18 if width <= 700 else 21
+            report.check(near(text['size'], size) and near(text['line'], size * 1.55), f'{where}: абзац hero {text["size"]}/{text["line"]} ≠ {size}/1.55')
+            report.check(text['max'] == '650px' and text['color'] == 'rgb(194, 202, 212)', f'{where}: абзац hero {text["max"]} {text["color"]}')
     if report.check(h1 is not None, f'{where}: нет h1 в main'):
         report.check(h1['font'] == expected['font'], f'{where}: шрифт h1 {h1["font"]}')
-        report.check(near(h1['size'], expected['h1_size']), f'{where}: размер h1 {h1["size"]} ≠ {expected["h1_size"]:.1f}')
+        report.check(near(h1['size'], h1_size), f'{where}: размер h1 {h1["size"]} ≠ {h1_size:.1f}')
         report.check(h1['weight'] == '500', f'{where}: вес h1 {h1["weight"]}')
-        report.check(near(h1['line'], h1['size'] * 1.12), f'{where}: line-height h1 {h1["line"]}')
-        report.check(abs(h1['spacing'] - h1['size'] * -0.045) <= 0.1, f'{where}: letter-spacing h1 {h1["spacing"]}')
+        report.check(near(h1['line'], h1['size'] * h1_line), f'{where}: line-height h1 {h1["line"]}')
+        report.check(abs(h1['spacing'] - h1['size'] * h1_spacing) <= 0.1, f'{where}: letter-spacing h1 {h1["spacing"]}')
+    for h2 in got['h2']:  # общие заголовки (§7.1): вес 500, 1,12, −0,045em
+        report.check(h2['weight'] == '500' and near(h2['line'], h2['size'] * 1.12) and abs(h2['spacing'] - h2['size'] * -0.045) <= 0.1,
+                     f'{where}: h2 «{h2["text"]}» {h2}')
+    card_size = 30 if width <= 1050 else min(max(29, width * 0.026), 38)  # .service-feature-copy h3 (CSS прототипа)
+    for card in got['serviceCards']:
+        report.check(near(card['size'], card_size) and card['weight'] == '500' and near(card['line'], card['size'] * 1.13)
+                     and abs(card['spacing'] - card['size'] * -0.04) <= 0.1, f'{where}: заголовок карточки услуги {card} ≠ {card_size:.1f}')
     report.check(near(got['headMain'], expected['head_main']), f'{where}: высота шапки {got["headMain"]} ≠ {expected["head_main"]}')
     report.check(0 < got['logo'] <= got['headMain'], f'{where}: логотип {got["logo"]}px не помещается в шапку')
     report.check(near(got['headSub'], expected['head_sub']), f'{where}: высота второго ряда {got["headSub"]} ≠ {expected["head_sub"]}')
@@ -337,6 +399,252 @@ def check_cookie(report, page, path):
     report.check(cookie.count() == 0, f'{path}: плашка не скрылась после «Tik būtini»')
     page.reload()
     report.check(not page.locator('.cookie').is_visible(), f'{path}: плашка вернулась после подтверждения')
+
+
+# ---------- W-05: порядок блоков, тексты эталона, медиа, движение ----------
+
+BLOCKS_PROBE = """() => {
+    const name = (el) => [el.tagName.toLowerCase(), ...el.classList].join('.');
+    return [...document.querySelector('main').children].map((el) => el.classList.contains('wrap') && el.classList.contains('page-content')
+        ? {[name(el)]: [...el.children].map(name)} : name(el));
+}"""
+
+
+def check_blocks(report, page, path, fixture):
+    """Порядок прямых детей main (и div.wrap.page-content) — как в prototype-blocks.json (§7.1). Заголовок примера
+    div.section-head на услугах сверяется, только если пример есть (опубликованный проект услуги, §4.1)."""
+    expected = json.loads(json.dumps(fixture[path]))
+    has_project = page.locator('main .project-card').count() > 0
+    for entry in expected:
+        if isinstance(entry, dict) and not has_project and re.match(r'^/(lt/paslaugos|en/services)/.', path):
+            for children in entry.values():
+                for i, child in enumerate(children):
+                    if child == 'div.section-head' and i + 1 < len(children) and children[i + 1] == 'div.grid.two':
+                        del children[i]
+                        break
+    got = page.evaluate(BLOCKS_PROBE)
+    report.check(got == expected, f'{path}: порядок блоков {got} ≠ {expected}')
+
+
+# Таблицы D-21: исходная фраза эталона → наш вид ('' — удалена). Применяются к тексту эталона до сверки.
+D21_REPLACEMENTS = [
+    ('Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti iš anksto apmokėjus.', 'Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.'),
+    ('We check the result and prepare it for delivery or prepaid collection.', 'We check the result and prepare it for delivery or collection.'),
+    ('Demonstracinė iliustracija. Konkrečią įrangą ir procesą parenkame pagal projektą.', ''),
+    ('Illustrative image. Equipment and process are selected for each project.', ''),
+    ('Demonstracinis vaizdas · tikros darbo aplinkos nuotraukos vieta', ''),
+    ('Illustrative image · placeholder for real workplace photography', ''),
+    ('Gamybos iliustracija ·', ''), ('Manufacturing illustration ·', ''),
+    ('Demonstracinė iliustracija', ''), ('Illustrative image', ''),
+    ('Planuojami prekių ženklai. Partnerystės ir atstovavimo statusai dar nepatvirtinti.', ''),
+    ('Planned brands. Partnership and representation statuses are not yet confirmed.', ''),
+    ('Planuojamas asortimentas. Atstovavimo statusai nepatvirtinti.', ''),
+    ('Planned range. Representation statuses are unconfirmed.', ''),
+    ('Demonstraciniai AIQME informaciniai straipsniai.', ''), ('Illustrative AIQME informational articles.', ''),
+    ('Viešai rodomos prototipo datos yra demonstracinės.', ''), ('Public dates in this prototype are illustrative.', ''),
+    ('Paskyroje galima sekti užsakymus, išsaugoti modelius ir taikyti administratoriaus nustatytą nuolaidą.', 'Paskyroje galima sekti užsakymus ir išsaugoti modelius.'),
+    ('An account supports order tracking, saved models and an administrator-configured discount.', 'An account supports order tracking and saved models.'),
+    ('Taip, iš anksto apmokėjus ir suderinus atsiėmimo vietą bei laiką.', 'Taip, suderinus atsiėmimo vietą bei laiką.'),
+    ('Yes, after prepayment and agreement on the collection location and time.', 'Yes, after agreement on the collection location and time.'),
+    ('Darbo laikas:', ''), ('tikslinamas', ''), ('Opening hours:', ''), ('to be confirmed', ''),
+    ('Naudokite tik demonstracinius duomenis.', ''), ('Use demonstration data only.', ''),
+    ('Failai niekur nesiunčiami. Tai pridėjimo demonstracija.', ''), ('Files are not sent anywhere. This demonstrates attachment selection.', ''),
+    ('Suprantu, kad tai demonstracinė užklausa ir ji nebus siunčiama.', ''), ('I understand this is a demonstration enquiry and will not be sent.', ''),
+    ('Peržiūrėti užklausos patvirtinimą', 'Siųsti užklausą'), ('Preview enquiry confirmation', 'Send enquiry'),
+    ('DEMONSTRACINIS TVARKARAŠTIS', ''), ('ILLUSTRATIVE SCHEDULE', ''),
+]
+# Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
+# черновики, D-21: исключается всегда).
+TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/apie-mus|en/about)$'), ('div', {'grid', 'two'}, None, ('div', {'gap'}))]
+NO_TEXT = {'script', 'style', 'template', 'noscript', 'svg'}
+
+
+class ReferenceText(HTMLParser):
+    """Текст main эталона по узлам (тег, классы, родитель) — только чтение dom.html как текста."""
+    VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
+
+    def __init__(self):
+        super().__init__()
+        self.root = {'tag': 'root', 'cls': set(), 'children': [], 'parent': None}
+        self.stack = [self.root]
+
+    def handle_starttag(self, tag, attrs):
+        node = {'tag': tag, 'cls': set((dict(attrs).get('class') or '').split()), 'children': [], 'parent': self.stack[-1]}
+        self.stack[-1]['children'].append(node)
+        if tag not in self.VOID:
+            self.stack.append(node)
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, 0, -1):
+            if self.stack[i]['tag'] == tag:
+                del self.stack[i:]
+                return
+
+    def handle_data(self, data):
+        self.stack[-1]['children'].append(data)
+
+
+def reference_phrases(path, has_project):
+    """Фразы видимого текста main эталона по порядку после исключений; None — эталона нет."""
+    file = EVIDENCE / 'verified-route-screens' / (path.strip('/').replace('/', '__')) / 'dom.html'
+    if not file.exists():
+        return None
+    parser = ReferenceText()
+    parser.feed(file.read_text(encoding='utf-8'))
+
+    def find(node):
+        if isinstance(node, dict):
+            if node['tag'] == 'main':
+                return node
+            for child in node['children']:
+                found = find(child)
+                if found:
+                    return found
+        return None
+
+    def excluded(node):
+        for rule in TEXT_EXCLUDED_BLOCKS:
+            tag, classes = rule[0], rule[1]
+            page_rule = rule[2] if len(rule) > 2 else None
+            parent_rule = rule[3] if len(rule) > 3 else None
+            if node['tag'] == tag and node['cls'] == classes and (page_rule is None or re.search(page_rule, path)):
+                parent = node['parent']
+                if parent_rule is None or (parent['tag'] == parent_rule[0] and parent['cls'] == parent_rule[1]):
+                    return True
+        if not has_project and 'project-card' in node['cls']:
+            return True  # пример — карточка опубликованного проекта, без него не выводится (§4.1)
+        if not has_project and node['tag'] == 'div' and node['cls'] == {'section-head'} and re.search(r'/(paslaugos|services)/', path):
+            siblings = [c for c in node['parent']['children'] if isinstance(c, dict)]
+            index = siblings.index(node)
+            return index + 1 < len(siblings) and siblings[index + 1]['cls'] == {'grid', 'two'}
+        return False
+
+    phrases = []
+
+    def walk(node):
+        for child in node['children']:
+            if isinstance(child, str):
+                text = ' '.join(child.split())
+                for original, replacement in D21_REPLACEMENTS:
+                    text = text.replace(original, replacement)
+                text = ' '.join(text.split())
+                if text:
+                    phrases.append(text)
+            elif child['tag'] not in NO_TEXT and not excluded(child):
+                walk(child)
+
+    walk(find(parser.root))
+    return phrases
+
+
+OUR_TEXT = """() => {
+    const walker = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT, {acceptNode: (node) =>
+        node.parentElement.closest('script, style, template, noscript, [hidden]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+    const parts = [];
+    while (walker.nextNode()) { const text = walker.currentNode.nodeValue.replace(/\\s+/g, ' ').trim(); if (text) parts.push(text); }
+    return parts.join(' ');
+}"""
+
+
+def check_text(report, page, path, allowlist, discrepancies):
+    """Каждая фраза эталона (после исключений) есть в нашем main в том же порядке (done[8] W-05)."""
+    phrases = reference_phrases(path, page.locator('main .project-card').count() > 0)
+    if phrases is None:
+        discrepancies.append(f'{path}: не проверено (нет эталона)')
+        return
+    allowed = {entry['phrase'] for entry in allowlist if entry['page'] == path}
+    ours = page.evaluate(OUR_TEXT)
+    position = 0
+    for phrase in phrases:
+        if phrase in allowed:
+            continue
+        found = ours.find(phrase, position)
+        if report.check(found >= 0, f'{path}: нет фразы эталона «{phrase[:120]}» (после позиции {position})'):
+            position = found + len(phrase)
+        else:
+            discrepancies.append(f'{path}: нет «{phrase}»')
+
+
+MEDIA_PROBE = """async () => {
+    const result = [];
+    for (const frame of document.querySelectorAll('main .hero-art, main .service-feature-media, main .media-frame, main .split-image, main .project-image')) {
+        frame.scrollIntoView({block: 'center'});
+        const img = frame.querySelector(':scope > img');
+        if (img) { await img.decode().catch(() => {}); }
+        const art = frame.querySelector(':scope > svg.placeholder-art');
+        const box = art && art.getBoundingClientRect();
+        result.push({frame: frame.className, image: img ? img.naturalWidth : null,
+            art: !!(box && box.width > 0 && box.height > 0 && getComputedStyle(art).visibility === 'visible'),
+            prototypeImage: [...frame.querySelectorAll('img')].some((i) => /\\/assets\\//.test(i.src))});
+    }
+    window.scrollTo(0, 0);
+    return result;
+}"""
+
+
+def check_media(report, page, path):
+    """Медиа или своя заглушка отрисованы (naturalWidth > 0 либо видимый SVG); изображений прототипа нет (§7.2, F-47)."""
+    for frame in page.evaluate(MEDIA_PROBE):
+        report.check((frame['image'] or 0) > 0 or frame['art'], f'{path}: медиа не отрисовано в {frame}')
+        report.check(not frame['prototypeImage'], f'{path}: изображение прототипа в {frame["frame"]}')
+
+
+MOTION_PROBE = """() => {
+    const video = document.getElementById('hero-video');
+    const tracks = [...document.querySelectorAll('.partner-marquee-track, .news-marquee-track')];
+    return {
+        video: video && {paused: video.paused, autoplay: video.hasAttribute('autoplay'), poster: video.poster, preload: video.preload,
+            visible: video.getBoundingClientRect().height > 0, mobile: [...video.querySelectorAll('source')].map((s) => s.media)},
+        tracks: tracks.map((t) => ({animation: getComputedStyle(t).animationName,
+            duplicates: [...t.querySelectorAll('[aria-hidden="true"]')].filter((g) => g.getBoundingClientRect().width > 0).length,
+            transform: getComputedStyle(t).transform})),
+    };
+}"""
+
+
+def check_motion(report, browser, new_page, path, hero_video):
+    """Видео hero и ленты (§7.3) на данных фабрик: с reduced-motion — пауза, без autoplay, постер, лента без анимации
+    и дублей; без него — видео играет, лента движется, кнопка паузы её останавливает."""
+    context, page, _ = new_page(1440, 1000, reduced_motion='reduce')
+    page.goto(BASE + path, wait_until='networkidle')
+    page.wait_for_timeout(800)
+    got = page.evaluate(MOTION_PROBE)
+    video = got['video']
+    if not hero_video:
+        report.notes.append(f'{path}: видео hero не проверено (нет ffmpeg — ролик не создан)')
+    elif report.check(video is not None, f'{path}: нет видео hero при медиа hero'):
+        report.check(video['paused'] and not video['autoplay'], f'{path} reduced-motion: видео играет или autoplay {video}')
+        report.check(bool(video['poster']) and video['visible'], f'{path} reduced-motion: нет постера {video}')
+        if video['poster']:
+            report.check(page.request.get(video['poster']).status == 200, f'{path}: постер не загружается {video["poster"]}')
+        report.check(video['preload'] == 'metadata' and '(max-width: 700px)' in video['mobile'], f'{path}: preload/мобильный источник {video}')
+    report.check(len(got['tracks']) == 2, f'{path}: ожидались ленты брендов и новостей (данные фабрик), найдено {len(got["tracks"])}')
+    for track in got['tracks']:
+        report.check(track['animation'] == 'none' and track['duplicates'] == 0, f'{path} reduced-motion: лента {track}')
+    context.close()
+
+    context, page, _ = new_page(1440, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    page.mouse.move(1, 1)
+    if hero_video:
+        try:
+            page.wait_for_function("() => { const v = document.getElementById('hero-video'); return v && !v.paused; }", timeout=5000)
+            report.check(True, '')
+        except Exception:  # noqa: BLE001 — таймаут ожидания и есть провал проверки
+            report.check(False, f'{path}: без reduced-motion видео hero не играет')
+    for selector in ('.partner-section', '.news-section'):
+        track = page.locator(f'{selector} [class$="-marquee-track"]')
+        before = track.evaluate('(t) => getComputedStyle(t).transform')
+        page.wait_for_timeout(400)
+        moved = track.evaluate('(t) => getComputedStyle(t).transform')
+        report.check(before != moved, f'{path}: лента {selector} не движется')
+        page.locator(f'{selector} .partner-motion-toggle').click()
+        page.mouse.move(1, 1)
+        stopped = track.evaluate('(t) => getComputedStyle(t).transform')
+        page.wait_for_timeout(400)
+        report.check(stopped == track.evaluate('(t) => getComputedStyle(t).transform'), f'{path}: пауза не остановила ленту {selector}')
+        report.check(page.locator(f'{selector} .partner-motion-toggle').get_attribute('aria-pressed') == 'true', f'{path}: aria-pressed паузы {selector}')
+    context.close()
 
 
 SELF_TEST_PATH = '/__browser-check-self-test'
@@ -406,21 +714,23 @@ def main():
     arguments = [a for a in sys.argv[1:] if not a.startswith('-')]
     env = browser_env()
     log('== подготовка БД aiqme_browser')
-    prepare(env)
+    accounts = prepare(env)
     log('== сборка Vite')
     build_assets()
     pages, skipped_ru = pages_from_routes(env)
-    if arguments:
-        pages = arguments
     allowlist = load_allowlist()
+    text_allowlist = load_allowlist(TEXT_ALLOWLIST)
+    blocks = json.loads(BLOCKS.read_text(encoding='utf-8'))
     log(f'== сервер {BASE} (bin/php -S)')
     server = start_server(env)
+    pages = arguments or sorted(set(pages[:-len(NOT_FOUND_PAGES)] + pages_from_sitemap())) + NOT_FOUND_PAGES
     report = Report()
     OUT.mkdir(parents=True, exist_ok=True)
     shots_dir = OUT / 'shots'
     shutil.rmtree(shots_dir, ignore_errors=True)
     shots_dir.mkdir()
     rows = []
+    discrepancies = []
     try:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch()
@@ -433,8 +743,8 @@ def main():
             log('== самопроверка детекторов и модального окна')
             self_test(report, browser, csp, assets)
 
-            def new_page(width, height):
-                context = browser.new_context(viewport={'width': width, 'height': height})
+            def new_page(width, height, reduced_motion='no-preference'):
+                context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion=reduced_motion)
 
                 def guard(route):
                     host = route.request.url.split('/')[2] if '://' in route.request.url else ''
@@ -470,6 +780,9 @@ def main():
                     if width in (390, 1440):
                         for hit in marker_hits(page, path, allowlist):
                             report.check(False, f'{where}: маркер {hit}')
+                    if path in blocks and width == 1440:
+                        check_blocks(report, page, path, blocks)
+                        check_text(report, page, path, text_allowlist, discrepancies)
                     if width == 1440:
                         check_focus_style(report, page, path)
                         page.reload(wait_until='networkidle')
@@ -477,9 +790,14 @@ def main():
                     if path in ('/lt', '/en', NOT_FOUND_PAGES[0]) and width <= 900 or width == 1440:
                         page.reload(wait_until='networkidle')
                         check_menu(report, page, path, width, height)
+                    if expect_status == 200 and width in (390, 1440):
+                        check_media(report, page, path)
                     for problem in problems:
                         report.check(False, f'{where}: {problem}')
                     context.close()
+
+                if path in ('/lt', '/en'):
+                    check_motion(report, browser, new_page, path, accounts['hero_video'])
 
                 row = {'path': path, 'shots': {}}
                 for device, (width, height) in SHOTS.items():
@@ -497,6 +815,8 @@ def main():
         server.wait()
 
     write_report(report, pages, skipped_ru, rows)
+    (OUT / 'text-discrepancies.md').write_text('# Сверка текста main с эталоном (W-05)\n\n'
+        + ('\n'.join(f'- {line}' for line in discrepancies) or 'Расхождений нет.') + '\n', encoding='utf-8')
     if report.failures:
         log(f'\nbin/browser-check: FAIL ({len(report.failures)})')
         for failure in report.failures[:200]:
@@ -513,6 +833,7 @@ def write_report(report, pages, skipped_ru, rows):
         f'- Страницы ({len(pages)}): ' + ', '.join(pages),
         f'- {SKIPPED_LOGIN}: кабинет, админка и /ru/ ({len(skipped_ru)} адресов /ru).',
         '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'),
+        '- Сверка текста с эталоном: text-discrepancies.md; заметки: ' + ('; '.join(report.notes) or 'нет'),
         '- Кадры рядом с эталоном: ' + ('report.html' if have_evidence else 'не проверено (нет эталона)')
         + '; ручной просмотр — ждёт проверки пользователем.', '',
     ] + [f'- FAIL {failure}' for failure in report.failures]

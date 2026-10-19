@@ -1,0 +1,300 @@
+{
+ "/lt": [
+  "section.hero",
+  "section.section",
+  "section.section.dark",
+  "section.section",
+  "section.section.partner-section",
+  "section.section.soft",
+  "section.section.news-section",
+  "section.cta-band"
+ ],
+ "/en": [
+  "section.hero",
+  "section.section",
+  "section.section.dark",
+  "section.section",
+  "section.section.partner-section",
+  "section.section.soft",
+  "section.section.news-section",
+  "section.cta-band"
+ ],
+ "/lt/paslaugos": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.service-features"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/services": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.service-features"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/apie-mus": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.three.gap"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/about": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.three.gap"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/kontaktai": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split"
+   ]
+  }
+ ],
+ "/en/contact": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split"
+   ]
+  }
+ ],
+ "/lt/duk": [
+  "section.page-top",
+  {
+   "div.wrap.page-content.article": [
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq"
+   ]
+  }
+ ],
+ "/en/faq": [
+  "section.page-top",
+  {
+   "div.wrap.page-content.article": [
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq",
+    "details.faq"
+   ]
+  }
+ ],
+ "/en/services/3d-modelling": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/services/3d-modelling-training": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "div.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/services/3d-printing": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/services/3d-scanning": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/services/cnc-machining": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/en/services/engraving": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/paslaugos/3d-modeliavimas": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/paslaugos/3d-modeliavimo-mokymai": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "div.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/paslaugos/3d-skenavimas": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/paslaugos/3d-spausdinimas": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/paslaugos/frezavimas": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ],
+ "/lt/paslaugos/graviravimas": [
+  "section.page-top",
+  {
+   "div.wrap.page-content": [
+    "div.split",
+    "div.grid.two.gap",
+    "section.section",
+    "div.section-head",
+    "div.grid.two",
+    "h2.gap",
+    "details.faq",
+    "details.faq"
+   ]
+  },
+  "section.cta-band"
+ ]
+}

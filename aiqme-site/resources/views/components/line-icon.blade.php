@@ -8,5 +8,8 @@
     'menu' => 'M3 6h18M3 12h18M3 18h18',
     'close' => 'm5 5 14 14M19 5 5 19',
     'box' => 'm12 2 10 5v10l-10 5-10-5V7l10-5zm0 10v10M2 7l10 5 10-5M7 4.5l10 5',
+    'check' => 'm5 12 4 4L20 5',
+    'scanner' => 'M3 8h18v7H3zM7 11h1m8 0h1M12 15v7m-5 0 5-7 5 7',
+    'printer' => 'M3 2h18v20H3zM6 5h12v12H6zM9 20h6M12 5v4m-3 5 3-5 3 5z',
 ])
 <svg {{ $attributes->class('icon') }} viewBox="0 0 24 24" aria-hidden="true"><path d="{{ $paths[$name] }}" stroke-linecap="round" stroke-linejoin="round"/></svg>

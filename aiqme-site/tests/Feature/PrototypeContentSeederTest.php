@@ -22,9 +22,11 @@ class PrototypeContentSeederTest extends TestCase
      * Таблица 1 D-21 (публикуемые тексты сидера): [исходные фразы, новые фразы, остающиеся фразы].
      * Строка часов работы проверяется словами tikslinamas и to be confirmed (D-21 «Проверка»).
      *
+     * Используется и проверкой страниц W-05 (PublicTextsTest).
+     *
      * @var list<array{0: list<string>, 1: list<string>, 2: list<string>}>
      */
-    private const D21_TABLE_1 = [
+    public const D21_TABLE_1 = [
         [['Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti iš anksto apmokėjus.', 'We check the result and prepare it for delivery or prepaid collection.'],
             ['Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.', 'We check the result and prepare it for delivery or collection.'], []],
         [['Gamybos iliustracija ·', 'Demonstracinė iliustracija', 'Manufacturing illustration ·', 'Illustrative image'], [], []],

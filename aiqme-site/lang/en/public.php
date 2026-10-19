@@ -1,0 +1,72 @@
+<?php
+
+// Public page template texts (W-05) — from the visible text of verified-route-screens/<page>/dom.html and t('LT','EN')
+// calls in app.js. D-21 demo labels are not carried over. Page content itself is in page_text/service/faq_item (W-04).
+return [
+    'hero' => [
+        'quote' => 'Upload a model & get a price',
+        'contact' => 'Discuss your project',
+        'play' => 'Play video',
+        'pause' => 'Pause video',
+        'play_label' => 'Play background video',
+        'pause_label' => 'Pause background video',
+        'video_error' => 'The video could not be played. A still image is shown.',
+    ],
+    'find_solution' => 'Find a solution ↗',
+    'service_features' => [
+        'explore' => 'Explore this service',
+        'contact' => 'Discuss a project ↗',
+        'quote' => 'Upload a model ↗',
+        'training' => 'Topics & registration ↗',
+    ],
+    'ticker' => [
+        'pause' => 'Pause scrolling',
+        'resume' => 'Resume scrolling',
+        'brands' => 'Horizontally scrolling brand banner. Motion pauses on hover or keyboard focus.',
+        'brands_list' => 'Technology brands',
+        'news' => 'Horizontally scrolling news strip. Motion pauses on hover or keyboard focus.',
+        'news_list' => 'Latest articles',
+        'all_news' => 'All news',
+        'article' => 'ARTICLE',
+        'read' => 'Read ↗',
+    ],
+    'cta' => [
+        'quote' => 'Upload a model',
+        'contact' => 'Discuss a project',
+    ],
+    'service' => [
+        'eyebrow' => 'AIQME / SERVICES',
+        'when' => 'WHEN IT HELPS',
+        'need' => "The solution starts\nwith your need.",
+        'enquiry' => 'Start an enquiry',
+        'input' => '01 / INPUT',
+        'provide' => 'What should you provide?',
+        'output' => '02 / OUTPUT',
+        'receive' => 'What will you receive?',
+        'workflow' => 'A clear workflow.',
+        'example' => 'Application example',
+        'view_project' => 'View project ↗',
+        'one_contact' => 'One point of contact for the whole job.',
+        'one_contact_text' => 'If the project needs scanning, modelling and production, AIQME coordinates every step. Suitable manufacturing partners are involved when needed.',
+        'similar' => 'Discuss a similar project',
+        'faq' => 'Frequently asked questions',
+    ],
+    'training' => [
+        'topics' => 'Training topics and dates',
+        'custom' => 'Request a custom programme',
+    ],
+    'contact' => [
+        'map' => 'Open map ↗',
+        'map_url' => 'https://www.google.com/maps?q=54.641192%2C25.268099',
+        'name' => 'Name *',
+        'company' => 'Company (optional)',
+        'email' => 'Email *',
+        'phone' => 'Phone (optional)',
+        'service' => 'Service *',
+        'choose_service' => 'Choose a service',
+        'equipment' => 'Equipment quotation',
+        'description' => 'Describe your task *',
+        'files' => 'Files & photos',
+        'deadline' => 'Target date (optional)',
+    ],
+];

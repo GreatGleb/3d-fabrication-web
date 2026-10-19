@@ -3,13 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\PrototypeContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\PageHead;
 use Tests\TestCase;
 
 /**
- * Адреса прототипа против таблицы §4.6 (04-content-seo.md) в объёме W-02: статические страницы, 301 и строки с 404.
+ * Адреса прототипа против таблицы §4.6 (04-content-seo.md): статические страницы, 301 и строки с 404 (W-02); адреса
+ * услуг со slug из БД после сидера W-04 — 200 на своей локали, 404 со slug другой локали (W-05).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -64,7 +66,9 @@ class PrototypeRoutesTest extends TestCase
         match ($row) {
             1 => $this->get($path)->assertStatus(301)->assertRedirect(route('lt.home')),
             2 => $this->assertPublicPage($path),
-            3, 4, 5, 7, 8, 9, 12 => $this->get($path)->assertNotFound(),
+            // Slug другой локали — 404 при опубликованных услугах (без сидера 404 ничего бы не доказывал).
+            3 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
+            4, 5, 7, 8, 9, 12 => $this->get($path)->assertNotFound(),
             14 => $this->assertNotFoundForGuestAndAdmin($path),
             default => $this->fail('строка '.$row.' §4.6 без проверки: '.$path),
         };
@@ -73,8 +77,12 @@ class PrototypeRoutesTest extends TestCase
     private function assertPublicPage(string $path): void
     {
         $plainPath = strtok($path, '?');
-        if (count(array_filter(explode('/', $plainPath))) > 2) {
-            $this->markTestSkipped('строка 2 §4.6, адрес сущности — W-05/W-06 после сидера W-04');
+        $segments = array_values(array_filter(explode('/', $plainPath)));
+        if (count($segments) > 2 && ! in_array($segments[1], ['paslaugos', 'services'], true)) {
+            $this->markTestSkipped('строка 2 §4.6, адрес статьи — W-06');
+        }
+        if (count($segments) > 2) {
+            $this->seed(PrototypeContentSeeder::class);
         }
 
         $withSlash = $this->get($path)->assertOk();

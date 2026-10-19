@@ -1,0 +1,72 @@
+<?php
+
+// Viešųjų puslapių šablonų tekstai (W-05) — iš verified-route-screens/<puslapis>/dom.html matomo teksto ir app.js
+// t('LT','EN') kvietimų. D-21 demonstracinės žymės neperkeliamos. Turinys — page_text/service/faq_item (W-04).
+return [
+    'hero' => [
+        'quote' => 'Įkelti modelį ir sužinoti kainą',
+        'contact' => 'Susisiekti dėl projekto',
+        'play' => 'Paleisti video',
+        'pause' => 'Sustabdyti video',
+        'play_label' => 'Paleisti foninį video',
+        'pause_label' => 'Sustabdyti foninį video',
+        'video_error' => 'Video nepavyko paleisti. Rodomas statinis kadras.',
+    ],
+    'find_solution' => 'Rasti sprendimą ↗',
+    'service_features' => [
+        'explore' => 'Plačiau apie paslaugą',
+        'contact' => 'Aptarti projektą ↗',
+        'quote' => 'Įkelti modelį ↗',
+        'training' => 'Temos ir registracija ↗',
+    ],
+    'ticker' => [
+        'pause' => 'Sustabdyti judėjimą',
+        'resume' => 'Tęsti judėjimą',
+        'brands' => 'Horizontaliai judanti prekių ženklų juosta. Judėjimas sustoja užvedus pelę arba pasirinkus klaviatūra.',
+        'brands_list' => 'Prekių ženklai',
+        'news' => 'Horizontaliai judanti naujienų juosta. Judėjimas sustoja užvedus pelę arba pasirinkus klaviatūra.',
+        'news_list' => 'Naujausi straipsniai',
+        'all_news' => 'Visos naujienos',
+        'article' => 'STRAIPSNIS',
+        'read' => 'Skaityti ↗',
+    ],
+    'cta' => [
+        'quote' => 'Įkelti modelį',
+        'contact' => 'Aptarti projektą',
+    ],
+    'service' => [
+        'eyebrow' => 'AIQME / PASLAUGOS',
+        'when' => 'KADA NAUDINGA',
+        'need' => "Sprendimas prasideda\nnuo jūsų poreikio.",
+        'enquiry' => 'Pateikti užklausą',
+        'input' => '01 / PRADŽIA',
+        'provide' => 'Ką pateikti?',
+        'output' => '02 / REZULTATAS',
+        'receive' => 'Ką gausite?',
+        'workflow' => 'Aiški darbų eiga.',
+        'example' => 'Pritaikymo pavyzdys',
+        'view_project' => 'Peržiūrėti projektą ↗',
+        'one_contact' => 'Vienas kontaktas visam darbui.',
+        'one_contact_text' => 'Jei projektui reikia skenavimo, modeliavimo ir gamybos, visus etapus suderina AIQME. Prireikus įtraukiame tinkamus gamybos partnerius.',
+        'similar' => 'Aptarti panašų projektą',
+        'faq' => 'Dažniausiai užduodami klausimai',
+    ],
+    'training' => [
+        'topics' => 'Mokymų temos ir datos',
+        'custom' => 'Užklausti individualios programos',
+    ],
+    'contact' => [
+        'map' => 'Atidaryti žemėlapį ↗',
+        'map_url' => 'https://www.google.com/maps?q=54.641192%2C25.268099',
+        'name' => 'Vardas *',
+        'company' => 'Įmonė (neprivaloma)',
+        'email' => 'El. paštas *',
+        'phone' => 'Telefonas (neprivaloma)',
+        'service' => 'Paslauga *',
+        'choose_service' => 'Pasirinkite paslaugą',
+        'equipment' => 'Įrangos pasiūlymas',
+        'description' => 'Užduoties aprašymas *',
+        'files' => 'Failai ir nuotraukos',
+        'deadline' => 'Pageidaujamas terminas (neprivaloma)',
+    ],
+];
