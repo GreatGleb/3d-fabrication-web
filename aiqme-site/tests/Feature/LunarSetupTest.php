@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Providers\AppServiceProvider;
 use Composer\InstalledVersions;
 use Illuminate\Support\Facades\Route;
+use Livewire\Livewire;
 use Lunar\Base\TelemetryServiceInterface;
 use Tests\TestCase;
 
@@ -15,6 +16,10 @@ class LunarSetupTest extends TestCase
 
     protected function tearDown(): void
     {
+        // Панель Filament включает статический флаг вставки ассетов Livewire; без сброса он переживает тест
+        // и добавляет стили Livewire в ответы следующих тестов.
+        Livewire::flushState();
+
         parent::tearDown();
 
         foreach ($this->savedEnv as $name => $value) {

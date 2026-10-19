@@ -1,0 +1,757 @@
+{
+  "source": "docs/customer-prototype/evidence/audit-20261016/route-manifest.json (2026-10-16), строки — docs/planning/edition-2/04-content-seo.md §4.6",
+  "rows": {
+    "1": "301 -> /lt",
+    "2": "200",
+    "3": "404",
+    "4": "404",
+    "5": "404",
+    "6": "404 while draft, 200 when published",
+    "7": "404",
+    "8": "404",
+    "9": "404 unless admin",
+    "10": "200 for customer, login form (200) for guest",
+    "11": "200",
+    "12": "404",
+    "13": "200 for admin, 404 for guest and customer",
+    "14": "404"
+  },
+  "routes": [
+    {
+      "path": "/",
+      "row": 1
+    },
+    {
+      "path": "/lt/",
+      "row": 2
+    },
+    {
+      "path": "/en/",
+      "row": 2
+    },
+    {
+      "path": "/en/account/",
+      "row": 10
+    },
+    {
+      "path": "/en/account/overview/",
+      "row": 10
+    },
+    {
+      "path": "/en/admin/audit/",
+      "row": 13
+    },
+    {
+      "path": "/lt/paslaugos/",
+      "row": 2
+    },
+    {
+      "path": "/lt/produktai/",
+      "row": 2
+    },
+    {
+      "path": "/lt/projektai/",
+      "row": 2
+    },
+    {
+      "path": "/lt/informacija/",
+      "row": 2
+    },
+    {
+      "path": "/lt/apie-mus/",
+      "row": 2
+    },
+    {
+      "path": "/lt/kontaktai/",
+      "row": 2
+    },
+    {
+      "path": "/lt/kalkuliatorius/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paskyra/",
+      "row": 10
+    },
+    {
+      "path": "/lt/krepselis/",
+      "row": 2
+    },
+    {
+      "path": "/lt/apmokejimas/",
+      "row": 8
+    },
+    {
+      "path": "/lt/palyginimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/biblioteka/",
+      "row": 2
+    },
+    {
+      "path": "/lt/naujienos/",
+      "row": 2
+    },
+    {
+      "path": "/lt/duk/",
+      "row": 2
+    },
+    {
+      "path": "/lt/administravimas/",
+      "row": 13
+    },
+    {
+      "path": "/lt/programuotojui/",
+      "row": 7
+    },
+    {
+      "path": "/lt/privatumas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/slapukai/",
+      "row": 2
+    },
+    {
+      "path": "/lt/pristatymas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/grazinimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/mokymai/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paieska/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paslaugos/3d-skenavimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paslaugos/3d-modeliavimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paslaugos/3d-spausdinimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paslaugos/frezavimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paslaugos/graviravimas/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paslaugos/3d-modeliavimo-mokymai/",
+      "row": 2
+    },
+    {
+      "path": "/lt/produktai/scanner-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/bambu-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/fastform-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/pla-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/aesub-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/nozzle-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/quicksurface-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/produktai/fusion-demo/",
+      "row": 5
+    },
+    {
+      "path": "/lt/projektai/part-reconstruction/",
+      "row": 6
+    },
+    {
+      "path": "/lt/projektai/prototype/",
+      "row": 6
+    },
+    {
+      "path": "/lt/projektai/production-fixture/",
+      "row": 6
+    },
+    {
+      "path": "/lt/biblioteka/file-guide/",
+      "row": 2
+    },
+    {
+      "path": "/lt/biblioteka/material-selection/",
+      "row": 2
+    },
+    {
+      "path": "/lt/biblioteka/scan-to-cad/",
+      "row": 2
+    },
+    {
+      "path": "/lt/paskyra/login/",
+      "row": 11
+    },
+    {
+      "path": "/lt/paskyra/register/",
+      "row": 11
+    },
+    {
+      "path": "/lt/paskyra/reset/",
+      "row": 11
+    },
+    {
+      "path": "/lt/paskyra/overview/",
+      "row": 10
+    },
+    {
+      "path": "/lt/paskyra/orders/",
+      "row": 10
+    },
+    {
+      "path": "/lt/paskyra/profile/",
+      "row": 12
+    },
+    {
+      "path": "/lt/paskyra/files/",
+      "row": 12
+    },
+    {
+      "path": "/lt/paskyra/invoices/",
+      "row": 10
+    },
+    {
+      "path": "/lt/paskyra/orders/DEMO-1047/",
+      "row": 12
+    },
+    {
+      "path": "/lt/administravimas/overview/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/orders/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/products/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/categories/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/services/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/projects/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/content/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/training/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/pricing/",
+      "row": 14
+    },
+    {
+      "path": "/lt/administravimas/discounts/",
+      "row": 14
+    },
+    {
+      "path": "/lt/administravimas/delivery/",
+      "row": 14
+    },
+    {
+      "path": "/lt/administravimas/integrations/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/telegram/",
+      "row": 14
+    },
+    {
+      "path": "/lt/administravimas/audit/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/users/",
+      "row": 14
+    },
+    {
+      "path": "/lt/administravimas/settings/",
+      "row": 13
+    },
+    {
+      "path": "/en/services/",
+      "row": 2
+    },
+    {
+      "path": "/en/products/",
+      "row": 2
+    },
+    {
+      "path": "/en/projects/",
+      "row": 2
+    },
+    {
+      "path": "/en/information/",
+      "row": 2
+    },
+    {
+      "path": "/en/about/",
+      "row": 2
+    },
+    {
+      "path": "/en/contact/",
+      "row": 2
+    },
+    {
+      "path": "/en/quote/",
+      "row": 2
+    },
+    {
+      "path": "/en/cart/",
+      "row": 2
+    },
+    {
+      "path": "/en/checkout/",
+      "row": 8
+    },
+    {
+      "path": "/en/compare/",
+      "row": 2
+    },
+    {
+      "path": "/en/library/",
+      "row": 2
+    },
+    {
+      "path": "/en/news/",
+      "row": 2
+    },
+    {
+      "path": "/en/faq/",
+      "row": 2
+    },
+    {
+      "path": "/en/admin/",
+      "row": 13
+    },
+    {
+      "path": "/en/developer/",
+      "row": 7
+    },
+    {
+      "path": "/en/privacy/",
+      "row": 2
+    },
+    {
+      "path": "/en/cookies/",
+      "row": 2
+    },
+    {
+      "path": "/en/delivery/",
+      "row": 2
+    },
+    {
+      "path": "/en/returns/",
+      "row": 2
+    },
+    {
+      "path": "/en/training/",
+      "row": 2
+    },
+    {
+      "path": "/en/search/",
+      "row": 2
+    },
+    {
+      "path": "/en/services/3d-scanning/",
+      "row": 2
+    },
+    {
+      "path": "/en/services/3d-modelling/",
+      "row": 2
+    },
+    {
+      "path": "/en/services/3d-printing/",
+      "row": 2
+    },
+    {
+      "path": "/en/services/cnc-machining/",
+      "row": 2
+    },
+    {
+      "path": "/en/services/engraving/",
+      "row": 2
+    },
+    {
+      "path": "/en/services/3d-modelling-training/",
+      "row": 2
+    },
+    {
+      "path": "/en/products/scanner-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/bambu-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/fastform-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/pla-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/aesub-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/nozzle-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/quicksurface-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/products/fusion-demo/",
+      "row": 5
+    },
+    {
+      "path": "/en/projects/part-reconstruction/",
+      "row": 6
+    },
+    {
+      "path": "/en/projects/prototype/",
+      "row": 6
+    },
+    {
+      "path": "/en/projects/production-fixture/",
+      "row": 6
+    },
+    {
+      "path": "/en/library/file-guide/",
+      "row": 2
+    },
+    {
+      "path": "/en/library/material-selection/",
+      "row": 2
+    },
+    {
+      "path": "/en/library/scan-to-cad/",
+      "row": 2
+    },
+    {
+      "path": "/en/account/login/",
+      "row": 11
+    },
+    {
+      "path": "/en/account/register/",
+      "row": 11
+    },
+    {
+      "path": "/en/account/reset/",
+      "row": 11
+    },
+    {
+      "path": "/en/account/orders/",
+      "row": 10
+    },
+    {
+      "path": "/en/account/profile/",
+      "row": 12
+    },
+    {
+      "path": "/en/account/files/",
+      "row": 12
+    },
+    {
+      "path": "/en/account/invoices/",
+      "row": 10
+    },
+    {
+      "path": "/en/account/orders/DEMO-1047/",
+      "row": 12
+    },
+    {
+      "path": "/en/admin/overview/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/orders/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/products/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/categories/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/services/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/projects/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/content/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/training/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/pricing/",
+      "row": 14
+    },
+    {
+      "path": "/en/admin/discounts/",
+      "row": 14
+    },
+    {
+      "path": "/en/admin/delivery/",
+      "row": 14
+    },
+    {
+      "path": "/en/admin/integrations/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/telegram/",
+      "row": 14
+    },
+    {
+      "path": "/en/admin/users/",
+      "row": 14
+    },
+    {
+      "path": "/en/admin/settings/",
+      "row": 13
+    },
+    {
+      "path": "/lt/produktai/?category=scanners",
+      "row": 2
+    },
+    {
+      "path": "/lt/produktai/?category=printers",
+      "row": 2
+    },
+    {
+      "path": "/lt/produktai/?category=materials",
+      "row": 2
+    },
+    {
+      "path": "/lt/produktai/?category=accessories",
+      "row": 2
+    },
+    {
+      "path": "/lt/produktai/?category=software",
+      "row": 2
+    },
+    {
+      "path": "/en/products/?category=scanners",
+      "row": 2
+    },
+    {
+      "path": "/en/products/?category=printers",
+      "row": 2
+    },
+    {
+      "path": "/en/products/?category=materials",
+      "row": 2
+    },
+    {
+      "path": "/en/products/?category=accessories",
+      "row": 2
+    },
+    {
+      "path": "/en/products/?category=software",
+      "row": 2
+    },
+    {
+      "path": "/en/admin/calculator/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/customers/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/translations/",
+      "row": 13
+    },
+    {
+      "path": "/en/admin/permissions/",
+      "row": 14
+    },
+    {
+      "path": "/lt/administravimas/calculator/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/customers/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/translations/",
+      "row": 13
+    },
+    {
+      "path": "/lt/administravimas/permissions/",
+      "row": 14
+    },
+    {
+      "path": "/lt/paskyra/models/",
+      "row": 10
+    },
+    {
+      "path": "/lt/paskyra/addresses/",
+      "row": 10
+    },
+    {
+      "path": "/lt/informacija/file-guide/",
+      "row": 4
+    },
+    {
+      "path": "/lt/informacija/material-selection/",
+      "row": 4
+    },
+    {
+      "path": "/lt/informacija/scan-to-cad/",
+      "row": 4
+    },
+    {
+      "path": "/lt/naujienos/file-guide/",
+      "row": 4
+    },
+    {
+      "path": "/lt/naujienos/material-selection/",
+      "row": 4
+    },
+    {
+      "path": "/lt/naujienos/scan-to-cad/",
+      "row": 4
+    },
+    {
+      "path": "/lt/paslaugos/3d-scanning/",
+      "row": 3
+    },
+    {
+      "path": "/lt/paslaugos/3d-modelling/",
+      "row": 3
+    },
+    {
+      "path": "/lt/paslaugos/3d-printing/",
+      "row": 3
+    },
+    {
+      "path": "/lt/paslaugos/cnc-machining/",
+      "row": 3
+    },
+    {
+      "path": "/lt/paslaugos/engraving/",
+      "row": 3
+    },
+    {
+      "path": "/lt/paslaugos/3d-modelling-training/",
+      "row": 3
+    },
+    {
+      "path": "/en/account/models/",
+      "row": 10
+    },
+    {
+      "path": "/en/account/addresses/",
+      "row": 10
+    },
+    {
+      "path": "/en/information/file-guide/",
+      "row": 4
+    },
+    {
+      "path": "/en/information/material-selection/",
+      "row": 4
+    },
+    {
+      "path": "/en/information/scan-to-cad/",
+      "row": 4
+    },
+    {
+      "path": "/en/news/file-guide/",
+      "row": 4
+    },
+    {
+      "path": "/en/news/material-selection/",
+      "row": 4
+    },
+    {
+      "path": "/en/news/scan-to-cad/",
+      "row": 4
+    },
+    {
+      "path": "/en/services/3d-skenavimas/",
+      "row": 3
+    },
+    {
+      "path": "/en/services/3d-modeliavimas/",
+      "row": 3
+    },
+    {
+      "path": "/en/services/3d-spausdinimas/",
+      "row": 3
+    },
+    {
+      "path": "/en/services/frezavimas/",
+      "row": 3
+    },
+    {
+      "path": "/en/services/graviravimas/",
+      "row": 3
+    },
+    {
+      "path": "/en/services/3d-modeliavimo-mokymai/",
+      "row": 3
+    },
+    {
+      "path": "/ru/",
+      "row": 9
+    }
+  ]
+}

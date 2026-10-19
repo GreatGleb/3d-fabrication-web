@@ -72,6 +72,12 @@ step 'PHPUnit'
 bin/php artisan test --compact </dev/null
 
 step 'Vite build'
+# Node стоит через nvm и может отсутствовать в PATH (§9.1): берём новейший из nvm, системный Node 18 Vite не запускает.
+nvm_node_bin="$(ls -d "$HOME"/.nvm/versions/node/v*/bin 2>/dev/null | sort -V | tail -n 1 || true)"
+[[ -n "$nvm_node_bin" ]] && export PATH="$nvm_node_bin:$PATH"
+node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+(( node_major >= 22 )) || fail "нужен Node 22 (nvm), найден: $(command -v node || echo нет) v$node_major"
+echo "node: $(command -v node)"
 npm run build --silent >/dev/null
 [[ -f public/build/manifest.json ]] || fail 'нет public/build/manifest.json'
 echo OK

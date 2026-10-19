@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Support\UnregisteredLunarPanelManager;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Facades\Telemetry;
@@ -28,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Lunar раз в день отправляет статистику на stats.lunarphp.io; внешние вызовы запрещены (D-20).
         Telemetry::optOut();
+
+        // canonical, hreflang и sitemap — абсолютные адреса от APP_URL, а не от заголовка Host (§4.4).
+        URL::forceRootUrl(config('app.url'));
     }
 
     public static function lunarPanelEnabled(string $environment, bool $flag): bool

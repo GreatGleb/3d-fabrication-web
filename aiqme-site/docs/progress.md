@@ -116,3 +116,99 @@ OK    удалённая отладка Chrome выключена (DevToolsActiv
   §6.4 запрещает подписанные публичные ссылки на файлы; отключить при работе с хранилищем (W-11/W-12).
 - Стартовая страница — `welcome.blade.php` шаблона Laravel; заменяется задачами вёрстки (W-03…).
 - `bin/check` требует запущенного Docker (поднимает PostgreSQL dev сам).
+
+## W-02 «Локали, маршруты и SEO-каркас» — 2026-10-19, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки). Агент не делал commit/push.
+
+### Что сделано
+
+- **Маршруты** (`routes/web.php`, `app/Support/Seo/StaticPages.php`): 19 статических страниц §1.2 на `lt`/`en`
+  с сегментами прототипа (`/lt/paslaugos` · `/en/services`, `/lt/kalkuliatorius` · `/en/quote` и т. д.) и на `ru` с
+  английскими сегментами (§4.3); имена `<locale>.<page>`. Страницы отвечают общей заготовкой `pages/static`
+  (`<x-layout>` + `<h1>`), без контроллеров. Адреса сущностей, кабинета, админки и `apmokejimas/<public_id>` не
+  создавались (W-05/W-06/W-25, W-07, W-08, W-16); slug в маршрутах нет. `/` → 301 на `route('lt.home')`.
+  Адрес со «/» отвечает тем же содержимым (маршрутизатор Laravel не различает завершающий «/»), canonical — из `route()` без «/».
+- **Локаль**: глобальный `SetLocaleFromPath` ставит `lt`/`en` по первому сегменту — и для 404 неизвестных адресов;
+  `RestrictRussianToAdmin` на группе `/ru`: не администратор (гость или клиент) — 404 (такая же страница, как любой
+  неизвестный адрес, LT), администратору — локаль `ru`, `X-Robots-Tag: noindex, nofollow` и meta noindex; без RU-файлов
+  тексты берутся из EN (`APP_FALLBACK_LOCALE=en`).
+- **SEO-head** `<x-seo-head>`: `<title>… | AIQME`, description, robots, canonical, hreflang только из переданных версий,
+  `x-default` → LT (только если LT-версия есть), og:title, og:description, og:image — только если передано изображение
+  (у заготовок медиа нет). `URL::forceRootUrl(APP_URL)` в `AppServiceProvider`: canonical/hreflang/sitemap не зависят от Host.
+- **Переключатель языка** — одна ссылка `<a>` на ту же страницу другой локали, как в прототипе («LT / EN»,
+  aria-label «Switch to English» · «Keisti į lietuvių kalbą»); на 404/500 — на главную другой локали; на `/ru` — на LT.
+- **404/500** (`resources/views/errors/`) на обеих локалях, noindex. Тексты 404 — из `notFound()` app.js прототипа
+  («Puslapis nerastas» · «Page not found», «Pasirinkite vieną…» · «Choose one…», «Grįžti į pradžią» · «Go home»).
+- **sitemap.xml** (Blade, `xhtml:link` lt/en/x-default) и **robots.txt** (маршрут: `Disallow:` пустой + `Sitemap:` абсолютный);
+  статический `public/robots.txt` удалён (иначе веб-сервер отдавал бы его вместо маршрута).
+- **Фикстура** `tests/fixtures/prototype-routes.json`: 184 адреса route-manifest, у каждого только `path` и `row`
+  (номер строки §4.6) + словарь `rows` со статусом строки; без текстов, заголовков и ссылок. Извлечена один раз скриптом
+  `build/w02/extract_prototype_routes.py` (игнорируемый `build/`, не в Git) по правилам сегментов; адрес без строки — ошибка
+  скрипта. Распределение по строкам: 1:1, 2:66, 3:12, 4:12, 5:16, 6:6, 7:2, 8:2, 9:1, 10:12, 11:6, 12:6, 13:30, 14:12.
+- `resources/views/welcome.blade.php` шаблона удалён (`/` теперь 301); `HomePageTest` W-01 проверяет `/lt` и `/en`.
+- `LunarSetupTest` (W-01): в tearDown добавлен `Livewire::flushState()` — тест панели Filament оставлял статический флаг
+  вставки ассетов Livewire, и следующие тесты получали стили Livewire в HTML (нашлось сравнением содержимого «/» и без «/»).
+
+### Решения по неопределённому (простейший вариант)
+
+- **Тексты** (`lang/lt|en/pages.php`): заголовок — `<h1>` прототипа, description — meta description прототипа
+  (verified-route-screens). Демо-описания политик («Demonstracinė informacijos vieta…» · «Illustrative policy area…»),
+  калькулятора («…demonstracinę kainą» · «…illustrative price») и проектов («…demonstraciniai…») заменены общим описанием
+  сайта прототипа «AIQME — vienas partneris nuo užduoties iki produkto.» · «AIQME — one partner from challenge to product.» (D-21).
+  У «О нас» в `<title>` прототипа нет пробела («prasidedanuo» из-за `<br>`) — взят видимый текст h1 с пробелом.
+  EN-проекты прототипа показывают LT (F-38): EN-заголовок «Projects» — из пункта меню EN.
+  **Текста 500 в прототипе нет** — короткие нейтральные: «Serverio klaida» / «Bandykite dar kartą vėliau.» ·
+  «Server error» / «Please try again later.»; кнопка — как у 404.
+- **Sitemap** (W-02 — только статические): главная, услуги, информация, библиотека, о нас, контакты, калькулятор, FAQ,
+  обучение. Не включены: поиск (noindex), товары, проекты, новости, политики (заглушки/черновики до публикации — их добавят
+  W-25, W-06, W-05 по опубликованному контенту), корзина и сравнение (пустое состояние, D-12).
+- `/` → 301 на `http://…/lt` (вид `route()`, без «/»), а не `/lt/` из текста §4.6 — по правилу §4.4 «только через route()».
+- canonical страницы `?category=…` — список товаров без query (до фильтров W-25).
+- hreflang не выводится на noindex-страницах (поиск, `/ru`); canonical на `/ru` — самоссылка.
+
+### Проверки (запущены в этой сессии)
+
+- `PATH=~/.nvm/versions/node/v22.23.1/bin:$PATH aiqme-site/bin/check` → `bin/check: OK`; PHPUnit **232 теста,
+  160 passed, 72 skipped, 1577 проверок**; Pint passed; Vite build OK.
+  **Замечание окружения:** в PATH этой сессии первым стоит системный Node 18.19.1 (`/usr/bin/node`), с ним шаг Vite
+  `bin/check` падает (`styleText` из `node:util`, rolldown требует новее); с Node 22 из nvm — OK. Код W-02 на это не влияет.
+- `PrototypeRoutesTest` (только фикстура): фикстура — 184 уникальных адреса, у каждого строка 1–14 и только `path`/`row`;
+  строка 1 — 301 на `lt.home`; строка 2 (статические, включая `?category=`) — 200 и со «/», и без, одинаковое содержимое,
+  canonical = APP_URL + путь без «/» и query; строки 3, 4, 5, 7, 8, 9, 12 — 404 гостю; строка 14 — 404 гостю и
+  администратору; неизвестная строка — `fail`. **Пропущены с пометкой (72):** строка 2 — адреса сущностей (18:
+  6+6 услуг, 3+3 статьи — W-05/W-06 после сидера W-04), строка 6 (W-06), 10 и 11 (W-07/W-15), 13 (вкладки админки — W-08 и др.).
+- `LocaleRoutesTest`: все 19 страниц на LT/EN с `lang` и h1 своей локали; сегмент чужой локали — 404; неизвестные адреса —
+  404 на языке пути, не главная, noindex, без canonical; 500 на обеих локалях без текста исключения (`app.debug=false`);
+  `/ru…` — 404 гостю и клиенту (содержимое = 404 неизвестного адреса); администратору — 200, `X-Robots-Tag`, meta noindex,
+  `lang="ru"`, EN-значения, не ключи `pages.`, без hreflang; полный head LT-страницы и взаимный hreflang с EN; описание
+  без демо-фраз; поиск noindex; компонент `x-seo-head` — только переданные версии, x-default только при LT, og:image при
+  изображении; переключатель; все href — абсолютные от APP_URL без завершающего «/»; чужой Host не меняет canonical.
+- `SitemapTest` (DOMDocument с LIBXML_NONET, без XSD): корень `urlset` в пространстве sitemaps.org 0.9, адреса абсолютные
+  от APP_URL, без дублей, ≤ 50 000; xhtml:link взаимные, x-default = LT; нет `/ru`, кабинета, админки, поиска и разделов-
+  заглушек; каждый адрес sitemap — 200, canonical = он сам, index; robots.txt — `Sitemap:` APP_URL и единственный пустой `Disallow:`.
+- **Тесты ловят поломки** (временные мутации, откачены): без проверки админа в `/ru`; без `forceRootUrl`; x-default не на LT;
+  302 вместо 301; поиск в sitemap; без установки локали по пути — каждая роняет соответствующие тесты.
+- Ручная проверка `bin/php artisan serve`: `/` 301, `/lt/` 200, `/ru/` 404 гостю, `/en/paslaugos` 404, sitemap/robots с типами.
+- `git status --porcelain aiqme-site`: новые файлы только в `app/`, `lang/`, `resources/views/`, `tests/`; бинарных медиа,
+  `.env`, ключей нет; `experiments/` не изменён.
+
+### Не проверено / для следующих задач
+
+- Поиск маркеров `bin/browser-check` (rules[7]) не выполнен: `bin/browser-check` и `marker-allowlist.json` создаёт W-03.
+  Демо-фразы в `lang/` W-02 проверены вручную и тестом описаний (нет «Demonstracin», «Illustrative»).
+- Вид страниц не оформлен (заготовки без CSS до оболочки W-03) — визуально **ждёт проверки пользователем** после W-03.
+- Переключатель для сущностей (W-04/W-06), добавление сущностей в sitemap (W-05, W-06, W-25) — в своих задачах;
+  `StaticPages::alternates()` и `<x-seo-head>` рассчитаны на передачу только существующих версий.
+- Скрипт извлечения фикстуры лежит в игнорируемом `build/w02/` и в Git не попадёт; повторное извлечение не требуется (§4.6).
+
+### Доработка после приёмки (W-02, замечание «bin/check красный»)
+
+- Причина: шаг Vite build `bin/check` запускал первый `node` из PATH — системный Node 18.19.1, на нём rolldown (Vite 8)
+  падает (`styleText` из `node:util`). Код W-02 тут ни при чём, PHPUnit/Pint были зелёными.
+- Исправлено по §9.1 (`09-verification.md`: «Node стоит через nvm и может отсутствовать в PATH неинтерактивной оболочки,
+  поэтому `bin/check` находит его явно»): перед `npm run build` `bin/check` добавляет в PATH новейший
+  `~/.nvm/versions/node/v*/bin`, печатает путь к `node` и падает с понятным сообщением, если Node < 22. Путь в этой сессии:
+  `/home/greatgleb/.nvm/versions/node/v22.23.1/bin/node`. Экспорт `NODE_BINARY` для PHPUnit и `node --test` — задача W-10, здесь не добавлены.
+- Проверка: `aiqme-site/bin/check` без изменения PATH (`which node` → `/usr/bin/node`) → `bin/check: OK`; PHPUnit 232 теста,
+  160 passed, 72 skipped (пропуски — как выше), Pint passed, Vite build OK.
