@@ -2,7 +2,7 @@
 
 Начните с [README.md](README.md), [актуальных требований](docs/requirements.md),
 [плана редакции 2](docs/planning/edition-2/README.md) и
-[карты реорганизации 18.10](docs/reorganization/20261018/README.md). Корень не является Git-репозиторием.
+[карты реорганизации 18.10](docs/reorganization/20261018/README.md). Корень — Git-репозиторий (публичный, см. ниже).
 
 - `aiqme-site/` — новый сайт по прототипу заказчика (пока пуст, кроме README).
   Приложение создаётся здесь задачами `docs/planning/edition-2/tasks.json`.
@@ -32,8 +32,9 @@ CDP и `python3 docs/customer-prototype/tools/capture_prototype_chrome.py`: ск
 Публикация: весь корень — в публичный репозиторий `git@github.com:GreatGleb/3d-fabrication-web.git`,
 ветка `main`; Pages раздаёт сборку лендинга из папки `legacy-landing/github-pages/`.
 Сайт: https://greatgleb.github.io/3d-fabrication-web/legacy-landing/github-pages/ (старый адрес переадресуют корневые `index.html`/`404.html`, `.nojekyll` обязателен).
-Пока `legacy-landing/github-pages/` — отдельный клон со своим `.git`; переход описан в `docs/legacy-landing/github-pages-v2.md`.
-`python3 legacy-landing/scripts/build_github_pages_v2.py` сохраняет `.git` и включает калькулятор
+Сборка `legacy-landing/github-pages/` хранится в корневом репозитории (своего `.git` у неё больше нет);
+после пересборки её изменения нужно закоммитить.
+`python3 legacy-landing/scripts/build_github_pages_v2.py` включает калькулятор
 из `site/` в оформление V2. Проверяйте:
 `STL_TEST_DIRECTORY=github-pages python3 legacy-landing/scripts/check_stl_pricing.py` и
 `python3 legacy-landing/scripts/check_github_pages_ui.py`. Сборщик заменяет рабочие файлы пакета:

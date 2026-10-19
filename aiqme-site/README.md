@@ -1,6 +1,6 @@
 # AIQME — новый сайт
 
-Здесь будет серверное приложение по [плану, редакция 2](../docs/planning/edition-2/README.md): Laravel 13 + Lunar 1.5, Blade/Livewire, JS-модули для STL и анимаций. **Реализация не начата**; задачи — [W-01…W-24](../docs/planning/edition-2/tasks.md), первая — каркас приложения в этом каталоге.
+Здесь будет серверное приложение по [плану, редакция 2](../docs/planning/edition-2/README.md): Laravel 13 + Lunar 1.5, Blade/Livewire, JS-модули для STL и анимаций. **Реализация не начата**; задачи — [W-01…W-32](../docs/planning/edition-2/tasks.md), первая — каркас приложения в этом каталоге.
 
 - Эталон внешнего вида и сценариев — [прототип заказчика](../docs/customer-prototype/README.md).
 - Требования и решения — [docs/requirements.md](../docs/requirements.md).

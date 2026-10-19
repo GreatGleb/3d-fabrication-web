@@ -8,14 +8,14 @@
 |---|---|
 | [`aiqme-site/`](aiqme-site/README.md) | Новый сайт (Laravel + Lunar). **Пока пуст**, кроме README; `experiments/` — эксперимент сравнения заказов с Lunar и без него. |
 | [`docs/`](docs/requirements.md) | Вся документация: требования, план, прототип заказчика, исследования, дизайн, материалы заказчика, отчёты. |
-| [`legacy-landing/`](legacy-landing/README.md) | Прежний статический лендинг V2 со всем для сборки: `site/`, `server/`, `instance/`, `design-previews/`, `build/`, `scripts/`, `tools/`, `github-pages/` (свой `.git`), `archive/`, `references/relats/`. |
+| [`legacy-landing/`](legacy-landing/README.md) | Прежний статический лендинг V2 со всем для сборки: `site/`, `server/`, `instance/`, `design-previews/`, `build/`, `scripts/`, `tools/`, `github-pages/`, `archive/`, `references/relats/`. |
 
 ### Документация
 
 | Путь | Что внутри |
 |---|---|
 | [docs/requirements.md](docs/requirements.md) | Согласованный объём, принятые решения, неизвестные данные и доступы |
-| [docs/planning/edition-2/](docs/planning/edition-2/README.md) | Действующий план: [задачи W-01…W-24](docs/planning/edition-2/tasks.md) ([tasks.json](docs/planning/edition-2/tasks.json)), [решения D-01…D-16](docs/planning/edition-2/decisions.md) |
+| [docs/planning/edition-2/](docs/planning/edition-2/README.md) | Действующий план: [задачи W-01…W-32](docs/planning/edition-2/tasks.md) ([tasks.json](docs/planning/edition-2/tasks.json)), [решения D-01…D-42](docs/planning/edition-2/decisions.md) |
 | [docs/planning/](docs/planning/questions-for-owner.md) | [Опросник (72 ответа)](docs/planning/questions-for-owner.md), [карта вопросов](docs/planning/questions-map.md), исторический 30-слойный цикл `run/` и [его инструмент](docs/planning/workflow/README.md) |
 | [docs/customer-prototype/](docs/customer-prototype/README.md) | Аудит прототипа, доказательства (снимки, DOM, CSS/JS), распакованный архив исходников 16.10 — **только локально, в публичный репозиторий не входят**; [доступ через Chrome](docs/customer-prototype/prototype-browser.md) |
 | [docs/customer/](docs/customer/README.md) | ТЗ и переписка заказчика, исходные требования, Excel-макет. **Только локально.** Переписку не переписывать |
@@ -35,7 +35,7 @@
 Из корня (скрипты не зависят от текущего каталога). Python 3; для браузерных проверок — `legacy-landing/requirements-dev.txt` и Google Chrome.
 
 ```bash
-git -C legacy-landing/github-pages status --short   # сначала сохранить незакоммиченное (после перехода — git status в корне)
+git status --short legacy-landing/github-pages   # сначала сохранить незакоммиченное
 python3 legacy-landing/scripts/build_github_pages_v2.py
 STL_TEST_DIRECTORY=github-pages python3 legacy-landing/scripts/check_stl_pricing.py
 python3 legacy-landing/scripts/check_github_pages_ui.py
@@ -52,4 +52,4 @@ python3 -m http.server 8830 --bind 127.0.0.1 --directory legacy-landing/github-p
 
 ## Git
 
-Корень пока **не** Git-репозиторий; единственный репозиторий — `legacy-landing/github-pages/.git` (клон `GreatGleb/3d-fabrication-web`). Решено публиковать весь корень в этот же **публичный** репозиторий. Поэтому корневой [.gitignore](.gitignore) исключает всё приватное и чужое: материалы заказчика (`docs/customer/`, аудит, снимки и исходники прототипа), исторический цикл `docs/planning/run/`, `instance/`, снимки-архивы, `.env`, копию сайта Relats и видео Behance, зависимости и runtime. Требования, план редакции 2 и опросник публикуются. Переход выполняет пользователь: перенести `.git` публикации в корень, проверить `git ls-files` до commit, затем push. [Пошагово](docs/legacy-landing/github-pages-v2.md#переход-на-общий-репозиторий-один-раз-выполняет-пользователь).
+Корень — Git-репозиторий публичного `GreatGleb/3d-fabrication-web` (ветка `main`; весь корень опубликован коммитом `2fb9487`); у `legacy-landing/github-pages/` своего `.git` больше нет. Корневой [.gitignore](.gitignore) исключает всё приватное и чужое: материалы заказчика (`docs/customer/`, аудит, снимки и исходники прототипа), исторический цикл `docs/planning/run/`, `instance/`, снимки-архивы, `.env`, копию сайта Relats и видео Behance, зависимости и runtime. Требования, план редакции 2 и опросник публикуются. Перед каждым commit проверяйте `git ls-files` и `git status`; commit и push — только по указанию пользователя. Переход на общий репозиторий выполнен; [история перехода](docs/legacy-landing/github-pages-v2.md#переход-на-общий-репозиторий-выполнен).

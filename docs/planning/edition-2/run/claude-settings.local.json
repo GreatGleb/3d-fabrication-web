@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/aiqme-site/**)",
+      "Edit(/docs/requirements.md)",
+      "Bash(aiqme-site/bin/*)",
+      "Bash(bin/*)",
+      "Bash(./bin/*)",
+      "Bash(aiqme-site/experiments/lunar-aiqme/bin/php *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(docker *)",
+      "Bash(python3 *)",
+      "Bash(curl *)",
+      "Bash(tar *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rm *)",
+      "Bash(chmod *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git ls-files *)",
+      "Bash(git check-ignore *)",
+      "Bash(ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com)",
+      "Bash(gh auth status)",
+      "Bash(bash docs/planning/edition-2/run/preflight.sh)",
+      "mcp__laravel-boost__*"
+    ],
+    "deny": [
+      "Edit(/aiqme-site/experiments/**)",
+      "Bash(git push *)",
+      "Bash(python3 docs/customer-prototype/tools/*)",
+      "Read(/legacy-landing/instance/**)",
+      "Read(/aiqme-site/experiments/**/.env)",
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}

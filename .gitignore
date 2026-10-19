@@ -46,6 +46,16 @@ node_modules/
 /aiqme-site/experiments/*/app/storage/logs/
 /aiqme-site/experiments/*/app/bootstrap/cache/
 /aiqme-site/storage/app/private/
+# Публичный диск medialibrary и загрузки тестов: локальные файлы, не исходники
+/aiqme-site/storage/app/public/
+/aiqme-site/public/storage
+/aiqme-site/public/build/
+/aiqme-site/public/hot
+# MCP-конфигурации Boost с локальными абсолютными путями (D-17)
+/aiqme-site/.codex/
+/aiqme-site/.mcp.json
+# Локальные правила разрешений Claude Code ночного прогона (D-28): не полагаться на глобальный excludes пользователя
+/.claude/settings.local.json
 /aiqme-site/storage/framework/
 /aiqme-site/storage/logs/
 /aiqme-site/bootstrap/cache/

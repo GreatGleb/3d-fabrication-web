@@ -21,20 +21,14 @@ python3 legacy-landing/scripts/check_github_pages_ui.py
 python3 -m http.server 8830 --bind 127.0.0.1 --directory legacy-landing/github-pages
 ```
 
-Просмотр: http://127.0.0.1:8830/ . Команды ничего не публикуют. Сборщик заменяет файлы `legacy-landing/github-pages/`, кроме `.git` и `README.md`. Перед сборкой проверьте `git status` и сохраните незакоммиченные правки. Готовая сборка **хранится в репозитории** (её раздаёт Pages), поэтому после пересборки изменения в `legacy-landing/github-pages/` нужно закоммитить. Сборка из чистого клона (только отслеживаемые файлы) проверена: результат совпадает с текущей публикацией. Не использовать `/tmp/aiqme-publish-5QS3Qi`.
+Просмотр: http://127.0.0.1:8830/ . Команды ничего не публикуют. Сборщик заменяет файлы `legacy-landing/github-pages/`, кроме `README.md`. Перед сборкой проверьте `git status` и сохраните незакоммиченные правки. Готовая сборка **хранится в репозитории** (её раздаёт Pages), поэтому после пересборки изменения в `legacy-landing/github-pages/` нужно закоммитить. Сборка из чистого клона (только отслеживаемые файлы) проверена: результат совпадает с текущей публикацией. Не использовать `/tmp/aiqme-publish-5QS3Qi`.
 
-## Переход на общий репозиторий (один раз, выполняет пользователь)
+## Переход на общий репозиторий (выполнен)
 
-Сейчас `legacy-landing/github-pages/` — отдельный клон этого репозитория со своим `.git`. Пока он вложен, корневой Git увидит каталог как встроенный репозиторий и не добавит файлы сайта. Порядок перехода с сохранением истории:
+Раньше `legacy-landing/github-pages/` была отдельным клоном со своим `.git`. Переход выполнен коммитом `2fb9487` (история публикации стала историей корня), своего `.git` у сборки больше нет. Перед каждым commit проверяйте, что приватное не попало в индекс:
 
 ```bash
-git -C legacy-landing/github-pages status --short    # должно быть пусто
-mv legacy-landing/github-pages/.git .git              # история публикации становится историей корня
-git status --short | head                             # прежние файлы корня → legacy-landing/github-pages/
-git add -A
 git ls-files | grep -E '^(docs/customer/|docs/customer-prototype/(audit|evidence|source)|docs/planning/run/|legacy-landing/instance/)' # должно быть пусто
-git commit -m "Move site into legacy-landing/github-pages and add workspace"
-git push origin main
 ```
 
 Всё, что однажды попало в публичный коммит, остаётся в истории даже после удаления. Поэтому проверка `git ls-files` выполняется **до** commit. Список исключений и причины — в корневом `.gitignore`.
