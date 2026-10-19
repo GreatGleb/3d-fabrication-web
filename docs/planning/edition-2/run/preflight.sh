@@ -155,7 +155,13 @@ if [ "$VARIANT" = "v" ] || [ "$VARIANT" = "g" ]; then
   DTAP="$HOME/.config/google-chrome/DevToolsActivePort"
   DTAP_ERR="$(LC_ALL=C ls "$DTAP" 2>&1 >/dev/null)"
   if [ -z "$DTAP_ERR" ]; then
-    warn "удалённая отладка Chrome включена (DevToolsActivePort есть), D-30"
+    # Файл остаётся и после выключения отладки — решает, слушается ли порт из его первой строки.
+    DT_PORT="$(head -1 "$DTAP" 2>/dev/null)"
+    if [ -n "$DT_PORT" ] && ss -ltnH "sport = :$DT_PORT" 2>/dev/null | grep -q .; then
+      warn "удалённая отладка Chrome включена (порт $DT_PORT слушается), D-30"
+    else
+      ok "удалённая отладка Chrome выключена (DevToolsActivePort устарел, порт ${DT_PORT:-?} не слушается)"
+    fi
   elif printf '%s' "$DTAP_ERR" | grep -q 'Permission denied'; then
     warn "удалённая отладка Chrome: не проверено (D-39) — права сессии не пустили проверку"
   else
