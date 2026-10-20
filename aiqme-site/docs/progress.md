@@ -891,3 +891,156 @@ commit/push.
   и вкладок W-15).
 - Настоящая доставка писем (D-15, SMTP домена) — уровень T; локально письмо проверено только в Mailpit. Вкладки кабинета W-15,
   оболочка админки W-08, подстановка профиля в заявку W-12 — в своих задачах.
+
+## W-08 «Админка: оболочка, общий редактор, услуги и страницы» — 2026-10-20, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки; нейтральные надписи и ручной просмотр кадров — **ждут проверки пользователем**).
+Агент не делал commit/push.
+
+### Что сделано
+
+- **Маршруты** (`routes/web.php`): `/lt/administravimas/…` · `/en/admin/…` — корень (`<locale>.admin`, Overview, как `/admin/`
+  прототипа) и вкладки `overview`, `services`, `content`, `audit` (`<locale>.admin.<вкладка>`), все под `auth.session`,
+  `EnsureAdmin` (404 гостю и клиенту) и no-store. Контроллер `app/Http/Controllers/Admin/AdminController` (вне touches — нужен
+  маршрутам). Шаблон-заготовка W-07 `admin/index.blade.php` заменён оболочкой.
+- **Оболочка** `resources/views/admin/shell.blade.php` — разметка прототипа: page-top «AIQME valdymo aplinka» · «AIQME management
+  workspace», `.admin-layout`, `nav.side-nav` «Administravimo meniu» · «Administration menu», `#admin-main`, выход (POST).
+  Не перенесены (D-21, §1.4): вводный текст «Demo administration…», notice, ярлык «ADMINISTRATION DEMO», переключатель ролей
+  «Try a role». В меню — только созданные вкладки (Overview, Services, Content & SEO, Audit log); Permissions, Telegram, CSV не
+  созданы (constraints), остальные пункты добавят W-26, W-11, W-14, W-17, W-18 вместе со своими адресами.
+- **Overview** — заготовка: заголовок прототипа «Darbo diena viename vaizde.» · «Your working day, at a glance.» и заглушка
+  «Informacija ruošiama»; демо-метрики, заказ DEMO-1047 и notice не переносятся (наполняет W-14).
+- **Services / Content & SEO** (`admin/content-tab`): таблица прототипа «Pavadinimas · LT / EN · Redaguoti», состояние
+  языков — «Abi kalbos» · «Both languages» (LT и EN опубликованы), «LT»/«EN» (один), «Juodraštis» · «Draft» (ни одного);
+  «Pridėti juodraštį +» · «Add a draft +» — только у услуг (`?new=1`); редактор открывается под списком (`?edit=<id>`), как
+  `#content-editor` прототипа. Вкладка content в W-08 содержит 8 page_text (статьи и новости добавит W-26). Панель «Drafts in
+  this session» не переносится.
+- **Общий Livewire-компонент** `app/Livewire/Admin/ContentEditor` + `admin/content-editor.blade.php` (форма `content-edit-form`):
+  поля перевода LT и EN рядом (`grid two form-grid`), RU — ниже под заголовком «RU»; подписи на языке поля, как в прототипе
+  («Pavadinimas LT», «Title EN», «Adresas LT», «URL EN», «SEO pavadinimas LT», «SEO description EN»; RU — английская подпись +
+  «RU»). «Išsaugoti» · «Save» сохраняет черновик каждого изменённого языка одной транзакцией (неизменённые и пустые несозданные
+  языки не трогаются); строка публикации каждого языка — состояние (Paskelbta / Yra nepaskelbtų pakeitimų / Juodraštis /
+  Nesukurta) и кнопки «Paskelbti LT» · «Publish LT», «Atšaukti paskelbimą LT» · «Unpublish LT» (публикация сначала сохраняет
+  изменённый язык). Все записи — через `ContentService` с ожидаемой ревизией языка; расхождение → сообщение
+  `content.stale` («Changed in another window. Reload the page and try again.»), введённый текст остаётся в форме, ни один
+  язык не сохраняется. Новая услуга: ключ — slug LT (для групп FAQ и связей проектов), позиция — после последней.
+  Каждый запрос компонента (`/livewire/update`, в том числе со снимком, полученным администратором) — `boot()`: не
+  администратор → 404; локаль интерфейса хранится в компоненте (у `/livewire/update` нет префикса локали).
+- **ContentTypes** (`app/Domain/Content/ContentTypes.php`) — одно место описания редактируемых типов для веба и бота W-19:
+  зарегистрированы `service` (поля `SERVICE_FIELDS`: short, label — строка; benefits, problems — список «по строке на пункт»;
+  description, provide, receive — текст; `ContentType::fields()` услуги берёт тот же список) и `page_text` (блоки страницы из
+  первой версии перевода: строка → текст, список строк → список, список записей → записи с частями, число записей задано
+  блоком — без конструктора). Там же проверки (`rules()` — правила валидатора по виду поля; slug — регулярное выражение
+  `ContentService::SLUG`), коллекции медиа по типу (услуга — `images`; главная — `video`, `video_mobile`, `video_poster`;
+  «О нас» — `images`; по одному файлу, новый заменяет прежний) и перевод хранимого вида ↔ формы (`toForm`/`fromForm`).
+- **Медиа** (внутри редактора, без отдельной вкладки): раздел «Failai ir nuotraukos» · «Files & photos» — список файлов
+  (коллекция, ссылка, alt), «Pašalinti» · «Remove», загрузка: «Paskirtis» (коллекция), файл, «Alt tekstas LT», «Alt text EN»,
+  «Šaltinis», «Šaltinio nuoroda» (подпись источника hero, только http(s)), «Įkelti» · «Upload». Проверка файла —
+  **`App\Domain\Content\MediaFile::check()`** (размер ≤ `aiqme.media_max_kb`, формат по сигнатуре: JPEG, PNG, WebP, MP4; SVG и
+  прочее — отказ; подходит коллекции), её вызывает `ContentService::addMedia()` (и вызовет бот W-19). Имя файла — UUID с
+  расширением по сигнатуре, имя медиа (`name`) — тот же UUID: исходные имя и расширение не сохраняются.
+  `ContentService::addMedia(…, replace: true)` и новый `removeMedia()` (только администратор). Медиа применяются сразу (версий у
+  файлов нет, как в W-04).
+- **Лимит** (§6.4): `config/aiqme.php` → `media_max_kb` = 20480 (env `AIQME_MEDIA_MAX_KB`); `AppServiceProvider` задаёт тот же
+  предел `livewire.temporary_file_upload.rules` = `['required', 'file', 'max:20480']` (по умолчанию у Livewire 12 МБ). Подпись
+  поля файла берёт число МБ из конфигурации.
+- **Audit** (`admin/audit`): последние 100 записей журнала `audit` — «Laikas» · «Time», «Kanalas» · «Channel» (вместо «Role»
+  прототипа: один администратор), «Veiksmas» · «Action» (Paskelbta / Paskelbimas atšauktas; неизвестное событие — его ключ),
+  «Objektas» · «Object» (заголовок перевода и тип), «Duomenys» · «Details» (свойства события, кроме канала: `locale: en ·
+  revision: 1`; «было/стало» событий заказов выведется так же — W-13/W-16/W-28). Пусто — «Veiksmų dar nėra.» · «No actions yet.».
+- **CSS**: `resources/css/shell.css` — `.account-layout>*, .admin-layout>*{min-width:0}`: таблица `.data-table` (min-width 550 px
+  прототипа) раздувала колонку сетки до 552 px на 390 px — ровно ошибка прототипа из §1.4; теперь прокручивается сама таблица.
+- **Тексты** `lang/lt|en/admin.php`, `content.media_invalid`; `ContentItem::pageBlocks()` (перенесено из ContentService),
+  `ContentService::SLUG`/`MAX_TEXT` стали публичными.
+- **bin/browser-check**: `ADMIN_PAGES` + 8 адресов вкладок; `check_admin_editor` — редактор услуги и главной из списка на 390 и
+  1440 (ширина, консоль/CSP); на 1440: черновик не виден на сайте → «Publish EN» → текст на странице услуги; PNG с именем
+  `x.html` → имя `UUID.png` и картинка на странице услуги; второе окно сохраняет ту же услугу раньше → в первом сообщение о
+  конфликте и введённый текст на месте; затем исходный текст возвращается публикацией (страница сверяется с эталоном).
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- **Нейтральные надписи, которых нет в прототипе:** вкладка не создаётся — пункта меню нет; состояния «Paskelbta» · «Published»,
+  «Yra nepaskelbtų pakeitimų» · «Unpublished changes», «Nesukurta» · «Not created»; кнопки «Paskelbti :locale» · «Publish :locale»,
+  «Atšaukti paskelbimą :locale» · «Unpublish :locale»; сообщения «Juodraštis išsaugotas.» · «Draft saved.», «Paskelbta: LT.» ·
+  «Published: LT.», «Paskelbimas atšauktas: LT.» · «Unpublished: LT.», «Failas įkeltas.» · «File uploaded.», «Failas
+  pašalintas.» · «File removed.», «Failų dar nėra.» · «No files yet.»; «(po vieną eilutėje)» · «(one per line)»; подписи полей
+  услуги «Trumpas aprašymas» · «Short description», «Bloko parašas» · «Block caption», «Bloko punktai» · «Block points»,
+  «Problemos» · «Problems» («Aprašymas» · «Description», «Ką pateikti?», «Ką gausite?» — из прототипа); медиа «Paskirtis» ·
+  «Purpose», «Nuotrauka» · «Image», «Mobilusis video» · «Mobile video», «Video kadras» · «Video poster», «Failas (JPEG, PNG, WebP
+  arba MP4, iki :max MB)», «Alt tekstas» · «Alt text», «Šaltinis» · «Source», «Šaltinio nuoroda» · «Source link», «Įkelti» ·
+  «Upload», «Pašalinti» · «Remove»; ошибка файла «Netinkamas failas: tik JPEG, PNG, WebP arba MP4, ne didesnis nei :max MB.» ·
+  «Invalid file: JPEG, PNG, WebP or MP4 only, up to :max MB.»; журнал «Kanalas» · «Channel», «Objektas» · «Object», «Duomenys» ·
+  «Details», каналы «Svetainė» · «Website», «Sistema» · «System», события «Paskelbta» · «Published», «Paskelbimas atšauktas» ·
+  «Unpublished». Сообщения проверки полей — тексты W-07 («Užpildykite šį lauką.», «Per ilga reikšmė…») и W-04 («Netinkama reikšmė: …»).
+- **Подписи блоков page_text** — имена блоков (`hero_title LT`, `scenarios 1 · title EN`): в прототипе редактора страниц нет,
+  придумывать ~40 подписей не стал. Порядок блоков — по имени (jsonb не хранит порядок ключей сидера), части записи — заголовок первым.
+- «Save as a draft» прототипа не перенесён: сохранение всегда черновик, публикация — отдельной кнопкой по языку (§4.2).
+  «Save both languages» → «Išsaugoti» · «Save» (языков три).
+- Число записей в блоках-списках page_text (сценарии, шаги, разделы политик) фиксировано — без конструктора (§4.1); списки строк
+  (benefits, problems, hero_stages) свободной длины.
+- Подпись alt — только при загрузке (смена подписи — удалить и загрузить заново); alt RU не вводится (RU — тестовая локаль).
+- Новые страницы page_text не создаются (набор — код); удаления услуги нет (не требуется задачей; снятие с публикации есть).
+- Журнал — последние 100 записей без постраничного вывода; детали событий — пары «ключ: значение».
+
+### Проверки (запущены в этой сессии)
+
+- `aiqme-site/bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **365 тестов, 337 passed, 28 skipped** (пропуски §4.6 —
+  вкладки кабинета W-15 и вкладки админки других задач), Vite build OK.
+- `bin/browser-check` без аргументов → **`bin/browser-check: OK (11154 проверок)`**: вход администратора через форму; 10 адресов
+  админки (корень и 4 вкладки LT/EN) на 320/390/768/1024/1440 — ширина, §7.1, маркеры D-21, консоль/CSP; гостю и клиенту — 404;
+  `check_admin_editor` (Livewire без нарушений CSP: черновик, публикация EN, загрузка PNG `x.html` → `UUID.png` и картинка на
+  странице услуги, конфликт двух окон) и все 89 страниц прежних задач. Первый прогон нашёл: (1) документ 552 px на 320/390
+  на вкладках с таблицей и в редакторе — исправлено `min-width:0` в shell.css; (2) мой же опубликованный текст ломал сверку
+  страницы услуги с эталоном — проверка теперь возвращает исходный текст. Повтор — OK. Чужих хостов нет.
+- Новые тесты: `AdminShellTest` (6) — все адреса W-08 (в т. ч. `?edit`, `?new=1`, со «/») 404 гостю и клиенту, 200 с noindex и
+  no-store администратору; чужой тип/несуществующий элемент в `?edit` — 404; **действия Livewire (`/livewire/update` со снимком
+  администратора) от клиента и гостя — 404**, правка не записана; оболочка LT/EN без демо-надписей, ролей, Permissions/Telegram/CSV,
+  меню из 4 вкладок, один `aria-current`; заглушка Overview; исключённые и будущие вкладки — 404; списки услуг и страниц с
+  состоянием языков; журнал (пусто → «No actions yet.»; публикация через Telegram и снятие через веб — время, канал, действие,
+  объект, детали; LT-надпись). `AdminContentEditorTest` (11) — новая услуга: черновик (ключ = slug LT, позиция 7, пустой EN не
+  создаётся, страница 404) → публикация LT (страница и список услуг) → EN → снятие EN (404 только EN); правка опубликованной
+  услуги не видна до публикации языка, LT не пересохраняется; SEO title/description и новый slug на публичной странице, старый
+  адрес 404; занятый slug — ошибка у поля, ввод сохранён; **конфликт ревизии** (правка того же перевода каналом telegram) —
+  сообщение, ввод на месте, версия бота не перезаписана, публикация с устаревшей ревизией отклонена; конфликт EN отменяет и LT;
+  проверки полей из ContentTypes (обязательность, slug, длина) LT/EN; page_text главной: блоки-строки, списки и записи, публикация
+  EN видна на `/en`, не на `/lt`, набор блоков не меняется; черновая политика публикуется из редактора; форма без правок не
+  создаёт версий (toForm/fromForm — без потерь); RU тем же редактором (`/ru/services/<slug>` администратору); описание полей
+  услуги в одном месте, незарегистрированный тип и новый page_text — 404. `AdminMediaTest` (5) — лимит 20480 в конфигурации и
+  в правилах Livewire, подпись «up to 20 MB»; **PNG с именем x.html → `UUID.png`**, `name` = UUID, `image/png`, alt LT/EN, картинка
+  на странице услуги; новая иллюстрация заменяет прежнюю, удаление; SVG под `.png`/`.svg`, HTML под `.jpg`, MP4 в коллекцию
+  фото — отказ, медиа не созданы; видео главной с источником; чужая коллекция и `javascript:`-источник — отказ; у политики
+  раздела медиа нет; предел из конфигурации (1 МБ) — в Livewire и в `MediaFile::check()` по пути файла (как вызовет бот W-19).
+  `PrototypeRoutesTest` — строка 13 §4.6 для корня и вкладок overview, services, content, audit проверяется (200 администратору,
+  404 гостю и клиенту), остальные вкладки пропускаются со своей задачей.
+- **Тесты ловят поломки** (временные мутации, откачены, `cmp`): без проверки администратора в `boot()` — падает тест действий
+  Livewire; сохранение с текущей ревизией из БД («последняя запись побеждает») — 2 теста конфликта; MediaFile без сигнатуры —
+  тест MediaFile; без правила Livewire — тест лимита. Остаток мутации (временный каталог `storage/media-library/temp` с SVG)
+  удалён.
+- `git status --porcelain aiqme-site`: новые файлы — `app/Domain/Content/{ContentTypes,MediaFile}.php`,
+  `app/Http/Controllers/Admin/`, `app/Livewire/Admin/`, `lang/*/admin.php`, шаблоны `resources/views/admin/`, 3 теста; удалён
+  `resources/views/admin/index.blade.php`; медиа, `.env`, ключей нет; `experiments/` не изменён.
+
+### Не проверено
+
+- Ручной просмотр кадров админки (`build/verification/browser-check/shots/*admin*-signed-in-*.png`) и редактора — **ждёт
+  проверки пользователем**; я посмотрел вкладку услуг на 1440 (EN) и 390 (LT): композиция как в прототипе, без демо-блоков.
+- Загрузка большого видео (до 20 МБ) через настоящий nginx/PHP-FPM (лимиты тела W-20) — не проверялась; локально — PNG и
+  короткий MP4-заголовок в тестах. Конверсии видео нет (как в W-04).
+- Проверку `MediaFile` из бота покажет W-19 (класс готов, тест вызова — там).
+
+### Доработка после приёмки (2026-10-20): bin/check красный
+
+- Причина (`W-08.check0.log`): упал `CatalogTest::test_products_show_a_placeholder_until_published_then_cards_without_code_changes`
+  (W-25) — первой карточкой оказался «NORDA CAD», а не «NORDA S1 scanner». Код W-08 каталог не трогает: порядок «рекомендуемые»
+  в `ProductController::index()` — `published_at` по убыванию с точностью до секунды; тест считал, что все позиции фабрики
+  публикуются в одну секунду («Одна дата публикации»). Под нагрузкой полного прогона публикации пересекли границу секунды, и
+  позже опубликованный товар честно встал первым — нестабильный тест, а не ошибка сортировки.
+- Исправление: в тесте публикация каталога идёт при замороженном времени (`Carbon::setTestNow(now()->startOfSecond())` …
+  `Carbon::setTestNow()`), как уже сделано в соседних тестах сортировки по дате того же файла. Поведение сайта не менялось.
+- Проверки: `bin/php artisan test --compact tests/Feature/CatalogTest.php` — 10 passed; `bin/check` — OK (365 тестов: 337 passed,
+  28 skipped; Pint, Vite build OK).
+
+
+## W-08: заблокирована ночным прогоном (2026-10-20 05:44)
+
+Причина (оркестратор): таймаут сессии (1 мин). Работа — в git stash «night-blocked W-08».
