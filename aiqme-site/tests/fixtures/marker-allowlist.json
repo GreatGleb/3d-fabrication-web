@@ -168,5 +168,25 @@
   "page": "/en/services/3d-modelling-training",
   "phrase": "Application example",
   "reason": "Заголовок блока примера услуги из прототипа (§1.2): выводится при опубликованном проекте услуги; не демо-пометка."
+ },
+ {
+  "page": "/lt/produktai/norda-s1-skeneris",
+  "phrase": "Komplektacija, garantijos sąlygos, montavimas ir techninis palaikymas tikslinami konkrečiame pasiūlyme.",
+  "reason": "Текст панели «Komplektacija ir palaikymas» страницы товара прототипа (rules[8]): условия уточняются в предложении — продажа только по запросу (D-12); не плановая пометка из таблицы 2 D-21. Страницы — товары фабрики tests/browser/ContentFactory::catalog()."
+ },
+ {
+  "page": "/lt/produktai/vekta-p2-spausdintuvas",
+  "phrase": "Komplektacija, garantijos sąlygos, montavimas ir techninis palaikymas tikslinami konkrečiame pasiūlyme.",
+  "reason": "Текст панели «Komplektacija ir palaikymas» страницы товара прототипа (rules[8]): условия уточняются в предложении — продажа только по запросу (D-12); не плановая пометка из таблицы 2 D-21. Страницы — товары фабрики tests/browser/ContentFactory::catalog()."
+ },
+ {
+  "page": "/lt/produktai/petg-gija",
+  "phrase": "Komplektacija, garantijos sąlygos, montavimas ir techninis palaikymas tikslinami konkrečiame pasiūlyme.",
+  "reason": "Текст панели «Komplektacija ir palaikymas» страницы товара прототипа (rules[8]): условия уточняются в предложении — продажа только по запросу (D-12); не плановая пометка из таблицы 2 D-21. Страницы — товары фабрики tests/browser/ContentFactory::catalog()."
+ },
+ {
+  "page": "/lt/produktai/norda-cad",
+  "phrase": "Komplektacija, garantijos sąlygos, montavimas ir techninis palaikymas tikslinami konkrečiame pasiūlyme.",
+  "reason": "Текст панели «Komplektacija ir palaikymas» страницы товара прототипа (rules[8]): условия уточняются в предложении — продажа только по запросу (D-12); не плановая пометка из таблицы 2 D-21. Страницы — товары фабрики tests/browser/ContentFactory::catalog()."
  }
 ]

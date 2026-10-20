@@ -16,7 +16,8 @@ use Tests\TestCase;
 /**
  * Адреса прототипа против таблицы §4.6 (04-content-seo.md): статические страницы, 301 и строки с 404 (W-02); адреса
  * услуг со slug из БД после сидера W-04 — 200 на своей локали, 404 со slug другой локали (W-05); статьи по адресу
- * библиотеки — 200, их дубли в /informacija/, /naujienos/ — 404, демо-проекты — 404, пока черновики, 200 после публикации (W-06).
+ * библиотеки — 200, их дубли в /informacija/, /naujienos/ — 404, демо-проекты — 404, пока черновики, 200 после публикации (W-06);
+ * демо-товары — 404 и после сидера (W-25).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -70,9 +71,9 @@ class PrototypeRoutesTest extends TestCase
         match ($row) {
             1 => $this->get($path)->assertStatus(301)->assertRedirect(route('lt.home')),
             2 => $this->assertPublicPage($path),
-            // Slug другой локали и дубли статей — 404 при опубликованных услугах и статьях (без сидера 404 ничего бы не доказывал).
-            3, 4 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
-            5, 7, 8, 9, 12 => $this->get($path)->assertNotFound(),
+            // Slug другой локали, дубли статей и демо-товары — 404 после сидера (без сидера 404 ничего бы не доказывал).
+            3, 4, 5 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
+            7, 8, 9, 12 => $this->get($path)->assertNotFound(),
             6 => $this->assertDraftProjectUntilPublished($path),
             14 => $this->assertNotFoundForGuestAndAdmin($path),
             default => $this->fail('строка '.$row.' §4.6 без проверки: '.$path),

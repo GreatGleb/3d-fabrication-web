@@ -11,7 +11,7 @@ use App\Models\User;
 /**
  * Данные публичных страниц W-05/W-06 для bin/browser-check и Feature-тестов — только через ContentService, как в админке:
  * опубликованные бренды, новости раздела «новости», медиа hero (видео, мобильное видео, постер, источник), проект LT+EN,
- * связанный с услугой, обучение, товар (для поиска).
+ * связанный с услугой, обучение, товары каталога с брендом и категорией (W-25).
  * Тексты нейтральные, без слов-маркеров D-21; файлы медиа создаёт вызывающий во временном каталоге.
  */
 final class ContentFactory
@@ -80,6 +80,52 @@ final class ContentFactory
         return $this->published(ContentType::Training, $key, array_map(fn (array $text): array => [
             'title' => $text[0], 'fields' => ['description' => $text[1]],
         ], $translations), ['date' => $date, 'format' => 'online'], $position);
+    }
+
+    /**
+     * Товар каталога (W-25): бренд (meta.brand — id бренда), категория (meta.category — ключ категории сидера W-04); на локаль —
+     * [название, slug, описание, характеристики, совместимость].
+     *
+     * @param  array<string, array{0: string, 1: string, 2: string, 3: string, 4: string}>  $translations
+     */
+    public function product(string $key, ?ContentItem $brand, string $category, array $translations, int $position = 0): ContentItem
+    {
+        return $this->published(ContentType::Product, $key, array_map(fn (array $text): array => [
+            'title' => $text[0], 'slug' => $text[1],
+            'fields' => ['description' => $text[2], 'specifications' => $text[3], 'compatibility' => $text[4]],
+        ], $translations), ['category' => $category, 'brand' => $brand?->id], $position);
+    }
+
+    /**
+     * 4 товара LT+EN с брендом и категорией (W-25 checks): бренды — из homeTickers (создаются, если их ещё нет).
+     *
+     * @return list<ContentItem>
+     */
+    public function catalog(): array
+    {
+        $brand = fn (string $key, string $name, int $position): ContentItem => ContentItem::where('type', ContentType::Brand)
+            ->where('key', $key)->first() ?? $this->brand($key, $name, $position);
+        $norda = $brand('norda', 'NORDA', 1);
+        $vekta = $brand('vekta', 'VEKTA', 2);
+
+        return [
+            $this->product('norda-scanner', $norda, 'scanners', [
+                'lt' => ['NORDA S1 skeneris', 'norda-s1-skeneris', 'Optinis skeneris detalių matmenims užfiksuoti.', 'Tikslumas iki 0,05 mm.', 'Veikia su CAD programomis.'],
+                'en' => ['NORDA S1 scanner', 'norda-s1-scanner', 'An optical scanner for capturing part geometry.', 'Accuracy up to 0.05 mm.', 'Works with CAD software.'],
+            ], 1),
+            $this->product('vekta-printer', $vekta, 'printers', [
+                'lt' => ['VEKTA P2 spausdintuvas', 'vekta-p2-spausdintuvas', 'FDM spausdintuvas funkcinėms detalėms.', 'Darbo laukas 250 × 250 × 250 mm.', 'PLA, PETG ir ABS gijos.'],
+                'en' => ['VEKTA P2 printer', 'vekta-p2-printer', 'An FDM printer for functional parts.', 'Build volume 250 × 250 × 250 mm.', 'PLA, PETG and ABS filament.'],
+            ], 2),
+            $this->product('vekta-petg', $vekta, 'materials', [
+                'lt' => ['PETG gija', 'petg-gija', 'Tvirta gija mechaninėms detalėms.', 'Skersmuo 1,75 mm.', 'FDM spausdintuvai.'],
+                'en' => ['PETG filament', 'petg-filament', 'A tough filament for mechanical parts.', 'Diameter 1.75 mm.', 'FDM printers.'],
+            ], 3),
+            $this->product('norda-software', $norda, 'software', [
+                'lt' => ['NORDA CAD', 'norda-cad', 'Programa skenavimo duomenims apdoroti.', 'Licencija vienai darbo vietai.', 'Windows 11.'],
+                'en' => ['NORDA CAD', 'norda-cad', 'Software for processing scan data.', 'Single-seat licence.', 'Windows 11.'],
+            ], 4),
+        ];
     }
 
     /** Проект, обучение и новость browser-check (W-06 checks): новости — из homeTickers. */

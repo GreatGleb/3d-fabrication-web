@@ -11,7 +11,7 @@ use Tests\browser\ContentFactory;
 use Tests\Support\Html;
 use Tests\TestCase;
 
-/** Тексты страниц W-05/W-06: таблица 1 D-21 на отрендеренных страницах и отсутствие LT-строк ui_text на EN-страницах (§7.2). */
+/** Тексты страниц W-05/W-06/W-25: таблица 1 D-21 на отрендеренных страницах и отсутствие LT-строк ui_text на EN-страницах (§7.2). */
 class PublicTextsTest extends TestCase
 {
     use RefreshDatabase;
@@ -21,12 +21,14 @@ class PublicTextsTest extends TestCase
             '/lt/paslaugos/3d-spausdinimas', '/lt/paslaugos/frezavimas', '/lt/paslaugos/graviravimas', '/lt/paslaugos/3d-modeliavimo-mokymai',
             '/lt/privatumas', '/lt/slapukai', '/lt/pristatymas', '/lt/grazinimas',
             '/lt/projektai', '/lt/projektai/laikiklio-atkurimas', '/lt/informacija', '/lt/biblioteka', '/lt/naujienos',
-            '/lt/biblioteka/file-guide', '/lt/mokymai', '/lt/paieska', '/lt/paieska?q=3D', '/lt/paieska?q=zzzz'],
+            '/lt/biblioteka/file-guide', '/lt/mokymai', '/lt/paieska', '/lt/paieska?q=3D', '/lt/paieska?q=zzzz',
+            '/lt/produktai', '/lt/produktai/norda-s1-skeneris', '/lt/palyginimas?products=norda-s1-skeneris,petg-gija', '/lt/palyginimas', '/lt/krepselis'],
         'en' => ['/en', '/en/services', '/en/about', '/en/contact', '/en/faq', '/en/services/3d-scanning', '/en/services/3d-modelling',
             '/en/services/3d-printing', '/en/services/cnc-machining', '/en/services/engraving', '/en/services/3d-modelling-training',
             '/en/privacy', '/en/cookies', '/en/delivery', '/en/returns',
             '/en/projects', '/en/projects/bracket-reconstruction', '/en/information', '/en/library', '/en/news',
-            '/en/library/file-guide', '/en/training', '/en/search', '/en/search?q=3D', '/en/search?q=zzzz'],
+            '/en/library/file-guide', '/en/training', '/en/search', '/en/search?q=3D', '/en/search?q=zzzz',
+            '/en/products', '/en/products/norda-s1-scanner', '/en/compare?products=norda-s1-scanner,petg-filament', '/en/compare', '/en/cart'],
     ];
 
     protected function setUp(): void
@@ -35,9 +37,10 @@ class PublicTextsTest extends TestCase
         $this->seed(PrototypeContentSeeder::class);
         $admin = User::factory()->create()->forceFill(['is_admin' => true]);
         $admin->save();
-        // С лентами, проектом и обучением (W-06): их тексты и подписи тоже проверяются.
+        // С лентами, проектом, обучением (W-06) и товарами (W-25): их тексты и подписи тоже проверяются.
         ContentFactory::as($admin)->homeTickers();
         ContentFactory::as($admin)->publicSections();
+        ContentFactory::as($admin)->catalog();
     }
 
     /** Видимый текст страницы и значения атрибутов, которые читает пользователь или экранный диктор. */

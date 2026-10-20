@@ -313,7 +313,7 @@ class PublicSectionsTest extends TestCase
         $this->assertSame([], $results('/en/search?q=atmintin'));
 
         $xpath = Html::xpath($this->get('/en/search?q=petg')->getContent());
-        $this->assertSame(route('en.products'), $xpath->query('//div[@id="global-results"]/a')->item(0)->getAttribute('href'));
+        $this->assertSame(route('en.products.show', ['slug' => 'petg-filament']), $xpath->query('//div[@id="global-results"]/a')->item(0)->getAttribute('href'));
         $this->assertSame('Materials', Html::text($xpath->query('//div[@id="global-results"]/a/small')->item(0)));
         $service = Html::xpath($this->get('/lt/paieska?q=skenavimas')->getContent());
         $this->assertSame(route('lt.services.show', ['slug' => '3d-skenavimas']), $service->query('//div[@id="global-results"]/a')->item(0)->getAttribute('href'));

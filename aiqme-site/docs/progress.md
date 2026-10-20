@@ -702,3 +702,91 @@ OK    удалённая отладка Chrome выключена (DevToolsActiv
 
 Не проверено: живой поиск без задержки сети на рабочем сервере (W-20) и в Safari/Firefox; вид кнопки «YouTube ↗» и окна поиска
 на кадрах — **ждёт проверки пользователем**.
+
+## W-25 «Каталог: товары, сравнение, корзина, бренды» — 2026-10-20, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки; ручной просмотр кадров и нейтральные решения ниже — **ждут проверки пользователем**).
+Агент не делал commit/push.
+
+### Что сделано
+
+- **Маршруты** (`routes/web.php`): `products`, `compare`, `cart` — `App\Http\Controllers\Public\ProductController` (раньше —
+  заготовки W-02); `<locale>.products.show` (`/lt/produktai/{slug}` · `/en/products/{slug}`): slug ищется среди опубликованных
+  переводов своей локали, иначе 404 (slug другой локали, черновик, снятый, демо-товары прототипа `*-demo` — 404).
+- **Данные товара** (модель W-04, без миграций): поля перевода `description`, `specifications`, `compatibility`; `meta.category` —
+  ключ категории, `meta.brand` — id элемента бренда. Демо-ассортимент не импортируется.
+- **Список** (`public/products`, `partials/product-card`): без публикаций на локали — заглушка «Informacija ruošiama» ·
+  «Information is being prepared» (без формы и ленты); после — форма GET `.catalog` (фильтр категории `?category=<slug категории>`
+  из опубликованных категорий, производителя `?brand=<id бренда>` из опубликованных брендов, «Išvalyti filtrus» · «Clear filters»,
+  help-box), поиск по названию (`?q=`, без учёта регистра), сортировки «Rekomenduojama» · «Recommended» (по `published_at`
+  перевода, новые первыми; при равенстве — порядок позиций) и «Pavadinimas A–Z» · «Name A–Z» (`Collator` локали); число найденных,
+  пустой результат «No results» с кнопкой сброса; лента `brand-row` опубликованных брендов. Карточка: фото (первое) или своя
+  заглушка, бренд, категория, название, «Pagal užklausą» · «On request», «Gauti pasiūlymą» · «Request a quote» (страница товара,
+  как в прототипе), отметка «Palyginti» · «Compare». Нет: notice списка, brand-note (D-36), «PLANNED RANGE», «Supply to be
+  confirmed», фильтров технологии и цены, сортировки по цене (D-41), покупки (D-12).
+- **Страница товара** (`public/product`): верх «AIQME / PRODUCTS», категория в вводной строке; галерея — фото товара (миниатюры
+  при ≥2, `resources/js/gallery.js`), без фото — своя заглушка `partials/art`; ярлык — только название бренда; описание;
+  «Individualus pasiūlymas» · «Tailored quotation»; «Gauti pasiūlymą» → контакты `?product=<slug>` (контракт §1.2, читает W-09);
+  список: «Delivery estimate: confirmed in the proposal» + совместимость; панель характеристик (категория + поле `specifications`
+  через `Markup::html`, без него — заглушка), «Included items & support» с текстом прототипа, «Documents» — заглушка; «Compatible
+  accessories» + notice совместимости (LT без «Prototipe»); «Back to the catalogue». SEO/hreflang/переключатель — только
+  опубликованные версии.
+- **Сравнение** (`public/compare`): `?products=<slug,…>` — опубликованные товары локали в порядке выбора, без повторов, первые 4;
+  при <2 — пустое состояние прототипа «Select at least two products» + «Open catalogue»; при ≥2 — таблица: Manufacturer, Category,
+  Price («On request»), Compatibility, «View». Выбор на странице товаров — `resources/js/compare.js`: localStorage своей локали,
+  панель `.compare-bar` «Selected for comparison: N/4», ссылка «Compare» на сравнение с выбором в адресе, «Clear comparison»;
+  пятая отметка снимается с сообщением «Compare up to 4 products.».
+- **Корзина** (`public/cart`): всегда пустое состояние «Your basket is empty» · «Krepšelis kol kas tuščias» и кнопка на калькулятор
+  (надпись — существующая `shell.quote_cta`); без demo-notice и «Try the purchase flow…».
+- **sitemap.xml**: список товаров — только на локали с публикацией; карточки товаров с alternates только опубликованных локалей.
+  **Поиск** (W-06) ведёт на карточку товара. Иконка `settings` прототипа в `x-line-icon`. CSS — `resources/css/public.css`
+  (фото/заглушка в рамках `.visual`, `.gallery-main`; `[hidden]` у панели сравнения).
+- **Фабрика** `ContentFactory::product()`/`catalog()` — 4 товара LT+EN с брендом (NORDA/VEKTA) и категорией; `BrowserDataSeeder`
+  её вызывает. `bin/browser-check`: `CATALOG_PAGES` (фильтр, пустой результат, сравнение 4 товаров LT/EN), рамки фото товара в
+  проверке медиа, `check_compare` на `/lt/produktai`, `/en/products` при 390 и 1440.
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- **Цена для показа** (§4.1) не выводится: везде «On request» / «Tailored quotation» (D-12, D-41: цена плановых — по запросу).
+  Поле цены добавит редактор W-26, если понадобится.
+- Строки сравнения «Technology» (поля нет, D-41) и «Delivery» (значение «To be confirmed» — пометка D-21) не выводятся; подпись
+  цены «Demo price excl. VAT» заменена на «Kaina» · «Price» (есть в app.js прототипа).
+- Абзац прототипа о характеристиках («…These fields are not a real equipment specification.») — демо-заметка, заменён полем
+  `specifications`; ярлык «<бренд> / PLANNED» — выводится только бренд; «Supply status» не выводится.
+- Нейтральные надписи, которых нет в прототипе: aria-label миниатюр «Vaizdas N» · «View N» (первая — «Pagrindinis vaizdas» ·
+  «Main view» из прототипа); кнопка корзины — «Įkelti modelį ir sužinoti kainą» (CTA шапки).
+- LT-текст «Komplektacija… tikslinami konkrečiame pasiūlyme.» — текст прототипа, не из таблицы 2 D-21; совпадение маркера
+  «tikslinam» внесено в `marker-allowlist.json` для 4 LT-страниц товаров фабрики.
+- Выбор сравнения хранится в localStorage (как state.compare прототипа); без JS отметки не работают, страница сравнения по
+  адресу работает.
+- Вне touches изменены нужные файлы: `routes/web.php`, `SitemapController`, `StaticPages` (комментарий), `Search`, `lang/*`,
+  `resources/js|css`, `x-line-icon`, тесты W-02/W-06 (`PrototypeRoutesTest` — строка 5 после сидера, `PublicSectionsTest` — ссылка
+  поиска на карточку, `PublicTextsTest` — + 10 страниц каталога), `tests/Support/Html::texts` (контекстный узел), `bin/browser-check`.
+
+### Проверки (запущены в этой сессии)
+
+- `aiqme-site/bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **321 тест, 273 passed, 48 skipped** (прежние пропуски §4.6:
+  кабинет и админка), Vite build OK.
+- `bin/browser-check` без аргументов → **`bin/browser-check: OK (8916 проверок)`**: в т. ч. список товаров, 8 карточек товаров из
+  sitemap, фильтр, пустой результат, сравнение пустое и из 4 товаров, корзина LT/EN — ширина 320/390/768/1024/1440, CSP/консоль,
+  маркеры D-21; `check_compare` (панель 4/4, пятая отметка отклонена с сообщением, восстановление из localStorage, очистка,
+  переход на сравнение с таблицей из 4); сверка текста с эталоном — «Расхождений нет». Чужих хостов нет.
+- Новый `tests/Feature/CatalogTest.php` (10): заглушка → карточки после публикации, снятие EN возвращает заглушку только EN;
+  фильтры категории (slug) и бренда (id), их сочетание, поиск только по названию, сохранение значений, пустой результат, нет
+  tech/max/сортировки по цене; сортировки (дата публикации, повторная публикация поднимает товар; литовский алфавит; неизвестная
+  → Recommended); страница товара (тексты, `?product=`, без покупки, canonical/hreflang, notice LT без «Prototipe», 404 для чужой
+  локали/черновика/снятого/демо); галерея (заглушка; 2 фото — переключатели, alt); сравнение (<2 — пустое; черновик, чужая локаль,
+  повтор не считаются; таблица; из 5 — первые 4); корзина; фразы D-21/D-36 и демо отсутствуют на 12 страницах каталога LT/EN, «Pagal
+  užklausą»/«Gauti pasiūlymą»/«On request» есть; sitemap — публикация и снятие; лента брендов главной после публикации бренда.
+- **Тесты ловят поломки** (временные мутации, откачены, `cmp`): без предела 4; без фильтра бренда; товары не в sitemap; старые
+  первыми; ссылка без `product=` — каждая роняет CatalogTest; предел в `compare.js` `>` вместо `>=` — роняет `check_compare`.
+- `git status --porcelain aiqme-site`: новые — `ProductController.php`, шаблоны `public/products|product|compare|cart`,
+  `partials/product-card`, `resources/js/compare.js|gallery.js`, `tests/Feature/CatalogTest.php`; медиа, `.env`, ключей нет;
+  `experiments/` не изменён.
+
+### Не проверено
+
+- Ручной просмотр кадров `build/verification/browser-check/report.html` — **ждёт проверки пользователем** (я посмотрел список EN и
+  товар LT на 1440: композиция как в прототипе, вместо иконок — заглушки). Эталон каталога показывает демо-товары, сверка текста для
+  каталога не делается (в `prototype-blocks.json` его нет).
+- Предзаполнение формы по `?product=` — W-09; редактор товаров/брендов — W-26. Safari/Firefox, реальные фото заказчика — нет.

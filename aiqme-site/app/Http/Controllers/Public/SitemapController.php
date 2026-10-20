@@ -10,14 +10,15 @@ use App\Support\Seo\StaticPages;
 use Illuminate\Http\Response;
 
 /**
- * Динамический sitemap.xml (§4.4): статические страницы, опубликованные политики, списки проектов, новостей и обучения —
- * на локалях, где в них есть публикации, и карточки услуг, проектов и статей (адрес библиотеки) — каждая версия с
+ * Динамический sitemap.xml (§4.4): статические страницы, опубликованные политики, списки товаров, проектов, новостей и
+ * обучения — на локалях, где в них есть публикации, и карточки услуг, товаров, проектов и статей (адрес библиотеки) — каждая версия с
  * alternates только опубликованных локалей. Без RU, кабинета, админки, поиска, разделов-заглушек и черновиков.
  */
 class SitemapController extends Controller
 {
     /** Списки-заглушки (§4.2): в sitemap — только на локали с хотя бы одной публикацией (тип, отбор по meta). */
     private const SECTIONS = [
+        'products' => [ContentType::Product, []],
         'projects' => [ContentType::Project, []],
         'news' => [ContentType::Article, ['section' => 'news']],
         'training' => [ContentType::Training, []],
@@ -44,8 +45,8 @@ class SitemapController extends Controller
         }
 
         $items = ContentItem::query()
-            ->whereIn('type', [ContentType::Service, ContentType::Project, ContentType::Article])
-            ->orderByRaw("case type when 'service' then 1 when 'project' then 2 else 3 end")
+            ->whereIn('type', [ContentType::Service, ContentType::Product, ContentType::Project, ContentType::Article])
+            ->orderByRaw("case type when 'service' then 1 when 'product' then 2 when 'project' then 3 else 4 end")
             ->orderBy('position')
             ->orderBy('id')
             ->with('translations')

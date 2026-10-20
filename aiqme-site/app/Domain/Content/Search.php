@@ -4,7 +4,6 @@ namespace App\Domain\Content;
 
 use App\Domain\Content\Models\ContentTranslation;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 /**
@@ -50,8 +49,7 @@ final class Search
         return [
             'name' => $translation->title,
             'description' => $description,
-            // Карточки товара до W-25 нет — ведём на список товаров.
-            'url' => Route::has($page.'.show') ? route($page.'.show', ['slug' => $translation->slug]) : route($page),
+            'url' => route($page.'.show', ['slug' => $translation->slug]),
         ];
     }
 }

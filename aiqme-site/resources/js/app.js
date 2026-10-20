@@ -4,6 +4,8 @@ import './hero-video';
 import './tickers';
 import './filters';
 import './search';
+import './compare';
+import './gallery';
 
 // Cookie-плашка (D-11): информационная; после «Tik būtini» · «Essential only» больше не показывается.
 const cookie = document.querySelector('.cookie');

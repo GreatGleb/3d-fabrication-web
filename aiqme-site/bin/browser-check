@@ -26,6 +26,10 @@ tests/browser/ (ролик hero создаёт ffmpeg во временном к
 W-06: проекты, информация, библиотека, новости, обучение, поиск и карточки проектов и статей — на данных фабрик tests/browser/
 (1 проект LT+EN, связанный с услугами modelling и scanning, 1 обучение, новости W-05); карточки — из sitemap.xml; поиск
 проверяется и с запросом (SEARCH_PAGES). Сверка текста — также 3 статьи и обучение (prototype-blocks.json).
+
+W-25: каталог на данных фабрик tests/browser/ (4 товара LT+EN с брендом и категорией): список товаров, карточки товаров — из
+sitemap.xml, фильтр и пустой результат, сравнение 4 товаров (CATALOG_PAGES); выбор для сравнения на странице товаров —
+check_compare (предел 4, панель «N/4», переход на сравнение с таблицей из 4 товаров).
 """
 import html
 import json
@@ -61,6 +65,10 @@ BROWSER_SEEDER = 'Tests\\browser\\BrowserDataSeeder'
 NOT_FOUND_PAGES = ['/lt/nera-tokio', '/en/missing-page']
 # Поиск с результатами и без (W-06): страница поиска без запроса — из route:list.
 SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
+# Каталог (W-25): фильтр, пустой результат и сравнение 4 товаров фабрики tests/browser/ContentFactory::catalog().
+CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
+                 '/lt/palyginimas?products=norda-s1-skeneris,vekta-p2-spausdintuvas,petg-gija,norda-cad',
+                 '/en/compare?products=norda-s1-scanner,vekta-p2-printer,petg-filament,norda-cad']
 SKIPPED_LOGIN = 'пропущено: вход появится в W-07'
 
 WIDTHS = [320, 390, 768, 1024, 1440]
@@ -434,6 +442,50 @@ def check_search_modal(report, new_page, path, width, height):
     context.close()
 
 
+def check_compare(report, new_page, path, width, height):
+    """Выбор для сравнения (F-04, resources/js/compare.js): 4 отметки — панель «4/4», пятая не ставится и выводится сообщение
+    о пределе; выбор сохраняется после перезагрузки; «Compare» открывает сравнение с таблицей из 4 товаров."""
+    where = f'{path} @{width} сравнение'
+    context, page, problems = new_page(width, height)
+    page.goto(BASE + path, wait_until='networkidle')
+    # Cookie-плашка и панель сравнения — обе внизу экрана (как в прототипе); посетитель сначала закрывает плашку.
+    page.locator('[data-cookie-accept]').click()
+    bar = page.locator('[data-compare-bar]')
+    boxes = page.locator('input[data-compare]')
+    report.check(not bar.is_visible(), f'{where}: панель видна без выбора')
+    report.check(boxes.count() >= 4, f'{where}: товаров для сравнения меньше 4 ({boxes.count()})')
+    for index in range(min(4, boxes.count())):
+        boxes.nth(index).check()
+    report.check(bar.is_visible() and '4/4' in bar.inner_text(), f'{where}: панель не показывает 4/4')
+    report.check(not page.locator('[data-compare-message]').is_visible(), f'{where}: сообщение о пределе до пятого')
+    # Пятого товара в фабрике нет: предел проверяется на 4 slug в localStorage и отметке ещё одного товара.
+    key = bar.get_attribute('data-compare-key')
+    page.evaluate("(key) => localStorage.setItem(key, JSON.stringify(['a', 'b', 'c', 'd']))", key)
+    page.reload(wait_until='networkidle')
+    report.check('4/4' in bar.inner_text() and page.locator('input[data-compare]:checked').count() == 0,
+                 f'{where}: выбор из localStorage не восстановлен')
+    boxes.nth(0).click()
+    report.check(not boxes.nth(0).is_checked() and page.locator('[data-compare-message]').is_visible(),
+                 f'{where}: пятый товар выбран или нет сообщения о пределе')
+    page.locator('[data-compare-clear]').click()
+    report.check(not bar.is_visible(), f'{where}: «Clear comparison» не скрыл панель')
+    for index in range(4):
+        boxes.nth(index).check()
+    page.reload(wait_until='networkidle')
+    report.check(page.locator('input[data-compare]:checked').count() == 4, f'{where}: выбор не сохранился после перезагрузки')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+    page.locator('[data-compare-link]').click()
+    page.wait_for_load_state('networkidle')
+    report.check('products=' in page.url, f'{where}: выбор не в адресе сравнения: {page.url}')
+    report.check(page.locator('main table thead th').count() == 5, f'{where}: в таблице сравнения не 4 товара')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: сравнение шире окна ({scroll} > {client})')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 # ---------- W-05: порядок блоков, тексты эталона, медиа, движение ----------
 
 BLOCKS_PROBE = """() => {
@@ -603,7 +655,7 @@ def check_text(report, page, path, allowlist, discrepancies):
 
 MEDIA_PROBE = """async () => {
     const result = [];
-    for (const frame of document.querySelectorAll('main .hero-art, main .service-feature-media, main .media-frame, main .split-image, main .project-image')) {
+    for (const frame of document.querySelectorAll('main .hero-art, main .service-feature-media, main .media-frame, main .split-image, main .project-image, main .gallery-view:not([hidden]), main .product-card .visual')) {
         frame.scrollIntoView({block: 'center'});
         const img = frame.querySelector(':scope > img');
         if (img) { await img.decode().catch(() => {}); }
@@ -759,7 +811,7 @@ def main():
     blocks = json.loads(BLOCKS.read_text(encoding='utf-8'))
     log(f'== сервер {BASE} (bin/php -S)')
     server = start_server(env)
-    pages = arguments or sorted(set(pages[:-len(NOT_FOUND_PAGES)] + pages_from_sitemap())) + SEARCH_PAGES + NOT_FOUND_PAGES
+    pages = arguments or sorted(set(pages[:-len(NOT_FOUND_PAGES)] + pages_from_sitemap())) + SEARCH_PAGES + CATALOG_PAGES + NOT_FOUND_PAGES
     report = Report()
     OUT.mkdir(parents=True, exist_ok=True)
     shots_dir = OUT / 'shots'
@@ -837,6 +889,9 @@ def main():
                 if path in ('/en', '/lt/paieska?q=3D'):
                     for width, height in ((390, 844), (1440, 1000)):
                         check_search_modal(report, new_page, path, width, height)
+                if path in ('/lt/produktai', '/en/products'):
+                    for width, height in ((390, 844), (1440, 1000)):
+                        check_compare(report, new_page, path, width, height)
 
                 row = {'path': path, 'shots': {}}
                 for device, (width, height) in SHOTS.items():

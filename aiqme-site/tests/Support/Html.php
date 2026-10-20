@@ -25,10 +25,10 @@ final class Html
     }
 
     /** @return list<string> */
-    public static function texts(DOMXPath $xpath, string $query): array
+    public static function texts(DOMXPath $xpath, string $query, ?DOMNode $context = null): array
     {
         $texts = [];
-        foreach ($xpath->query($query) as $node) {
+        foreach ($xpath->query($query, $context) as $node) {
             $texts[] = self::text($node);
         }
 
