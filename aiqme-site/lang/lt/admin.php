@@ -1,0 +1,90 @@
+<?php
+
+// Админка (§1.4, W-08): источники и нейтральные надписи — см. lang/en/admin.php и docs/progress.md (W-08).
+return [
+    'menu' => 'Administravimo meniu',
+    'tabs' => [
+        'overview' => 'Apžvalga',
+        'services' => 'Paslaugos',
+        'content' => 'Informacija ir SEO',
+        'audit' => 'Veiksmų istorija',
+    ],
+    'overview' => [
+        'heading' => 'Darbo diena viename vaizde.',
+    ],
+    'list' => [
+        'title' => 'Pavadinimas',
+        'languages' => 'LT / EN',
+        'add' => 'Pridėti juodraštį +',
+        'edit' => 'Redaguoti',
+        'both' => 'Abi kalbos',
+        'draft' => 'Juodraštis',
+    ],
+    'editor' => [
+        'heading' => 'Turinio redaktorius',
+        'save' => 'Išsaugoti',
+        'saved' => 'Juodraštis išsaugotas.',
+        'publish' => 'Paskelbti :locale',
+        'unpublish' => 'Atšaukti paskelbimą :locale',
+        'published_locale' => 'Paskelbta: :locale.',
+        'unpublished_locale' => 'Paskelbimas atšauktas: :locale.',
+        'one_per_line' => '(po vieną eilutėje)',
+        'state' => [
+            'published' => 'Paskelbta',
+            'changes' => 'Yra nepaskelbtų pakeitimų',
+            'draft' => 'Juodraštis',
+            'none' => 'Nesukurta',
+        ],
+    ],
+    'fields' => [
+        'title' => 'Pavadinimas',
+        'slug' => 'Adresas',
+        'seo_title' => 'SEO pavadinimas',
+        'seo_description' => 'SEO aprašymas',
+        'short' => 'Trumpas aprašymas',
+        'label' => 'Bloko parašas',
+        'benefits' => 'Bloko punktai',
+        'description' => 'Aprašymas',
+        'problems' => 'Problemos',
+        'provide' => 'Ką pateikti?',
+        'receive' => 'Ką gausite?',
+    ],
+    'media' => [
+        'heading' => 'Failai ir nuotraukos',
+        'collection' => 'Paskirtis',
+        'collections' => [
+            'images' => 'Nuotrauka',
+            'video' => 'Video',
+            'video_mobile' => 'Mobilusis video',
+            'video_poster' => 'Video kadras',
+        ],
+        'file' => 'Failas (JPEG, PNG, WebP arba MP4, iki :max MB)',
+        'alt' => 'Alt tekstas',
+        'source' => 'Šaltinis',
+        'source_url' => 'Šaltinio nuoroda',
+        'upload' => 'Įkelti',
+        'remove' => 'Pašalinti',
+        'uploaded' => 'Failas įkeltas.',
+        'removed' => 'Failas pašalintas.',
+        'none' => 'Failų dar nėra.',
+    ],
+    'audit' => [
+        'heading' => 'Veiksmų istorija',
+        'time' => 'Laikas',
+        'channel' => 'Kanalas',
+        'action' => 'Veiksmas',
+        'object' => 'Objektas',
+        'details' => 'Duomenys',
+        'empty' => 'Veiksmų dar nėra.',
+        'channels' => [
+            'web' => 'Svetainė',
+            'telegram' => 'Telegram',
+            'stripe' => 'Stripe',
+            'system' => 'Sistema',
+        ],
+        // Событие журнала (AuditLog::record) «content.published» → events.content.published.
+        'events' => [
+            'content' => ['published' => 'Paskelbta', 'unpublished' => 'Paskelbimas atšauktas'],
+        ],
+    ],
+];

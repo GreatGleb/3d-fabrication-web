@@ -44,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         // Единственный администратор (§2.4, §6.1): права на запись контента и админку.
         Gate::define('admin', fn (User $user): bool => $user->is_admin === true);
 
+        // Временные загрузки Livewire (медиа админки) — тот же предел, что у MediaFile (§6.4); по умолчанию Livewire — 12 МБ.
+        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.config('aiqme.media_max_kb')]]);
+
         // Пароль — не короче 8 символов (§6.3); тот же minlength в формах входа, регистрации и сброса.
         Password::defaults(fn (): Password => Password::min(8));
     }

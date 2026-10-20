@@ -1,6 +1,6 @@
 /* Исправления оболочки прототипа (§7.2): ширина документа = окну, меню на коротком экране (приёмы V2 shared/responsive.css). */
 body{overflow-wrap:break-word}
-main,.wrap>*,.grid>*,.split>*,.catalog>*{min-width:0}
+main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-width:0}
 .search-overlay[hidden]{display:none}
 
 @media(max-width:900px){

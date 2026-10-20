@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -68,9 +69,15 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
             });
         });
 
-    Route::get($locale.'/'.($locale === 'lt' ? 'administravimas' : 'admin'), fn () => view('admin.index'))
+    Route::prefix($locale.'/'.($locale === 'lt' ? 'administravimas' : 'admin'))
         ->middleware(['auth.session', EnsureAdmin::class, 'cache.headers:private;no_store'])
-        ->name($locale.'.admin');
+        ->group(function () use ($locale): void {
+            // Вкладки W-08; остальные вкладки §1.4 добавляют свои задачи (до них — 404).
+            Route::get('/', [AdminController::class, 'overview'])->name($locale.'.admin');
+            foreach (array_keys(AdminController::TABS) as $tab) {
+                Route::get($tab, [AdminController::class, $tab])->name($locale.'.admin.'.$tab);
+            }
+        });
 }
 
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');

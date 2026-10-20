@@ -1040,7 +1040,18 @@ commit/push.
 - Проверки: `bin/php artisan test --compact tests/Feature/CatalogTest.php` — 10 passed; `bin/check` — OK (365 тестов: 337 passed,
   28 skipped; Pint, Vite build OK).
 
+### Продолжение после таймаута (2026-10-20, ночь 13:11)
 
-## W-08: заблокирована ночным прогоном (2026-10-20 05:44)
-
-Причина (оркестратор): таймаут сессии (1 мин). Работа — в git stash «night-blocked W-08».
+- Работа восстановлена в дереве; прошлая приёмка не состоялась (сессия приёмщика прервана таймаутом). Сверил критерии done с
+  кодом: маршруты и 404 (EnsureAdmin + `boot()` компонента), ContentTypes, ContentEditor с ревизиями, MediaFile, лимит
+  `aiqme.media_max_kb` = 20480 и `livewire.temporary_file_upload.rules` — на месте, тесты есть.
+- Доделано: `MediaFile::sniff()` принимал любой `ftyp` как MP4, в том числе картинки HEIC/AVIF (сохранились бы как `.mp4`).
+  Теперь основной бренд `heic/heix/heim/heis/hevc/hevx/mif1/msf1/avif/avis` отклоняется; в
+  `AdminMediaTest::test_svg_html_and_wrong_collection_files_are_rejected_by_signature` добавлены файлы `ftypheic`/`ftypavif`
+  с именем `.mp4` — отказ.
+- Проверки: `bin/php artisan test --compact tests/Feature/AdminMediaTest.php tests/Feature/PublicMediaTest.php` — 8 passed;
+  `bin/check` — **OK** (Pint; PHPUnit 365 тестов: 337 passed, 28 skipped; Vite build OK).
+- `bin/browser-check` (передний план; из-за 10-минутного предела инструмента досмотрен после перевода в фон, ~13,5 мин) —
+  **`bin/browser-check: OK (11154 проверок)`**, включая админку 320–1440, 404 гостю/клиенту, редактор W-08 и 89 страниц.
+- `git status --porcelain aiqme-site`: новых файлов сверх перечисленных выше нет; медиа, `.env`, ключей нет.
+- Не проверено, как и раньше: ручной просмотр кадров админки — **ждёт проверки пользователем**; большие видео через nginx — W-20.

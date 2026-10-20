@@ -31,6 +31,9 @@ W-06: проекты, информация, библиотека, новости
 (1 проект LT+EN, связанный с услугами modelling и scanning, 1 обучение, новости W-05); карточки — из sitemap.xml; поиск
 проверяется и с запросом (SEARCH_PAGES). Сверка текста — также 3 статьи и обучение (prototype-blocks.json).
 
+W-08: вкладки админки (overview, services, content, audit) — в ADMIN_PAGES; общий редактор — check_admin_editor (Livewire
+без нарушений CSP: черновик, публикация EN, загрузка PNG с именем x.html, конфликт двух окон).
+
 W-25: каталог на данных фабрик tests/browser/ (4 товара LT+EN с брендом и категорией): список товаров, карточки товаров — из
 sitemap.xml, фильтр и пустой результат, сравнение 4 товаров (CATALOG_PAGES); выбор для сравнения на странице товаров —
 check_compare (предел 4, панель «N/4», переход на сравнение с таблицей из 4 товаров).
@@ -74,9 +77,10 @@ SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
                  '/lt/palyginimas?products=norda-s1-skeneris,vekta-p2-spausdintuvas,petg-gija,norda-cad',
                  '/en/compare?products=norda-s1-scanner,vekta-p2-printer,petg-filament,norda-cad']
-# Кабинет и админка после входа через форму (W-07); вкладки W-15 и W-08 добавят свои адреса.
+# Кабинет и админка после входа через форму (W-07); вкладки админки W-08; вкладки W-15 добавят свои адреса.
 ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/account/addresses']
-ADMIN_PAGES = ['/lt/administravimas', '/en/admin']
+ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
+                                                      for tab in ('overview', 'services', 'content', 'audit')]
 MAILPIT = 'http://127.0.0.1:58025'
 
 WIDTHS = [320, 390, 768, 1024, 1440]
@@ -882,6 +886,90 @@ def check_profile_and_logout(report, new_page, state):
     context.close()
 
 
+def png_file(directory, name, width=64, height=32):
+    """PNG без внешних библиотек (zlib): файл с чужим именем проверяет определение формата по сигнатуре (§6.4)."""
+    import struct
+    import zlib
+    rows = b''.join(b'\x00' + bytes([8, 103, 255]) * width for _ in range(height))
+    chunk = lambda kind, data: struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))  # noqa: E731
+    path = Path(directory) / name
+    path.write_bytes(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0))
+                     + chunk(b'IDAT', zlib.compress(rows)) + chunk(b'IEND', b''))
+    return path
+
+
+def check_admin_editor(report, new_page, state):
+    """Общий редактор W-08 в браузере (Livewire, CSP): открытие из списка на 390 и 1440 без расползания; на 1440 —
+    черновик → публикация EN → текст на публичной странице; PNG с именем x.html → имя UUID.png и картинка на странице
+    услуги; правка той же услуги во втором окне → в первом сообщение о конфликте, введённый текст на месте."""
+    for width, height in ((390, 844), (1440, 1000)):
+        for path, row in (('/en/admin/services', 'scanning'), ('/lt/administravimas/content', 'home')):
+            where = f'{path} @{width} редактор'
+            context, page, problems = new_page(width, height, storage_state=state)
+            page.goto(BASE + path, wait_until='networkidle')
+            page.locator('main table a.btn').first.click()
+            page.wait_for_load_state('networkidle')
+            report.check(page.locator('#content-edit-form').count() == 1, f'{where}: редактор не открылся')
+            scroll, client = document_fits(page)
+            report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+            for problem in problems:
+                report.check(False, f'{where}: {problem}')
+            context.close()
+
+    where = 'редактор услуги @1440'
+    context, page, problems = new_page(1440, 1000, storage_state=state)
+    page.goto(BASE + '/en/admin/services', wait_until='networkidle')
+    page.locator('main table a.btn').first.click()
+    page.wait_for_load_state('networkidle')
+    short = '#field-form-en-fields-short'
+    original = page.input_value(short)
+    page.fill(short, 'Checked by the browser.')
+    page.click('#content-edit-form button[type=submit]')
+    page.wait_for_selector('#content-edit-form .notice.success:has-text("Draft saved.")')
+    public = page.context.new_page()
+    public.goto(BASE + '/en/services/3d-scanning', wait_until='networkidle')
+    report.check('Checked by the browser.' not in public.inner_text('main'), f'{where}: черновик виден на сайте')
+    page.click('button:has-text("Publish EN")')
+    page.wait_for_selector('#content-edit-form .notice.success:has-text("Published: EN.")')
+    public.reload(wait_until='networkidle')
+    report.check('Checked by the browser.' in public.inner_text('main'), f'{where}: опубликованный текст не виден на сайте')
+
+    with tempfile.TemporaryDirectory() as directory:
+        page.set_input_files('#field-upload', str(png_file(directory, 'x.html', 1200, 600)))
+        page.wait_for_load_state('networkidle')
+        page.fill('#field-alt-en', 'Scanned part')
+        page.click('#media-upload-form button[type=submit]')
+        page.wait_for_selector('#content-editor .notice.success:has-text("File uploaded.")')
+    links = page.locator('#content-media a.text-link').all_inner_texts()
+    report.check(len(links) == 1 and re.fullmatch(r'[0-9a-f-]{36}\.png ↗', links[0] if links else ''), f'{where}: имя файла {links}')
+    public.reload(wait_until='networkidle')
+    image = public.locator('main img[alt="Scanned part"]')
+    report.check(image.count() == 1 and image.evaluate('(img) => img.complete && img.naturalWidth > 0'), f'{where}: загруженное фото не показано')
+
+    # Второе окно сохраняет ту же услугу раньше — первое получает сообщение о конфликте, ввод не теряется.
+    other_context, other, other_problems = new_page(1440, 1000, storage_state=state)
+    other.goto(page.url, wait_until='networkidle')
+    other.fill(short, 'Saved in the second window.')
+    other.click('#content-edit-form button[type=submit]')
+    other.wait_for_selector('#content-edit-form .notice.success:has-text("Draft saved.")')
+    page.fill(short, 'Typed in the first window.')
+    page.click('#content-edit-form button[type=submit]')
+    page.wait_for_selector('#content-edit-form .notice.error')
+    report.check('Changed in another window' in page.inner_text('#content-edit-form .notice.error'), f'{where}: нет сообщения о конфликте')
+    report.check(page.input_value(short) == 'Typed in the first window.', f'{where}: введённый текст потерян при конфликте')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+    # Возврат исходного текста: страница услуги дальше сверяется с эталоном (публикация сохраняет изменённый язык).
+    other.reload(wait_until='networkidle')
+    other.fill(short, original)
+    other.click('button:has-text("Publish EN")')
+    other.wait_for_selector('#content-edit-form .notice.success:has-text("Published: EN.")')
+    for problem in problems + other_problems:
+        report.check(False, f'{where}: {problem}')
+    other_context.close()
+    context.close()
+
+
 def mailpit(method, path):
     with urlopen(Request(MAILPIT + path, method=method), timeout=5) as response:
         body = response.read().decode()
@@ -943,6 +1031,8 @@ def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     client = sign_in(report, new_page, '/lt/paskyra/login', client_email, client_password, '/lt/paskyra')
     check_private_pages(report, new_page, ACCOUNT_PAGES, client, '#address-form', allowlist, 'клиент')
     check_private_pages(report, new_page, ADMIN_PAGES, admin, 'main h1', allowlist, 'администратор')
+    log('== редактор контента админки (W-08)')
+    check_admin_editor(report, new_page, admin)
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], client, 404, 'клиент')
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], None, 404, 'гость')
     check_russian(report, new_page, ru_paths, admin)

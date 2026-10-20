@@ -76,7 +76,10 @@ class CatalogTest extends TestCase
             $this->assertCount(0, $xpath->query('//form[@class="catalog"] | //div[@class="brand-row"] | //div[@data-compare-bar]'));
         }
 
+        // Одна секунда на все публикации: иначе переход секунды меняет порядок «новые первыми».
+        Carbon::setTestNow(now()->startOfSecond());
         $this->factory()->catalog();
+        Carbon::setTestNow();
 
         $xpath = Html::xpath($this->get('/en/products')->getContent());
         $this->assertCount(0, $xpath->query('//main//div[@class="empty"]'));

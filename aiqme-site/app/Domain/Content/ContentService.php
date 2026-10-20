@@ -25,9 +25,9 @@ final class ContentService
 {
     public const LOCALES = ['lt', 'en', 'ru'];
 
-    private const SLUG = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
+    public const SLUG = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
-    private const MAX_TEXT = 20000;
+    public const MAX_TEXT = 20000;
 
     public function createItem(User $actor, ContentType $type, ?string $key = null, array $meta = [], int $position = 0): ContentItem
     {
@@ -156,19 +156,17 @@ final class ContentService
     }
 
     /**
-     * Медиа элемента (spatie/medialibrary): тип файла — по сигнатуре (JPEG, PNG, WebP, MP4; SVG не принимается, §6.4),
-     * имя — UUID; alt/подпись — на локаль, необязательный источник (текст и http(s)-ссылка).
+     * Медиа элемента (spatie/medialibrary): размер и тип файла — MediaFile (по сигнатуре: JPEG, PNG, WebP, MP4; SVG не
+     * принимается, §6.4), имя — UUID с расширением по сигнатуре; alt/подпись — на локаль, необязательный источник
+     * (текст и http(s)-ссылка). $replace — новый файл заменяет прежние файлы этой коллекции элемента.
      *
      * @param  array<string, string>  $alt
      * @param  array{text?: string, url?: string}|null  $source
      */
-    public function addMedia(User $actor, ContentItem $item, string $path, string $collection, array $alt = [], ?array $source = null): Media
+    public function addMedia(User $actor, ContentItem $item, string $path, string $collection, array $alt = [], ?array $source = null, bool $replace = false): Media
     {
         $this->authorize($actor);
-        $extension = self::sniff($path);
-        if (! in_array($extension, ContentItem::MEDIA_COLLECTIONS[$collection] ?? [], true)) {
-            $this->fail('file');
-        }
+        $extension = MediaFile::check($path, $collection);
         foreach ($alt as $locale => $text) {
             if (! in_array($locale, self::LOCALES, true) || ! is_string($text) || mb_strlen($text) > 500) {
                 $this->fail('alt');
@@ -182,11 +180,24 @@ final class ContentService
             }
         }
 
-        return $item->addMedia($path)
+        $name = (string) Str::uuid();
+        $media = $item->addMedia($path)
             ->preservingOriginal()
-            ->usingFileName(Str::uuid().'.'.$extension)
+            ->usingName($name)
+            ->usingFileName($name.'.'.$extension)
             ->withCustomProperties(['alt' => $alt, 'source' => $source])
             ->toMediaCollection($collection);
+        if ($replace) {
+            $item->clearMediaCollectionExcept($collection, $media);
+        }
+
+        return $media;
+    }
+
+    public function removeMedia(User $actor, ContentItem $item, int $mediaId): void
+    {
+        $this->authorize($actor);
+        $item->media()->whereKey($mediaId)->firstOrFail()->delete();
     }
 
     /**
@@ -319,7 +330,7 @@ final class ContentService
         if (! is_array($fields) || array_is_list($fields) && $fields !== []) {
             $this->fail('fields');
         }
-        $blocks = $type->fields() ?? ($definingBlocks ? array_keys($fields) : $this->pageBlocks($item));
+        $blocks = $type->fields() ?? array_keys($definingBlocks ? $fields : $item->pageBlocks());
         foreach ($fields as $name => $value) {
             if (! in_array($name, $blocks, true)) {
                 $this->fail('fields');
@@ -328,15 +339,6 @@ final class ContentService
         }
 
         return ['title' => $title, 'slug' => $slug, 'fields' => $fields] + $seo;
-    }
-
-    /** @return list<string> Блоки page_text, заданные при создании страницы (первая версия перевода). */
-    private function pageBlocks(ContentItem $item): array
-    {
-        $first = ContentRevision::whereIn('content_translation_id', $item->translations()->select('id'))
-            ->where('revision', 1)->first();
-
-        return array_keys($first->fields ?? []);
     }
 
     /** Текст: строка, null или вложенные массивы строк (не глубже трёх уровней). */
@@ -370,20 +372,6 @@ final class ContentService
         }
 
         return false;
-    }
-
-    /** Формат файла по первым байтам; расширение и MIME клиента — лишь подсказки (§6.4). */
-    public static function sniff(string $path): ?string
-    {
-        $head = (string) @file_get_contents($path, false, null, 0, 16);
-
-        return match (true) {
-            str_starts_with($head, "\xFF\xD8\xFF") => 'jpg',
-            str_starts_with($head, "\x89PNG\r\n\x1A\n") => 'png',
-            str_starts_with($head, 'RIFF') && substr($head, 8, 4) === 'WEBP' => 'webp',
-            substr($head, 4, 4) === 'ftyp' => 'mp4',
-            default => null,
-        };
     }
 
     private function fail(string $field, string $message = 'content.invalid'): never

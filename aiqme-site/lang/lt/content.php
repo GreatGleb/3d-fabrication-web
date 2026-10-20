@@ -5,4 +5,5 @@ return [
     'stale' => 'Įrašas pakeistas kitame lange. Atnaujinkite puslapį ir pakartokite.',
     'invalid' => 'Netinkama reikšmė: :field.',
     'slug_taken' => 'Toks adresas jau naudojamas.',
+    'media_invalid' => 'Netinkamas failas: tik JPEG, PNG, WebP arba MP4, ne didesnis nei :max MB.',
 ];

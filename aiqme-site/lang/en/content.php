@@ -5,4 +5,5 @@ return [
     'stale' => 'Changed in another window. Reload the page and try again.',
     'invalid' => 'Invalid value: :field.',
     'slug_taken' => 'This address is already in use.',
+    'media_invalid' => 'Invalid file: JPEG, PNG, WebP or MP4 only, up to :max MB.',
 ];

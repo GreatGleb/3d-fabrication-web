@@ -55,6 +55,20 @@ class ContentItem extends Model implements HasMedia
         return $this->meta[$name] ?? $default;
     }
 
+    /**
+     * Блоки page_text, заданные при создании страницы (первая версия первого перевода): имя блока => исходное
+     * значение. Набор и форма блоков не меняются редакторами (без конструктора страниц, §4.1).
+     *
+     * @return array<string, mixed>
+     */
+    public function pageBlocks(): array
+    {
+        $first = ContentRevision::whereIn('content_translation_id', $this->translations()->select('id'))
+            ->where('revision', 1)->orderBy('content_translation_id')->first();
+
+        return $first->fields ?? [];
+    }
+
     public function registerMediaConversions(?Media $media = null): void
     {
         foreach (self::IMAGE_WIDTHS as $width) {
