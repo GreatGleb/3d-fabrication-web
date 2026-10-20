@@ -1,10 +1,11 @@
-{{-- Подвал прототипа (светлый, §7.1). Группы служебных ссылок прототипа и демо-подписи нет (D-21). --}}
+{{-- Подвал прототипа (светлый, §7.1). Группы служебных ссылок прототипа и демо-подписи нет (D-21). Логотип — $logo из layout (D-43). --}}
+@props(['logo'])
 @php($locale = app()->getLocale())
 <footer class="footer">
     <div class="wrap">
         <div class="footer-top">
             <div>
-                <a class="logo" href="{{ route($locale.'.home') }}"><img src="{{ asset('images/logo-dark.png') }}" alt="AIQME"></a>
+                <a class="logo" href="{{ route($locale.'.home') }}"><img src="{{ $logo }}" alt="AIQME"></a>
                 <p>{{ __('shell.footer.slogan') }}</p>
             </div>
             <div>

@@ -1,5 +1,5 @@
 {{-- Блоки услуг главной и списка услуг (serviceFeatureRows прототипа): номер, подпись, название, описание, три пункта и
-     действия. Иллюстрация — медиа услуги или своя заглушка; подписи «Illustrative image» нет (D-21). --}}
+     действия. Иллюстрация — медиа услуги, иначе фрагмент прототипа по умолчанию (D-43, alt — название услуги), иначе своя заглушка; подписи «Illustrative image» нет (D-21). --}}
 @php($locale = app()->getLocale())
 <div class="service-features">
     @foreach ($services as $service)
@@ -7,7 +7,8 @@
         <article class="service-feature" aria-labelledby="service-heading-{{ $key }}">
             <div @class(['service-feature-media', 'service-feature-media--light' => in_array($key, ['engraving', 'training'], true)])>
                 <span class="service-feature-number" aria-hidden="true">{{ sprintf('%02d', $loop->iteration) }}</span>
-                @include('public.partials.media', ['mediaImage' => $service->item->getFirstMedia('images'), 'mediaSizes' => '(max-width: 760px) 100vw, 50vw'])
+                @include('public.partials.media', ['mediaImage' => $service->item->getFirstMedia('images'), 'mediaDefault' => $service->item->defaultMedia('images'),
+                    'mediaAlt' => $service->title, 'mediaSizes' => '(max-width: 760px) 100vw, 50vw'])
             </div>
             <div class="service-feature-copy">
                 <div class="eyebrow"><span class="dot"></span> {{ sprintf('%02d', $loop->iteration) }} / {{ $service->field('label') }}</div>

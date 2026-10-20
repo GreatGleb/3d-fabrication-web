@@ -1,4 +1,4 @@
-{{-- Страница услуги (§1.2, §4.1). Иллюстрация — медиа услуги или своя заглушка, без подписи прототипа (D-21, F-47). --}}
+{{-- Страница услуги (§1.2, §4.1). Иллюстрация — медиа услуги, иначе её фрагмент прототипа по умолчанию (D-43), иначе своя заглушка, без подписи прототипа (D-21, F-47). --}}
 @php($locale = app()->getLocale())
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.services.show', ['slug' => $service->slug])"
     :languages="$languages" :switch-url="$switchUrl" :image="$image" :noindex="$locale === 'ru'">
@@ -19,7 +19,7 @@
             </div>
             <div>
                 <div class="media-frame">
-                    @include('public.partials.media', ['mediaImage' => $illustration, 'mediaSizes' => '(max-width: 900px) 100vw, 50vw', 'mediaLazy' => false])
+                    @include('public.partials.media', ['mediaImage' => $illustration, 'mediaDefault' => $service->item->defaultMedia('images'), 'mediaAlt' => $service->title, 'mediaSizes' => '(max-width: 900px) 100vw, 50vw', 'mediaLazy' => false])
                 </div>
             </div>
         </div>

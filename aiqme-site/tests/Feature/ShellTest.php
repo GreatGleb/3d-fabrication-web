@@ -125,18 +125,17 @@ class ShellTest extends TestCase
         }
     }
 
-    public function test_logo_is_the_copied_customer_logo_and_exists(): void
+    public function test_logo_and_favicon_are_the_prototype_defaults(): void
     {
         $xpath = $this->xpath($this->get('/lt')->getContent());
 
         foreach (['//header//a[@class="logo"]/img', '//footer//a[@class="logo"]/img'] as $query) {
-            $this->assertSame(asset('images/logo-dark.png'), $xpath->query($query)->item(0)->getAttribute('src'));
+            $this->assertSame(asset('defaults/logo.jpg'), $xpath->query($query)->item(0)->getAttribute('src'));
             $this->assertSame('AIQME', $xpath->query($query)->item(0)->getAttribute('alt'));
         }
-        // D-25: копия логотипа прежнего сайта, legacy-landing/ не меняется.
-        foreach (['logo-dark.png', 'logo-light.png'] as $file) {
-            $this->assertFileEquals(base_path('../legacy-landing/site/assets/images/'.$file), public_path('images/'.$file));
-        }
+        $this->assertSame(asset('defaults/favicon.svg'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
+        // D-43 заменяет D-25: прежних копий логотипа нет.
+        $this->assertDirectoryDoesNotExist(public_path('images'));
     }
 
     public function test_static_pages_use_the_prototype_page_top_with_breadcrumbs(): void

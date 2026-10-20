@@ -26,6 +26,8 @@ class ContentItem extends Model implements HasMedia
         'video' => ['mp4'],
         'video_mobile' => ['mp4'],
         'video_poster' => ['jpg', 'png', 'webp'],
+        'logo' => ['jpg', 'png', 'webp'],
+        'favicon' => ['png'],
     ];
 
     /** Ширины WebP-вариантов изображений (§4.4). */
@@ -67,6 +69,17 @@ class ContentItem extends Model implements HasMedia
             ->where('revision', 1)->orderBy('content_translation_id')->first();
 
         return $first->fields ?? [];
+    }
+
+    /** Файл прототипа по умолчанию (D-43, config aiqme.media_defaults) для коллекции записи: путь в public/ или null. */
+    public function defaultMedia(string $collection): ?string
+    {
+        return self::mediaDefault($this->type, (string) $this->key, $collection);
+    }
+
+    public static function mediaDefault(ContentType $type, string $key, string $collection): ?string
+    {
+        return config('aiqme.media_defaults')[$type->value][$key][$collection] ?? null;
     }
 
     public function registerMediaConversions(?Media $media = null): void

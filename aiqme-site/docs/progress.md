@@ -1155,3 +1155,89 @@ commit/push.
   я посмотрел кадры вкладок products (1440) и translations (390): композиция прототипа, без расползания.
 - Полный `bin/browser-check` без аргументов (все публичные страницы) — в этой сессии не запускался (см. выше).
 - Вызов ContentTypes::meta()/metaRules() из бота — W-19.
+
+## W-33 «Медиа прототипа по умолчанию» — 2026-10-20, Claude Code (ночной прогон)
+
+### Сделано
+
+- **public/defaults/** (отслеживаемый, 15 файлов, 5,4 МБ): побайтовые копии `logo.jpg`, `favicon.svg`,
+  `hero-engineering.mp4`, `hero-engineering-mobile.mp4`, `hero-video-poster.jpg`, `engineering.jpg`,
+  `project-{part-reconstruction,prototype,production-fixture}.jpg` из `source-backup…/dist/assets/` (ролики не
+  перекодированы) и `services/<ключ>.png` ×6 — фрагменты `concept-dark.png`/`concept-light.png` по координатам D-43 без
+  масштабирования (вырезаны один раз Pillow, скрипт — игнорируемый `build/w33/make_defaults.py`). Целых спрайтов нет.
+  `public/images/logo-dark.png`, `logo-light.png` (D-25) удалены, каталог `public/images/` больше не существует.
+- **Таблица `config('aiqme.media_defaults')`** (тип → ключ записи → коллекция → путь в public/) — единственный источник;
+  читают `ContentItem::defaultMedia()` / `ContentItem::mediaDefault()`. Подпись источника ролика по умолчанию —
+  `config('aiqme.hero_video_source')` («Bosch / The Apic», ссылка прототипа `…watch?v=1Nd_xg8QfXo`).
+- **Вывод** — тот же `public/partials/media` W-05: свой Media → иначе `$mediaDefault` (`<img>` с width/height файла, тем же
+  loading, alt `$mediaAlt`) → иначе SVG-заглушка. Места: иллюстрации услуг (главная, список, страница услуги; alt — название
+  услуги), фото «О нас» (alt пустой), фото проекта (карточка в списке и примере на странице услуги, страница проекта; alt —
+  название проекта; только опубликованные проекты — публичные запросы черновиков не возвращают, D-11). Новый проект или товар
+  без медиа — SVG-заглушка.
+- **Hero**: видео-партиал получает адреса. Без своего `video` — ролик, мобильный ролик и постер по умолчанию (каждый
+  перекрывается своей загрузкой слота) и подпись прототипа без «Manufacturing illustration ·»; со своим `video` умолчания
+  hero и подпись прототипа не выводятся (мобильный ролик и постер — только свои, подпись — из источника своего медиа).
+  `hero-video.js` не менялся. Кнопка паузы теперь выводится всегда (видео есть всегда).
+- **Логотип и favicon**: `x-layout` один раз читает page_text главной (с `rescue` — страница 500 без БД получает умолчания),
+  передаёт `$logo` в шапку и подвал и выводит `<link rel="icon">` (своё — PNG, иначе `favicon.svg`) — на всех страницах
+  сайта, кабинета и админки (все они на `x-layout`). Новые коллекции `logo` (jpg/png/webp) и `favicon` (png) в
+  `ContentItem::MEDIA_COLLECTIONS` и слоты page_text `home` в `ContentTypes::MEDIA`.
+- **CSS** (`public.css`): `.split-image` — `overflow:hidden`; `.split-image>img` — `object-position:right center` и
+  `scale(1.35)` от правого края, что равно фону прототипа `right center / auto 135%`. Правило места: применяется и к
+  загруженному фото «О нас» (простейший вариант — одно правило места, как в прототипе) — **ждёт проверки пользователем**.
+- **Админка** (общий редактор W-08): у слота без своего файла — превью файла по умолчанию (картинка 48 px, у видео —
+  ссылка) с пометкой; у загруженных изображений тоже превью. При своём video главной умолчания video_mobile/video_poster
+  не показываются (на сайте они не используются). «No files yet» — только если нет ни своих файлов, ни умолчаний.
+- **Нейтральные надписи (в прототипе нет, rules[8]) — ждут проверки пользователем**: коллекции «Logotipas» · «Logo»,
+  «Svetainės ikona (PNG)» · «Favicon (PNG)»; пометка умолчания «(numatytasis)» · «(default)».
+- **bin/browser-check**: ffmpeg-ролик и загрузка hero в `BrowserDataSeeder` убраны — reduced-motion и воспроизведение
+  проверяются на ролике по умолчанию; `ContentFactory::publishDraft()` публикует LT+EN черновик сидера `prototype`
+  (как администратор снимает демо-пометку результата «Demonstracinis rezultatas:» · «Illustrative result:», D-21;
+  остальное дословно); `check_defaults` (DEFAULT_MEDIA: `/en`, `/lt`, `/en/services`, `/en/services/engraving`,
+  `/en/about`, `/en/projects`, `/en/projects/prototype`; 390 и 1440): `.logo img`, `.hero-video` (постер и оба
+  источника), `.service-feature-media img`, `.media-frame img`, `.split-image img`, `.project-image img` — файл из
+  `/defaults/` и отрисован; ожидание `load` ленивых картинок в пробах (раньше там были только SVG); `check_admin_editor`
+  проверяет превью умолчания до загрузки и после удаления своего файла (и возврат умолчания на страницу услуги).
+- **Фикстуры**: из `text-allowlist.json` убраны записи «Bosch / The Apic ↗» (фраза теперь выводится и сверяется по
+  порядку); в `marker-allowlist.json` добавлены 4 фразы страниц проекта prototype («a trial prototype printed», «A
+  physical prototype», «bandomasis prototipas», «Fizinis prototipas» — предмет проекта, как «prototipai» у 3D-печати).
+  Этого файла нет в touches W-33, но без него проверка маркеров на опубликованном проекте, которого требует check[3],
+  невозможна (rules[7]).
+
+### Проверки
+
+- `bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **383 теста, 365 passed, 18 skipped** (прежние пропуски §4.6);
+  Vite build OK.
+- Новый `tests/Feature/DefaultMediaTest.php` (6 тестов): каталог `public/defaults/` = значения таблицы, 15 файлов,
+  ≤ 6 МБ, размеры фрагментов по самим файлам; sha256 копий и пиксели фрагментов (5 точек каждого) = исходникам assets/
+  (source-backup есть локально — проверено, не пропущено); главная без загрузок — `<video>` с двумя источниками и
+  постером /defaults/, подпись и ссылка прототипа, без «Manufacturing illustration»/«Demonstracinė iliustracija»; логотип
+  и favicon /defaults/ на публичной странице и в админке; 6 услуг на главной, в списках LT/EN и на страницах услуг
+  (src, width/height, alt); «О нас» — engineering.jpg, alt пустой; проект prototype — до публикации 404 и нет фото в
+  списке, после — фото на странице, в списке и в примере услуги печати; новый проект без медиа — SVG; перекрытие и возврат
+  по слотам logo, favicon, images «О нас», услуги, проекта; постер и мобильный ролик без своего video; своё video — нет ни
+  `/defaults/hero-`, ни `1Nd_xg8QfXo`, ни подписи, после removeMedia — снова умолчание; редактор главной, «О нас»,
+  опубликованного проекта и услуги — превью /defaults/, после загрузки — превью загруженного, после удаления — снова умолчание.
+- **Тесты ловят поломки** (временные мутации, откачены): умолчания hero при своём video — падает тест перекрытия; превью
+  умолчания всегда — падает тест админки; карточка проекта без умолчания — падает тест проекта.
+- Обновлены `ShellTest` (логотип/favicon /defaults/, каталога images/ нет), `PublicMediaTest` (без медиа — файлы
+  /defaults/ вместо заглушек), `PublicPagesTest` («О нас» — engineering.jpg), `AdminMediaTest` (превью умолчания вместо «No
+  files yet»).
+- `bin/browser-check /lt /en /en/services /lt/paslaugos /en/services/engraving /en/services/3d-printing
+  /lt/paslaugos/3d-spausdinimas /en/about /lt/apie-mus /en/projects /lt/projektai /en/projects/prototype
+  /lt/projektai/prototype` → **`OK (2415 проверок)`** (ширины, §7.1, маркеры D-21, сверка текста, медиа, умолчания,
+  reduced-motion и воспроизведение ролика по умолчанию, без ответов 4xx). `bin/browser-check --signed-in /en` →
+  **`OK (2685 проверок)`** (вход, все адреса админки, редакторы W-08/W-26 с возвратом умолчания).
+- `git ls-files --cached --others --exclude-standard aiqme-site/public/defaults aiqme-site/public/images`: 15 файлов
+  таблицы + ещё числятся `logo-dark.png`/`logo-light.png` только как неподготовленное удаление (в рабочем дереве их нет;
+  удаление попадёт в коммит оркестратора). Суммарно 5 424 744 байт; больше 1 МБ — только `hero-engineering.mp4`.
+
+### Не проверено / ждёт проверки пользователем
+
+- Ручная сверка кадров `build/verification/browser-check/shots/` с эталоном evidence — **ждёт проверки пользователем**.
+  Я посмотрел главную, «О нас» и список услуг на 1440: ролик, логотип и фото на местах. Иллюстрации услуг выводятся с
+  кадрированием загруженного файла (cover на всю рамку, как требует W-33 done[2]); прототип показывал фрагмент целиком по
+  ширине рамки — у нас фрагмент 267×121 растянут и обрезан сильнее, выглядит мягче. Это видимое отличие от прототипа.
+- Полный `bin/browser-check` без аргументов (все публичные страницы, ~14 мин) не запускался: дольше предела инструмента;
+  выполнит проверка оркестратора.
+- Демо-сборка W-24 (копия в `aiqme-site/demo/`) — задача W-24.

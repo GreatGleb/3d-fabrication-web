@@ -63,7 +63,7 @@ class AdminMediaTest extends TestCase
     public function test_png_named_html_is_stored_as_png_under_a_server_uuid_name_and_shown_on_the_service_page(): void
     {
         $editor = $this->editor('service', 'scanning')
-            ->assertSee('Files &amp; photos', false)->assertSee('No files yet.')
+            ->assertSee('Files &amp; photos', false)->assertSee('/defaults/services/scanning.png')
             ->set('upload', UploadedFile::fake()->createWithContent('x.html', $this->png(1200, 600)))
             ->set('alt.lt', 'Skenuojama detalė')->set('alt.en', 'Part being scanned')
             ->call('uploadMedia')

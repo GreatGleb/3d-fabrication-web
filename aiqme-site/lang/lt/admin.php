@@ -101,6 +101,8 @@ return [
             'video' => 'Video',
             'video_mobile' => 'Mobilusis video',
             'video_poster' => 'Video kadras',
+            'logo' => 'Logotipas',
+            'favicon' => 'Svetainės ikona (PNG)',
         ],
         'file' => 'Failas (JPEG, PNG, WebP arba MP4, iki :max MB)',
         'alt' => 'Alt tekstas',
@@ -111,6 +113,7 @@ return [
         'uploaded' => 'Failas įkeltas.',
         'removed' => 'Failas pašalintas.',
         'none' => 'Failų dar nėra.',
+        'default' => '(numatytasis)',
     ],
     'audit' => [
         'heading' => 'Veiksmų istorija',

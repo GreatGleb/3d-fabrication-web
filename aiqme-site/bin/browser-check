@@ -25,8 +25,8 @@ W-05 (публичные страницы): страницы услуг — из
 порядок блоков — tests/fixtures/prototype-blocks.json (прямые дети main и div.wrap.page-content, без evidence/); каждая
 фраза видимого текста main эталона (verified-route-screens/<страница>/dom.html, если evidence/ есть локально) — в нашем
 main в том же порядке, кроме исключений D-21/условных блоков и tests/fixtures/text-allowlist.json ({"page", "phrase",
-"reason"}); медиа или заглушка отрисованы; reduced-motion: видео hero и ленты брендов/новостей на данных фабрик
-tests/browser/ (ролик hero создаёт ffmpeg во временном каталоге; без ffmpeg — «не проверено»).
+"reason"}); медиа или заглушка отрисованы; reduced-motion: видео hero (ролик по умолчанию D-43) и ленты брендов/новостей
+на данных фабрик tests/browser/.
 
 W-06: проекты, информация, библиотека, новости, обучение, поиск и карточки проектов и статей — на данных фабрик tests/browser/
 (1 проект LT+EN, связанный с услугами modelling и scanning, 1 обучение, новости W-05); карточки — из sitemap.xml; поиск
@@ -41,6 +41,10 @@ W-26: вкладки products, categories, projects, training, translations — 
 W-25: каталог на данных фабрик tests/browser/ (4 товара LT+EN с брендом и категорией): список товаров, карточки товаров — из
 sitemap.xml, фильтр и пустой результат, сравнение 4 товаров (CATALOG_PAGES); выбор для сравнения на странице товаров —
 check_compare (предел 4, панель «N/4», переход на сравнение с таблицей из 4 товаров).
+
+W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
+логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
+и отрисованы; ответы 4xx на ресурсы ловит общая проверка страницы.
 """
 import html
 import json
@@ -87,6 +91,16 @@ ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for pre
                                                       for tab in ('overview', 'services', 'content', 'audit', 'products',
                                                                   'categories', 'projects', 'training', 'translations')]
 MAILPIT = 'http://127.0.0.1:58025'
+# Места медиа по умолчанию D-43 (W-33): страница => селекторы (все совпадения берут файл из /defaults/).
+DEFAULT_MEDIA = {
+    '/en': ['.logo img', 'main .hero-video', 'main .service-feature-media > img'],
+    '/lt': ['.logo img', 'main .hero-video', 'main .service-feature-media > img'],
+    '/en/services': ['.logo img', 'main .service-feature-media > img'],
+    '/en/services/engraving': ['main .media-frame > img'],
+    '/en/about': ['main .split-image > img'],
+    '/en/projects': ['main .project-image > img'],
+    '/en/projects/prototype': ['main .project-image > img'],
+}
 
 WIDTHS = [320, 390, 768, 1024, 1440]
 STYLE_WIDTHS = [1440, 768, 390]
@@ -155,29 +169,13 @@ def prepare(env):
     client_password = secrets.token_urlsafe(24)
     run(['bin/php', 'artisan', 'aiqme:make-admin', 'admin@aiqme.test', '--name=AIQME', '--password-stdin', '--no-interaction'],
         env=env, stdin=admin_password + '\n')
-    media_dir = tempfile.TemporaryDirectory(prefix='aiqme-browser-media-')
-    hero = hero_media(Path(media_dir.name))
     seeded = run(['bin/php', 'artisan', 'db:seed', f'--class={BROWSER_SEEDER}', '--force', '--no-interaction'],
-                 env={**env, 'BROWSER_CLIENT_PASSWORD': client_password, **hero}).stdout
-    media_dir.cleanup()
+                 env={**env, 'BROWSER_CLIENT_PASSWORD': client_password}).stdout
     client = re.search(r'client-\d+@aiqme\.test', seeded)
     if not client:
         sys.exit('FAIL: сидер tests/browser не создал клиента')
     # Пароли остаются только в памяти процесса; входят ими через форму входа (W-07).
-    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password), 'hero_video': bool(hero)}
-
-
-def hero_media(directory):
-    """Короткий настоящий ролик hero (2 с, H.264), мобильный вариант и постер — ffmpeg во временном каталоге (W-05)."""
-    if shutil.which('ffmpeg') is None:
-        return {}
-    files = {'BROWSER_HERO_VIDEO': directory / 'hero.mp4', 'BROWSER_HERO_VIDEO_MOBILE': directory / 'hero-mobile.mp4',
-             'BROWSER_HERO_POSTER': directory / 'poster.png'}
-    for key, size in (('BROWSER_HERO_VIDEO', '640x360'), ('BROWSER_HERO_VIDEO_MOBILE', '360x640')):
-        run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc2=duration=2:size={size}:rate=24', '-pix_fmt', 'yuv420p',
-             '-c:v', 'libx264', '-movflags', '+faststart', str(files[key])])
-    run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=1280x720', '-frames:v', '1', str(files['BROWSER_HERO_POSTER'])])
-    return {key: str(path) for key, path in files.items()}
+    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password)}
 
 
 def build_assets():
@@ -672,12 +670,22 @@ def check_text(report, page, path, allowlist, discrepancies):
             discrepancies.append(f'{path}: нет «{phrase}»')
 
 
+# Ленивое изображение после прокрутки: ждём load/error (не дольше 5 с), затем decode.
+LOADED = """const loaded = async (img) => {
+    if (!img.complete) {
+        await new Promise((resolve) => { img.addEventListener('load', resolve, {once: true});
+            img.addEventListener('error', resolve, {once: true}); setTimeout(resolve, 5000); });
+    }
+    await img.decode().catch(() => {});
+};"""
+
 MEDIA_PROBE = """async () => {
+    """ + LOADED + """
     const result = [];
     for (const frame of document.querySelectorAll('main .hero-art, main .service-feature-media, main .media-frame, main .split-image, main .project-image, main .gallery-view:not([hidden]), main .product-card .visual')) {
         frame.scrollIntoView({block: 'center'});
         const img = frame.querySelector(':scope > img');
-        if (img) { await img.decode().catch(() => {}); }
+        if (img) { await loaded(img); }
         const art = frame.querySelector(':scope > svg.placeholder-art');
         const box = art && art.getBoundingClientRect();
         result.push({frame: frame.className, image: img ? img.naturalWidth : null,
@@ -709,7 +717,37 @@ MOTION_PROBE = """() => {
 }"""
 
 
-def check_motion(report, browser, new_page, path, hero_video):
+DEFAULTS_PROBE = """async (selector) => {
+    """ + LOADED + """
+    const result = [];
+    for (const element of document.querySelectorAll(selector)) {
+        element.scrollIntoView({block: 'center'});
+        if (element.tagName === 'IMG') {
+            await loaded(element);
+            result.push({src: element.getAttribute('src'), drawn: element.naturalWidth > 0, alt: element.getAttribute('alt')});
+        } else {
+            result.push({src: element.getAttribute('poster'), drawn: element.getBoundingClientRect().height > 0,
+                sources: [...element.querySelectorAll('source')].map((s) => s.getAttribute('src'))});
+        }
+    }
+    window.scrollTo(0, 0);
+    return result;
+}"""
+
+
+def check_defaults(report, page, path, width):
+    """Места D-43 без загруженных медиа берут файл из /defaults/ и отрисованы (W-33)."""
+    for selector in DEFAULT_MEDIA[path]:
+        found = page.evaluate(DEFAULTS_PROBE, selector)
+        where = f'{path} @{width} {selector}'
+        if report.check(len(found) > 0, f'{where}: нет элемента'):
+            for element in found:
+                files = [element['src'], *element.get('sources', [])]
+                report.check(all('/defaults/' in (file or '') for file in files), f'{where}: не файл по умолчанию {element}')
+                report.check(element['drawn'], f'{where}: не отрисовано {element}')
+
+
+def check_motion(report, browser, new_page, path):
     """Видео hero и ленты (§7.3) на данных фабрик: с reduced-motion — пауза, без autoplay, постер, лента без анимации
     и дублей; без него — видео играет, лента движется, кнопка паузы её останавливает."""
     context, page, _ = new_page(1440, 1000, reduced_motion='reduce')
@@ -717,9 +755,7 @@ def check_motion(report, browser, new_page, path, hero_video):
     page.wait_for_timeout(800)
     got = page.evaluate(MOTION_PROBE)
     video = got['video']
-    if not hero_video:
-        report.notes.append(f'{path}: видео hero не проверено (нет ffmpeg — ролик не создан)')
-    elif report.check(video is not None, f'{path}: нет видео hero при медиа hero'):
+    if report.check(video is not None, f'{path}: нет видео hero'):
         report.check(video['paused'] and not video['autoplay'], f'{path} reduced-motion: видео играет или autoplay {video}')
         report.check(bool(video['poster']) and video['visible'], f'{path} reduced-motion: нет постера {video}')
         if video['poster']:
@@ -733,12 +769,11 @@ def check_motion(report, browser, new_page, path, hero_video):
     context, page, _ = new_page(1440, 1000)
     page.goto(BASE + path, wait_until='networkidle')
     page.mouse.move(1, 1)
-    if hero_video:
-        try:
-            page.wait_for_function("() => { const v = document.getElementById('hero-video'); return v && !v.paused; }", timeout=5000)
-            report.check(True, '')
-        except Exception:  # noqa: BLE001 — таймаут ожидания и есть провал проверки
-            report.check(False, f'{path}: без reduced-motion видео hero не играет')
+    try:
+        page.wait_for_function("() => { const v = document.getElementById('hero-video'); return v && !v.paused; }", timeout=5000)
+        report.check(True, '')
+    except Exception:  # noqa: BLE001 — таймаут ожидания и есть провал проверки
+        report.check(False, f'{path}: без reduced-motion видео hero не играет')
     for selector in ('.partner-section', '.news-section'):
         track = page.locator(f'{selector} [class$="-marquee-track"]')
         before = track.evaluate('(t) => getComputedStyle(t).transform')
@@ -939,6 +974,8 @@ def check_admin_editor(report, new_page, state):
     public.reload(wait_until='networkidle')
     report.check('Checked by the browser.' in public.inner_text('main'), f'{where}: опубликованный текст не виден на сайте')
 
+    default = '/defaults/services/scanning.png'
+    report.check(page.locator(f'#content-media img[src$="{default}"]').count() == 1, f'{where}: нет превью умолчания до загрузки (W-33)')
     with tempfile.TemporaryDirectory() as directory:
         page.set_input_files('#field-upload', str(png_file(directory, 'x.html', 1200, 600)))
         page.wait_for_load_state('networkidle')
@@ -969,6 +1006,12 @@ def check_admin_editor(report, new_page, state):
     other.fill(short, original)
     other.click('button:has-text("Publish EN")')
     other.wait_for_selector('#content-edit-form .notice.success:has-text("Published: EN.")')
+    # W-33: удаление своего файла возвращает умолчание D-43 в редакторе и на сайте (дальше проверяются места умолчаний).
+    other.click('#content-media button:has-text("Remove")')
+    other.wait_for_selector('#content-editor .notice.success:has-text("File removed.")')
+    report.check(other.locator(f'#content-media img[src$="{default}"]').count() == 1, f'{where}: превью умолчания не вернулось после удаления')
+    public.reload(wait_until='networkidle')
+    report.check(public.locator(f'main .media-frame > img[src$="{default}"]').count() == 1, f'{where}: умолчание не вернулось на страницу услуги')
     for problem in problems + other_problems:
         report.check(False, f'{where}: {problem}')
     other_context.close()
@@ -1191,12 +1234,14 @@ def main():
                         check_menu(report, page, path, width, height)
                     if expect_status == 200 and width in (390, 1440):
                         check_media(report, page, path)
+                    if path in DEFAULT_MEDIA and width in (390, 1440):
+                        check_defaults(report, page, path, width)
                     for problem in problems:
                         report.check(False, f'{where}: {problem}')
                     context.close()
 
                 if path in ('/lt', '/en'):
-                    check_motion(report, browser, new_page, path, accounts['hero_video'])
+                    check_motion(report, browser, new_page, path)
                 if path in ('/en', '/lt/paieska?q=3D'):
                     for width, height in ((390, 844), (1440, 1000)):
                         check_search_modal(report, new_page, path, width, height)

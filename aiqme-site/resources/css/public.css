@@ -1,5 +1,5 @@
-/* Публичные страницы W-05: место медиа заказчика. До медиа — своя линейная заглушка (§7.2, F-47), изображения
-   прототипа не используются; медиа и заглушка занимают ту же рамку, что иллюстрации прототипа. */
+/* Публичные страницы W-05: место медиа заказчика. До своего медиа — файл прототипа по умолчанию (D-43, W-33), без него —
+   своя линейная заглушка (§7.2, F-47); медиа, умолчание и заглушка занимают ту же рамку, что иллюстрации прототипа. */
 .placeholder-art{display:block;width:100%;height:100%}
 .hero-art>.placeholder-art{position:absolute;inset:0;color:#ffffff24}
 .service-feature-media>img,.service-feature-media>.placeholder-art,.split-image>img,.split-image>.placeholder-art,
@@ -7,6 +7,9 @@
 .service-feature-media>.placeholder-art{color:#3d5878}
 .service-feature-media--light>.placeholder-art,.split-image>.placeholder-art,.project-image>.placeholder-art,
 .media-frame>.placeholder-art{color:#9fb0c2}
+/* Фото «О нас» — кадр фона прототипа (right center / auto 135%): cover по высоте, увеличение 135 % от правого края. */
+.split-image{overflow:hidden}
+.split-image>img{object-position:right center;transform:scale(1.35);transform-origin:right center}
 .media-frame{position:relative;overflow:hidden;aspect-ratio:1.8;background:#e9edf1}
 .partner-wordmark img{display:block;max-height:48px;width:auto}
 /* Каталог W-25: фото товара или своя заглушка в рамках иконок прототипа (.product-card .visual, .gallery-main). */

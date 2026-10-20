@@ -212,7 +212,7 @@ class PublicPagesTest extends TestCase
             $xpath = Html::xpath($html);
             $this->assertCount(3, $xpath->query('//div[@class="grid three gap"]/div[@class="panel"]'));
             $this->assertCount(0, $xpath->query('//div[@class="inset gap"]'));
-            $this->assertCount(1, $xpath->query('//div[@class="split-image"]/*[name()="svg"]'));
+            $this->assertSame(asset('defaults/engineering.jpg'), $xpath->query('//div[@class="split-image"]/img')->item(0)->getAttribute('src'));
             foreach ([$team, 'Čia bus pateiktos tikros komandos', 'Real team photographs', 'išgalvotų', 'fictional', 'Demonstracinis vaizdas', 'Illustrative image'] as $absent) {
                 $this->assertStringNotContainsString($absent, $html);
             }

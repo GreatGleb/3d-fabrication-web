@@ -1,8 +1,8 @@
-{{-- Шапка прототипа (§1.1): логотип (D-25), 7 пунктов, поиск, LT/EN, корзина, кнопка меню ≤900 px (resources/js/menu.js)
+{{-- Шапка прототипа (§1.1): логотип ($logo — адрес из layout, D-43), 7 пунктов, поиск, LT/EN, корзина, кнопка меню ≤900 px (resources/js/menu.js)
      и второй ряд с CTA. Активный пункт — текущая страница или вложенная (имя маршрута «<locale>.<page>.…»).
      Поиск — модальное окно прототипа (searchPanel, без JS — ссылка на страницу поиска). Значок кабинета ведёт на кабинет LT/EN (W-07; на /ru — EN). $languages — версии этой страницы для переключателя (W-02); $switchUrl —
      адрес, если версии другой локали нет (W-05). --}}
-@props(['languages' => [], 'switchUrl' => null])
+@props(['languages' => [], 'switchUrl' => null, 'logo'])
 @php
     $locale = app()->getLocale();
     $switchTo = $locale === 'lt' ? 'en' : 'lt';
@@ -11,7 +11,7 @@
 <a class="skip" href="#main">{{ __('shell.skip') }}</a>
 <header class="header">
     <div class="wrap head-main">
-        <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ asset('images/logo-dark.png') }}" alt="AIQME"></a>
+        <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ $logo }}" alt="AIQME"></a>
         <nav class="nav" id="main-nav" aria-label="{{ __('shell.nav_label') }}">
             @foreach (__('shell.nav') as $page => $label)
                 @php($active = $current === $locale.'.'.$page || str_starts_with($current, $locale.'.'.$page.'.'))

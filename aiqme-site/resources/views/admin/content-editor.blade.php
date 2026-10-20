@@ -1,5 +1,7 @@
 {{-- Общий редактор контента (W-08, W-26; content-edit-form прототипа): атрибуты элемента, поля перевода LT и EN рядом, RU —
-     ниже; публикация и снятие по каждому языку; медиа элемента. «Save as a draft» прототипа нет: сохранение всегда черновик, публикация — отдельной кнопкой. --}}
+     ниже; публикация и снятие по каждому языку; медиа элемента. «Save as a draft» прототипа нет: сохранение всегда черновик, публикация — отдельной кнопкой.
+     Слот без своего файла показывает превью файла по умолчанию D-43 с пометкой (то, что сейчас на сайте); умолчания
+     video_mobile и video_poster при своём video на сайте не используются и не показываются. --}}
 @php
     $locales = \App\Domain\Content\ContentService::LOCALES;
     $rows = array_merge(['title' => 'line'], $item->type->hasSlug() ? ['slug' => 'line'] : [],
@@ -63,18 +65,38 @@
     </form>
 
     @if ($item->exists && $media)
+        @php
+            $defaults = collect($media)->keys()
+                ->reject(fn (string $name): bool => $files->contains('collection_name', $name)
+                    || (in_array($name, ['video_mobile', 'video_poster'], true) && $files->contains('collection_name', 'video')))
+                ->mapWithKeys(fn (string $name): array => [$name => $item->defaultMedia($name)])->filter();
+        @endphp
         <section class="panel gap" id="content-media">
             <h3>{{ __('admin.media.heading') }}</h3>
-            @forelse ($files as $file)
+            @foreach ($files as $file)
                 <p class="admin-media-file">
                     <span class="tag">{{ __('admin.media.collections.'.$file->collection_name) }}</span>
+                    @if (str_starts_with((string) $file->mime_type, 'image/'))
+                        <img class="admin-media-preview" src="{{ $file->getUrl() }}" height="48" alt="" loading="lazy">
+                    @endif
                     <a class="text-link" href="{{ $file->getUrl() }}" target="_blank" rel="noopener">{{ $file->file_name }} ↗</a>
                     {{ collect($file->getCustomProperty('alt', []))->map(fn ($text, $locale) => strtoupper($locale).': '.$text)->join(' · ') }}
                     <button type="button" class="btn small secondary" wire:click="removeMedia({{ $file->id }})">{{ __('admin.media.remove') }}</button>
                 </p>
-            @empty
+            @endforeach
+            @foreach ($defaults as $name => $path)
+                <p class="admin-media-file admin-media-default">
+                    <span class="tag">{{ __('admin.media.collections.'.$name) }}</span>
+                    @unless (str_ends_with($path, '.mp4'))
+                        <img class="admin-media-preview" src="{{ asset($path) }}" height="48" alt="" loading="lazy">
+                    @endunless
+                    <a class="text-link" href="{{ asset($path) }}" target="_blank" rel="noopener">{{ basename($path) }} ↗</a>
+                    {{ __('admin.media.default') }}
+                </p>
+            @endforeach
+            @if ($files->isEmpty() && $defaults->isEmpty())
                 <p>{{ __('admin.media.none') }}</p>
-            @endforelse
+            @endif
             <form id="media-upload-form" wire:submit="uploadMedia">
                 <div class="grid two form-grid">
                     <x-field name="collection" type="select" :label="__('admin.media.collection')" :value="$collection" wire:model="collection"

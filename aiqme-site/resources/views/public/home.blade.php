@@ -1,10 +1,24 @@
-{{-- Главная (§1.2): тёмный hero с видео (медиа заказчика или своя заглушка; сцены «СКАН → CAD → ДЕТАЛЬ» нет, D-40),
-     сценарии, процесс, услуги, ленты брендов и новостей (заглушка без ленты, пока нет публикаций; D-26), категории, CTA. --}}
+{{-- Главная (§1.2): тёмный hero с видео (медиа заказчика, иначе набор прототипа по умолчанию D-43; сцены «СКАН → CAD →
+     ДЕТАЛЬ» нет, D-40), сценарии, процесс, услуги, ленты брендов и новостей (заглушка без ленты, пока нет публикаций;
+     D-26), категории, CTA. Видео по умолчанию — один набор: при своём video мобильный ролик и постер — только свои,
+     подпись — из источника своего медиа (§7.3). --}}
+@use('App\Domain\Content\ContentType')
+@use('App\Domain\Content\Models\ContentItem')
 @use('Illuminate\Support\Facades\Route')
 @php
     $locale = app()->getLocale();
     $video = $heroMedia?->getFirstMedia('video');
-    $source = $video?->getCustomProperty('source');
+    $posterMedia = $heroMedia?->getFirstMedia('video_poster');
+    // Свой файл слота, иначе (пока нет своего video) — умолчание этого слота.
+    $own = ['mobile' => $heroMedia?->getFirstMedia('video_mobile')?->getUrl(),
+        'poster' => $posterMedia?->getUrl($posterMedia->hasGeneratedConversion('w1600') ? 'w1600' : '')];
+    $default = fn (string $collection): ?string => $video ? null : asset(ContentItem::mediaDefault(ContentType::PageText, 'home', $collection));
+    $hero = [
+        'video' => $video?->getUrl() ?? $default('video'),
+        'mobile' => $own['mobile'] ?? $default('video_mobile'),
+        'poster' => $own['poster'] ?? $default('video_poster'),
+    ];
+    $source = $video ? $video->getCustomProperty('source') : config('aiqme.hero_video_source');
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.home')" :languages="$languages"
     :image="($poster = $heroMedia?->getFirstMedia('video_poster')) ? $poster->getUrl($poster->hasGeneratedConversion('w1600') ? 'w1600' : '') : null"
@@ -16,9 +30,7 @@
     <section class="hero">
         <div class="hero-art hero-video-art" aria-hidden="true">
             @include('public.partials.media', ['mediaCover' => true])
-            @if ($video)
-                @include('public.partials.media', ['mediaVideo' => $video, 'mediaVideoMobile' => $heroMedia->getFirstMedia('video_mobile'), 'mediaPoster' => $heroMedia->getFirstMedia('video_poster')])
-            @endif
+            @include('public.partials.media', ['mediaVideo' => $hero['video'], 'mediaVideoMobile' => $hero['mobile'], 'mediaPoster' => $hero['poster']])
             <div class="hero-video-shade"></div>
         </div>
         <div class="wrap">
@@ -36,17 +48,15 @@
                         <span><b>{{ sprintf('%02d', $loop->iteration) }}</b>{{ $stage }}</span>
                     @endforeach
                 </div>
-                @if ($video)
-                    <div class="hero-media-controls">
-                        @if (filled($source['text'] ?? null))
-                            <span>@if (filled($source['url'] ?? null))<a href="{{ $source['url'] }}" target="_blank" rel="noopener noreferrer">{{ $source['text'] }} ↗</a>@else{{ $source['text'] }}@endif</span>
-                        @endif
-                        <button type="button" id="hero-video-toggle" class="hero-video-toggle" aria-controls="hero-video" aria-label="{{ __('public.hero.play_label') }}"
-                            data-play="{{ __('public.hero.play') }}" data-pause="{{ __('public.hero.pause') }}"
-                            data-play-label="{{ __('public.hero.play_label') }}" data-pause-label="{{ __('public.hero.pause_label') }}"><span aria-hidden="true">▶</span> {{ __('public.hero.play') }}</button>
-                        <span id="hero-video-status" class="sr-only" aria-live="polite" data-error="{{ __('public.hero.video_error') }}"></span>
-                    </div>
-                @endif
+                <div class="hero-media-controls">
+                    @if (filled($source['text'] ?? null))
+                        <span>@if (filled($source['url'] ?? null))<a href="{{ $source['url'] }}" target="_blank" rel="noopener noreferrer">{{ $source['text'] }} ↗</a>@else{{ $source['text'] }}@endif</span>
+                    @endif
+                    <button type="button" id="hero-video-toggle" class="hero-video-toggle" aria-controls="hero-video" aria-label="{{ __('public.hero.play_label') }}"
+                        data-play="{{ __('public.hero.play') }}" data-pause="{{ __('public.hero.pause') }}"
+                        data-play-label="{{ __('public.hero.play_label') }}" data-pause-label="{{ __('public.hero.pause_label') }}"><span aria-hidden="true">▶</span> {{ __('public.hero.play') }}</button>
+                    <span id="hero-video-status" class="sr-only" aria-live="polite" data-error="{{ __('public.hero.video_error') }}"></span>
+                </div>
             </div>
         </div>
     </section>

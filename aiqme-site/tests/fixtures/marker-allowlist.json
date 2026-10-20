@@ -188,5 +188,25 @@
   "page": "/lt/produktai/norda-cad",
   "phrase": "Komplektacija, garantijos sąlygos, montavimas ir techninis palaikymas tikslinami konkrečiame pasiūlyme.",
   "reason": "Текст панели «Komplektacija ir palaikymas» страницы товара прототипа (rules[8]): условия уточняются в предложении — продажа только по запросу (D-12); не плановая пометка из таблицы 2 D-21. Страницы — товары фабрики tests/browser/ContentFactory::catalog()."
+ },
+ {
+  "page": "/en/projects/prototype",
+  "phrase": "a trial prototype printed",
+  "reason": "Опубликованный черновик проекта prototype сидера W-04 (данные bin/browser-check, W-33): «prototype/prototipas» — предмет проекта (услуга прототипирования, как у 3D-печати D-21), а не пометка демо; демо-пометка результата «Demonstracinis rezultatas:» · «Illustrative result:» снята при публикации."
+ },
+ {
+  "page": "/en/projects/prototype",
+  "phrase": "A physical prototype",
+  "reason": "Опубликованный черновик проекта prototype сидера W-04 (данные bin/browser-check, W-33): «prototype/prototipas» — предмет проекта (услуга прототипирования, как у 3D-печати D-21), а не пометка демо; демо-пометка результата «Demonstracinis rezultatas:» · «Illustrative result:» снята при публикации."
+ },
+ {
+  "page": "/lt/projektai/prototype",
+  "phrase": "bandomasis prototipas",
+  "reason": "Опубликованный черновик проекта prototype сидера W-04 (данные bin/browser-check, W-33): «prototype/prototipas» — предмет проекта (услуга прототипирования, как у 3D-печати D-21), а не пометка демо; демо-пометка результата «Demonstracinis rezultatas:» · «Illustrative result:» снята при публикации."
+ },
+ {
+  "page": "/lt/projektai/prototype",
+  "phrase": "Fizinis prototipas",
+  "reason": "Опубликованный черновик проекта prototype сидера W-04 (данные bin/browser-check, W-33): «prototype/prototipas» — предмет проекта (услуга прототипирования, как у 3D-печати D-21), а не пометка демо; демо-пометка результата «Demonstracinis rezultatas:» · «Illustrative result:» снята при публикации."
  }
 ]

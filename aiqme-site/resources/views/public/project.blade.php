@@ -1,4 +1,4 @@
-{{-- Карточка проекта (§1.2): фото (медиа или своя заглушка), задача → решение → результат, связанные услуги, контакт,
+{{-- Карточка проекта (§1.2): фото (медиа, иначе фото прототипа по умолчанию для ключа D-43, иначе своя заглушка), задача → решение → результат, связанные услуги, контакт,
      YouTube-ссылка при наличии (meta.youtube, только https; поле редактора прототипа «YouTube URL (optional)»).
      Без notice и демо-подписи вводного текста прототипа (D-21). --}}
 @php($locale = app()->getLocale())
@@ -7,7 +7,8 @@
     <x-page-top :title="$project->title" />
     <div class="wrap page-content">
         <div class="project-image">
-            @include('public.partials.media', ['mediaImage' => $image, 'mediaSizes' => '100vw', 'mediaLazy' => false])
+            @include('public.partials.media', ['mediaImage' => $image, 'mediaDefault' => $project->item->defaultMedia('images'), 'mediaAlt' => $project->title,
+                'mediaSizes' => '100vw', 'mediaLazy' => false])
         </div>
         <div class="project-story">
             @foreach (['task', 'solution', 'result'] as $part)

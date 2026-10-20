@@ -109,6 +109,8 @@ return [
             'video' => 'Video',
             'video_mobile' => 'Mobile video',
             'video_poster' => 'Video poster',
+            'logo' => 'Logo',
+            'favicon' => 'Favicon (PNG)',
         ],
         'file' => 'File (JPEG, PNG, WebP or MP4, up to :max MB)',
         'alt' => 'Alt text',
@@ -119,6 +121,7 @@ return [
         'uploaded' => 'File uploaded.',
         'removed' => 'File removed.',
         'none' => 'No files yet.',
+        'default' => '(default)',
     ],
     'audit' => [
         'heading' => 'Audit history',

@@ -97,19 +97,17 @@ class PublicMediaTest extends TestCase
         $this->assertSame('', $small->getAttribute('alt'));
     }
 
-    public function test_without_media_pages_show_the_own_svg_placeholder_and_no_prototype_images(): void
+    public function test_without_media_pages_show_the_prototype_defaults_and_no_prototype_asset_paths(): void
     {
         foreach (['/lt', '/en/services', '/en/services/3d-scanning', '/lt/apie-mus'] as $path) {
             $html = $this->get($path)->getContent();
-            $xpath = Html::xpath($html);
-            $this->assertGreaterThan(0, $xpath->query('//*[name()="svg" and @class="placeholder-art"]')->length, $path);
-            $this->assertCount(0, $xpath->query('//main//img'), $path);
+            $images = Html::xpath($html)->query('//main//img');
+            $this->assertGreaterThan(0, $images->length, $path);
+            foreach ($images as $img) {
+                $this->assertStringStartsWith(asset('defaults/'), $img->getAttribute('src'), $path);
+            }
             $this->assertStringNotContainsString('/assets/', $html);
         }
-        $html = $this->get('/en')->getContent();
-        $this->assertCount(0, Html::xpath($html)->query('//video'), 'без медиа hero — только заглушка, без видео');
-        $this->assertStringNotContainsString('hero-video-toggle', $html);
-        $this->assertStringNotContainsString('youtube', $html);
     }
 
     public function test_hero_video_has_metadata_preload_mobile_source_poster_controls_and_the_media_source_caption(): void

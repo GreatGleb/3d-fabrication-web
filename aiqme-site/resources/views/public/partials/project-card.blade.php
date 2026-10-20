@@ -2,7 +2,8 @@
      название, задача. --}}
 <a class="card project-card" href="{{ route(app()->getLocale().'.projects.show', ['slug' => $project->slug]) }}">
     <div class="project-image">
-        @include('public.partials.media', ['mediaImage' => $project->item->getFirstMedia('images'), 'mediaSizes' => '(max-width: 760px) 100vw, 50vw'])
+        @include('public.partials.media', ['mediaImage' => $project->item->getFirstMedia('images'), 'mediaDefault' => $project->item->defaultMedia('images'),
+            'mediaAlt' => $project->title, 'mediaSizes' => '(max-width: 760px) 100vw, 50vw'])
     </div>
     <div class="card-body">
         @if ($service)

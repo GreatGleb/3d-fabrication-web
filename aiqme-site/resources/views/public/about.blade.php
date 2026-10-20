@@ -1,4 +1,4 @@
-{{-- «О нас» (§1.2): вводный блок и три панели из page_text; фото — медиа или своя заглушка без подписи прототипа;
+{{-- «О нас» (§1.2): вводный блок и три панели из page_text; фото — медиа, иначе engineering.jpg прототипа (D-43, alt пустой: в прототипе это фон), без подписи прототипа;
      блока команды нет до реальных данных (D-32). --}}
 @php($locale = app()->getLocale())
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.about')" :languages="$languages" :noindex="$locale === 'ru'">
@@ -16,7 +16,7 @@
                     @endforeach
                 </div>
                 <div class="split-image">
-                    @include('public.partials.media', ['mediaImage' => $about->item->getFirstMedia('images'), 'mediaSizes' => '(max-width: 900px) 100vw, 50vw'])
+                    @include('public.partials.media', ['mediaImage' => $about->item->getFirstMedia('images'), 'mediaDefault' => $about->item->defaultMedia('images'), 'mediaSizes' => '(max-width: 900px) 100vw, 50vw'])
                 </div>
             </div>
             <div class="grid three gap">

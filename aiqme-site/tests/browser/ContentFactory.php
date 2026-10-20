@@ -128,7 +128,7 @@ final class ContentFactory
         ];
     }
 
-    /** Проект, обучение и новость browser-check (W-06 checks): новости — из homeTickers. */
+    /** Проекты, обучение и новость browser-check (W-06 checks; W-33 — опубликованный черновик prototype): новости — из homeTickers. */
     public function publicSections(): void
     {
         $project = $this->project('bracket', [
@@ -141,6 +141,30 @@ final class ContentFactory
             'lt' => ['CAD pagrindai', 'Nuotoliniu būdu · grupė'],
             'en' => ['CAD basics', 'Online · group'],
         ], 1);
+        $this->publishDraft(ContentType::Project, 'prototype');
+    }
+
+    /**
+     * Публикует LT+EN черновик сидера W-04 (проект prototype, W-33: его фото — файл по умолчанию D-43). Как администратор
+     * перед публикацией, убирает демо-пометку результата прототипа (D-21) «Demonstracinis rezultatas:» · «Illustrative
+     * result:»; остальной текст — дословно.
+     */
+    public function publishDraft(ContentType $type, string $key): ContentItem
+    {
+        $item = ContentItem::where('type', $type)->where('key', $key)->with('translations')->firstOrFail();
+        foreach ($item->translations as $translation) {
+            $revision = $translation->latestRevision();
+            $fields = $revision->fields;
+            if (isset($fields['result'])) {
+                $fields['result'] = ucfirst((string) preg_replace('/^(Demonstracinis rezultatas|Illustrative result):\s*/u', '', $fields['result']));
+            }
+            $data = ['title' => $revision->title, 'slug' => $revision->slug, 'fields' => $fields,
+                'seo_title' => $revision->seo_title, 'seo_description' => $revision->seo_description];
+            $saved = $this->content->saveDraft($this->admin, $item, $translation->locale, $data, $translation->revision, Channel::Web);
+            $this->content->publish($this->admin, $item, $translation->locale, $saved->revision, Channel::Web);
+        }
+
+        return $item;
     }
 
     /**
