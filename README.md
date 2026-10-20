@@ -15,7 +15,7 @@
 | Путь | Что внутри |
 |---|---|
 | [docs/requirements.md](docs/requirements.md) | Согласованный объём, принятые решения, неизвестные данные и доступы |
-| [docs/planning/edition-2/](docs/planning/edition-2/README.md) | Действующий план: [задачи W-01…W-32](docs/planning/edition-2/tasks.md) ([tasks.json](docs/planning/edition-2/tasks.json)), [решения D-01…D-42](docs/planning/edition-2/decisions.md) |
+| [docs/planning/edition-2/](docs/planning/edition-2/README.md) | Действующий план: [задачи W-01…W-33](docs/planning/edition-2/tasks.md) ([tasks.json](docs/planning/edition-2/tasks.json)), [решения D-01…D-43](docs/planning/edition-2/decisions.md) |
 | [docs/planning/](docs/planning/questions-for-owner.md) | [Опросник (72 ответа)](docs/planning/questions-for-owner.md), [карта вопросов](docs/planning/questions-map.md), исторический 30-слойный цикл `run/` и [его инструмент](docs/planning/workflow/README.md) |
 | [docs/customer-prototype/](docs/customer-prototype/README.md) | Аудит прототипа, доказательства (снимки, DOM, CSS/JS), распакованный архив исходников 16.10 — **только локально, в публичный репозиторий не входят**; [доступ через Chrome](docs/customer-prototype/prototype-browser.md) |
 | [docs/customer/](docs/customer/README.md) | ТЗ и переписка заказчика, исходные требования, Excel-макет. **Только локально.** Переписку не переписывать |
