@@ -12,7 +12,7 @@
 # Параметры: AIQME_HOURS (7), AIQME_TASK_MINUTES (120), AIQME_MODEL (модель аккаунта по умолчанию),
 #   AIQME_NIGHT_SHARE (0.15 — доля недельного лимита на ночь), AIQME_WEEKLY_TOKENS (120000000),
 #   AIQME_REVIEW (all | off | W-16,W-28 — где работает приёмщик), AIQME_FIX_ROUNDS (1 — доработок по замечаниям и красным проверкам),
-#   AIQME_STOP_AFTER_SLICE (S1 — остановиться после этапа для просмотра; пусто — не останавливаться).
+#   AIQME_STOP_AFTER_SLICE (пусто — не останавливаться; S1,… — остановиться после этих этапов для просмотра).
 #
 # Отказывается работать в занятом дереве: ночь, начатая поверх чужих правок, заберёт их в свой коммит.
 # На время ночи push отключён (remote.origin.pushurl), после — восстанавливается.
@@ -60,6 +60,6 @@ AIQME_D39=g python3 "$ROOT/docs/planning/edition-2/run/night.py" --out "$out" \
   --hours "${AIQME_HOURS:-7}" --task-minutes "${AIQME_TASK_MINUTES:-120}" \
   --model "${AIQME_MODEL:-}" --night-share "${AIQME_NIGHT_SHARE:-0.15}" \
   --weekly-tokens "${AIQME_WEEKLY_TOKENS:-120000000}" --review "${AIQME_REVIEW:-all}" \
-  --fix-rounds "${AIQME_FIX_ROUNDS:-1}" --stop-after-slice "${AIQME_STOP_AFTER_SLICE-S1}" "${args[@]}" 2>&1 | tee -a "$out/night.log" || status=$?
+  --fix-rounds "${AIQME_FIX_ROUNDS:-1}" --stop-after-slice "${AIQME_STOP_AFTER_SLICE-}" "${args[@]}" 2>&1 | tee -a "$out/night.log" || status=$?
 echo "Сводка: $out/СВОДКА.md"
 exit "$status"

@@ -473,7 +473,7 @@ def main():
     ap.add_argument("--night-share", type=float, default=0.15, help="доля недельного лимита на ночь")
     ap.add_argument("--review", default="all", help="приёмка: all, off или список задач через запятую")
     ap.add_argument("--fix-rounds", type=int, default=1, help="доработок автора по замечаниям приёмщика и красным проверкам")
-    ap.add_argument("--stop-after-slice", default="S1", help="остановиться после этих этапов для просмотра (через запятую; пусто — не останавливаться)")
+    ap.add_argument("--stop-after-slice", default="", help="остановиться после этих этапов для просмотра (через запятую; пусто — не останавливаться)")
     ap.add_argument("--only", nargs="*", default=[], help="только эти задачи (пробный запуск, например W-01)")
     ap.add_argument("--dry-run", action="store_true", help="показать, что будет выполнено, без запуска")
     args = ap.parse_args()
