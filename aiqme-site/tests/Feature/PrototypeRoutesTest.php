@@ -17,7 +17,8 @@ use Tests\TestCase;
  * Адреса прототипа против таблицы §4.6 (04-content-seo.md): статические страницы, 301 и строки с 404 (W-02); адреса
  * услуг со slug из БД после сидера W-04 — 200 на своей локали, 404 со slug другой локали (W-05); статьи по адресу
  * библиотеки — 200, их дубли в /informacija/, /naujienos/ — 404, демо-проекты — 404, пока черновики, 200 после публикации (W-06);
- * демо-товары — 404 и после сидера (W-25).
+ * демо-товары — 404 и после сидера (W-25); вход, регистрация, восстановление — 200, кабинет (корень и вкладка addresses) —
+ * форма входа гостю и кабинет клиенту, корень админки — 200 администратору и 404 гостю и клиенту (W-07).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -26,11 +27,10 @@ class PrototypeRoutesTest extends TestCase
 
     private const FIXTURE = __DIR__.'/../fixtures/prototype-routes.json';
 
-    /** Строки §4.6, которые проверяют другие задачи (адреса сущностей, кабинет, админка). */
-    private const LATER_ROWS = [
-        10 => 'W-07/W-15: кабинет',
-        11 => 'W-07: вход, регистрация, восстановление',
-        13 => 'W-08, W-26, W-11, W-14, W-17, W-18: вкладки админки',
+    /** Вкладки §4.6, которые создают другие задачи: строка => [последний сегмент пути => задача]. */
+    private const LATER_TABS = [
+        10 => ['overview' => 'W-15', 'orders' => 'W-15', 'models' => 'W-15', 'invoices' => 'W-15'],
+        13 => ['*' => 'W-08, W-26, W-11, W-14, W-17, W-18'],
     ];
 
     /** @return array{rows: array<int, string>, routes: list<array{path: string, row: int}>} */
@@ -64,8 +64,11 @@ class PrototypeRoutesTest extends TestCase
     #[DataProvider('prototypeRoutes')]
     public function test_prototype_address_answers_as_its_section_4_6_row(string $path, int $row): void
     {
-        if (isset(self::LATER_ROWS[$row])) {
-            $this->markTestSkipped('строка '.$row.' §4.6 — '.self::LATER_ROWS[$row]);
+        $segments = explode('/', trim($path, '/'));
+        $tab = count($segments) > 2 ? end($segments) : null;
+        $later = self::LATER_TABS[$row] ?? [];
+        if ($tab !== null && ($task = $later[$tab] ?? $later['*'] ?? null)) {
+            $this->markTestSkipped('строка '.$row.' §4.6, вкладка '.$tab.' — '.$task);
         }
 
         match ($row) {
@@ -75,6 +78,9 @@ class PrototypeRoutesTest extends TestCase
             3, 4, 5 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
             7, 8, 9, 12 => $this->get($path)->assertNotFound(),
             6 => $this->assertDraftProjectUntilPublished($path),
+            10 => $this->assertAccountPage($path),
+            11 => $this->assertOk200($path),
+            13 => $this->assertAdminOnly($path),
             14 => $this->assertNotFoundForGuestAndAdmin($path),
             default => $this->fail('строка '.$row.' §4.6 без проверки: '.$path),
         };
@@ -109,6 +115,29 @@ class PrototypeRoutesTest extends TestCase
         app(ContentService::class)->publish($admin, $project, $locale, $project->translation($locale)->revision, Channel::Web);
 
         $this->get($path)->assertOk();
+    }
+
+    private function assertOk200(string $path): void
+    {
+        $this->get($path)->assertOk()->assertSee('id="auth-form"', false);
+    }
+
+    /** Кабинет: гостю — форма входа (200), вошедшему клиенту — кабинет (200). */
+    private function assertAccountPage(string $path): void
+    {
+        $this->get($path)->assertOk()->assertSee('id="auth-form" data-mode="login"', false);
+        $this->actingAs(User::factory()->create())->get($path)->assertOk()->assertSee('id="address-form"', false);
+    }
+
+    /** Админка: администратору — 200, гостю и клиенту — 404. */
+    private function assertAdminOnly(string $path): void
+    {
+        $this->get($path)->assertNotFound();
+        $this->actingAs(User::factory()->create())->get($path)->assertNotFound();
+
+        $admin = User::factory()->create()->forceFill(['is_admin' => true]);
+        $admin->save();
+        $this->actingAs($admin)->get($path)->assertOk();
     }
 
     private function assertNotFoundForGuestAndAdmin(string $path): void

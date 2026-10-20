@@ -14,7 +14,11 @@
 (законные совпадения — только tests/fixtures/marker-allowlist.json: список {"page": "/lt/…", "phrase": "точная фраза",
 "reason": "почему это не демо-надпись"}); кадры в размерах verified-route-screens.json
 и отчёт «наш кадр рядом с эталоном» в игнорируемом build/verification/browser-check/.
-Страницы кабинета, админки и /ru/ — «пропущено: вход появится в W-07».
+W-07: страницы входа, регистрации и восстановления и вкладки кабинета гостю (форма входа) — из route:list как публичные;
+вход администратора и клиента — через форму входа (служебных маршрутов входа нет): кабинет клиента (ACCOUNT_PAGES) и
+админка (ADMIN_PAGES) — 200 с теми же проверками ширины, §7.1, маркеров и консоли; админка гостю и клиенту — 404;
+/ru/ — администратору 200 с noindex; сохранение профиля и выход; сброс пароля по письму из локального Mailpit
+(docker-compose.dev.yml, API на 127.0.0.1:58025): ссылка из письма → новый пароль → прежняя сессия клиента ведёт на вход.
 
 W-05 (публичные страницы): страницы услуг — из sitemap.xml; hero, заголовки h2 и карточки услуг — getComputedStyle §7.1;
 порядок блоков — tests/fixtures/prototype-blocks.json (прямые дети main и div.wrap.page-content, без evidence/); каждая
@@ -44,7 +48,8 @@ import tempfile
 import time
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
 
 from playwright.sync_api import sync_playwright
 
@@ -69,7 +74,10 @@ SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
                  '/lt/palyginimas?products=norda-s1-skeneris,vekta-p2-spausdintuvas,petg-gija,norda-cad',
                  '/en/compare?products=norda-s1-scanner,vekta-p2-printer,petg-filament,norda-cad']
-SKIPPED_LOGIN = 'пропущено: вход появится в W-07'
+# Кабинет и админка после входа через форму (W-07); вкладки W-15 и W-08 добавят свои адреса.
+ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/account/addresses']
+ADMIN_PAGES = ['/lt/administravimas', '/en/admin']
+MAILPIT = 'http://127.0.0.1:58025'
 
 WIDTHS = [320, 390, 768, 1024, 1440]
 STYLE_WIDTHS = [1440, 768, 390]
@@ -118,7 +126,7 @@ def port_in_use():
 def prepare(env):
     if (APP / 'bootstrap' / 'cache' / 'config.php').exists():
         sys.exit('FAIL: есть bootstrap/cache/config.php — переменные окружения (DB_DATABASE) не подействуют; bin/php artisan config:clear')
-    run(['docker', 'compose', '-f', 'docker-compose.dev.yml', 'up', '-d', '--wait', 'postgres'])
+    run(['docker', 'compose', '-f', 'docker-compose.dev.yml', 'up', '-d', '--wait', 'postgres', 'mailpit'])
     exists = run(['docker', 'compose', '-f', 'docker-compose.dev.yml', 'exec', '-T', 'postgres', 'psql', '-U', 'aiqme', '-d', 'aiqme',
                   '-tAc', f"SELECT 1 FROM pg_database WHERE datname = '{DATABASE}'"]).stdout.strip()
     if exists != '1':
@@ -146,7 +154,7 @@ def prepare(env):
     client = re.search(r'client-\d+@aiqme\.test', seeded)
     if not client:
         sys.exit('FAIL: сидер tests/browser не создал клиента')
-    # Пароли остаются только в памяти процесса: вход через форму добавит W-07.
+    # Пароли остаются только в памяти процесса; входят ими через форму входа (W-07).
     return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password), 'hero_video': bool(hero)}
 
 
@@ -201,6 +209,8 @@ def pages_from_routes(env):
         if '{' in uri:
             continue
         first = uri.split('/')[0]
+        if '/' + uri in ADMIN_PAGES:
+            continue
         if first in ('lt', 'en'):
             public.append('/' + uri)
         elif first == 'ru':
@@ -784,6 +794,166 @@ def self_test(report, browser, csp, assets):
     context.close()
 
 
+# ---------- вход через форму (W-07) ----------
+
+def sign_in(report, new_page, login_path, email, password, expect_path):
+    """Вход через форму входа кабинета; возвращает storage_state вошедшего браузера (cookie сессии)."""
+    context, page, problems = new_page(1440, 1000)
+    page.goto(BASE + login_path, wait_until='networkidle')
+    page.fill('#auth-form input[name=email]', email)
+    page.fill('#auth-form input[name=password]', password)
+    with page.expect_navigation(wait_until='networkidle'):
+        page.click('#auth-form button[type=submit]')
+    report.check(urlparse(page.url).path == expect_path, f'вход {email} через {login_path}: открылся {page.url}, ожидался {expect_path}')
+    for problem in problems:
+        report.check(False, f'вход {email}: {problem}')
+    state = context.storage_state()
+    context.close()
+    return state
+
+
+def check_private_pages(report, new_page, paths, state, selector, allowlist, who):
+    """Страницы после входа: 200, нужный блок (а не форма входа), ширина, §7.1, маркеры D-21, консоль."""
+    for path in paths:
+        for width in WIDTHS:
+            height = {320: 568, 390: 844, 768: 1024, 1024: 768, 1440: 1000}[width]
+            context, page, problems = new_page(width, height, storage_state=state)
+            response = page.goto(BASE + path, wait_until='networkidle')
+            where = f'{path} @{width} ({who})'
+            report.check(response.status == 200, f'{where}: HTTP {response.status}')
+            report.check(page.locator(selector).count() == 1, f'{where}: нет {selector}')
+            report.check(page.locator('#auth-form').count() == 0, f'{where}: форма входа вместо страницы')
+            scroll, client = document_fits(page)
+            report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+            if width in STYLE_WIDTHS:
+                check_styles(report, page, path, width)
+            if width in (390, 1440):
+                for hit in marker_hits(page, path, allowlist):
+                    report.check(False, f'{where}: маркер {hit}')
+                # Кадр после входа — для ручного просмотра (в report.html не входит).
+                page.screenshot(path=str(OUT / 'shots' / f'{path.strip("/").replace("/", "__")}-signed-in-{width}.png'))
+            for problem in problems:
+                report.check(False, f'{where}: {problem}')
+            context.close()
+
+
+def check_status(report, new_page, paths, state, status, who):
+    for path in paths:
+        context, page, _ = new_page(1440, 1000, storage_state=state)
+        response = page.goto(BASE + path, wait_until='networkidle')
+        report.check(response.status == status, f'{path} ({who}): HTTP {response.status}, ожидался {status}')
+        context.close()
+
+
+def check_russian(report, new_page, paths, state):
+    """/ru/ — только администратору: 200, X-Robots-Tag и meta robots noindex, ширина документа."""
+    for path in paths:
+        context, page, problems = new_page(1440, 1000, storage_state=state)
+        response = page.goto(BASE + path, wait_until='networkidle')
+        report.check(response.status == 200, f'{path} (администратор): HTTP {response.status}')
+        report.check('noindex' in (response.headers.get('x-robots-tag') or ''), f'{path}: нет X-Robots-Tag noindex')
+        robots = page.locator('meta[name=robots]').get_attribute('content') or ''
+        report.check('noindex' in robots, f'{path}: meta robots «{robots}»')
+        scroll, client = document_fits(page)
+        report.check(scroll <= client, f'{path}: документ шире окна ({scroll} > {client})')
+        for problem in problems:
+            report.check(False, f'{path} (администратор): {problem}')
+        context.close()
+
+
+def check_profile_and_logout(report, new_page, state):
+    """Профиль сохраняется и показывается снова; выход ведёт на вход, кабинет после выхода — форма входа."""
+    context, page, problems = new_page(1440, 1000, storage_state=state)
+    page.goto(BASE + '/lt/paskyra/addresses', wait_until='networkidle')
+    page.fill('#address-form input[name=company]', 'UAB Detalė')
+    page.fill('#address-form input[name=city]', 'Vilnius')
+    with page.expect_navigation(wait_until='networkidle'):
+        page.click('#address-form button[type=submit]')
+    report.check(page.locator('#address-form [role=status]').inner_text().strip() == 'Duomenys išsaugoti.', 'профиль: нет «Duomenys išsaugoti.»')
+    page.reload(wait_until='networkidle')
+    report.check(page.input_value('#address-form input[name=company]') == 'UAB Detalė', 'профиль: значение не сохранилось')
+    with page.expect_navigation(wait_until='networkidle'):
+        page.click('.side-nav button[form=logout-form]')
+    report.check(urlparse(page.url).path == '/lt/paskyra/login', f'выход: открылся {page.url}')
+    page.goto(BASE + '/lt/paskyra/addresses', wait_until='networkidle')
+    report.check(page.locator('#auth-form').count() == 1 and page.locator('#address-form').count() == 0, 'после выхода кабинет открыт')
+    for problem in problems:
+        report.check(False, f'профиль и выход: {problem}')
+    context.close()
+
+
+def mailpit(method, path):
+    with urlopen(Request(MAILPIT + path, method=method), timeout=5) as response:
+        body = response.read().decode()
+    return json.loads(body) if body.strip().startswith('{') else body
+
+
+def check_password_reset(report, new_page, email, state):
+    """Сброс по письму из Mailpit: ссылка → новый пароль; прежняя сессия клиента ведёт на вход. Возвращает новый пароль."""
+    query = quote(f'to:"{email}"')
+    mailpit('DELETE', f'/api/v1/search?query={query}')
+    context, page, problems = new_page(1440, 1000)
+    page.goto(BASE + '/en/account/reset', wait_until='networkidle')
+    page.fill('#auth-form input[name=email]', email)
+    with page.expect_navigation(wait_until='networkidle'):
+        page.click('#auth-form button[type=submit]')
+    report.check('If an account with this email exists' in page.locator('#auth-result').inner_text(), 'сброс: нет нейтрального ответа')
+
+    messages = []
+    for _ in range(50):
+        messages = mailpit('GET', f'/api/v1/search?query={query}').get('messages', [])
+        if messages:
+            break
+        time.sleep(0.1)
+    if not report.check(len(messages) == 1, f'сброс: писем в Mailpit для клиента {len(messages)}, ожидалось 1'):
+        context.close()
+        return None
+    message = mailpit('GET', f'/api/v1/message/{messages[0]["ID"]}')
+    report.check(message.get('Subject') == 'Reset your password', f'сброс: тема письма «{message.get("Subject")}»')
+    links = re.findall(r'href="([^"]+/en/account/reset/[^"]+)"', message.get('HTML', ''))
+    if not report.check(len(links) == 1 and links[0].startswith(BASE), f'сброс: ссылка в письме {links}'):
+        context.close()
+        return None
+
+    password = secrets.token_urlsafe(24)
+    page.goto(html.unescape(links[0]), wait_until='networkidle')
+    page.fill('#auth-form input[name=password]', password)
+    with page.expect_navigation(wait_until='networkidle'):
+        page.click('#auth-form button[type=submit]')
+    report.check(urlparse(page.url).path == '/en/account/login', f'сброс: после смены пароля открылся {page.url}')
+    report.check('Password changed' in page.locator('#auth-result').inner_text(), 'сброс: нет сообщения о смене пароля')
+    for problem in problems:
+        report.check(False, f'сброс: {problem}')
+    context.close()
+
+    # Прежняя сессия (вход до сброса) завершена: кабинет ведёт на вход.
+    context, page, _ = new_page(1440, 1000, storage_state=state)
+    page.goto(BASE + '/en/account', wait_until='networkidle')
+    report.check(urlparse(page.url).path == '/en/account/login' and page.locator('#address-form').count() == 0,
+                 f'сброс: прежняя сессия не завершена ({page.url})')
+    context.close()
+    return password
+
+
+def check_accounts(report, new_page, accounts, ru_paths, allowlist):
+    admin_email, admin_password = accounts['admin']
+    client_email, client_password = accounts['client']
+    log('== вход через форму: администратор и клиент')
+    admin = sign_in(report, new_page, '/en/account/login', admin_email, admin_password, '/en/admin')
+    client = sign_in(report, new_page, '/lt/paskyra/login', client_email, client_password, '/lt/paskyra')
+    check_private_pages(report, new_page, ACCOUNT_PAGES, client, '#address-form', allowlist, 'клиент')
+    check_private_pages(report, new_page, ADMIN_PAGES, admin, 'main h1', allowlist, 'администратор')
+    check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], client, 404, 'клиент')
+    check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], None, 404, 'гость')
+    check_russian(report, new_page, ru_paths, admin)
+    check_profile_and_logout(report, new_page, client)
+    log('== сброс пароля по письму (Mailpit)')
+    client = sign_in(report, new_page, '/lt/paskyra/login', client_email, client_password, '/lt/paskyra')
+    new_password = check_password_reset(report, new_page, client_email, client)
+    if new_password:
+        sign_in(report, new_page, '/en/account/login', client_email, new_password, '/en/account')
+
+
 def evidence_shot(path, device):
     """Кадр эталона для пути (по verified-route-screens.json); None — эталона нет."""
     index = EVIDENCE / 'verified-route-screens.json'
@@ -831,8 +1001,9 @@ def main():
             log('== самопроверка детекторов и модального окна')
             self_test(report, browser, csp, assets)
 
-            def new_page(width, height, reduced_motion='no-preference'):
-                context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion=reduced_motion)
+            def new_page(width, height, reduced_motion='no-preference', storage_state=None):
+                context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion=reduced_motion,
+                                              storage_state=storage_state)
 
                 def guard(route):
                     host = route.request.url.split('/')[2] if '://' in route.request.url else ''
@@ -851,6 +1022,9 @@ def main():
                 page.on('pageerror', lambda error: problems.append(f'pageerror: {error}'))
                 page.on('response', lambda r: problems.append(f'{r.status} {r.url}') if r.status >= 400 and r.request.resource_type != 'document' else None)
                 return context, page, problems
+
+            if not arguments:
+                check_accounts(report, new_page, accounts, skipped_ru, allowlist)
 
             log(f'== страницы: {len(pages)}')
             for path in pages:
@@ -908,7 +1082,7 @@ def main():
         server.terminate()
         server.wait()
 
-    write_report(report, pages, skipped_ru, rows)
+    write_report(report, pages, skipped_ru, rows, signed_in=not arguments)
     (OUT / 'text-discrepancies.md').write_text('# Сверка текста main с эталоном (W-05)\n\n'
         + ('\n'.join(f'- {line}' for line in discrepancies) or 'Расхождений нет.') + '\n', encoding='utf-8')
     if report.failures:
@@ -919,13 +1093,15 @@ def main():
     log(f'\nbin/browser-check: OK ({report.passed} проверок)')
 
 
-def write_report(report, pages, skipped_ru, rows):
+def write_report(report, pages, skipped_ru, rows, signed_in):
     have_evidence = (EVIDENCE / 'verified-route-screens.json').exists()
     lines = [
         f'# bin/browser-check — {time.strftime("%Y-%m-%d %H:%M")}', '',
         f'- Итог: {"FAIL" if report.failures else "OK"}; проверок пройдено {report.passed}, ошибок {len(report.failures)}.',
         f'- Страницы ({len(pages)}): ' + ', '.join(pages),
-        f'- {SKIPPED_LOGIN}: кабинет, админка и /ru/ ({len(skipped_ru)} адресов /ru).',
+        ('- Вход через форму (W-07): администратор и клиент; кабинет ' + ', '.join(ACCOUNT_PAGES) + '; админка '
+         + ', '.join(ADMIN_PAGES) + f'; /ru/ ({len(skipped_ru)} адресов) — 200 с noindex; профиль, выход, сброс пароля по письму из Mailpit.'
+         if signed_in else '- Вход, кабинет, админка и /ru/ — не проверялись (запуск с путями).'),
         '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'),
         '- Сверка текста с эталоном: text-discrepancies.md; заметки: ' + ('; '.join(report.notes) or 'нет'),
         '- Кадры рядом с эталоном: ' + ('report.html' if have_evidence else 'не проверено (нет эталона)')

@@ -9,6 +9,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 use function Laravel\Prompts\password;
 
@@ -29,7 +30,8 @@ class MakeAdmin extends Command
     public function handle(Terminal $terminal): int
     {
         $admin = User::query()->where('is_admin', true)->first();
-        $email = $this->argument('email');
+        // E-mail — строчными, как при регистрации и входе (W-07).
+        $email = $this->argument('email') === null ? null : Str::lower($this->argument('email'));
 
         if ($admin === null && $email === null) {
             $this->error('Администратора ещё нет: укажите email, например: bin/php artisan aiqme:make-admin admin@example.com');

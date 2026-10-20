@@ -790,3 +790,104 @@ OK    удалённая отладка Chrome выключена (DevToolsActiv
   товар LT на 1440: композиция как в прототипе, вместо иконок — заглушки). Эталон каталога показывает демо-товары, сверка текста для
   каталога не делается (в `prototype-blocks.json` его нет).
 - Предзаполнение формы по `?product=` — W-09; редактор товаров/брендов — W-26. Safari/Firefox, реальные фото заказчика — нет.
+
+## W-07 «Вход, регистрация, восстановление и профиль» — 2026-10-20, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки; нейтральные надписи и ручной просмотр — **ждут проверки пользователем**). Агент не делал
+commit/push.
+
+### Что сделано
+
+- **Маршруты** (`routes/web.php`, только LT/EN): `/lt/paskyra/…` · `/en/account/…` — `login`, `register`, `reset` (GET+POST),
+  `reset/{token}` (ссылка из письма, токен в пути — под правило журнала nginx W-20), корень кабинета и `addresses` (GET, POST),
+  `logout` (POST). Имена `<locale>.account[.login|.register|.reset|.reset.token|.addresses|.logout]`, у POST — `*.store/update`.
+  На всех — `Cache-Control: private, no-store` (§6.6, `cache.headers`). Кабинет и выход — под `auth.session` (AuthenticateSession).
+  Админка: `/lt/administravimas` · `/en/admin` (`<locale>.admin`) — `auth.session` + `App\Http\Middleware\EnsureAdmin` (404 гостю
+  и клиенту, без редиректа на вход, Gate `admin`) + no-store; страница — заготовка `resources/views/admin/index.blade.php`
+  (заголовок прототипа «AIQME valdymo aplinka» · «AIQME management workspace» и «Atsijungti»); оболочку и вкладки делает W-08.
+  `/ru/` — добавлены `auth.session` и no-store (по-прежнему 404 всем, кроме администратора, `X-Robots-Tag: noindex`).
+  `bootstrap/app.php`: `redirectGuestsTo` — форма входа своей локали (гость на POST кабинета и сессия, завершённая
+  AuthenticateSession).
+- **Контроллеры** `app/Http/Controllers/Auth/`: `LoginController` (вход: нейтральная ошибка «Neteisingas el. paštas arba
+  slaptažodis.» · «Incorrect email or password.» для неверного пароля и несуществующего адреса; ограничение — 5 неудачных попыток
+  в минуту на e-mail+IP и 20 на IP, затем «Per daug bandymų…» · «Too many attempts. Try again in N s.», успешный вход сбрасывает
+  счётчик e-mail+IP; `session()->regenerate()`; клиент → кабинет, администратор → админка (`intended`); выход —
+  `logout` + `invalidate()` + новый CSRF), `RegisterController` (имя, e-mail, пароль; `User::create` — `is_admin` не в `$fillable`;
+  без подтверждения почты, сразу вход), `PasswordResetController` (запрос — всегда «Jei paskyra su šiuo el. pašto adresu yra,
+  išsiuntėme…» · «If an account with this email exists, we have sent a password reset link.», в том числе для несуществующего
+  адреса и повтора раньше `throttle` брокера; 5 запросов в минуту с IP; смена пароля — брокер Laravel: токен одноразовый, срок
+  `auth.passwords.users.expire` = 60 мин; новый `remember_token`), общий трейт `AuthForm` (локализованные сообщения проверки,
+  e-mail — строчными). `app/Http/Controllers/Account/AccountController` — вкладка профиля; гостю на корне и вкладке — форма входа (200).
+- **Письмо сброса** `app/Mail/ResetPasswordLink` (`ShouldQueue`, язык страницы запроса), шаблон `account/reset-mail.blade.php`;
+  `User::sendPasswordResetNotification` ставит его в очередь вместо уведомления Laravel. Локально уходит в Mailpit (SMTP .env).
+- **Профиль** — миграция `customer_profiles` (`user_id` unique, FK cascade; name, company, company_code, vat_code, address, city,
+  postcode — nullable), модель `App\Models\CustomerProfile`, `User::profile()`. Форма отправляет весь профиль: пустое поле очищается.
+- **Пароль**: `Password::defaults()` — `min(8)` (AppServiceProvider); в формах `minlength="8"`, `autocomplete` `current-password`
+  (вход) / `new-password` (регистрация, новый пароль); экрана смены пароля нет.
+- **Сессии**: `SESSION_ENCRYPT=true` в `.env.example` и `.env`, по умолчанию `true` в `config/session.php`; драйвер database (был).
+- **Шаблоны** `resources/views/account/auth.blade.php` (режимы login/register/reset/new_password, разметка `auth-form` прототипа:
+  `.auth`, `.panel`, ссылки Registruotis / Pamiršote slaptažodį? / Prisijungti, «Užsakyti be paskyros» → калькулятор, `#auth-result`
+  для сообщения), `account/addresses.blade.php` (`account-layout`, `side-nav`, `address-form`; выход — кнопка `form="logout-form"`,
+  как кнопка прототипа в меню). Страницы кабинета и входа — `noindex` (§4.4). Тексты — `lang/{lt,en}/account.php`.
+- **Шапка**: значок кабинета прототипа (`user`, «Paskyra» · «Account») → `<locale>.account` (на /ru — EN). `x-line-icon` + `user`.
+- `aiqme:make-admin` приводит e-mail к строчным (как регистрация и вход), иначе администратор с заглавными не смог бы войти.
+- **bin/browser-check**: вход администратора (`/en/account/login` → `/en/admin`) и клиента (`/lt/paskyra/login` → `/lt/paskyra`)
+  через форму; кабинет (`ACCOUNT_PAGES`) и админка (`ADMIN_PAGES`) — 200 на 320–1440 с проверками ширины, §7.1, маркеров D-21 и
+  консоли; админка и /ru/ гостю и клиенту — 404; все /ru/ из route:list администратору — 200 с `X-Robots-Tag` и meta noindex;
+  сохранение профиля и выход; сброс пароля: запрос → письмо в Mailpit (API `127.0.0.1:58025`, тема, ссылка) → новый пароль →
+  прежняя сессия клиента ведёт на вход → вход новым паролем. Пометка «пропущено: вход появится в W-07» снята; подготовка поднимает
+  и `mailpit`. Страницы входа/регистрации/восстановления и кабинета для гостя проверяются в общем цикле (из route:list).
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- Демо-надписи D-21 удалены: баннер, «Demo password *» → «Slaptažodis *» · «Password *», подсказка о пробном пароле, «Atverti
+  paskyros pavyzdį», «Tik demonstraciniai duomenys šiai sesijai.», предзаполненный `demo@example.invalid`.
+- Нейтральные надписи, которых нет в прототипе: кнопки «Prisijungti» · «Sign in» (вместо «…į demo paskyrą»), «Sukurti paskyrą» ·
+  «Create an account», «Siųsti atkūrimo nuorodą» · «Send reset link» (вместо «Imituoti atkūrimo laišką»), «Išsaugoti duomenis» ·
+  «Save details», «Duomenys išsaugoti.» · «Details saved.»; поле «Naujas slaptažodis *» · «New password *», кнопка «Išsaugoti
+  naują slaptažodį» · «Save new password»; сообщения ошибок/ограничения/сброса (см. `lang/*/account.php`); aria-label меню
+  «Paskyros meniu» · «Account menu»; текст письма сброса (тема — заголовок прототипа «Slaptažodžio atkūrimas» · «Reset your password»).
+- Вкладки W-15 (Overview, Orders, Saved models, Invoices) не созданы; меню кабинета — только «Adresai ir įmonė», корень кабинета
+  до W-15 показывает эту вкладку (в прототипе корень — Overview). Строки §4.6 этих вкладок пропускаются в `PrototypeRoutesTest`.
+- Админка W-07 — только корень-заготовка (нужна для входа администратора и проверки 200); остальные вкладки — W-08 и далее.
+- Форма нового пароля — одно поле, без подтверждения (как одно поле пароля в формах прототипа). Регистрация без ограничения частоты
+  (план требует ограничения для входа и сброса). Ошибка «Paskyra su šiuo el. pašto adresu jau yra.» при регистрации раскрывает
+  наличие адреса — штатное поведение, нейтральность требуется только для входа и сброса.
+- `MAIL_FROM_ADDRESS` не менялся (D-15 не решён; локально — Mailpit).
+
+### Проверки (запущены в этой сессии)
+
+- `aiqme-site/bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **343 теста, 307 passed, 36 skipped** (пропуски §4.6 —
+  вкладки кабинета W-15 и вкладки админки W-08 и далее), Vite build OK.
+- `bin/browser-check` без аргументов → **`bin/browser-check: OK (10429 проверок)`**: вход администратора и клиента через форму;
+  кабинет 4 адреса и админка 2 адреса после входа на 320/390/768/1024/1440 (ширина, §7.1, маркеры D-21, CSP/консоль); админка и
+  /ru/ гостю и клиенту — 404; 19 адресов /ru/ администратору — 200 с noindex; сохранение профиля и выход; **сброс пароля по
+  письму из Mailpit** (тема, ссылка, новый пароль, прежняя сессия ведёт на вход, вход новым паролем); 89 страниц общего цикла,
+  включая вход/регистрацию/восстановление и кабинет гостя. Чужих хостов нет. Первый прогон нашёл переполнение шапки на 320 px
+  (351 > 320) из-за значка кабинета — исправлено в `resources/css/shell.css` (≤360 px: промежутки и поля кнопок шапки).
+- Новые тесты: `tests/Feature/AuthTest.php` (16) — форма входа (тексты, minlength 8, autocomplete, noindex, no-store, нет
+  демо-надписей), вход с регенерацией сессии, одинаковая ошибка для неверного пароля и неизвестного адреса, ограничение по e-mail+IP
+  и по IP со снятием через минуту, вход администратора → админка и /ru/ (noindex), 404 админки и /ru/ гостю и клиенту, регистрация
+  без is_admin и с отказами (короткий пароль, занятый адрес, пустые поля LT), выход (строка сессии удалена, скопированная cookie
+  ведёт на форму входа, POST профиля с ней — на вход), сброс: вход через форму → смена пароля по ссылке из Mail::fake → следующий
+  запрос той же сессии — редирект на вход (клиент и администратор), одноразовость, срок 60 мин, неверный токен/e-mail, нейтральный
+  ответ и одно письмо при повторе, ограничение запросов по IP, письмо в очереди на языке страницы, шифрование: `session.encrypt`
+  === true и `base64_decode(payload)` строки sessions после GET ссылки сброса не содержит токена. Сессии в этих тестах — драйвер
+  database и cookie «браузера» (`tests/Support/BrowserSession.php`). `tests/Feature/AccountProfileTest.php` (6) — форма
+  вкладки, сохранение в customer_profiles, очистка пустых полей, лимит 255, **изоляция двух клиентов**, гость, удаление с
+  пользователем. `PrototypeRoutesTest`: строки 10 (корень и addresses), 11 и корень админки строки 13 проверяются; `ShellTest` —
+  значок кабинета.
+- **Тесты ловят поломки** (временные мутации, откачены, `cmp`): без `auth.session` — падает тест сброса; `SESSION_ENCRYPT=false` —
+  тест шифрования; без `invalidate()` — тест выхода; пределы 500/2000 — тест ограничения; общий профиль вместо своего — тест
+  изоляции.
+- `git status --porcelain aiqme-site`: новые — контроллеры Auth/ и Account/, `EnsureAdmin`, `app/Mail/`, `CustomerProfile`,
+  миграция, `lang/*/account.php`, шаблоны `account/`, `admin/`, тесты; медиа, ключей, `.env` нет (`.env` игнорируется);
+  `experiments/` не изменён.
+
+### Не проверено
+
+- Ручной просмотр кадров (`build/verification/browser-check/report.html`, кадры после входа `shots/*-signed-in-*.png`) —
+  **ждёт проверки пользователем** (я сверил вход EN и вкладку адресов EN на 1440 с эталоном: композиция совпадает, без демо-баннера
+  и вкладок W-15).
+- Настоящая доставка писем (D-15, SMTP домена) — уровень T; локально письмо проверено только в Mailpit. Вкладки кабинета W-15,
+  оболочка админки W-08, подстановка профиля в заявку W-12 — в своих задачах.

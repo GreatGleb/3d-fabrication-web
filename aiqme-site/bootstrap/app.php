@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SetLocaleFromPath::class);
         $middleware->append(SecurityHeaders::class);
+        // Гость на действии кабинета и сессия, завершённая после смены пароля (AuthenticateSession), — на вход своей локали.
+        $middleware->redirectGuestsTo(fn (Request $request): string => route(($request->segment(1) === 'lt' ? 'lt' : 'en').'.account.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

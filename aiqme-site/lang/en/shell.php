@@ -15,6 +15,7 @@ return [
         'contact' => 'Contact',
     ],
     'search' => 'Search',
+    'account' => 'Account',
     'cart' => 'Basket',
     'menu' => 'Open menu',
     'tagline' => '3D ENGINEERING & TECHNOLOGY',

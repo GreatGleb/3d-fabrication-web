@@ -16,3 +16,8 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*{min-width:0}
 @media(max-width:900px){
  .footer-top>div:last-child{grid-column:auto}
 }
+/* Значок кабинета в шапке (W-07): на 320 px пять кнопок шапки прототипа шире окна — уже промежутки и поля кнопок. */
+@media(max-width:360px){
+ .tools{gap:2px}
+ .tools .icon-btn{padding:3px}
+}

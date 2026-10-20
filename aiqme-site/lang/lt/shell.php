@@ -16,6 +16,7 @@ return [
         'contact' => 'Kontaktai',
     ],
     'search' => 'Paieška',
+    'account' => 'Paskyra',
     'cart' => 'Krepšelis',
     'menu' => 'Atverti meniu',
     'tagline' => '3D INŽINERIJA IR TECHNOLOGIJOS',

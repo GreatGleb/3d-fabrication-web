@@ -1,6 +1,6 @@
 {{-- Шапка прототипа (§1.1): логотип (D-25), 7 пунктов, поиск, LT/EN, корзина, кнопка меню ≤900 px (resources/js/menu.js)
      и второй ряд с CTA. Активный пункт — текущая страница или вложенная (имя маршрута «<locale>.<page>.…»).
-     Поиск — модальное окно прототипа (searchPanel, без JS — ссылка на страницу поиска). Значка кабинета нет до входа W-07. $languages — версии этой страницы для переключателя (W-02); $switchUrl —
+     Поиск — модальное окно прототипа (searchPanel, без JS — ссылка на страницу поиска). Значок кабинета ведёт на кабинет LT/EN (W-07; на /ru — EN). $languages — версии этой страницы для переключателя (W-02); $switchUrl —
      адрес, если версии другой локали нет (W-05). --}}
 @props(['languages' => [], 'switchUrl' => null])
 @php
@@ -21,6 +21,7 @@
         <div class="tools">
             <a class="icon-btn" href="{{ route($locale.'.search') }}" data-modal-open="search-modal" aria-label="{{ __('shell.search') }}"><x-line-icon name="search" /></a>
             <a href="{{ $languages[$switchTo] ?? $switchUrl ?? route($switchTo.'.home') }}" hreflang="{{ $switchTo }}" aria-label="{{ __('pages.switch_language') }}" class="icon-btn lang">@if ($switchTo === 'en')LT / <span>EN</span>@else<span>LT</span> / EN @endif</a>
+            <a class="icon-btn" href="{{ route(($locale === 'lt' ? 'lt' : 'en').'.account') }}" aria-label="{{ __('shell.account') }}"><x-line-icon name="user" /></a>
             <a class="icon-btn" href="{{ route($locale.'.cart') }}" aria-label="{{ __('shell.cart') }}"><x-line-icon name="cart" /></a>
             <button class="icon-btn menu-btn" type="button" aria-label="{{ __('shell.menu') }}" aria-expanded="false" aria-controls="main-nav"><x-line-icon name="menu" /></button>
         </div>

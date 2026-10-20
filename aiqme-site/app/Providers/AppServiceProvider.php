@@ -9,6 +9,7 @@ use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Facades\Telemetry;
 
@@ -42,6 +43,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Единственный администратор (§2.4, §6.1): права на запись контента и админку.
         Gate::define('admin', fn (User $user): bool => $user->is_admin === true);
+
+        // Пароль — не короче 8 символов (§6.3); тот же minlength в формах входа, регистрации и сброса.
+        Password::defaults(fn (): Password => Password::min(8));
     }
 
     public static function lunarPanelEnabled(string $environment, bool $flag): bool

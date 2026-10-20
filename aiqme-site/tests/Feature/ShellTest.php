@@ -69,6 +69,7 @@ class ShellTest extends TestCase
         $this->assertSame(1, $xpath->query('//main[@id="main"][@tabindex="-1"]')->length);
         $this->assertSame(route('lt.search'), $xpath->query('//header//a[@aria-label="Paieška"]/@href')->item(0)->value);
         $this->assertSame(route('lt.cart'), $xpath->query('//header//a[@aria-label="Krepšelis"]/@href')->item(0)->value);
+        $this->assertSame(route('lt.account'), $xpath->query('//header//a[@aria-label="Paskyra"]/@href')->item(0)->value);
 
         $menu = $xpath->query('//button[contains(@class,"menu-btn")]')->item(0);
         $this->assertSame('false', $menu->getAttribute('aria-expanded'));
