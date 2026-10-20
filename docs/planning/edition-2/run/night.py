@@ -40,6 +40,8 @@ DENY = [
     "Read(./legacy-landing/instance/**)", "Read(./aiqme-site/experiments/**/.env)",
     "Edit(./legacy-landing/**)", "Edit(./aiqme-site/experiments/**)", "Edit(./AGENTS.md)",
     "Edit(./docs/planning/**)", "WebFetch", "WebSearch",
+    # Будильники держат сессию впустую (W-06 ночи 19.10 простояла 20 минут) — проверки ждать в переднем плане.
+    "ScheduleWakeup", "CronCreate", "CronDelete", "RemoteTrigger",
 ]
 # Приёмщик: --restricted убирает Bash и прочий запуск кода; запись запрещена явно.
 REVIEW_DENY = ["Write", "Edit", "NotebookEdit", "Read(./legacy-landing/instance/**)",
@@ -64,7 +66,8 @@ WORK_PROMPT = """Ты — ночной агент проекта AIQME. Чело
 - Меняй только aiqme-site/ (кроме experiments/) и, если это задача W-21, строку «Новый сайт» в docs/requirements.md.
 - Если план противоречив или задачу нельзя выполнить без догадки — не гадай: запиши вопрос и причину
   в progress.md и заверши задачу со статусом blocked.
-- Перед завершением прогони aiqme-site/bin/check (если он уже есть) и проверки из checks задачи.
+- Перед завершением прогони aiqme-site/bin/check (если он уже есть) и проверки из checks задачи — в переднем
+  плане, дожидаясь результата (без фоновых запусков и отложенных пробуждений).
 - После тебя работу проверит отдельный приёмщик по критериям done задачи: тесты должны проверять поведение,
   а не только проходить; непроверенное честно отметь в progress.md.
 
@@ -72,6 +75,10 @@ WORK_PROMPT = """Ты — ночной агент проекта AIQME. Чело
 {{"status": "done" или "blocked", "summary": "что сделано, 1–3 предложения", "reason": "почему blocked, иначе пусто"}}
 """
 W01_EXTRA = "Первый шаг W-01 — bash docs/planning/edition-2/run/preflight.sh (без перенаправления). При FAIL — status blocked.\n"
+RESUME_EXTRA = """
+Продолжение: работа над {id} из прошлой ночи уже восстановлена в дереве (её прервали: {why}).
+Не начинай заново — сверь сделанное с критериями done, доделай недостающее и прогони проверки.
+"""
 FIX_EXTRA = """
 Это доработка: работа над {id} уже лежит в дереве (не начинай заново). Приёмщик её не принял.
 Устрани каждое замечание ниже или, если замечание неверно, объясни это в progress.md со ссылкой на план:
@@ -207,7 +214,7 @@ class Night:
         (self.out / f"{name}.prompt.txt").write_text(prompt)
         if self.model:
             argv += ["--model", self.model]
-        timeout = min(self.task_seconds, max(60, self.deadline - time.time()))
+        timeout = self.task_seconds  # начатая задача доводится до конца; время ночи решает, начинать ли новую
         log = self.out / f"{name}.stdout.json"
         code = run_limited(argv, timeout, prompt, log)
         if code is None:
@@ -225,8 +232,27 @@ class Night:
             raise ProviderError(str(printed.get("result", ""))[:300])
         return printed.get("result", ""), tokens, ""
 
-    def work(self, task, rnd, findings):
+    def resume(self, tid):
+        """Работа задачи из stash прошлой ночи возвращается в дерево; возвращает причину блокировки или None."""
+        names = git("stash", "list", "--format=%gd %s").splitlines()
+        ref = next((n.split()[0] for n in names if n.endswith(f"night-blocked {tid}")), None)
+        if not ref:
+            return None
+        progress = ROOT / PROGRESS
+        why = re.findall(rf"## {tid}: заблокирована.*?Причина \(оркестратор\): (.*?)\. Работа", progress.read_text(), re.S)
+        if subprocess.run(["git", "-C", str(ROOT), "stash", "apply", ref], capture_output=True).returncode != 0:
+            # progress.md меняли и работа, и заметка о блокировке — берётся версия работы
+            for path in git("diff", "--name-only", "--diff-filter=U").splitlines():
+                git("checkout", "--theirs", "--", path)
+        git("reset", "-q")  # всё обратно в рабочее дерево, без индекса
+        git("stash", "drop", ref)
+        self.note(task=tid, event="resumed", detail=f"работа восстановлена из {ref}")
+        return why[-1] if why else "причина не записана"
+
+    def work(self, task, rnd, findings, resumed=None):
         extra = W01_EXTRA if task["id"] == "W-01" else ""
+        if resumed:
+            extra += RESUME_EXTRA.format(id=task["id"], why=resumed)
         if findings:
             extra += FIX_EXTRA.format(id=task["id"], findings=json.dumps(findings, ensure_ascii=False, indent=1))
         prompt = WORK_PROMPT.format(id=task["id"], title=task["title"], extra=extra)
@@ -313,9 +339,10 @@ class Night:
     def one_task(self, task, branch):
         """Автор → проверки → приёмщик → доработка; возвращает итог для журнала."""
         tid, findings, cost = task["id"], None, {"work": 0, "review": 0}
+        resumed = self.resume(tid)
         for rnd in range(self.fix_rounds + 1):
             head = git("rev-parse", "HEAD")
-            result, tokens, err = self.work(task, rnd, findings)
+            result, tokens, err = self.work(task, rnd, findings, resumed if rnd == 0 else None)
             cost["work"] += tokens
             if git("branch", "--show-current") != branch or git("rev-parse", "HEAD") != head:
                 raise ProviderError("автор сменил ветку или HEAD — смотрите вручную")
@@ -369,7 +396,7 @@ class Night:
             # Остановка после этапа — только если этап дорабатывался этой ночью: следующая ночь идёт дальше сама.
             if prev_slice in self.stop_slices and prev_slice in worked_slices and task["slice"] != prev_slice:
                 self.note(task=tid, event="stop", detail=f"этап {prev_slice} закончен этой ночью — посмотрите результат; "
-                          "следующий запуск продолжит со следующего этапа")
+                          "следующий запуск продолжит с того, что осталось")
                 return 0
             prev_slice = task["slice"]
             if task["track"] != "L":
