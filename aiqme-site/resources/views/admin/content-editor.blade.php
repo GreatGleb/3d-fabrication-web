@@ -1,5 +1,5 @@
-{{-- Общий редактор контента (W-08, content-edit-form прототипа): поля перевода LT и EN рядом, RU — ниже; публикация и снятие
-     по каждому языку; медиа элемента. «Save as a draft» прототипа нет: сохранение всегда черновик, публикация — отдельной кнопкой. --}}
+{{-- Общий редактор контента (W-08, W-26; content-edit-form прототипа): атрибуты элемента, поля перевода LT и EN рядом, RU —
+     ниже; публикация и снятие по каждому языку; медиа элемента. «Save as a draft» прототипа нет: сохранение всегда черновик, публикация — отдельной кнопкой. --}}
 @php
     $locales = \App\Domain\Content\ContentService::LOCALES;
     $rows = array_merge(['title' => 'line'], $item->type->hasSlug() ? ['slug' => 'line'] : [],
@@ -24,6 +24,27 @@
                             <button type="button" class="btn small secondary" wire:click="unpublish('{{ $locale }}')">{{ __('admin.editor.unpublish', ['locale' => strtoupper($locale)]) }}</button>
                         @endif
                     </div>
+                @endforeach
+            </div>
+        @endif
+        @if ($metaFields)
+            {{-- Атрибуты элемента (meta) — общие для языков, применяются при сохранении. --}}
+            <div class="grid two form-grid" id="content-meta">
+                @foreach ($metaFields as $name => $field)
+                    @if ($field['kind'] === 'choices')
+                        <div class="field" role="group" aria-labelledby="meta-{{ $name }}-label">
+                            <span id="meta-{{ $name }}-label">{{ __('admin.meta.'.$name) }}</span>
+                            @foreach ($field['options'] as $value => $optionLabel)
+                                <label class="checks"><input type="checkbox" value="{{ $value }}" wire:model="meta.{{ $name }}"> {{ $optionLabel }}</label>
+                            @endforeach
+                            @error('meta.'.$name.'.*') <small>{{ $message }}</small> @enderror
+                        </div>
+                    @elseif ($field['kind'] === 'select')
+                        <x-field :name="'meta.'.$name" type="select" :label="__('admin.meta.'.$name)" :value="$meta[$name]" wire:model="meta.{{ $name }}"
+                            :options="['' => '—'] + $field['options']" />
+                    @else
+                        <x-field :name="'meta.'.$name" :type="$field['kind']" :label="__('admin.meta.'.$name)" :value="$meta[$name]" wire:model="meta.{{ $name }}" />
+                    @endif
                 @endforeach
             </div>
         @endif

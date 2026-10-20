@@ -19,7 +19,7 @@ use Tests\TestCase;
  * библиотеки — 200, их дубли в /informacija/, /naujienos/ — 404, демо-проекты — 404, пока черновики, 200 после публикации (W-06);
  * демо-товары — 404 и после сидера (W-25); вход, регистрация, восстановление — 200, кабинет (корень и вкладка addresses) —
  * форма входа гостю и кабинет клиенту, корень админки — 200 администратору и 404 гостю и клиенту (W-07); вкладки админки
- * overview, services, content, audit — так же (W-08).
+ * overview, services, content, audit — так же (W-08); products, categories, projects, training, translations (W-26).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -31,10 +31,10 @@ class PrototypeRoutesTest extends TestCase
     /** Вкладки §4.6, которые создают другие задачи: строка => [последний сегмент пути => задача]. */
     private const LATER_TABS = [
         10 => ['overview' => 'W-15', 'orders' => 'W-15', 'models' => 'W-15', 'invoices' => 'W-15'],
-        // Админка: overview, services, content, audit и корень — W-08; остальные вкладки — свои задачи.
+        // Админка: overview, services, content, audit и корень — W-08; products, categories, projects, training,
+        // translations — W-26; остальные вкладки — свои задачи.
         13 => [
-            'orders' => 'W-14', 'customers' => 'W-14', 'calculator' => 'W-11', 'products' => 'W-26', 'categories' => 'W-26',
-            'projects' => 'W-26', 'training' => 'W-26', 'translations' => 'W-26', 'integrations' => 'W-18', 'settings' => 'W-17',
+            'orders' => 'W-14', 'customers' => 'W-14', 'calculator' => 'W-11', 'integrations' => 'W-18', 'settings' => 'W-17',
         ],
     ];
 

@@ -2,6 +2,7 @@
 """Браузерная проверка aiqme-site (W-03, §9.1): Python Playwright, bundled Chromium (не Chrome пользователя).
 
 Запуск: aiqme-site/bin/browser-check [путь …]   (без путей — все GET-страницы /lt и /en из route:list и две 404)
+        --signed-in с путями — ещё и проверки после входа (кабинет, админка, редакторы), как в полном прогоне
 
 Подготовка: своя БД aiqme_browser dev-PostgreSQL — migrate:fresh, сидеры контента, данные tests/browser/,
 администратор (aiqme:make-admin --password-stdin, D-29) и клиент со случайными паролями на каждый запуск.
@@ -33,6 +34,9 @@ W-06: проекты, информация, библиотека, новости
 
 W-08: вкладки админки (overview, services, content, audit) — в ADMIN_PAGES; общий редактор — check_admin_editor (Livewire
 без нарушений CSP: черновик, публикация EN, загрузка PNG с именем x.html, конфликт двух окон).
+
+W-26: вкладки products, categories, projects, training, translations — в ADMIN_PAGES; редакторы проекта (атрибуты),
+статьи (разделы-записи), строки интерфейса — check_admin_editors_w26 на 390 и 1440; правка ui_text видна в шапке.
 
 W-25: каталог на данных фабрик tests/browser/ (4 товара LT+EN с брендом и категорией): список товаров, карточки товаров — из
 sitemap.xml, фильтр и пустой результат, сравнение 4 товаров (CATALOG_PAGES); выбор для сравнения на странице товаров —
@@ -77,10 +81,11 @@ SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
                  '/lt/palyginimas?products=norda-s1-skeneris,vekta-p2-spausdintuvas,petg-gija,norda-cad',
                  '/en/compare?products=norda-s1-scanner,vekta-p2-printer,petg-filament,norda-cad']
-# Кабинет и админка после входа через форму (W-07); вкладки админки W-08; вкладки W-15 добавят свои адреса.
+# Кабинет и админка после входа через форму (W-07); вкладки админки W-08 и W-26; вкладки W-15 добавят свои адреса.
 ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/account/addresses']
 ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
-                                                      for tab in ('overview', 'services', 'content', 'audit')]
+                                                      for tab in ('overview', 'services', 'content', 'audit', 'products',
+                                                                  'categories', 'projects', 'training', 'translations')]
 MAILPIT = 'http://127.0.0.1:58025'
 
 WIDTHS = [320, 390, 768, 1024, 1440]
@@ -970,6 +975,46 @@ def check_admin_editor(report, new_page, state):
     context.close()
 
 
+def check_admin_editors_w26(report, new_page, state):
+    """Редакторы W-26 в браузере: проект (атрибуты элемента), новая статья (разделы-записи), строка интерфейса — открываются на
+    390 и 1440 без расползания и ошибок консоли/CSP; на 1440 правка ui_text shell.nav.services видна в шапке сайта, затем
+    пустое поле возвращает текст файла."""
+    for width, height in ((390, 844), (1440, 1000)):
+        for path, form in (('/en/admin/projects', '#content-meta'), ('/lt/administravimas/content?new=article', '#content-edit-form'),
+                           ('/en/admin/translations?edit=shell.nav.services', '#ui-text-form')):
+            where = f'{path} @{width} редактор W-26'
+            context, page, problems = new_page(width, height, storage_state=state)
+            page.goto(BASE + path, wait_until='networkidle')
+            if 'edit=' not in path and 'new=' not in path:
+                page.locator('main table a.btn').first.click()
+                page.wait_for_load_state('networkidle')
+            report.check(page.locator(form).count() == 1, f'{where}: нет {form}')
+            scroll, client = document_fits(page)
+            report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+            for problem in problems:
+                report.check(False, f'{where}: {problem}')
+            context.close()
+
+    where = 'ui_text @1440'
+    context, page, problems = new_page(1440, 1000, storage_state=state)
+    page.goto(BASE + '/en/admin/translations?edit=shell.nav.services', wait_until='networkidle')
+    page.fill('#field-values-en', 'Our services')
+    page.click('#ui-text-form button[type=submit]')
+    page.wait_for_selector('#ui-text-form .notice.success:has-text("Saved.")')
+    public = page.context.new_page()
+    public.goto(BASE + '/en', wait_until='networkidle')
+    report.check('Our services' in public.inner_text('header'), f'{where}: правка не видна в шапке')
+    page.fill('#field-values-en', '')
+    page.click('#ui-text-form button[type=submit]')
+    page.wait_for_selector('#ui-text-form .notice.success:has-text("Saved.")')
+    public.reload(wait_until='networkidle')
+    report.check('Our services' not in public.inner_text('header') and 'Services' in public.inner_text('header'),
+                 f'{where}: текст файла не вернулся')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def mailpit(method, path):
     with urlopen(Request(MAILPIT + path, method=method), timeout=5) as response:
         body = response.read().decode()
@@ -1033,6 +1078,8 @@ def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     check_private_pages(report, new_page, ADMIN_PAGES, admin, 'main h1', allowlist, 'администратор')
     log('== редактор контента админки (W-08)')
     check_admin_editor(report, new_page, admin)
+    log('== редакторы W-26')
+    check_admin_editors_w26(report, new_page, admin)
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], client, 404, 'клиент')
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], None, 404, 'гость')
     check_russian(report, new_page, ru_paths, admin)
@@ -1113,7 +1160,7 @@ def main():
                 page.on('response', lambda r: problems.append(f'{r.status} {r.url}') if r.status >= 400 and r.request.resource_type != 'document' else None)
                 return context, page, problems
 
-            if not arguments:
+            if not arguments or '--signed-in' in sys.argv:
                 check_accounts(report, new_page, accounts, skipped_ru, allowlist)
 
             log(f'== страницы: {len(pages)}')
@@ -1172,7 +1219,7 @@ def main():
         server.terminate()
         server.wait()
 
-    write_report(report, pages, skipped_ru, rows, signed_in=not arguments)
+    write_report(report, pages, skipped_ru, rows, signed_in=not arguments or '--signed-in' in sys.argv)
     (OUT / 'text-discrepancies.md').write_text('# Сверка текста main с эталоном (W-05)\n\n'
         + ('\n'.join(f'- {line}' for line in discrepancies) or 'Расхождений нет.') + '\n', encoding='utf-8')
     if report.failures:

@@ -28,12 +28,7 @@ enum ContentType: string
         return match ($this) {
             self::PageText => null,
             self::Service => array_keys(ContentTypes::SERVICE_FIELDS),
-            self::Project => ['task', 'solution', 'result'],
-            self::Article => ['intro', 'sections'],
-            self::Training => ['description'],
-            self::Product => ['description', 'specifications', 'compatibility'],
-            self::Brand, self::Category => [],
-            self::FaqItem => ['answer'],
+            default => array_keys(ContentTypes::FIELDS[$this->value]),
         };
     }
 

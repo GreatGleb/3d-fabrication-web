@@ -241,7 +241,9 @@ class AdminContentEditorTest extends TestCase
         $this->assertSame(array_keys(ContentTypes::SERVICE_FIELDS), ContentType::Service->fields());
         $this->assertTrue(ContentTypes::isRegistered(ContentType::Service));
         $this->assertTrue(ContentTypes::isRegistered(ContentType::PageText));
-        $this->assertFalse(ContentTypes::isRegistered(ContentType::Project), 'остальные типы — W-26');
+        foreach (ContentType::cases() as $type) {
+            $this->assertTrue(ContentTypes::isRegistered($type), $type->value.' (W-26)');
+        }
 
         $rules = ContentTypes::rules($this->item(ContentType::Service, 'scanning'));
         $this->assertContains('required', $rules['slug']);
@@ -251,10 +253,10 @@ class AdminContentEditorTest extends TestCase
         $this->assertSame(['kind' => 'pairs', 'parts' => ['title', 'text'], 'count' => 3], $home['scenarios']);
         $this->assertSame(['kind' => 'text'], $home['hero_title']);
 
-        // Тип без описания не открывается редактором.
+        // Элемент чужого типа и новый page_text не открываются редактором.
         $project = ContentItem::where('type', ContentType::Project)->firstOrFail();
-        Livewire::test(ContentEditor::class, ['type' => 'project', 'itemId' => $project->id])->assertStatus(404);
         Livewire::test(ContentEditor::class, ['type' => 'service', 'itemId' => $project->id])->assertStatus(404);
+        Livewire::test(ContentEditor::class, ['type' => 'unknown'])->assertStatus(404);
         Livewire::test(ContentEditor::class, ['type' => 'page_text'])->assertStatus(404);
     }
 }

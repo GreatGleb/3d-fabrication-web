@@ -1055,3 +1055,103 @@ commit/push.
   **`bin/browser-check: OK (11154 проверок)`**, включая админку 320–1440, 404 гостю/клиенту, редактор W-08 и 89 страниц.
 - `git status --porcelain aiqme-site`: новых файлов сверх перечисленных выше нет; медиа, `.env`, ключей нет.
 - Не проверено, как и раньше: ручной просмотр кадров админки — **ждёт проверки пользователем**; большие видео через nginx — W-20.
+
+## W-26 «Админка: остальные редакторы контента» — 2026-10-20, Claude Code (ночной прогон)
+
+**Статус: выполнено** (ждёт приёмки; нейтральные надписи и ручной просмотр редакторов — **ждут проверки пользователем**).
+Агент не делал commit/push.
+
+### Что сделано
+
+- **ContentTypes** (`app/Domain/Content/ContentTypes.php`) — зарегистрированы все типы §4.1. Поля перевода (`FIELDS`):
+  project — task, solution, result (текст); article — intro (текст), sections — новый вид **records** (записи heading/text
+  свободного числа: в форме сохранённые и одна пустая для новой, очищенная запись удаляется); training — description;
+  product — description, specifications (текст, вывод через Markup), compatibility (строка); faq_item — answer; brand,
+  category — только название (и slug у категории). `ContentType::fields()` берёт те же списки (одно место описания).
+  **Атрибуты элемента (meta)** — `meta()`, `metaRules()`, `metaToForm()`, `metaFromForm()`: faq_item — группа (ключ услуги,
+  `services`, `general`); article — раздел (news/library), категория (`ArticleController::CATEGORIES`); project — связанные
+  услуги (несколько), применение (`ProjectController::APPLICATIONS`), YouTube (только https); training — дата (Y-m-d), формат
+  (online/aiqme/company); product — категория (ключ), бренд (id). Варианты услуг/категорий/брендов — из БД; чужое значение —
+  ошибка проверки. Прочие ключи meta сохраняются. Медиа: проект и товар — несколько фото (`images`), бренд — один логотип
+  (новый заменяет прежний).
+- **Общий компонент** `ContentEditor` (без отдельных редакторов по типам): блок атрибутов `#content-meta` над полями
+  перевода (select, флажки, date, url); «Išsaugoti» сохраняет изменённые языки и атрибуты одной транзакцией
+  (`ContentService::updateItem`, создание — `createItem` с meta); публикация/снятие сначала сохраняют изменённое (при ошибке
+  атрибутов не выполняются); новый элемент — у всех типов, кроме page_text; ключ — slug LT у типов со slug, у обучения,
+  FAQ и брендов ключа нет. Подписи записей статьи — «Skyrius 1 · Antraštė LT» · «Section 1 · Heading EN»; подписи блоков
+  page_text не менялись (W-08).
+- **Вкладки** (`AdminController`, маршруты из `TABS` + `HIDDEN_TABS`; `routes/web.php` вне touches — нужен маршрутам, как в
+  W-08): меню в порядке прототипа — Overview, Products, Services, Projects, Content & SEO, Training, LT / EN content, Audit log.
+  `products` — товары («Pridėti produktą +» · «Add a product +») и бренды (h3 «Prekių ženklai» · «Brands») + панель
+  «Kategorijos» · «Categories» прототипа со ссылками «Redaguoti ↗» · «Edit ↗»; `categories` — список и редактор категорий
+  (адрес из §4.6, пункта меню нет, как в прототипе — подсвечивается Products); `services` — услуги и FAQ (h3 «DUK» · «FAQ»);
+  `content` — статьи и новости, затем page_text (h3 «Puslapių tekstai» · «Page texts»); `projects`, `training`.
+  `?new=<тип>` вместо `?new=1` W-08.
+- **Translations** (`admin/translations`, Livewire `UiTextEditor`, `admin/ui-text-editor`): фиксированный набор — строковые
+  ключи lang/ групп `shell`, `public`, `pages`, `account` (тексты админки и служебные `content.*` не правятся); переключатель
+  группы (`?group=`), таблица «Raktas · LT · EN» с действующими значениями, правка `?edit=<ключ>`: LT и EN рядом, RU ниже.
+  Сохранение — `ContentService::saveUiText()` с ревизией каждого изменённого языка в одной транзакции; конфликт —
+  «изменено в другом окне», ввод на месте, ничего не сохранено; пустое поле или текст, равный тексту файла, удаляет
+  переопределение. Ключ вне набора — 404; компонент — только администратору (404).
+- **Тексты** `lang/lt|en/admin.php`: из прототипа — вкладки «Produktai», «Projektai», «Mokymai», «LT / EN turinys» · «LT / EN
+  content», «Pridėti produktą +», «Kategorijos», «Kategorija», «Gamintojas» · «Manufacturer», «YouTube nuoroda (neprivaloma)»,
+  «Mokymų vieta» · «Training format» и варианты, «Suderinamumas», «Savybės ir specifikacijos», «Tekstas» · «Text», «Data» ·
+  «Date» (без «Demo»); подписи разделов и применений — из `lang/*/public.php`.
+- **bin/browser-check**: в `ADMIN_PAGES` добавлены products, categories, projects, training, translations (LT/EN);
+  `check_admin_editors_w26` — редактор проекта (атрибуты), новая статья, строка интерфейса на 390 и 1440 (ширина, консоль/CSP),
+  на 1440 правка `shell.nav.services` видна в шапке `/en` и откатывается пустым полем. Флаг `--signed-in` — запуск проверок
+  после входа вместе с путями (полный прогон дольше 10-минутного предела инструмента агента).
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- **Нейтральные надписи (в прототипе нет):** h3 «Prekių ženklai» · «Brands», «DUK» · «FAQ», «Puslapių tekstai» · «Page texts»;
+  поля «Užduotis» · «Task», «Sprendimas» · «Solution», «Rezultatas» · «Result» (как на странице проекта, без номера),
+  «Įžanga» · «Introduction», «Skyrius» · «Section», «Antraštė» · «Heading», «Atsakymas» · «Answer»; атрибуты «DUK grupė» ·
+  «FAQ group» («Visos paslaugos» · «All services», «Bendri klausimai» · «General questions»), «Skiltis» · «Section»
+  («Naujienos» · «News», «Biblioteka» · «Library»), «Susijusios paslaugos» · «Related services», «Taikymas» · «Application»;
+  ui_text — «Tekstų grupės» · «Text groups», «Meniu ir poraštė» · «Menu and footer», «Puslapiai» · «Pages», «Puslapių
+  pavadinimai» · «Page titles», «Paskyra ir formos» · «Account and forms», «Raktas» · «Key», «Tuščias laukas grąžina
+  numatytąjį tekstą. Pakeitimas matomas svetainėje iš karto.» · «An empty field restores the default text. The change is
+  visible on the site immediately.», «Išsaugota.» · «Saved.»; пустой вариант выбора — «—».
+- **Цена, режим продажи, склад, срок товара и ссылка бренда не редактируются:** публичные страницы их не показывают (D-12,
+  D-41 — «Pagal užklausą» · «On request»; ссылка бренда нигде не выводится), поле без вывода было бы лишним. Добавить — вместе
+  с местом показа. Столбцы «Mode/Demo price» списка товаров прототипа не перенесены — список как у остальных типов.
+- **Атрибуты (meta) применяются сразу при сохранении**, без версий и публикации по языкам (они общие для языков, как медиа
+  W-08); проверки ревизии у них нет (правка в двух окнах — последняя запись). Сообщение после сохранения — то же «Draft saved.».
+- Дата статьи — дата публикации (отдельного поля нет, списки сортируются по ней, как в W-06). Формат обучения хранится и
+  правится, но публичные страницы его пока не выводят (как и до W-26).
+- Удаления элементов нет (снятие с публикации есть); порядок — после последнего, перестановки нет.
+- ui_text без версий и публикации (видно сразу, как задумано W-04); набор групп — константа `UI_TEXT_GROUPS`.
+
+### Проверки (запущены в этой сессии)
+
+- `aiqme-site/bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **377 тестов, 359 passed, 18 skipped** (пропуски §4.6 —
+  вкладки других задач и кабинет W-15); Vite build OK.
+- `bin/browser-check --signed-in /en` → **`bin/browser-check: OK (2639 проверок)`**: вход администратора через форму, все
+  18 адресов админки на 320/390/768/1024/1440 (ширина, §7.1, маркеры D-21, консоль/CSP), гостю и клиенту — 404, редактор
+  W-08 (публикация, загрузка, конфликт), `check_admin_editors_w26`, сброс пароля, страница `/en`. Полный прогон всех публичных
+  страниц (~14 мин) в этой сессии не запускался: публичные шаблоны W-26 не менял; его выполнит проверка оркестратора.
+- Новые тесты `AdminEditorsTest` (12): проект — атрибуты, черновик не виден, публикация EN/LT, фильтр применения, YouTube,
+  снятие EN; ошибочные атрибуты (javascript:/http:, чужое применение и услуга) — ошибки, ввод на месте, meta не изменена;
+  новость — список новостей и главная, карточка по адресу библиотеки, `/en/news/<slug>` и `/lt/naujienos/<slug>` — 404,
+  разделы-записи (пустая запись не сохраняется), смена раздела переносит статью в библиотеку; обучение — без slug/SEO,
+  дата/формат, список обучения только после публикации, неверная дата — ошибка; категория → бренд → товар: каталог, фильтры
+  категории и бренда, карточка, чужие бренд/категория — ошибка; FAQ — группа general на странице FAQ, затем группа услуги;
+  все типы описаны в ContentTypes; фото проекта — несколько, логотип бренда — один; **ui_text — правка EN видна в шапке
+  `/en`, LT не меняется, пустое поле возвращает текст файла**; конфликт ревизии ui_text; редактор строк только
+  администратору и только для ключей набора; вкладки — списки, кнопки добавления, панель категорий, подсветка меню.
+  Обновлены `AdminShellTest` (адреса и меню W-26, FAQ в списке услуг, статьи во вкладке content, `?new=<тип>`),
+  `AdminContentEditorTest` (все типы зарегистрированы), `PrototypeRoutesTest` (строка 13 §4.6 для products, categories,
+  projects, training, translations теперь проверяется).
+- **Тесты ловят поломки** (временные мутации, откачены, `cmp`): meta существующего элемента не сохраняется — 3 теста;
+  UiTextEditor без проверки администратора — 1; без проверки атрибутов — 4; пустые записи статьи сохраняются — 1.
+- `git status --porcelain aiqme-site`: новые файлы — `app/Livewire/Admin/UiTextEditor.php`, `resources/views/admin/
+  {translations,ui-text-editor}.blade.php`, `tests/Feature/AdminEditorsTest.php`; медиа, `.env`, ключей нет; `experiments/`
+  не изменён.
+
+### Не проверено
+
+- Ручной просмотр редакторов (атрибуты, записи статьи, строки интерфейса) на 390/1440 — **ждёт проверки пользователем**;
+  я посмотрел кадры вкладок products (1440) и translations (390): композиция прототипа, без расползания.
+- Полный `bin/browser-check` без аргументов (все публичные страницы) — в этой сессии не запускался (см. выше).
+- Вызов ContentTypes::meta()/metaRules() из бота — W-19.

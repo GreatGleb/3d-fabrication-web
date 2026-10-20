@@ -1,13 +1,18 @@
 <?php
 
-// Админка (§1.4, W-08): источники и нейтральные надписи — см. lang/en/admin.php и docs/progress.md (W-08).
+// Админка (§1.4, W-08, W-26): источники и нейтральные надписи — см. lang/en/admin.php и docs/progress.md (W-08, W-26).
 return [
     'menu' => 'Administravimo meniu',
     'tabs' => [
         'overview' => 'Apžvalga',
+        'products' => 'Produktai',
         'services' => 'Paslaugos',
+        'projects' => 'Projektai',
         'content' => 'Informacija ir SEO',
+        'training' => 'Mokymai',
+        'translations' => 'LT / EN turinys',
         'audit' => 'Veiksmų istorija',
+        'categories' => 'Kategorijos',
     ],
     'overview' => [
         'heading' => 'Darbo diena viename vaizde.',
@@ -16,6 +21,7 @@ return [
         'title' => 'Pavadinimas',
         'languages' => 'LT / EN',
         'add' => 'Pridėti juodraštį +',
+        'add_product' => 'Pridėti produktą +',
         'edit' => 'Redaguoti',
         'both' => 'Abi kalbos',
         'draft' => 'Juodraštis',
@@ -48,6 +54,44 @@ return [
         'problems' => 'Problemos',
         'provide' => 'Ką pateikti?',
         'receive' => 'Ką gausite?',
+        'task' => 'Užduotis',
+        'solution' => 'Sprendimas',
+        'result' => 'Rezultatas',
+        'intro' => 'Įžanga',
+        'sections' => 'Skyrius',
+        'heading' => 'Antraštė',
+        'text' => 'Tekstas',
+        'specifications' => 'Savybės ir specifikacijos',
+        'compatibility' => 'Suderinamumas',
+        'answer' => 'Atsakymas',
+        'value' => 'Tekstas',
+    ],
+    'sections' => [
+        'brand' => 'Prekių ženklai',
+        'category' => 'Kategorijos',
+        'faq_item' => 'DUK',
+        'page_text' => 'Puslapių tekstai',
+    ],
+    'meta' => [
+        'group' => 'DUK grupė',
+        'section' => 'Skiltis',
+        'category' => 'Kategorija',
+        'services' => 'Susijusios paslaugos',
+        'application' => 'Taikymas',
+        'youtube' => 'YouTube nuoroda (neprivaloma)',
+        'date' => 'Data',
+        'format' => 'Mokymų vieta',
+        'brand' => 'Gamintojas',
+        'groups' => ['services' => 'Visos paslaugos', 'general' => 'Bendri klausimai'],
+        'sections' => ['news' => 'Naujienos', 'library' => 'Biblioteka'],
+        'formats' => ['online' => 'Nuotoliniai', 'aiqme' => 'AIQME patalpose', 'company' => 'Kliento įmonėje'],
+    ],
+    'ui_text' => [
+        'groups_label' => 'Tekstų grupės',
+        'groups' => ['shell' => 'Meniu ir poraštė', 'public' => 'Puslapiai', 'pages' => 'Puslapių pavadinimai', 'account' => 'Paskyra ir formos'],
+        'key' => 'Raktas',
+        'hint' => 'Tuščias laukas grąžina numatytąjį tekstą. Pakeitimas matomas svetainėje iš karto.',
+        'saved' => 'Išsaugota.',
     ],
     'media' => [
         'heading' => 'Failai ir nuotraukos',

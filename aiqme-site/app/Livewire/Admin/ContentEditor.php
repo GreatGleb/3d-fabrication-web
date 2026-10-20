@@ -22,7 +22,8 @@ use Livewire\WithFileUploads;
 
 /**
  * Общий редактор контента админки (§1.4, §4.2) для типов, зарегистрированных в ContentTypes: поля перевода LT/EN/RU,
- * slug и SEO, сохранение черновика, публикация и снятие по каждому языку, медиа элемента. Все записи — через
+ * slug и SEO, атрибуты элемента (meta: группа FAQ, раздел статьи, услуги проекта, дата обучения, категория товара…),
+ * сохранение черновика, публикация и снятие по каждому языку, медиа элемента. Все записи — через
  * ContentService с ожидаемой ревизией перевода: при расхождении сохранение отклоняется, введённый текст остаётся в форме.
  * Каждый запрос компонента (в том числе /livewire/update) — только администратору, иначе 404.
  */
@@ -49,6 +50,13 @@ class ContentEditor extends Component
 
     /** @var array<string, array<string, mixed>> */
     public array $form = [];
+
+    /** @var array<string, mixed> атрибуты элемента (meta) в виде формы */
+    public array $meta = [];
+
+    /** @var array<string, mixed> */
+    #[Locked]
+    public array $originalMeta = [];
 
     public ?string $status = null;
 
@@ -83,7 +91,7 @@ class ContentEditor extends Component
         if ($itemId !== null) {
             abort_unless(ContentItem::whereKey($itemId)->where('type', $contentType)->exists(), 404);
         }
-        // Новый элемент — только у услуг: набор страниц (page_text) задан кодом (§4.1).
+        // Новый элемент — у всех типов, кроме page_text: набор страниц задан кодом (§4.1).
         abort_if($itemId === null && $contentType === ContentType::PageText, 404);
         $this->type = $type;
         $this->itemId = $itemId;
@@ -92,7 +100,7 @@ class ContentEditor extends Component
         $this->collection = (string) array_key_first(ContentTypes::media($this->item()));
     }
 
-    /** «Išsaugoti» · «Save»: черновик каждого изменённого языка; опубликованное не меняется. */
+    /** «Išsaugoti» · «Save»: черновик каждого изменённого языка (опубликованное не меняется) и изменённые атрибуты элемента. */
     public function save(): void
     {
         if ($this->saveLocales($this->changedLocales())) {
@@ -163,6 +171,7 @@ class ContentEditor extends Component
         return view('admin.content-editor', [
             'item' => $item,
             'fields' => ContentTypes::fields($item),
+            'metaFields' => ContentTypes::meta($item),
             'states' => collect(ContentService::LOCALES)->mapWithKeys(fn (string $locale): array => [
                 $locale => $this->state($translations->get($locale)),
             ]),
@@ -171,12 +180,14 @@ class ContentEditor extends Component
         ]);
     }
 
-    /** Сохранить язык (если изменён) и выполнить над ним действие публикации. */
+    /** Сохранить язык и атрибуты элемента (если изменены) и выполнить над языком действие публикации. */
     private function changeLocale(string $locale, callable $action, string $message): void
     {
         abort_unless(in_array($locale, ContentService::LOCALES, true), 404);
+        $this->status = $this->conflict = null;
+        $this->resetErrorBag();
         $changed = in_array($locale, $this->changedLocales(), true);
-        if (($changed && ! $this->saveLocales([$locale])) || $this->itemId === null) {
+        if ((($changed || $this->meta != $this->originalMeta) && ! $this->saveLocales($changed ? [$locale] : [])) || $this->itemId === null) {
             return;
         }
         if ($this->revisions[$locale] === 0) {
@@ -195,8 +206,8 @@ class ContentEditor extends Component
     }
 
     /**
-     * Черновики языков одной транзакцией (новый элемент создаётся вместе с первым сохранением): расхождение ревизии
-     * или ошибка на любом языке отменяет всё. Ввод остаётся в форме.
+     * Черновики языков и изменённые атрибуты элемента одной транзакцией (новый элемент создаётся вместе с первым
+     * сохранением): расхождение ревизии или ошибка на любом языке отменяет всё. Ввод остаётся в форме.
      *
      * @param  list<string>  $locales
      */
@@ -215,7 +226,11 @@ class ContentEditor extends Component
                 $rules['form.'.$locale.'.'.$field] = $fieldRules;
             }
         }
-        $validator = Validator::make(['form' => $this->form], $rules, $this->messages(), $this->attributes($locales));
+        $metaChanged = $this->meta != $this->originalMeta;
+        if ($metaChanged) {
+            $rules += ContentTypes::metaRules($item);
+        }
+        $validator = Validator::make(['form' => $this->form, 'meta' => $this->meta], $rules, $this->messages(), $this->attributes($locales));
         if ($validator->fails()) {
             $this->setErrorBag($validator->errors());
 
@@ -223,12 +238,14 @@ class ContentEditor extends Component
         }
 
         $saved = false;
-        $this->guard($locales[0] ?? 'lt', function () use ($item, $locales, &$saved): void {
+        $this->guard($locales[0] ?? 'lt', function () use ($item, $locales, $metaChanged, &$saved): void {
             $content = app(ContentService::class);
             $actor = auth()->user();
-            DB::transaction(function () use ($content, $actor, $item, $locales): void {
+            DB::transaction(function () use ($content, $actor, $item, $locales, $metaChanged): void {
                 if (! $item->exists) {
                     $item = $this->createItem($content, $item);
+                } elseif ($metaChanged) {
+                    $content->updateItem($actor, $item, ContentTypes::metaFromForm($item, $this->meta), $item->position);
                 }
                 foreach ($locales as $locale) {
                     $content->saveDraft($actor, $item, $locale, ContentTypes::fromForm($item, $this->form[$locale]), $this->revisions[$locale], Channel::Web);
@@ -245,15 +262,21 @@ class ContentEditor extends Component
         return true;
     }
 
-    /** Новая услуга: ключ — slug LT (группа FAQ, связи проектов), порядок — после последней. */
+    /**
+     * Новый элемент: ключ — slug LT (у услуги — группа FAQ и связи проектов, у категории — meta товара), у типов без
+     * slug ключа нет; атрибуты — из формы; порядок — после последнего элемента типа.
+     */
     private function createItem(ContentService $content, ContentItem $item): ContentItem
     {
-        $key = $this->form['lt']['slug'] ?? null;
-        if ($key === null || $key === '' || ContentItem::where('type', $item->type)->where('key', $key)->exists()) {
-            throw ValidationException::withMessages(['slug' => __('content.slug_taken')]);
+        $key = null;
+        if ($item->type->hasSlug()) {
+            $key = $this->form['lt']['slug'] ?? null;
+            if ($key === null || $key === '' || ContentItem::where('type', $item->type)->where('key', $key)->exists()) {
+                throw ValidationException::withMessages(['slug' => __('content.slug_taken')]);
+            }
         }
 
-        return $content->createItem(auth()->user(), $item->type, $key,
+        return $content->createItem(auth()->user(), $item->type, $key, ContentTypes::metaFromForm($item, $this->meta),
             position: (int) ContentItem::where('type', $item->type)->max('position') + 1);
     }
 
@@ -288,6 +311,7 @@ class ContentEditor extends Component
             $this->original[$locale] = ContentTypes::toForm($item, $translation?->latestRevision()?->only(['title', 'slug', 'fields', 'seo_title', 'seo_description']));
         }
         $this->form = $this->original;
+        $this->meta = $this->originalMeta = ContentTypes::metaToForm($item);
     }
 
     private function item(): ContentItem
@@ -318,10 +342,16 @@ class ContentEditor extends Component
     /** Подпись поля на языке поля, как в прототипе: «Pavadinimas LT», «Title EN»; RU — по-английски. */
     public static function label(string $field, string $locale): string
     {
+        return self::name($field, $locale).' '.strtoupper($locale);
+    }
+
+    /** Название поля или части записи на языке поля без суффикса языка; без перевода — имя поля (блоки page_text). */
+    public static function name(string $field, string $locale): string
+    {
         $labelLocale = $locale === 'lt' ? 'lt' : 'en';
         $key = collect(['admin.fields.'.$field, 'admin.media.'.$field])->first(fn (string $key): bool => trans()->has($key, $labelLocale, false));
 
-        return ($key ? __($key, [], $labelLocale) : $field).' '.strtoupper($locale);
+        return $key ? __($key, [], $labelLocale) : $field;
     }
 
     /** Сообщения проверки LT/EN: тексты W-07 (обязательное поле, длина) и ContentService (неверное значение). */
@@ -334,6 +364,8 @@ class ContentEditor extends Component
             'regex' => __('content.invalid', ['field' => ':attribute']),
             'url' => __('content.invalid', ['field' => ':attribute']),
             'in' => __('content.invalid', ['field' => ':attribute']),
+            'array' => __('content.invalid', ['field' => ':attribute']),
+            'date_format' => __('content.invalid', ['field' => ':attribute']),
         ];
     }
 
@@ -346,6 +378,10 @@ class ContentEditor extends Component
                 $name = str_starts_with($field, 'fields.') ? explode('.', $field)[1] : $field;
                 $attributes['form.'.$locale.'.'.$field] = self::label($name, $locale);
             }
+        }
+        foreach (array_keys(ContentTypes::meta($this->item())) as $name) {
+            $attributes['meta.'.$name] = __('admin.meta.'.$name);
+            $attributes['meta.'.$name.'.*'] = __('admin.meta.'.$name);
         }
 
         return $attributes;

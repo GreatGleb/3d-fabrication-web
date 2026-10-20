@@ -8,8 +8,9 @@
     <div class="wrap page-content">
         <div class="admin-layout">
             <nav class="side-nav" aria-label="{{ __('admin.menu') }}">
+                @php($menuTab = \App\Http\Controllers\Admin\AdminController::HIDDEN_TABS[$tab] ?? $tab)
                 @foreach (\App\Http\Controllers\Admin\AdminController::TABS as $name => $icon)
-                    <a @class(['active' => $name === $tab]) href="{{ route($locale.'.admin.'.$name) }}" @if ($name === $tab) aria-current="page" @endif><x-line-icon :name="$icon" /> {{ __('admin.tabs.'.$name) }}</a>
+                    <a @class(['active' => $name === $menuTab]) href="{{ route($locale.'.admin.'.$name) }}" @if ($name === $tab) aria-current="page" @endif><x-line-icon :name="$icon" /> {{ __('admin.tabs.'.$name) }}</a>
                 @endforeach
                 <button class="btn small secondary" type="submit" form="logout-form">{{ __('account.logout') }}</button>
             </nav>

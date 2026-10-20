@@ -13,17 +13,21 @@ use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 /**
- * Оболочка админки W-08 (§1.4, §6.1): вкладки overview (корень и overview), services, content, audit — только
- * администратору, гостю и клиенту 404 (в том числе действия Livewire-редактора через /livewire/update); меню без
- * Permissions, Telegram и CSV; без демо-надписей прототипа; журнал публикаций.
+ * Оболочка админки W-08 (§1.4, §6.1): вкладки overview (корень и overview), services, content, audit и вкладки W-26
+ * (products, categories, projects, training, translations) — только администратору, гостю и клиенту 404 (в том числе
+ * действия Livewire-редактора через /livewire/update); меню без Permissions, Telegram и CSV; без демо-надписей
+ * прототипа; журнал публикаций.
  */
 class AdminShellTest extends TestCase
 {
     use RefreshDatabase;
 
     private const TABS = [
-        'lt' => ['/lt/administravimas', '/lt/administravimas/overview', '/lt/administravimas/services', '/lt/administravimas/content', '/lt/administravimas/audit'],
-        'en' => ['/en/admin', '/en/admin/overview', '/en/admin/services', '/en/admin/content', '/en/admin/audit'],
+        'lt' => ['/lt/administravimas', '/lt/administravimas/overview', '/lt/administravimas/products', '/lt/administravimas/services',
+            '/lt/administravimas/projects', '/lt/administravimas/content', '/lt/administravimas/training', '/lt/administravimas/translations',
+            '/lt/administravimas/audit'],
+        'en' => ['/en/admin', '/en/admin/overview', '/en/admin/products', '/en/admin/services', '/en/admin/projects', '/en/admin/content',
+            '/en/admin/training', '/en/admin/translations', '/en/admin/audit'],
     ];
 
     protected function setUp(): void
@@ -50,7 +54,8 @@ class AdminShellTest extends TestCase
         $id = $this->service()->id;
         $page = ContentItem::where('type', ContentType::PageText)->where('key', 'home')->firstOrFail()->id;
         $paths = array_merge(...array_values(self::TABS));
-        $paths = array_merge($paths, ["/en/admin/services?edit=$id", '/en/admin/services?new=1', "/lt/administravimas/content?edit=$page", '/en/admin/services/']);
+        $paths = array_merge($paths, ["/en/admin/services?edit=$id", '/en/admin/services?new=service', "/lt/administravimas/content?edit=$page", '/en/admin/services/',
+            '/en/admin/categories', '/lt/administravimas/categories', '/en/admin/services?new=faq_item', '/en/admin/translations?group=public&edit=public.find_solution']);
 
         foreach ($paths as $path) {
             $this->get($path)->assertNotFound();
@@ -67,6 +72,9 @@ class AdminShellTest extends TestCase
         // Чужой тип и неизвестный элемент в ?edit — 404, а не редактор.
         $this->get("/en/admin/services?edit=$page")->assertNotFound();
         $this->get('/en/admin/content?edit=999999')->assertNotFound();
+        // Строка интерфейса вне набора вкладки (тексты админки, несуществующий ключ) — 404.
+        $this->get('/en/admin/translations?edit=admin.menu')->assertNotFound();
+        $this->get('/en/admin/translations?edit=shell.nope')->assertNotFound();
     }
 
     public function test_livewire_editor_actions_are_404_without_the_admin(): void
@@ -94,8 +102,8 @@ class AdminShellTest extends TestCase
     public function test_shell_follows_the_prototype_without_demo_texts_roles_or_excluded_tabs(): void
     {
         $this->actingAs($this->admin());
-        foreach (['lt' => ['AIQME valdymo aplinka', 'Administravimo meniu', ['Apžvalga', 'Paslaugos', 'Informacija ir SEO', 'Veiksmų istorija']],
-            'en' => ['AIQME management workspace', 'Administration menu', ['Overview', 'Services', 'Content &amp; SEO', 'Audit log']]] as $locale => [$title, $menu, $tabs]) {
+        foreach (['lt' => ['AIQME valdymo aplinka', 'Administravimo meniu', ['Apžvalga', 'Produktai', 'Paslaugos', 'Projektai', 'Informacija ir SEO', 'Mokymai', 'LT / EN turinys', 'Veiksmų istorija']],
+            'en' => ['AIQME management workspace', 'Administration menu', ['Overview', 'Products', 'Services', 'Projects', 'Content &amp; SEO', 'Training', 'LT / EN content', 'Audit log']]] as $locale => [$title, $menu, $tabs]) {
             foreach (self::TABS[$locale] as $path) {
                 $html = $this->get($path)->assertOk()->getContent();
                 $this->assertStringContainsString('<h1>'.$title.'</h1>', $html);
@@ -103,7 +111,7 @@ class AdminShellTest extends TestCase
                 $this->assertStringContainsString('class="admin-layout"', $html);
                 preg_match('~<nav class="side-nav".*?</nav>~s', $html, $nav);
                 preg_match_all('~<a[^>]*href="[^"]*/(?:administravimas|admin)/(\w+)"[^>]*>.*?</svg>\s*([^<]+?)</a>~s', $nav[0], $links);
-                $this->assertSame(['overview', 'services', 'content', 'audit'], $links[1], $path);
+                $this->assertSame(['overview', 'products', 'services', 'projects', 'content', 'training', 'translations', 'audit'], $links[1], $path);
                 $this->assertSame($tabs, $links[2], $path);
                 $this->assertSame(1, substr_count($html, 'aria-current="page"'), $path);
                 foreach (['Demo administration', 'Demonstracinis administravimas', 'ADMINISTRATION DEMO', 'ADMINISTRAVIMO DEMONSTRACIJA',
@@ -125,7 +133,7 @@ class AdminShellTest extends TestCase
     public function test_excluded_and_later_tabs_are_not_routes_yet(): void
     {
         $this->actingAs($this->admin());
-        foreach (['permissions', 'telegram', 'users', 'pricing', 'discounts', 'delivery', 'csv', 'orders', 'products', 'translations'] as $tab) {
+        foreach (['permissions', 'telegram', 'users', 'pricing', 'discounts', 'delivery', 'csv', 'orders', 'customers', 'calculator'] as $tab) {
             $this->get('/en/admin/'.$tab)->assertNotFound();
         }
     }
@@ -136,7 +144,7 @@ class AdminShellTest extends TestCase
         $html = $this->get('/en/admin/services')->assertOk()->getContent();
         $this->assertStringContainsString('<h2>Services</h2>', $html);
         $this->assertStringContainsString('Add a draft +', $html);
-        $this->assertSame(6, substr_count($html, '<span class="tag">Both languages</span>'));
+        $this->assertSame(6 + 9, substr_count($html, '<span class="tag">Both languages</span>'), '6 услуг и 9 вопросов FAQ');
         foreach (['3D scanning', '3D modelling training'] as $title) {
             $this->assertStringContainsString('<td>'.$title.'</td>', $html);
         }
@@ -147,15 +155,17 @@ class AdminShellTest extends TestCase
         $scanning = $this->service();
         app(ContentService::class)->unpublish($admin, $scanning, 'en', $scanning->translation('en')->revision, Channel::Web);
         $html = $this->get('/lt/administravimas/services')->getContent();
-        $this->assertSame(5, substr_count($html, '<span class="tag">Abi kalbos</span>'));
+        $this->assertSame(5 + 9, substr_count($html, '<span class="tag">Abi kalbos</span>'));
         $this->assertStringContainsString('<span class="tag">LT</span>', $html);
 
-        // Тексты страниц: 8 page_text, политики — черновики; без «Add a draft +» (новые страницы — разработка).
+        // Статьи (3) и тексты страниц (8, политики — черновики); «Add a draft +» — только у статей (новые страницы — разработка).
         $html = $this->get('/en/admin/content')->assertOk()->getContent();
         $this->assertStringContainsString('<h2>Content &amp; SEO</h2>', $html);
-        $this->assertSame(8, substr_count($html, '#content-editor">Edit</a>'));
+        $this->assertStringContainsString('<h3>Page texts</h3>', $html);
+        $this->assertSame(3 + 8, substr_count($html, '#content-editor">Edit</a>'));
         $this->assertSame(4, substr_count($html, '<span class="tag">Draft</span>'));
-        $this->assertStringNotContainsString('Add a draft +', $html);
+        $this->assertSame(1, substr_count($html, 'Add a draft +'));
+        $this->assertStringContainsString('href="'.route('en.admin.content', ['new' => 'article']).'#content-editor"', $html);
         $this->assertStringContainsString('<td>Privacy &amp; file retention</td>', $html);
     }
 

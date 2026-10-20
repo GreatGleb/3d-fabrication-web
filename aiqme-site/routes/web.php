@@ -72,9 +72,9 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
     Route::prefix($locale.'/'.($locale === 'lt' ? 'administravimas' : 'admin'))
         ->middleware(['auth.session', EnsureAdmin::class, 'cache.headers:private;no_store'])
         ->group(function () use ($locale): void {
-            // Вкладки W-08; остальные вкладки §1.4 добавляют свои задачи (до них — 404).
+            // Вкладки W-08 и W-26; остальные вкладки §1.4 добавляют свои задачи (до них — 404).
             Route::get('/', [AdminController::class, 'overview'])->name($locale.'.admin');
-            foreach (array_keys(AdminController::TABS) as $tab) {
+            foreach ([...array_keys(AdminController::TABS), ...array_keys(AdminController::HIDDEN_TABS)] as $tab) {
                 Route::get($tab, [AdminController::class, $tab])->name($locale.'.admin.'.$tab);
             }
         });
