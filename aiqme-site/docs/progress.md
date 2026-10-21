@@ -1796,3 +1796,52 @@ užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Pre
   запуском в эту ночь нет (обход разбит на части, 82 адреса против 91 в полном прогоне: список собран из route:list и
   sitemap.xml вручную).
 - Право гостя в сессии, ограничение частоты гостевой страницы, защищённая выдача STL — W-15, W-32.
+
+## W-32 «Защищённая выдача STL и проверка прав на заказ» — 2026-10-21, Claude Code (ночной прогон)
+
+### Сделано
+
+- `app/Domain/Orders/OrderAccess::allows(Order, ?User)` — единственная проверка прав на заказ (§6.1): администратор
+  (`is_admin`) или владелец — вошедший пользователь при непустом `user_id` заказа, равном его id. У гостевого заказа
+  (`user_id` = null) владельца нет; сравнение `user_id === auth()->id()` эксперимента не перенесено. Право гостя в сессии
+  добавит W-15 в этот же сервис; W-14…W-17 вызывают его же, отказ — 404 у вызывающего.
+- `app/Http/Controllers/StlDownloadController` + маршрут `GET|HEAD /stl/{stlFile}` (`stl.download`, `whereNumber`,
+  `auth.session`). Права — через `OrderAccess` на каждый запрос (GET, HEAD, Range); файл без заказа, чужой, несуществующий
+  или отсутствующий на диске — 404. Ответ — `BinaryFileResponse` (Range и HEAD обслуживает Symfony): `application/octet-stream`,
+  `Content-Disposition: attachment` (ASCII `filename=` с экранированием кавычек + `filename*` UTF-8; `/` и `\` в имени
+  заменяются на `_`, иначе заголовок не собрать), `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store`.
+  Подписанных ссылок нет.
+- `config/filesystems.php`: `'serve' => false` у диска `local` — маршрута шаблона `storage/{path}` больше нет
+  (`route:list --path=storage` пуст). Диска `private` в приложении нет (приватные файлы — диск `local`,
+  `storage/app/private`), поэтому изменён только `local`.
+- Решения без указаний плана (простейший вариант): адрес выдачи `/stl/<id>` без префикса локали — один маршрут для
+  кабинета, гостевой страницы и админки; в адресе нет токена (§6.2), знание id доступа не даёт (§6.1). Отдельной проверки
+  владельца заказа в W-12 не было (гостевая страница сверяет токен, `RequestCartValidator` — владельца файла в корзине до
+  заказа), заменять было нечего. Ссылки на скачивание в шаблонах не добавлены — их выводят карточки W-14/W-15.
+
+### Проверки
+
+- `tests/Feature/StlDownloadTest.php` → 6/6 (114 утверждений), заказы созданы штатной отправкой `OrderSubmission`:
+  заказ клиента A — владелец и администратор получают 200 (тело = файл, заголовки), HEAD 200 с `Content-Length` и пустым
+  телом, `Range: bytes=0-9` → 206, `Content-Range`, 10 байт; клиент B и посетитель — 404 на GET/HEAD/Range без
+  `attachment`; гостевой заказ (`user_id` = null) — посетитель и клиент B 404 на все три, администратор скачивает; сервис:
+  посетитель на гостевом заказе — false; неизвестный id, нечисловой id и файл без заказа — 404 даже администратору;
+  экранирование имени `detalė "1";x\y.stl`; `/storage/stl/<uuid>.stl` GET/HEAD и PUT — 404.
+- Мутации: `'serve' => true` — тест `/storage` падает (403 вместо 404, отдельно от проверки конфигурации); проверка
+  эксперимента `is_admin || order.user_id === user?->id` — падают тесты гостевого заказа (200 посетителю) и сервиса;
+  без строки `Cache-Control` — `private, must-revalidate` вместо `no-store, private`. Всё восстановлено.
+- `vendor/bin/pint --dirty` → passed; `bin/check` → **OK**: PHPUnit 473 (455 passed, 18 skipped), Vite.
+- `bin/browser-check` не запускался: шаблонов и страниц задача не меняет (поиск маркеров rules[7] не требуется), новый
+  маршрут без локали в обход route:list не входит.
+- `git status --porcelain aiqme-site`: изменены `config/filesystems.php`, `routes/web.php`; новые `OrderAccess.php`,
+  `StlDownloadController.php`, `StlDownloadTest.php`. Бинарных файлов, .env, ключей, новых пакетов нет.
+
+### Не проверено
+
+- HEAD/Range проверены через ядро Laravel в PHPUnit, не на nginx/PHP-FPM (W-20).
+- Скачивание гостем по праву в сессии — W-15 (до неё гость получает 404 на STL своего заказа).
+
+
+## W-32: заблокирована ночным прогоном (2026-10-21 07:52)
+
+Причина (оркестратор): автор не вернул JSON-итог. Работа — в git stash «night-blocked W-32».
