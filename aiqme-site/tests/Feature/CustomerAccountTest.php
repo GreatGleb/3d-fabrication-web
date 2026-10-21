@@ -6,6 +6,7 @@ use App\Domain\Orders\Models\OrderMessage;
 use App\Domain\Orders\OrderSubmission;
 use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\SubmittedOrder;
+use App\Domain\Payments\Models\PaymentRequest;
 use App\Models\OrderCharge;
 use App\Models\StlFile;
 use App\Models\User;
@@ -24,7 +25,7 @@ use Tests\TestCase;
 
 /**
  * Кабинет клиента и гостевая страница заказа (W-15, §1.3, §6.1, §6.2, §9.2 «Права»): вкладки Overview, Orders, Saved
- * models, Invoices; карточка заказа (стадии, оплата, открытые запросы без ссылки, платежи и возвраты, трек, сообщение и
+ * models, Invoices; карточка заказа (стадии, оплата, открытые запросы с кнопкой оплаты W-16, платежи и возвраты, трек, сообщение и
  * три ответа, повторный заказ); право гостя в сессии и скачивание STL по нему; изоляция клиентов A/B, посетителя и гостя
  * с правом на другой заказ — 404 на GET/HEAD/Range, на гостевую страницу и на ответ; ограничение частоты по IP.
  * Заказы создаются штатной отправкой заявки (OrderSubmission), изменения — OrderWorkflow.
@@ -200,8 +201,10 @@ class CustomerAccountTest extends TestCase
         $page->assertSee('Partly paid')->assertSee('Payment requests')->assertSee('Tracking: DPD LT000000001');
         $request = $html->query('//*[@data-payment-request]')->item(0);
         $this->assertStringContainsString('€40.00', $request->textContent);
-        $this->assertSame(0, $html->query('.//a', $request)->length);
-        $page->assertDontSee('/checkout', false)->assertDontSee('/apmokejimas', false);
+        // Кнопка оплаты открытого запроса (W-16) — ссылка на страницу оплаты этого запроса.
+        $link = $html->query('//a[@data-checkout-link]');
+        $this->assertSame(1, $link->length);
+        $this->assertSame(route('en.checkout', PaymentRequest::where('order_id', $a->order->id)->sole()->public_id), $link->item(0)->getAttribute('href'));
 
         // Платежи и возвраты (D-04): дата, вид, сумма; неуспешная транзакция не показывается.
         $transactions = iterator_to_array($html->query('//*[@data-transaction]'));

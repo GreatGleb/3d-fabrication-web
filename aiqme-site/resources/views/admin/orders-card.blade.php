@@ -140,9 +140,21 @@
                     <tr wire:key="request-{{ $request->id }}">
                         <td>{{ $request->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
                         <td>{{ $money($request->amount) }}</td>
-                        <td>{{ __('admin.orders.request_states.'.$request->state) }}</td>
+                        <td>{{ __('admin.orders.request_states.'.$request->state) }}@if ($request->needs_review) <span class="tag" data-needs-review>{{ __('admin.orders.needs_review') }}</span>@endif</td>
                         <td>
-                            @if ($request->state === \App\Domain\Payments\Models\PaymentRequest::PENDING && $request->stripe_intent_id === null)
+                            {{-- W-16: ссылка страницы оплаты клиенту (гостю — перевыпуск гостевой ссылки), отмена по автомату §3.3 и
+                                 «проверить статус в Stripe»; в демо-сборке блоков оплаты нет (§8.7). --}}
+                            @if (! app()->environment('demo'))
+                                @if ($customer && $request->state === \App\Domain\Payments\Models\PaymentRequest::PENDING)
+                                    <a class="text-link" href="{{ route($meta->locale.'.checkout', $request->public_id) }}" data-checkout-link>{{ __('admin.orders.checkout_link') }}</a>
+                                @endif
+                                @if (in_array($request->state, [\App\Domain\Payments\Models\PaymentRequest::PENDING, \App\Domain\Payments\Models\PaymentRequest::CREATING], true))
+                                    <button class="btn small secondary" type="button" wire:click="cancelRequest({{ $request->id }})" data-cancel-request>{{ __('admin.orders.cancel_request') }}</button>
+                                @endif
+                                @if (in_array($request->state, [\App\Domain\Payments\Models\PaymentRequest::CREATING, \App\Domain\Payments\Models\PaymentRequest::CANCELLING], true) || ($request->state === \App\Domain\Payments\Models\PaymentRequest::PENDING && $request->stripe_intent_id !== null))
+                                    <button class="btn small secondary" type="button" wire:click="checkRequest({{ $request->id }})" data-check-request>{{ __('admin.orders.check_stripe') }}</button>
+                                @endif
+                            @elseif ($request->state === \App\Domain\Payments\Models\PaymentRequest::PENDING && $request->stripe_intent_id === null)
                                 <button class="btn small secondary" type="button" wire:click="cancelRequest({{ $request->id }})">{{ __('admin.orders.cancel_request') }}</button>
                             @endif
                         </td>

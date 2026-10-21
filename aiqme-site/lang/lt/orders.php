@@ -18,6 +18,7 @@ return [
         'request_too_large' => 'Mokėjimo užklausa viršija nesumokėtą sumą, kurios nedengia atviros užklausos.',
         'request_rest_too_small' => 'Po šios užklausos likusi suma turi būti 0 arba ne mažesnė nei 0,50 EUR.',
         'request_not_cancellable' => 'Šios mokėjimo užklausos čia atšaukti negalima.',
+        'request_not_checkable' => 'Būseną Stripe galima tikrinti tik tikrinamai, atšaukiamai arba atvirai užklausai su pradėtu mokėjimu.',
         'stage_invalid' => 'Toks etapo pakeitimas negalimas.',
         'debt_unconfirmed' => 'Užsakymas apmokėtas ne visas. Patvirtinkite gamybos pradžią su likusia skola.',
         'tracking_required' => 'Nurodykite vežėją ir siuntos sekimo numerį.',

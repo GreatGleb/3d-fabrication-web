@@ -173,7 +173,9 @@ def browser_env():
     env.update({'DB_DATABASE': DATABASE, 'QUEUE_CONNECTION': 'sync', 'APP_URL': BASE, 'APP_ENV': 'local',
                 'APP_DEBUG': 'false',
                 # Заявки W-12 одного прогона (несколько страниц, ширин и ошибочных отправок) — с одного IP; лимит поднят.
-                'AIQME_ORDERS_PER_HOUR': '100'})
+                'AIQME_ORDERS_PER_HOUR': '100',
+                # Stripe на уровне L не вызывается (W-16): без ключей страница оплаты — «оплата временно недоступна».
+                'STRIPE_KEY': '', 'STRIPE_SECRET': ''})
     return env
 
 
@@ -1219,7 +1221,8 @@ def check_customer_orders(report, new_page, state, guest_url, allowlist):
     """W-15 на фабричных заказах (tests/browser/OrderFactory): карточка заказа клиента (стадия, аванс, сообщение и ответ),
     «пересчитать» в Saved models (390, LT) и повторный заказ из карточки (1440, EN) — модель загружена в калькулятор, итог
     5,12, отправка создаёт новый заказ с новой моделью; гостевая страница по ссылке — карточка и скачивание STL по праву
-    в сессии, чистый браузер без ссылки — 404 на STL. Ширина, маркеры D-21, консоль на 390 и 1440."""
+    в сессии, чистый браузер без ссылки — 404 на STL; кнопка оплаты гостевой страницы — страница оплаты W-16 (чистый
+    браузер — 404). Ширина, маркеры D-21, консоль на 390 и 1440."""
     def fits(page, where, path):
         scroll, client = document_fits(page)
         report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
@@ -1301,7 +1304,7 @@ def check_customer_orders(report, new_page, state, guest_url, allowlist):
         context, page, problems = new_page(width, height)
         response = page.goto(BASE + guest_url, wait_until='networkidle')
         report.check(response.status == 200 and page.locator('#customer-order').count() == 1, f'{where}: HTTP {response.status}')
-        report.check(page.locator('[data-payment-request] a, [data-reorder]').count() == 0, f'{where}: ссылка оплаты или повторного заказа')
+        report.check(page.locator('[data-reorder]').count() == 0, f'{where}: ссылка повторного заказа')
         fits(page, where, guest_url)
         links = page.locator('#customer-order a[href*="/stl/"]').evaluate_all('links => links.map(link => link.href)')
         report.check(len(links) == 2, f'{where}: ссылки STL {links}')
@@ -1310,6 +1313,21 @@ def check_customer_orders(report, new_page, state, guest_url, allowlist):
             answer = page.request.get(stl)
             report.check(answer.status == 200 and answer.headers.get('content-disposition', '').startswith('attachment'), f'{where}: скачивание STL гостем {answer.status}')
         page.screenshot(path=str(OUT / 'shots' / f'guest-order-{width}.png'), full_page=True)
+        # W-16: кнопка оплаты открытого запроса ведёт на страницу оплаты по праву в сессии (без ключей Stripe —
+        # «оплата временно недоступна», Payment Element на уровне L не проверяется — W-22).
+        checkout = page.locator('a[data-checkout-link]')
+        report.check(checkout.count() == 1, f'{where}: кнопок оплаты {checkout.count()}')
+        if checkout.count() == 1:
+            checkout_url = checkout.get_attribute('href')
+            checkout.click()
+            page.wait_for_load_state('networkidle')
+            report.check(page.locator('#checkout[data-checkout-status="unavailable"]').count() == 1, f'{where}: страница оплаты {page.url}')
+            fits(page, f"страница оплаты @{width}", urlparse(checkout_url).path)
+            page.screenshot(path=str(OUT / 'shots' / f'checkout-{width}.png'), full_page=True)
+            if width == 1440:
+                fresh, other, _ = new_page(1440, 1000)
+                report.check(other.request.get(checkout_url).status == 404, 'страница оплаты без права в сессии — не 404')
+                fresh.close()
         for problem in problems:
             report.check(False, f'{where}: {problem}')
         context.close()

@@ -10,6 +10,7 @@ use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
+use App\Domain\Payments\PaymentRequestService;
 use App\Models\OrderCharge;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -22,10 +23,11 @@ use Spatie\Activitylog\Models\Activity;
 
 /**
  * Карточка заказа во вкладке Orders (§1.4, W-14): файлы (скачивание STL — только защищённая выдача W-32), параметры и
- * пожелания, лист задания Bambu, подтверждение и изменение цены по строкам со строкой доставки, платёжные запросы и их
- * отмена без intent, начало производства, стадии, трек, отмена заказа, сообщение клиенту и ответы клиента, перевыпуск
- * гостевой ссылки, история. Все действия — методы OrderWorkflow (W-13): правил здесь нет, только перевод EUR в центы и
- * подтверждение опасных действий (отмена, изменение цены, начало производства при долге > 0, §3.4) вторым нажатием.
+ * пожелания, лист задания Bambu, подтверждение и изменение цены по строкам со строкой доставки, платёжные запросы, их
+ * отмена и «проверить статус в Stripe» (W-16), ссылка страницы оплаты клиенту, начало производства, стадии, трек,
+ * отмена заказа, сообщение клиенту и ответы клиента, перевыпуск гостевой ссылки, история. Все действия — методы
+ * OrderWorkflow (W-13) и PaymentRequestService (W-16): правил здесь нет, только перевод EUR в центы и подтверждение
+ * опасных действий (отмена, изменение цены, начало производства при долге > 0, §3.4) вторым нажатием.
  * Каждый запрос — только администратору, иначе 404.
  */
 class Card extends Component
@@ -117,11 +119,17 @@ class Card extends Component
         $this->done('request_created');
     }
 
-    public function cancelRequest(OrderWorkflow $flow, int $requestId): void
+    /** Отмена запроса по автомату §3.3 (W-16): без intent — сразу void, с intent и в creating — через Stripe. */
+    public function cancelRequest(PaymentRequestService $payments, int $requestId): void
     {
-        $request = PaymentRequest::where('order_id', $this->orderId)->find($requestId) ?? abort(404);
-        $flow->cancelPaymentRequest($this->admin(), $request);
-        $this->done('request_cancelled');
+        $result = $payments->cancel($this->admin(), $this->paymentRequest($requestId));
+        $this->done($result === PaymentRequest::VOID ? 'request_cancelled' : 'stripe_'.$result);
+    }
+
+    /** «Проверить статус в Stripe» для creating, cancelling и pending с intent (§3.3). */
+    public function checkRequest(PaymentRequestService $payments, int $requestId): void
+    {
+        $this->done('stripe_'.$payments->checkStatus($this->admin(), $this->paymentRequest($requestId)));
     }
 
     /** Начало производства; при непогашенном долге — только после подтверждения администратора (§3.4). */
@@ -261,6 +269,11 @@ class Card extends Component
         }
         $this->carrier = (string) $state->carrier;
         $this->trackingNumber = (string) $state->tracking_number;
+    }
+
+    private function paymentRequest(int $requestId): PaymentRequest
+    {
+        return PaymentRequest::where('order_id', $this->orderId)->find($requestId) ?? abort(404);
     }
 
     private function order(): Order

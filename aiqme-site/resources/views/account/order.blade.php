@@ -2,8 +2,8 @@
      с номером и стадией, timeline стадий, решение по сообщению администратора (три ответа), «Order contents» и «Payment &
      delivery», кнопки. Одна и та же в кабинете (владелец, $reorder) и на гостевой странице по секретной ссылке (§6.2).
      Не переносятся (D-21): «DEMONSTRATION ORDER», notice об имитации оплаты, «Demo completed», «Demo payable total»,
-     «Prepaid collection», «View demo invoice», «View the staff workflow». Кнопку оплаты открытых запросов добавляет W-16,
-     счета — W-17. STL — только защищённая выдача (route stl.download), токена в адресах файлов нет. --}}
+     «Prepaid collection», «View demo invoice», «View the staff workflow». Кнопка оплаты открытых запросов — страница
+     оплаты W-16 (гостю — по праву в сессии), счета — W-17. STL — только защищённая выдача (route stl.download), токена в адресах файлов нет. --}}
 @php
     $locale = app()->getLocale();
     $money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale);
@@ -76,8 +76,11 @@
                     @if ($requests->isNotEmpty())
                         <h3 class="gap">{{ __('admin.orders.requests') }}</h3>
                         @foreach ($requests as $request)
-                            {{-- Кнопка оплаты запроса — W-16 (маршрут оплаты). --}}
                             <div class="summary-row" data-payment-request><span>{{ __('admin.orders.request_states.'.$request->state) }}</span><b>{{ $money($request->amount) }}</b></div>
+                            {{-- Кнопка оплаты (W-16): открытый запрос, кроме отменяемого; в демо-сборке блоков оплаты нет (§8.7). --}}
+                            @if ($request->state !== \App\Domain\Payments\Models\PaymentRequest::CANCELLING && ! app()->environment('demo'))
+                                <x-button :href="route($locale.'.checkout', $request->public_id)" small arrow data-checkout-link>{{ __('checkout.proceed') }}</x-button>
+                            @endif
                         @endforeach
                     @endif
                     @if ($payments->isNotEmpty())

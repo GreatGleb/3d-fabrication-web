@@ -10,6 +10,7 @@ use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\PriceRevision;
 use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Payments\Models\PaymentRequest;
+use App\Domain\Payments\PaymentRequestService;
 use App\Models\OrderCharge;
 use App\Models\StlPart;
 use App\Models\User;
@@ -126,7 +127,7 @@ final class OrderWorkflow
         });
     }
 
-    /** Отмена запроса без intent: pending → void в одной транзакции, без Stripe. Запрос с intent отменяет W-16. */
+    /** Отмена запроса без intent: pending → void в одной транзакции, без Stripe. Запрос с intent — PaymentRequestService. */
     public function cancelPaymentRequest(User $admin, PaymentRequest $request): PaymentRequest
     {
         $this->authorize($admin);
@@ -204,7 +205,8 @@ final class OrderWorkflow
 
     /**
      * Отмена заказа администратором с причиной из любой стадии до completed. Открытые запросы pending без intent — void
-     * в той же транзакции; запросы с intent и в creating отменяет W-16 (§3.4). Деньги не возвращаются.
+     * в той же транзакции, pending с intent — cancelling; после commit PaymentRequestService отменяет их intent в Stripe и
+     * проверяет запросы в creating (§3.4, W-16). Деньги не возвращаются.
      */
     public function cancel(User $admin, Order $order, string $reason): void
     {
@@ -216,16 +218,23 @@ final class OrderWorkflow
             $this->require(trim($reason) !== '', 'reason_required');
             $requests = PaymentRequest::where('order_id', $order->id)
                 ->where('state', PaymentRequest::PENDING)
-                ->whereNull('stripe_intent_id')
                 ->lockForUpdate()
                 ->get();
             foreach ($requests as $request) {
+                if ($request->stripe_intent_id !== null) {
+                    $request->update(['state' => PaymentRequest::CANCELLING]);
+
+                    continue;
+                }
                 $request->update(['state' => PaymentRequest::VOID]);
                 $this->recordRequestEvent('payment_request.cancelled', $order, $request, 'Payment request cancelled (order cancelled)');
             }
             $state->update(['stage' => ProductionStage::Cancelled, 'cancel_reason' => trim($reason)]);
             $this->recordOrderEvent('order.cancelled', $order, $admin, 'Order cancelled', null, ['reason' => trim($reason)]);
         });
+
+        // Вызовы Stripe — только после commit (§2.6); сервис зависит от этого, поэтому берётся из контейнера здесь.
+        app(PaymentRequestService::class)->cancelForCancelledOrder($order);
     }
 
     /** Сообщение администратора клиенту по заказу (§1.3): запись и журнал. */

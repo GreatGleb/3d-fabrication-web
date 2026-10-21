@@ -267,10 +267,10 @@ class AdminOrdersTest extends TestCase
         $card->call('cancelRequest', $request->id)->assertSee('Payment request cancelled.');
         $this->assertSame(PaymentRequest::VOID, $request->fresh()->state);
 
-        // Запрос с intent (W-16) здесь не отменяется: кнопки нет, вызов отклоняет правило.
+        // Запрос с intent отменяется через Stripe (W-16, PaymentRequestsTest); без ключей Stripe — остаётся cancelling.
         $intent = PaymentRequest::create(['public_id' => (string) Str::uuid(), 'order_id' => $order->id, 'amount' => 1000, 'currency' => 'EUR', 'state' => PaymentRequest::PENDING, 'stripe_intent_id' => 'pi_test_not_real']);
-        $card->call('cancelRequest', $intent->id)->assertSee(__('orders.workflow.request_not_cancellable'));
-        $this->assertSame(PaymentRequest::PENDING, $intent->fresh()->state);
+        $card->call('cancelRequest', $intent->id)->assertSee(__('admin.orders.done.stripe_error'));
+        $this->assertSame(PaymentRequest::CANCELLING, $intent->fresh()->state);
         // Запрос другого заказа — 404.
         $other = PaymentRequest::create(['public_id' => (string) Str::uuid(), 'order_id' => $this->order()->id, 'amount' => 1000, 'currency' => 'EUR', 'state' => PaymentRequest::PENDING]);
         $card->call('cancelRequest', $other->id)->assertStatus(404);

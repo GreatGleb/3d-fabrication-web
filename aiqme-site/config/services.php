@@ -44,4 +44,15 @@ return [
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
     ],
 
+    /*
+    | Stripe (W-16, §3.3, §5.5): публикуемый ключ для Payment Element и секретный ключ API — только в .env, свои для
+    | каждой среды (test вне рабочей среды, live — только в production). Не заданы — «оплата временно недоступна».
+    | timeout — секунд на вызов API (вызов всегда вне транзакции БД, §2.6).
+    */
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'timeout' => (int) env('STRIPE_TIMEOUT', 20),
+    ],
+
 ];

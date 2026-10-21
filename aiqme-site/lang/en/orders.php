@@ -19,6 +19,7 @@ return [
         'request_too_large' => 'The payment request exceeds the unpaid amount not covered by open requests.',
         'request_rest_too_small' => 'The amount left after this request must be 0 or at least 0.50 EUR.',
         'request_not_cancellable' => 'This payment request cannot be cancelled here.',
+        'request_not_checkable' => 'Status can be checked in Stripe only for a request being checked, being cancelled or open with a started payment.',
         'stage_invalid' => 'This stage change is not allowed.',
         'debt_unconfirmed' => 'The order is not fully paid. Confirm starting production with an outstanding balance.',
         'tracking_required' => 'Enter the carrier and the tracking number.',

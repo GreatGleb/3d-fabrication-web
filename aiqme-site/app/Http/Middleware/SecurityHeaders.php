@@ -11,7 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
  * Заголовки безопасности §6.6 на всех ответах: CSP (enforce) с nonce на каждый ответ, nosniff, Referrer-Policy.
  * Nonce получают теги Vite и Livewire (Vite::useCspNonce); <script>/<style> без nonce браузер блокирует.
  * 'unsafe-eval' — признанный компромисс §6.6 (Alpine в Livewire 3.8.10); style-src-attr 'unsafe-inline' — атрибуты
- * style="…" прототипа и Livewire. Домены Stripe добавляет W-16. Dev-сервер Vite (`npm run dev`) политикой не разрешён:
+ * style="…" прототипа и Livewire. Домены Stripe Payment Element (W-16) — официальный список Stripe.js §6.6: скрипты
+ * js.stripe.com, фреймы (и 3D Secure hooks.stripe.com), запросы к api.stripe.com. Dev-сервер Vite (`npm run dev`) политикой не разрешён:
  * страницы проверяются на собранных ресурсах (`npm run build`).
  */
 class SecurityHeaders
@@ -34,11 +35,13 @@ class SecurityHeaders
     {
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval'",
+            "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval' https://js.stripe.com https://*.js.stripe.com",
             "style-src 'self' 'nonce-{$nonce}'",
             "style-src-elem 'self' 'nonce-{$nonce}'",
             "style-src-attr 'unsafe-inline'",
             "img-src 'self' data:",
+            'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com',
+            "connect-src 'self' https://api.stripe.com",
             "frame-ancestors 'none'",
             "object-src 'none'",
             "base-uri 'self'",

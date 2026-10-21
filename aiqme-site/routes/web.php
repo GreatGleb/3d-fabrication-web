@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Account\CheckoutController;
 use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\LoginController;
@@ -66,6 +67,9 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
         // Гостевая страница (W-15): верный токен пишет право на заказ в сессию; подбор токена ограничен частотой по IP.
         Route::get($locale.'/'.($locale === 'lt' ? 'uzsakymas' : 'order').'/{number}/{token}', [OrderController::class, 'guest'])
             ->whereNumber('number')->middleware('throttle:guest-orders')->name($locale.'.order.guest');
+        // Страница оплаты платёжного запроса и return_url (W-16, §3.3): владелец, администратор, гость с правом в сессии.
+        Route::get($locale.'/'.($locale === 'lt' ? 'apmokejimas' : 'checkout').'/{publicId}', [CheckoutController::class, 'show'])
+            ->whereUuid('publicId')->middleware('auth.session')->name($locale.'.checkout');
     });
     // Ответ клиента на сообщение администратора (§1.3, W-15): владелец или гость с правом на заказ в сессии, иначе 404.
     Route::post($locale.'/'.($locale === 'lt' ? 'uzsakymas' : 'order').'/{number}/reply', [OrderController::class, 'reply'])

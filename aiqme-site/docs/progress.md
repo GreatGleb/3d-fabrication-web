@@ -2363,3 +2363,130 @@ AIQME site: data is not saved or sent.»; сообщение действий �
 - Объём куба 1 см³ в интерфейсе не выводится и в демо отдельно не проверялся: проверены габарит 10 × 10 × 10 и итог 5,12
   (тот же итог, что у bin/browser-check W-27 на этом кубе); объём ядра проверяют Node-тесты W-10.
 - W-16/W-17/W-28 скрывают свои блоки в демо-режиме сами; W-21 пересобирает демо и повторяет `bin/demo-check`.
+
+## W-16: Платёжные запросы и Stripe: страница оплаты, intent, отмена (локальный уровень) — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+### Сделано
+
+- `App\Domain\Payments\StripeInstallments` — граница SDK (stripe-php 16.6.0 через `PaymentIntentService` поверх
+  `StripeClientInterface`): create (сумма и валюта из `payment_requests`, `capture_method=automatic`,
+  `payment_method_types=['card']` по D-33, без `automatic_payment_methods`, metadata `request_id`/`order_id`, ключ
+  `aiqme-request-<public_id>`), retrieve, cancel, find (Search API по `metadata['request_id']`). `configured()` — оба ключа
+  заданы; ключ с `_live_` вне production не принимается (§2.6).
+- `App\Domain\Payments\PaymentRequestService` (автомат §3.3, ни одного вызова Stripe внутри `DB::transaction`):
+  - `checkout` — страница оплаты: администратор — без Payment Element и без intent; `redirect_status=succeeded|processing` —
+    «обрабатывается» без Stripe и без записи; `creating` — «проверяется» без Stripe; `paid`/`void`/`cancelling`/отменённый
+    заказ — без формы; ключи не заданы — «оплата временно недоступна» до транзакции 1; pending с intent — retrieve
+    (succeeded/processing — «обрабатывается», ничего не пишется); без intent — транзакция 1 (pending → creating, ключ,
+    `intent_first_attempt_at` только при первом переходе), create вне транзакции (любая `ApiErrorException` — таймаут, 5xx,
+    4xx — запрос остаётся creating), транзакция 2 под блокировкой (creating → pending + client_secret; отменённый заказ —
+    creating → cancelling и отмена intent; void — без изменений, intent отменяется после commit).
+  - `cancel` — без intent: `OrderWorkflow::cancelPaymentRequest` (W-13); с intent: pending → cancelling, отмена в Stripe,
+    cancelling → void с событием §5.1; `payment_intent_unexpected_state` (`InvalidRequestException`) — retrieve: succeeded с
+    latest_charge — запись оплаты, canceled — void; Stripe недоступен — остаётся cancelling; creating — поиск: найден —
+    creating → pending → cancelling → void, не найден — void.
+  - `checkStatus` («проверить статус в Stripe»): creating — поиск, не найден в 24 часа от `intent_first_attempt_at` —
+    повтор создания с тем же ключом, позже — void с `needs_review` (`intent_not_found`); cancelling — retrieve: canceled →
+    void, succeeded → оплата, отменяемый статус — повтор отмены, иначе ошибка; pending с intent — retrieve и запись оплаты.
+  - `cancelForCancelledOrder` — вызывается `OrderWorkflow::cancel` после commit: в транзакции отмены заказа pending с intent →
+    cancelling (pending без intent → void, как в W-13), затем отмена intent; creating — проверка по §3.4.
+- `App\Domain\Payments\PaymentRecorder` — внутренний сервис записи (его же использует W-28; маршрута и команды нет):
+  только status succeeded, amount_received > 0, latest_charge; под блокировкой заказа и запроса уже записанный заряд
+  (capture с тем же reference) пропускается; не EUR — без capture, `needs_review` (`currency`); иначе Lunar capture
+  (`reference` = заряд, `meta.request_id`, driver stripe), запрос → paid; `needs_review` — другой intent, другая сумма,
+  отменённый заказ (`cancelled_order`), переплата (`overpaid`). Событие §5.1 `payment.succeeded` и журнал (канал Stripe) —
+  в той же транзакции.
+- Страница оплаты `/lt/apmokejimas/<public_id>` · `/en/checkout/<public_id>` (`Account\CheckoutController`, `whereUuid`,
+  no-store, noindex): доступ — `OrderAccess::allows` (владелец, администратор, гость с правом «заказ + хеш токена»), иначе
+  404 и на HEAD (HEAD intent не создаёт). Шаблон `public/checkout` — номер заказа, сумма, Payment Element
+  (`resources/js/checkout.js`: `stripe.elements({clientSecret})`, `confirmPayment` с `return_url` = та же страница),
+  Stripe.js `https://js.stripe.com/v3/` с nonce.
+- CSP (§6.6): `script-src … https://js.stripe.com https://*.js.stripe.com`, `frame-src https://js.stripe.com
+  https://*.js.stripe.com https://hooks.stripe.com`, `connect-src 'self' https://api.stripe.com`.
+- Клиент Stripe в `AppServiceProvider`: `StripeClient` с ключом из `services.stripe.secret`, версия `ApiVersion::CURRENT`
+  (2025-02-24.acacia), `CurlClient` с таймаутом `STRIPE_TIMEOUT` (20 с). `config/services.php` и `.env.example`:
+  `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_TIMEOUT` (пустые). Секрет webhook — W-28.
+- Кнопка «Proceed to checkout» у открытых запросов (кроме cancelling) в карточке кабинета и на гостевой странице (общий
+  шаблон W-15). Админка (карточка заказа W-14): ссылка «Payment page» для заказа клиента (у гостевого — нет, гостю —
+  перевыпуск гостевой ссылки), «Cancel request» для pending и creating, «Check status in Stripe» для creating, cancelling и
+  pending с intent, метка «Needs review»; итоги Stripe выводятся сообщением. При `APP_ENV=demo` кнопка оплаты, ссылка
+  страницы оплаты и кнопки W-16 не выводятся (§8.7).
+- `bin/browser-check`: `STRIPE_KEY`/`STRIPE_SECRET` пусты; гостевая страница теперь проверяет кнопку оплаты → страница
+  оплаты (состояние unavailable, ширина, маркеры D-21, консоль) на 390/1440 и 404 в чистом браузере.
+
+### Тексты (rules[8])
+
+- Из прототипа (app.js): «Pereiti prie apmokėjimo» · «Proceed to checkout» (кнопка оплаты).
+- Нейтральные (в прототипе страница оплаты — демо-имитация, D-21): заголовок «Apmokėjimas» · «Checkout»; «Mokėjimo suma» ·
+  «Payment amount»; «Mokėti :amount» · «Pay :amount»; состояния: «Administratorius mato šį puslapį be mokėjimo formos.» ·
+  «Administrators see this page without the payment form.», «Mokėjimas apdorojamas…» · «The payment is being processed. The
+  order is updated once Stripe confirms the payment.», «Mokėjimas tikrinamas. Pabandykite vėliau.» · «The payment is being
+  checked. Please try again later.», «Ši mokėjimo užklausa apmokėta.» · «This payment request has been paid.», «Ši mokėjimo
+  užklausa uždaryta.» · «This payment request is closed.», «Apmokėjimas laikinai negalimas. Pabandykite vėliau.» · «Payment is
+  temporarily unavailable. Please try again later.»; админка: «Mokėjimo puslapis» · «Payment page», «Tikrinti būseną Stripe» ·
+  «Check status in Stripe», «Reikia patikrinti» · «Needs review», итоги `admin.orders.done.stripe_*` (paid, void, pending,
+  unchanged, error), `orders.workflow.request_not_checkable`.
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- Домены Stripe добавлены в CSP всех ответов (не только страницы оплаты) — одна политика, как в §6.6.
+- Сообщение `stripe_error` одно на все отказы Stripe (таймаут, 5xx, ключи не заданы, неотменяемый статус) — состояние
+  запроса не меняется, администратор повторяет «проверить статус».
+- После «найден по metadata.request_id» запрос становится pending (по §3.3), даже если intent уже succeeded: оплату запишет
+  следующая «проверить статус» или webhook W-28.
+- Кнопка оплаты показывается и для creating (страница покажет «проверяется»), не показывается для cancelling.
+- Ссылки «назад к заказу» на странице оплаты нет (гостевой адрес содержит токен, которого нет в сессии).
+- HEAD страницы оплаты с правом — 200 без вызова Stripe (как просмотр администратора).
+
+### Тесты эксперимента → наши
+
+- `test_checkout_is_idempotent_and_does_not_create_a_second_intent` — перенесён (GET страницы оплаты, второй GET — retrieve
+  того же intent, плюс проверка параметров create, D-33 и ключа идемпотентности).
+- `test_other_buyer_cannot_create_intent_for_someone_elses_request` — перенесён с ожиданием 404 на GET и HEAD (клиент B,
+  посетитель, гость с правом на другой гостевой заказ; заказ клиента и гостевой заказ).
+- Остальные тесты StripeInstallmentsTest эксперимента — webhook (W-28).
+
+### Проверки
+
+- `tests/Feature/PaymentRequestsTest.php` → 26/26 (404 утверждения). Мок `tests/Support/FakeStripe` реализует
+  `StripeClientInterface` под настоящими `PaymentIntentService` SDK (create/retrieve/cancel/search, идемпотентность по ключу,
+  отставание поиска, очередь отказов: таймаут `ApiConnectionException`, 4xx, `payment_intent_unexpected_state`); на каждый
+  вызов запоминает `DB::transactionLevel()`, `tearDown` каждого теста сравнивает с уровнем на начало теста (1). Покрыто:
+  запрос без Stripe; intent при первом открытии и тот же intent при повторном; параметры intent; права (404 GET/HEAD, LT/EN,
+  неизвестный public_id); гость из чистой сессии через гостевую страницу, после перевыпуска ссылки — 404; администратор без
+  Payment Element и без intent, ссылка в админке только у заказа клиента; redirect_status и paid=1 не ставят paid;
+  succeeded/processing при повторном открытии — «обрабатывается» без записи; ключи не заданы или live — «недоступна» без
+  смены состояния; таймаут и 4xx создания — creating, повторное открытие без Stripe; «проверить статус» creating: найден,
+  повтор с тем же ключом в 23 ч (`intent_first_attempt_at` не меняется), void + needs_review через 25 ч; отмена без intent и
+  с intent (cancelling → void, событие без письма), откат void при сбое записи события; таймаут отмены → cancelling, затем
+  retrieve canceled → void, отменяемый статус → повтор отмены, processing → остаётся; unexpected_state при canceled → void;
+  «уже оплачено» при отмене → paid, capture (reference, meta, сумма), событие и журнал, повторная запись пропущена, оплаченный
+  не отменяется и не проверяется; откат capture при сбое события; «проверить статус» pending с intent → capture, стадия не
+  меняется; отмена заказа: intent → cancelling → void без возврата, оплаченный intent → paid + needs_review cancelled_order,
+  creating — поиск (не найден → void, найден → отмена), Stripe недоступен → creating; транзакция 2 после отмены заказа и после
+  void — без client_secret, intent отменён; creating и cancelling резервируют сумму и блокируют changePrice; клиент не
+  отменяет и не проверяет (AuthorizationException), недопустимые переходы отклонены; карточка админки (отмена с ошибкой
+  Stripe, «проверить статус» → void, чужой запрос 404); демо-режим без блоков оплаты; CSP страницы оплаты.
+- Мутации (восстановлены, каждая роняет тесты): retrieve внутри `DB::transaction`; транзакция 2 без проверки отмены заказа;
+  повтор создания без срока 24 часа; администратор создаёт intent; redirect_status игнорируется; recorder без пропуска
+  записанного заряда; отмена заказа без вызова сервиса после commit.
+- Обновлены тесты прежних задач под новое поведение: `OrderWorkflowTest` (отмена заказа: запрос с intent → cancelling),
+  `AdminOrdersTest` (запрос с intent отменяется через Stripe; без ключей — cancelling и сообщение), `CustomerAccountTest`
+  (у открытого запроса — ссылка на страницу оплаты).
+- `pint --dirty` → passed; `bin/check` → **OK**: Pint; Node 39/39; PHPUnit 574 (570 passed, 4 skipped); Vite.
+- `bin/browser-check --signed-in /en/account` → **OK (3828 проверок)**: кабинет, карточки заказа клиента и админки, гостевая
+  страница → кнопка оплаты → страница оплаты на 390/1440 (маркеры D-21, ширина, консоль/CSP), чистый браузер — 404; кадры
+  `build/verification/browser-check/shots/checkout-390.png`, `checkout-1440.png`.
+- `git status --porcelain aiqme-site`: изменения и новые файлы только в app/, bin/browser-check, config/, lang/, resources/,
+  routes/, tests/, .env.example и docs/progress.md; бинарных файлов, .env, ключей и новых пакетов нет; experiments/ не изменён.
+
+### Не проверено
+
+- Payment Element в браузере и отсутствие нарушений CSP со Stripe.js: bin/browser-check прерывает запросы к js.stripe.com —
+  «не проверено до W-22» (уровень T: тестовые ключи, карты успеха/отказа/3DS, return_url после 3DS).
+- Реальный ответ Stripe на cancel/search/idempotency (форма ошибок, отставание поиска) — только мок; уровень T — W-22.
+- Webhook, аномалии, возвраты и выборки «на сверку» в Overview — W-28; частичный уникальный индекс `lunar_transactions
+  (reference) WHERE type = 'capture'` — W-28 (сейчас дубли заряда отсекает проверка под блокировкой строки запроса).
+- Параллельные вкладки клиента при создании intent — блокировки строк есть, отдельного теста конкурентности нет.
+- Демо-сборка `demo/` не пересобиралась (app.js получил модуль checkout; блоки оплаты в demo не выводятся — тест) — W-21.
+- Визуальный вид страницы оплаты — ждёт проверки пользователем (кадры выше; эталона прототипа для настоящей оплаты нет).

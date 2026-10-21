@@ -447,7 +447,9 @@ class OrderWorkflowTest extends TestCase
         $state = $this->state($order);
         $this->assertSame([ProductionStage::Cancelled, 'Customer changed mind'], [$state->stage, $state->cancel_reason]);
         $this->assertSame(PaymentRequest::VOID, $pending->fresh()->state);
-        $this->assertSame(PaymentRequest::PENDING, $withIntent->fresh()->state);
+        // С intent — cancelling (отмену в Stripe после commit делает W-16; без ключей Stripe запрос ждёт «проверить статус»),
+        // creating — без изменений до проверки в Stripe (PaymentRequestsTest).
+        $this->assertSame(PaymentRequest::CANCELLING, $withIntent->fresh()->state);
         $this->assertSame(PaymentRequest::CREATING, $creating->fresh()->state);
         $this->assertSame(4000, $this->flow->balance($order)['paid']);
         $this->assertSame(0, $order->transactions()->where('type', 'refund')->count());

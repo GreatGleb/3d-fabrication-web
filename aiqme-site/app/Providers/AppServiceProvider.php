@@ -17,6 +17,11 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Facades\Telemetry;
+use Stripe\ApiRequestor;
+use Stripe\HttpClient\CurlClient;
+use Stripe\StripeClient;
+use Stripe\StripeClientInterface;
+use Stripe\Util\ApiVersion;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +35,17 @@ class AppServiceProvider extends ServiceProvider
         } else {
             $this->app->scoped('lunar-panel', fn (): UnregisteredLunarPanelManager => new UnregisteredLunarPanelManager);
         }
+
+        // Клиент Stripe (W-16, §2.6): ключ из .env, версия API endpoint §5.5, таймаут вызова; тесты подменяют
+        // StripeClientInterface моком — сетевых запросов к Stripe в тестах нет.
+        $this->app->bind(StripeClientInterface::class, function (): StripeClient {
+            $http = new CurlClient;
+            $http->setTimeout(config('services.stripe.timeout'));
+            $http->setConnectTimeout(min(10, config('services.stripe.timeout')));
+            ApiRequestor::setHttpClient($http);
+
+            return new StripeClient(['api_key' => config('services.stripe.secret') ?: null, 'stripe_version' => ApiVersion::CURRENT]);
+        });
 
         // ui_text: значения из БД поверх lang/ на уровне переводчика (§4.1), __() в любом шаблоне их учитывает.
         $this->app->extend('translation.loader', fn (Loader $files): UiTextLoader => new UiTextLoader($files));
