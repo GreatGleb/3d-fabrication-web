@@ -2589,3 +2589,125 @@ užsakyme, tada pažymėkite kaip išspręstus.»; колонки «Order / Item
   вид блока — ждёт проверки пользователем.
 - Конкурентная доставка одного события (две параллельные транзакции) — опирается на `ON CONFLICT DO NOTHING` и блокировку
   строки, отдельного теста нет.
+
+## W-17: Автоматические счета — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+### Сделано
+
+- Миграция `invoices` (номер: серия + число, уникально `(series, number)`; основание выпуска — итоговый счёт заказа,
+  уникально `order_id`; вид `final`, язык, снимки `seller`/`buyer`, `net_total`/`vat_total`/`total`, `pdf_path`,
+  `issued_at`) и `invoice_lines` (описание, количество, нетто, VAT, брутто). Счётчик — строка `counters`
+  «invoices:<серия>», выдача `OrderNumber::next` (атомарный `UPDATE … RETURNING` в транзакции выпуска).
+- `App\Domain\Invoices`: `SellerSettings` (запись settings «invoices», значений по умолчанию нет — пока не сохранена,
+  выпуск блокируется), `InvoiceService::issueIfDue(order)` (под блокировкой строки заказа: счёта нет, цена подтверждена,
+  заказ не отменён, оплачено capture − refund ≥ подтверждённой цены, реквизиты полные → номер, снимки, строки, рендер PDF,
+  событие §5.1 `invoice.issued` в `integration_events` (только Sheets, без письма; `invoice_number` для строки заказа W-18),
+  последним — запись PDF в `storage/app/private/invoices/<серия>-<номер>.pdf`; любое исключение откатывает всё, номер не
+  расходуется), `InvoicePdf` (dompdf напрямую, DejaVu Sans из `dompdf/lib/fonts`, remote/PHP/JS выключены), задания
+  `IssueInvoice` (tries 5, backoff 60 с; исключение не глотается → failed_jobs → предупреждение Overview W-14) и
+  `IssuePendingInvoices` (ставит `IssueInvoice` каждому подтверждённому неотменённому заказу с capture и без счёта).
+- Точки вызова: `PaymentRecorder` — одна приватная `issueInvoiceAfterCommit()` после записи capture и refund
+  (`IssueInvoice::dispatch()->afterCommit()`); `OrderWorkflow::setPrices` (подтверждение и изменение цены) — так же;
+  `IssuePendingInvoices` — после сохранения вкладки Settings и `Schedule::job(...)->daily()` в routes/console.php.
+- VAT (D-22): из брутто каждой строки `floor(брутто × ставка / (100 + ставка) + 0,5)` целочисленно
+  (`InvoiceService::vat`), нетто = брутто − VAT; итог = сумма строк = подтверждённая цена; неплательщик — VAT 0 и пометка
+  из настроек. Ставка — одна для всех (D-34). Покупатель (D-23): имя, компания, код, VAT-код из заявки; адрес — из заявки,
+  иначе из профиля клиента, иначе без адреса.
+- Блокировка цены: `OrderWorkflow::changePrice` при выпущенном счёте — `orders.workflow.invoice_issued`.
+- Доступ: `GET|HEAD /invoices/{id}` (`InvoiceDownloadController`) — `OrderAccess::allows` (владелец, администратор, гость
+  с правом в сессии), иначе 404; attachment `<серия>-<номер>.pdf`, nosniff, private, no-store; токена в адресе нет.
+- Кабинет: вкладка Invoices — список счетов своих заказов (номер · заказ · сумма, «Download PDF»); карточка заказа
+  (кабинет и гостевая страница) и карточка заказа админки — ссылка на PDF. Overview — предупреждение «незаполненные
+  реквизиты» со ссылкой на вкладку Settings.
+- Админка: вкладка Settings (`/lt/administravimas/settings`, `/en/admin/settings`, Livewire `Admin\Settings`): название,
+  код, адрес, статус VAT (плательщик — VAT-код и ставка 1–100 %, нет — пометка), серия `[A-Z0-9]{1,10}`, первый номер.
+- Демо (§8.7): при `APP_ENV=demo` список счетов, ссылки на счёт в карточках, предупреждение о реквизитах и пункт меню
+  Settings не выводятся; `aiqme:demo-export` не берёт вкладку (`AdminController::NOT_IN_DEMO`).
+- Тесты, затронутые вкладкой: `PrototypeRoutesTest` (строка 13 — settings больше не пропускается), `AdminShellTest`
+  (меню с «Nustatymai» · «Settings»); `bin/browser-check` — settings в ADMIN_PAGES.
+
+### Тексты (rules[8])
+
+Из прототипа (app.js): «Sąskaitos» · «Invoices», «Įmonės kodas» · «Company number», «PVM mokėtojo kodas» · «VAT number»,
+«Adresas» · «Address», «Kiekis» · «Quantity», «Suma be PVM» · «Total excl. VAT», «Iš viso» · «Total»; строки счёта —
+«Pristatymas» · «Delivery» (`admin.orders.delivery`) и «Order fee» (`calculator.js.order_fee`). Демо-модалка счёта
+прототипа («Demo invoice», «Not valid for accounting», «VAT (demo)») не переносится (D-21). Нейтральные надписи (в
+прототипе нет): PDF — «Sąskaita faktūra» · «Invoice», «PVM sąskaita faktūra» · «VAT invoice», «Nr. :n» · «No. :n»,
+«Data: …» · «Date: …», «Užsakymas Nr. …» · «Order No. …», «Pardavėjas» · «Seller», «Pirkėjas» · «Buyer», «Aprašymas» ·
+«Description», «PVM :rate %» · «VAT :rate%»; кабинет — «Atsisiųsti PDF» · «Download PDF», «Sąskaita :n (PDF)» ·
+«Invoice :n (PDF)»; вкладка — «Nustatymai» · «Settings», «Sąskaitų duomenys» · «Invoice details», «Pardavėjo
+pavadinimas» · «Seller name», «PVM statusas» · «VAT status», «PVM mokėtojas» · «VAT payer», «Ne PVM mokėtojas» · «Not a
+VAT payer», «PVM tarifas, %» · «VAT rate, %», «Pastaba sąskaitoje, kai ne PVM mokėtojas» · «Invoice note when not a VAT
+payer», «Sąskaitų serija (A–Z, 0–9)» · «Invoice series (A–Z, 0–9)», «Pirmas sąskaitos numeris» · «First invoice number»,
+подсказка о первом номере и VAT в цене, «Išsaugoti» · «Save»; Overview — «Neužpildyti sąskaitų duomenys…» · «Invoice
+details are not filled in…»; блокировка цены — «Sąskaita jau išrašyta, todėl kainos keisti negalima.» · «The invoice has
+been issued, so the price cannot be changed.»; ошибки и «Saved.» — общие `admin.calculator.invalid|saved`.
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- D-04, D-05, D-22, D-23, D-34 — в вариантах по умолчанию; до рабочего выпуска нужен ответ бухгалтера (W-23).
+- Ставка VAT — целые проценты (1–100); номер показывается как «<серия>-<номер>» без ведущих нулей.
+- Первый номер действует, пока по серии не выдан ни один номер (строка счётчика создаётся первой выдачей); смена серии
+  начинает новый счётчик.
+- Дата счёта — `issued_at` в `config('app.timezone')`, как в остальных шаблонах (сейчас UTC; Europe/Vilnius из §2.5 в
+  приложении нигде не задан).
+- Сохранение реквизитов в журнал не пишется (как настройки калькулятора W-11); кредитовых счетов нет (§3.5).
+- Реквизиты продавца в счёте — название, код, VAT-код (если есть), адрес; банковских реквизитов в D-05 нет.
+- Отдельного класса `InvoiceNumberer` (§2.2) нет: используется общий `OrderNumber::next` со своим именем счётчика.
+
+### Проверки
+
+- `tests/Feature/InvoicesTest.php` → 15/15: без реквизитов счёта нет и номер не выдан, Overview предупреждает; неполные
+  реквизиты (без ставки) не сохраняются; сохранение через Livewire Settings выпускает ожидающий счёт (серия TEST, первый
+  номер 7), предупреждение пропадает; неплательщик — VAT 0 и пометка в PDF; оплата 40 + 55 EUR подписанными webhook —
+  после аванса счёта нет, затем один счёт, итог = capture − refund = цене 95 EUR, VAT 9 % по строкам 248/248/41/248
+  (= 785, нетто 8715), повтор события и задания номер не меняют; переплата 190 EUR — итог 95 EUR, `overpaid` на сверке;
+  цена снижена до оплаченного 40 EUR — счёт на 40 EUR, затем изменение цены отклонено с сообщением; отменённый оплаченный —
+  без счёта и не в «ожидающих»; webhook под `Queue::fake()` ставит `IssueInvoice`, первый ручной запуск — исключение
+  рендера (View::composer), счёта, события, номера и файла нет, второй — номер 7 и PDF, третий — без изменений; сбой
+  записи outbox `invoice.issued` откатывает выпуск (событие в той же транзакции); БД отклоняет второй счёт заказа;
+  pdftotext: LT-заявка — «PVM sąskaita faktūra», «Pristatymas», «Iš viso» и «ąčęėįšųūž», EN-заявка — «VAT invoice»,
+  «Delivery», без LT-заголовка; HTML шаблона без `http:`, `src=`, `<link`, `url(`, `@import`; адрес из заявки / из профиля /
+  без адреса (гость, самовывоз); правка профиля не меняет PDF; доступ: посетитель, клиент B и гость с правом на другой
+  гостевой заказ — 404 на GET и HEAD (заказ клиента, гостевой заказ, несуществующий id), владелец, администратор и гость с
+  правом — 200 (`application/pdf`, attachment), ссылка на гостевой странице без токена; Invoices в кабинете, карточки
+  клиента и админки показывают счёт, клиенту B — нет; при `APP_ENV=demo` ни списка, ни ссылок, ни предупреждения, ни
+  пункта меню Settings; `schedule:list` содержит `IssuePendingInvoices`.
+- pdftotext установлен (`/usr/bin/pdftotext`) — тесты с PDF не пропускались.
+- **Время генерации PDF** (InvoicePdf::render, счёт из 4 строк, A4): 95–121 мс в прогонах теста (`[W-17] invoice PDF
+  render`), в bin/check — 104 мс.
+- Мутации (по одной, восстановлены; каждая роняет InvoicesTest): без постановки задания после capture; без блокировки цены
+  после счёта; предупреждение о реквизитах в демо; без проверки «оплачено ≥ цены» (5 провалов); без проверки отмены;
+  пункт меню Settings в демо.
+- Вместе с StripeWebhook (W-28 зелёные), PaymentRequests, OrderWorkflow, AdminOrders, CustomerAccount, AdminShell,
+  DemoExport, PrototypeRoutes — зелёные.
+- `pint --dirty` → passed; `bin/check` → **OK**: Pint; Node; PHPUnit 618 (616 passed, 2 skipped — вкладка calculator в
+  PrototypeRoutesTest, как раньше); Vite. Повторный `bin/check` после исключения Settings из демо (NOT_IN_DEMO) —
+  **OK** (PHPUnit 618: 616 passed, 2 skipped).
+- `bin/browser-check --signed-in /en/account` → **OK (4010 проверок)**, включая `/lt/administravimas/settings`,
+  `/en/admin/settings` и Overview с предупреждением (поиск маркеров D-21, ширина, консоль/CSP).
+- `git status --porcelain aiqme-site`: изменения и новые файлы только в app/, bin/browser-check, database/migrations/,
+  lang/, resources/views/, routes/, tests/Feature/ и docs/progress.md; бинарных файлов, .env, ключей и новых пакетов нет
+  (dompdf — уже в дереве Lunar, §2.1); experiments/ не изменён.
+
+### Доработка после приёмки (2026-10-21)
+
+- Замечание: `bin/check` зелёный, полный `bin/browser-check` красный — `ui_text @1440: текст файла не вернулся`
+  (check_admin_editors_w26). Причина — гонка в самой проверке, а не в W-17: редактор строки интерфейса сохраняет через
+  Livewire без перезагрузки, «Saved.» первого сохранения остаётся на экране, и ожидание второго сохранения завершалось
+  сразу — шапка /en перечитывалась до записи пустого значения. Исправлено: второе сохранение ждёт ответ POST Livewire
+  (`page.expect_response`, тот же приём, что в соседних проверках), затем сообщение. Код W-17 не менялся.
+- `bin/check` → **OK**; полный `bin/browser-check` (без путей, с входом) → **OK (15194 проверок, ошибок 0)**, включая
+  `/lt/administravimas/settings`, `/en/admin/settings` и ui_text @1440.
+
+### Не проверено
+
+- Параллельная выдача номера двумя процессами одновременно не тестировалась: опирается на блокировку строки заказа
+  (`lockForUpdate`, та же, что у записи оплаты и OrderWorkflow), атомарный счётчик (параллельный тест счётчика —
+  OrderNumberConcurrencyTest W-12) и уникальные индексы `invoices (order_id)`, `(series, number)` (тест).
+- Вид PDF и вкладки Settings глазами — ждёт проверки пользователем; строка счёта в браузерной проверке не показана (в
+  данных фабрик нет реквизитов и счетов).
+- Демо-сборка (`bin/demo-build`, `bin/demo-check`) не пересобиралась: `demo/` отслеживается и пересобирается W-21;
+  вкладка Settings в экспорт не входит, блоки счетов в демо скрыты (тест).
+- Содержание счёта для бухгалтерии (обязательные реквизиты, формулировки, ставка) — до рабочего выпуска подтверждает
+  бухгалтер (D-04/D-05/D-22/D-23/D-34, W-23); Sheets-проекция номера счёта — W-18.

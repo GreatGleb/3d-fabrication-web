@@ -57,7 +57,7 @@ return [
         'hide' => 'Remove from list',
         'hidden' => 'The model was removed from the list. The order file is kept.',
     ],
-    'invoices' => ['heading' => 'Invoices', 'empty' => 'No invoices yet.'],
+    'invoices' => ['heading' => 'Invoices', 'empty' => 'No invoices yet.', 'download' => 'Download PDF'],
     'order' => [
         'title' => 'Order progress',
         'current' => 'Current status',

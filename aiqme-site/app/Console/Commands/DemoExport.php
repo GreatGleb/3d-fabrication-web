@@ -112,7 +112,7 @@ class DemoExport extends Command
         $signedIn = [
             DemoSeeder::CLIENT_EMAIL => ['lt/paskyra' => self::ACCOUNT_TABS, 'en/account' => self::ACCOUNT_TABS],
             DemoSeeder::ADMIN_EMAIL => array_fill_keys(['lt/administravimas', 'en/admin'],
-                ['', ...array_keys(AdminController::TABS), ...array_keys(AdminController::HIDDEN_TABS)]),
+                ['', ...array_diff(array_keys(AdminController::TABS), AdminController::NOT_IN_DEMO), ...array_keys(AdminController::HIDDEN_TABS)]),
         ];
         foreach ($signedIn as $email => $sections) {
             Auth::login(User::where('email', $email)->sole());

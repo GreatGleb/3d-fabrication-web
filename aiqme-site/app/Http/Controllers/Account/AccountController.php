@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Account;
 
+use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Orders\OrderWorkflow;
@@ -19,7 +20,7 @@ use Lunar\Models\Order;
 /**
  * Кабинет клиента (§1.3): вкладки прототипа Overview, Orders, Saved models, Addresses & company, Invoices. Гостю на любой
  * вкладке — форма входа (200, §4.6). Клиент видит только свои заказы (user_id заказа) и модели — STL своих заказов без
- * скрытых (W-15); скрытие файл не удаляет. Invoices — пустое состояние, список счетов наполняет W-17.
+ * скрытых (W-15); скрытие файл не удаляет. Invoices — выпущенные счета своих заказов со скачиванием PDF (W-17).
  */
 class AccountController extends Controller
 {
@@ -57,7 +58,11 @@ class AccountController extends Controller
 
     public function invoices(Request $request): View
     {
-        return $this->tab($request, 'invoices', fn (): array => []);
+        // Демо-сборка (§8.7): блока счетов нет.
+        return $this->tab($request, 'invoices', fn (User $user): array => [
+            'invoices' => app()->environment('demo') ? collect() : Invoice::whereIn('order_id', $this->ownOrders($user)->select('id'))->latest('id')->get(),
+            'numbers' => OrderMeta::whereIn('order_id', $this->ownOrders($user)->select('id'))->pluck('number', 'order_id'),
+        ]);
     }
 
     public function addresses(Request $request): View

@@ -5,6 +5,7 @@ namespace App\Domain\Payments;
 use App\Domain\Audit\AuditLog;
 use App\Domain\Audit\Channel;
 use App\Domain\Integrations\IntegrationEvents;
+use App\Domain\Invoices\IssueInvoice;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Orders\OrderWorkflow;
@@ -25,6 +26,7 @@ use Stripe\PaymentIntent;
  * без capture, на сверку; валюта не EUR — без capture, на сверку. Иначе capture на amount_received, запрос → paid из
  * любого состояния (§3.3); на сверку (needs_review с review_reason) — другой intent (пустой — только у creating),
  * order_id, сумма, отменённый заказ; переплата (оплачено за вычетом возвратов больше цены) — overpaid при любом исходе.
+ * После записи capture и refund — проверка выпуска счёта (IssueInvoice после commit, W-17).
  */
 final class PaymentRecorder
 {
@@ -81,6 +83,7 @@ final class PaymentRecorder
                 'captured_at' => now(),
                 'meta' => ['request_id' => $request->public_id, 'intent_id' => $intent->id],
             ]);
+            $this->issueInvoiceAfterCommit($order);
             $balance = $this->workflow->balance($order);
             $reason = match (true) {
                 $balance['paid'] > $balance['total'] => 'overpaid',
@@ -137,11 +140,18 @@ final class PaymentRecorder
                 'status' => 'refunded',
                 'meta' => ['request_id' => $capture->meta['request_id'] ?? null],
             ]);
+            $this->issueInvoiceAfterCommit($order);
             $this->event('payment.refunded', $request ?? $order, 'Refund recorded', $amount, ['charge' => $capture->reference]);
             AuditLog::record('payment.refunded', $order, Channel::Stripe, null, ['charge' => $capture->reference, 'amount' => $amount]);
 
             return true;
         });
+    }
+
+    /** Единственная точка вызова issueIfDue после оплаты и возврата (§3.5): задание очереди после commit записи. */
+    private function issueInvoiceAfterCommit(Order $order): void
+    {
+        IssueInvoice::dispatch($order->id)->afterCommit();
     }
 
     /**

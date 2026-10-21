@@ -7,6 +7,7 @@ return [
         'already_confirmed' => 'Kaina jau patvirtinta; keiskite ją nurodę priežastį.',
         'not_confirmed' => 'Pirmiausia patvirtinkite kainą.',
         'price_locked' => 'Pradėjus gamybą kainos keisti negalima.',
+        'invoice_issued' => 'Sąskaita jau išrašyta, todėl kainos keisti negalima.',
         'reason_required' => 'Nurodykite priežastį ir suderinimą su klientu.',
         'open_request' => 'Prieš keisdami kainą atšaukite atvirą mokėjimo užklausą.',
         'every_line' => 'Nurodykite kiekvienos eilutės kainą.',

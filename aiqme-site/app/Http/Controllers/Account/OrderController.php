@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Account;
 
+use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Orders\Models\OrderMessage;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\ProductionState;
@@ -22,7 +23,7 @@ use Lunar\Models\Order;
  * Стадии производства и отдельно оплата; состав со скачиванием STL через защищённую выдачу; сумма, оплачено, долг;
  * открытые платёжные запросы с кнопкой перехода к оплате (W-16; гость — по праву в сессии); поступившие платежи и возвраты из
  * транзакций Lunar (подтверждение аванса, D-04); доставка и трек; сообщение администратора и три ответа клиента
- * (OrderWorkflow); повторный заказ — только владельцу (калькулятор с ?models=). Счета — W-17.
+ * (OrderWorkflow); повторный заказ — только владельцу (калькулятор с ?models=); скачивание счёта (W-17).
  */
 class OrderController extends Controller
 {
@@ -85,6 +86,8 @@ class OrderController extends Controller
             'requests' => PaymentRequest::where('order_id', $order->id)->whereIn('state', PaymentRequest::OPEN)->orderBy('id')->get(),
             'payments' => $order->transactions()->whereIn('type', ['capture', 'refund'])->where('success', true)->orderBy('created_at')->orderBy('id')->get(),
             'messages' => OrderMessage::where('order_id', $order->id)->orderBy('id')->get(),
+            // Счёт (W-17) — скачивание по тем же правам (владелец, гость с правом в сессии); в демо-сборке блока нет (§8.7).
+            'invoice' => app()->environment('demo') ? null : Invoice::where('order_id', $order->id)->first(),
             'reorder' => $owner ? route(app()->getLocale().'.calculator', ['models' => $parts->map(fn ($line) => $line->purchasable->file->id)->join(',')]) : null,
         ]);
     }

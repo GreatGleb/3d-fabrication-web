@@ -15,6 +15,7 @@ return [
         'training' => 'Mokymai',
         'translations' => 'LT / EN turinys',
         'integrations' => 'Integracijos',
+        'settings' => 'Nustatymai',
         'audit' => 'Veiksmų istorija',
         'categories' => 'Kategorijos',
     ],
@@ -30,6 +31,7 @@ return [
         'orders' => 'Užsakymai',
         'all_orders' => 'Visi užsakymai ↗',
         'failed' => 'Nepavykusių foninių užduočių: :count. Patikrinkite laiškų ir lentelės pristatymo būseną ir eilės žurnalą.',
+        'seller_missing' => 'Neužpildyti sąskaitų duomenys: pardavėjo rekvizitai, PVM statusas arba sąskaitų numeracija. Kol jie neišsaugoti, sąskaitos neišrašomos.',
         // W-28: «платежи на сверку» — в прототипе нет, нейтральные надписи (docs/progress.md, W-28).
         'review' => [
             'notice' => 'Mokėjimų, kuriuos reikia patikrinti: :count. Patikrinkite juos Stripe ir užsakyme, tada pažymėkite kaip išspręstus.',
@@ -341,6 +343,23 @@ return [
         'save' => 'Išsaugoti parametrus',
         'saved' => 'Išsaugota.',
         'invalid' => 'Patikrinkite reikšmę.',
+    ],
+    // W-17: вкладки Settings в прототипе нет — нейтральные надписи, перечислены в docs/progress.md.
+    'settings' => [
+        'heading' => 'Sąskaitų duomenys',
+        'name' => 'Pardavėjo pavadinimas',
+        'company_code' => 'Įmonės kodas',
+        'vat_code' => 'PVM mokėtojo kodas',
+        'address' => 'Adresas',
+        'vat_payer' => 'PVM statusas',
+        'vat_payer_yes' => 'PVM mokėtojas',
+        'vat_payer_no' => 'Ne PVM mokėtojas',
+        'vat_rate' => 'PVM tarifas, %',
+        'vat_note' => 'Pastaba sąskaitoje, kai ne PVM mokėtojas',
+        'series' => 'Sąskaitų serija (A–Z, 0–9)',
+        'first_number' => 'Pirmas sąskaitos numeris',
+        'hint' => 'Pirmas numeris taikomas, kol neišrašyta pirmoji serijos sąskaita. Kainos nurodomos su PVM; sąskaitoje kiekvienoje eilutėje išskiriamas į kainą įskaičiuotas PVM.',
+        'save' => 'Išsaugoti',
     ],
     // W-19 из прототипа: вкладка «Integracijos», заголовок «Integracijos ir duomenų eiga», «NEPRIJUNGTA», «Telegram»;
     // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19).

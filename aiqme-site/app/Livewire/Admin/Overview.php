@@ -7,6 +7,7 @@ use App\Domain\Audit\Channel;
 use App\Domain\Forms\Models\ContactRequest;
 use App\Domain\Forms\Models\TrainingRegistration;
 use App\Domain\Integrations\Models\IntegrationEvent;
+use App\Domain\Invoices\SellerSettings;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentEvent;
@@ -26,7 +27,8 @@ use Lunar\Models\Order;
  * предупреждение о неудачных фоновых заданиях — failed_jobs и каналы outbox (письмо, Sheets) в состоянии failed
  * (§2.7, §8.4); «платежи на сверку» (W-28, §3.3 «Аномалии»): запросы с needs_review и события payment_events с
  * result = needs_review без reviewed_at, у каждого действие «разобрано» с записью в журнал; при APP_ENV=demo блока нет
- * (§8.7). Предупреждение «незаполненные реквизиты» добавляет W-17. Только администратору, иначе 404.
+ * (§8.7). Предупреждение «незаполненные реквизиты» (W-17): реквизиты продавца, VAT или нумерация не заданы — счета не
+ * выпускаются; при APP_ENV=demo его нет. Только администратору, иначе 404.
  */
 class Overview extends Component
 {
@@ -73,7 +75,7 @@ class Overview extends Component
         ]);
     }
 
-    public function render(): View
+    public function render(SellerSettings $seller): View
     {
         $stages = fn (ProductionStage ...$stages): int => DB::table('production_states')
             ->whereIn('stage', array_map(fn (ProductionStage $stage): string => $stage->value, $stages))->count();
@@ -98,6 +100,7 @@ class Overview extends Component
             'reviewRequests' => $reviewRequests,
             'reviewEvents' => $reviewEvents,
             'numbers' => OrderMeta::whereIn('order_id', $orderIds)->pluck('number', 'order_id'),
+            'sellerMissing' => ! $demo && ! $seller->complete(),
         ]);
     }
 

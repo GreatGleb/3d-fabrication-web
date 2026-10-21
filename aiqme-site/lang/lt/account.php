@@ -54,7 +54,7 @@ return [
         'hide' => 'Pašalinti iš sąrašo',
         'hidden' => 'Modelis pašalintas iš sąrašo. Užsakymo failas išsaugotas.',
     ],
-    'invoices' => ['heading' => 'Sąskaitos', 'empty' => 'Sąskaitų dar nėra.'],
+    'invoices' => ['heading' => 'Sąskaitos', 'empty' => 'Sąskaitų dar nėra.', 'download' => 'Atsisiųsti PDF'],
     'order' => [
         'title' => 'Užsakymo eiga',
         'current' => 'Dabartinė būsena',

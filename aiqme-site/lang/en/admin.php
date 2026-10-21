@@ -25,6 +25,7 @@ return [
         'training' => 'Training',
         'translations' => 'LT / EN content',
         'integrations' => 'Integrations',
+        'settings' => 'Settings',
         'audit' => 'Audit log',
         'categories' => 'Categories',
     ],
@@ -41,6 +42,7 @@ return [
         'orders' => 'Orders',
         'all_orders' => 'All orders ↗',
         'failed' => 'Failed background tasks: :count. Check the mail and table delivery status and the queue log.',
+        'seller_missing' => 'Invoice details are not filled in: seller details, VAT status or invoice numbering. Invoices are not issued until they are saved.',
         // W-28: «платежи на сверку» — в прототипе нет, нейтральные надписи (docs/progress.md, W-28).
         'review' => [
             'notice' => 'Payments to review: :count. Check them in Stripe and the order, then mark them as resolved.',
@@ -357,6 +359,23 @@ return [
         'save' => 'Save parameters',
         'saved' => 'Saved.',
         'invalid' => 'Check the value.',
+    ],
+    // W-17: вкладки Settings в прототипе нет — нейтральные надписи, перечислены в docs/progress.md.
+    'settings' => [
+        'heading' => 'Invoice details',
+        'name' => 'Seller name',
+        'company_code' => 'Company number',
+        'vat_code' => 'VAT number',
+        'address' => 'Address',
+        'vat_payer' => 'VAT status',
+        'vat_payer_yes' => 'VAT payer',
+        'vat_payer_no' => 'Not a VAT payer',
+        'vat_rate' => 'VAT rate, %',
+        'vat_note' => 'Invoice note when not a VAT payer',
+        'series' => 'Invoice series (A–Z, 0–9)',
+        'first_number' => 'First invoice number',
+        'hint' => 'The first number applies until the first invoice of the series is issued. Prices include VAT; the invoice shows the VAT included in each line.',
+        'save' => 'Save',
     ],
     // W-19 из прототипа: вкладка «Integrations», заголовок «Integrations & data flow», «NOT CONNECTED», «Telegram»;
     // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19).

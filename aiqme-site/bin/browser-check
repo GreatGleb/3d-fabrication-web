@@ -58,6 +58,8 @@ W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 �
 куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
 
 W-19: вкладка Integrations (раздел Telegram) — в ADMIN_PAGES.
+W-17: вкладка Settings (реквизиты, VAT и нумерация счетов) — в ADMIN_PAGES; Overview — с предупреждением «незаполненные
+реквизиты» (реквизитов в данных фабрик нет).
 W-11: вкладка Calculator админки — в ADMIN_PAGES; check_calculator_settings на 390 и 1440: форма без расползания и ошибок
 консоли/CSP; на 1440 габарит 300 мм сохраняется через Livewire, пометка «Not confirmed» у него снимается, /en/quote выводит
 300 в data-settings; затем габарит возвращается к 250.
@@ -127,7 +129,7 @@ ACCOUNT_PAGES = [f'/{prefix}{tab}' for prefix in ('lt/paskyra', 'en/account') fo
 ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
                                                       for tab in ('overview', 'orders', 'services', 'content', 'audit', 'products',
                                                                   'categories', 'projects', 'training', 'translations',
-                                                                  'calculator', 'customers', 'integrations')]
+                                                                  'calculator', 'customers', 'integrations', 'settings')]
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
@@ -1097,7 +1099,9 @@ def check_admin_editors_w26(report, new_page, state):
     public.goto(BASE + '/en', wait_until='networkidle')
     report.check('Our services' in public.inner_text('header'), f'{where}: правка не видна в шапке')
     page.fill('#field-values-en', '')
-    page.click('#ui-text-form button[type=submit]')
+    # «Saved.» первого сохранения остаётся на экране — ждём ответ Livewire второго, иначе шапка читается до записи.
+    with page.expect_response(lambda r: r.request.method == 'POST' and 'livewire' in r.url):
+        page.click('#ui-text-form button[type=submit]')
     page.wait_for_selector('#ui-text-form .notice.success:has-text("Saved.")')
     public.reload(wait_until='networkidle')
     report.check('Our services' not in public.inner_text('header') and 'Services' in public.inner_text('header'),

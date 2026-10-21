@@ -8,6 +8,7 @@ return [
         'already_confirmed' => 'The price is already confirmed; change it with a reason.',
         'not_confirmed' => 'Confirm the price first.',
         'price_locked' => 'The price cannot be changed after production has started.',
+        'invoice_issued' => 'The invoice has been issued, so the price cannot be changed.',
         'reason_required' => 'Enter the reason and the customer agreement.',
         'open_request' => 'Cancel the open payment request before changing the price.',
         'every_line' => 'Enter a price for every line.',

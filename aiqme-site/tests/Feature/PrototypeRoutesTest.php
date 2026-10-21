@@ -21,7 +21,7 @@ use Tests\TestCase;
  * демо-товары — 404 и после сидера (W-25); вход, регистрация, восстановление — 200, кабинет (корень и вкладка addresses) —
  * форма входа гостю и кабинет клиенту (вкладки overview, orders, models, invoices — W-15), корень админки — 200 администратору и 404 гостю и клиенту (W-07); вкладки админки
  * overview, services, content, audit — так же (W-08); products, categories, projects, training, translations (W-26);
- * integrations (W-19, раздел Telegram); orders, customers (W-14).
+ * integrations (W-19, раздел Telegram); orders, customers (W-14); settings (W-17).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -35,7 +35,7 @@ class PrototypeRoutesTest extends TestCase
         // Админка: overview, services, content, audit и корень — W-08; products, categories, projects, training,
         // translations — W-26; integrations — W-19; orders, customers — W-14; остальные вкладки — свои задачи.
         13 => [
-            'calculator' => 'W-11', 'settings' => 'W-17',
+            'calculator' => 'W-11',
         ],
     ];
 

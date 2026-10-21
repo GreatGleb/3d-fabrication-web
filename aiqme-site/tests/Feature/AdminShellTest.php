@@ -25,9 +25,9 @@ class AdminShellTest extends TestCase
     private const TABS = [
         'lt' => ['/lt/administravimas', '/lt/administravimas/overview', '/lt/administravimas/orders', '/lt/administravimas/products', '/lt/administravimas/services',
             '/lt/administravimas/calculator', '/lt/administravimas/customers', '/lt/administravimas/projects', '/lt/administravimas/content', '/lt/administravimas/training', '/lt/administravimas/translations',
-            '/lt/administravimas/integrations', '/lt/administravimas/audit'],
+            '/lt/administravimas/integrations', '/lt/administravimas/settings', '/lt/administravimas/audit'],
         'en' => ['/en/admin', '/en/admin/overview', '/en/admin/orders', '/en/admin/products', '/en/admin/services', '/en/admin/calculator', '/en/admin/customers', '/en/admin/projects', '/en/admin/content',
-            '/en/admin/training', '/en/admin/translations', '/en/admin/integrations', '/en/admin/audit'],
+            '/en/admin/training', '/en/admin/translations', '/en/admin/integrations', '/en/admin/settings', '/en/admin/audit'],
     ];
 
     protected function setUp(): void
@@ -102,8 +102,8 @@ class AdminShellTest extends TestCase
     public function test_shell_follows_the_prototype_without_demo_texts_roles_or_excluded_tabs(): void
     {
         $this->actingAs($this->admin());
-        foreach (['lt' => ['AIQME valdymo aplinka', 'Administravimo meniu', ['Apžvalga', 'Užsakymai', 'Produktai', 'Paslaugos', 'Kalkuliatorius', 'Klientai', 'Projektai', 'Informacija ir SEO', 'Mokymai', 'LT / EN turinys', 'Integracijos', 'Veiksmų istorija']],
-            'en' => ['AIQME management workspace', 'Administration menu', ['Overview', 'Orders', 'Products', 'Services', 'Calculator', 'Customers', 'Projects', 'Content &amp; SEO', 'Training', 'LT / EN content', 'Integrations', 'Audit log']]] as $locale => [$title, $menu, $tabs]) {
+        foreach (['lt' => ['AIQME valdymo aplinka', 'Administravimo meniu', ['Apžvalga', 'Užsakymai', 'Produktai', 'Paslaugos', 'Kalkuliatorius', 'Klientai', 'Projektai', 'Informacija ir SEO', 'Mokymai', 'LT / EN turinys', 'Integracijos', 'Nustatymai', 'Veiksmų istorija']],
+            'en' => ['AIQME management workspace', 'Administration menu', ['Overview', 'Orders', 'Products', 'Services', 'Calculator', 'Customers', 'Projects', 'Content &amp; SEO', 'Training', 'LT / EN content', 'Integrations', 'Settings', 'Audit log']]] as $locale => [$title, $menu, $tabs]) {
             foreach (self::TABS[$locale] as $path) {
                 $html = $this->get($path)->assertOk()->getContent();
                 $this->assertStringContainsString('<h1>'.$title.'</h1>', $html);
@@ -111,7 +111,7 @@ class AdminShellTest extends TestCase
                 $this->assertStringContainsString('class="admin-layout"', $html);
                 preg_match('~<nav class="side-nav".*?</nav>~s', $html, $nav);
                 preg_match_all('~<a[^>]*href="[^"]*/(?:administravimas|admin)/(\w+)"[^>]*>.*?</svg>\s*([^<]+?)</a>~s', $nav[0], $links);
-                $this->assertSame(['overview', 'orders', 'products', 'services', 'calculator', 'customers', 'projects', 'content', 'training', 'translations', 'integrations', 'audit'], $links[1], $path);
+                $this->assertSame(['overview', 'orders', 'products', 'services', 'calculator', 'customers', 'projects', 'content', 'training', 'translations', 'integrations', 'settings', 'audit'], $links[1], $path);
                 $this->assertSame($tabs, $links[2], $path);
                 $this->assertSame(1, substr_count($html, 'aria-current="page"'), $path);
                 foreach (['Demo administration', 'Demonstracinis administravimas', 'ADMINISTRATION DEMO', 'ADMINISTRAVIMO DEMONSTRACIJA',

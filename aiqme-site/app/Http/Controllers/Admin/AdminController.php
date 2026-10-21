@@ -23,8 +23,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * (?edit=<id>, ?new=<тип>) на одной странице, как в прототипе; translations — строки интерфейса (ui_text); audit — журнал.
  * W-08: overview, services (услуги; FAQ — W-26), content (page_text; статьи и новости — W-26), audit. W-26: products
  * (товары и бренды, панель категорий), categories (без пункта меню, как в прототипе — категории правятся из вкладки
- * товаров), projects, training, translations. W-09: заявки форм в overview и training, скачивание вложений. Остальные
- * вкладки добавляют W-17, W-18; до них их адресов нет. W-14: overview — метрики, последние заказы и предупреждение
+ * товаров), projects, training, translations. W-09: заявки форм в overview и training, скачивание вложений. W-17:
+ * settings — реквизиты продавца, VAT и нумерация счетов (Livewire Settings); остальные подключения integrations — W-18. W-14: overview — метрики, последние заказы и предупреждение
  * (Livewire Overview); orders — список, поиск и карточка заказа (?order=<id>, Livewire Orders\Index и Orders\Card);
  * customers — клиенты, карточка клиента (?customer=<id>) и гостевые контакты (Livewire Customers). W-11: calculator — настройки калькулятора (Livewire CalculatorSettings). W-19: integrations — раздел Telegram
  * (Livewire Integrations; остальные подключения — W-18).
@@ -36,8 +36,11 @@ class AdminController extends Controller
         'overview' => 'settings', 'orders' => 'settings', 'products' => 'settings', 'services' => 'settings',
         'calculator' => 'settings', 'customers' => 'settings', 'projects' => 'settings',
         'content' => 'settings', 'training' => 'settings', 'translations' => 'settings', 'integrations' => 'settings',
-        'audit' => 'settings',
+        'settings' => 'settings', 'audit' => 'settings',
     ];
+
+    /** Вкладки, которых нет в демо-сборке (§8.7): счета — W-17. */
+    public const NOT_IN_DEMO = ['settings'];
 
     /** Вкладки без пункта меню => пункт меню, который они подсвечивают. */
     public const HIDDEN_TABS = ['categories' => 'products'];
@@ -157,6 +160,11 @@ class AdminController extends Controller
     public function integrations(): View
     {
         return view('admin.integrations', ['tab' => 'integrations']);
+    }
+
+    public function settings(): View
+    {
+        return view('admin.settings', ['tab' => 'settings']);
     }
 
     public function audit(): View

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\InvoiceDownloadController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\CalculatorController;
 use App\Http\Controllers\Public\FormController;
@@ -118,6 +119,9 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
 
 // Защищённая выдача STL заказа (§6.4, W-32): владелец, администратор, гость с правом в сессии (W-15); GET, HEAD и Range.
 Route::get('stl/{stlFile}', StlDownloadController::class)->whereNumber('stlFile')->middleware('auth.session')->name('stl.download');
+
+// Скачивание PDF счёта (§3.5, W-17): владелец, администратор, гость с правом в сессии; GET и HEAD, токена в адресе нет.
+Route::get('invoices/{invoice}', InvoiceDownloadController::class)->whereNumber('invoice')->middleware('auth.session')->name('invoices.download');
 
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
 

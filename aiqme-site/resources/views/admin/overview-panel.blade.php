@@ -1,11 +1,15 @@
 {{-- Метрики и последние заказы Overview (W-14) в разметке прототипа (.grid.three .metric, .topline, orderList): метрики
      «Demo orders» и «Demo registrations» и notice «…simulated in the browser» не переносятся (D-21). «Платежи на сверку»
-     (W-28): запросы и события с needs_review, кнопка «разобрано»; блока в прототипе нет — разметка .notice и x-table. --}}
+     (W-28): запросы и события с needs_review, кнопка «разобрано»; блока в прототипе нет — разметка .notice и x-table.
+     «Незаполненные реквизиты» (W-17) — .notice со ссылкой на вкладку Settings. --}}
 @php($locale = app()->getLocale())
 @php($money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale))
 <div>
     @if ($failed > 0)
         <div class="notice warning gap" role="alert" id="overview-failed">{{ __('admin.overview.failed', ['count' => $failed]) }}</div>
+    @endif
+    @if ($sellerMissing)
+        <div class="notice warning gap" role="alert" id="overview-seller-missing">{{ __('admin.overview.seller_missing') }} <a class="text-link" href="{{ route($locale.'.admin.settings') }}">{{ __('admin.tabs.settings') }}</a></div>
     @endif
     @if ($reviewRequests->isNotEmpty() || $reviewEvents->isNotEmpty())
         <section class="gap" id="overview-payment-review">

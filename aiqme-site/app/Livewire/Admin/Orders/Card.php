@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Orders;
 
 use App\Domain\Audit\AuditLog;
+use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Orders\Models\OrderMessage;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\PriceRevision;
@@ -25,7 +26,7 @@ use Spatie\Activitylog\Models\Activity;
  * Карточка заказа во вкладке Orders (§1.4, W-14): файлы (скачивание STL — только защищённая выдача W-32), параметры и
  * пожелания, лист задания Bambu, подтверждение и изменение цены по строкам со строкой доставки, платёжные запросы, их
  * отмена и «проверить статус в Stripe» (W-16), ссылка страницы оплаты клиенту, начало производства, стадии, трек,
- * отмена заказа, сообщение клиенту и ответы клиента, перевыпуск гостевой ссылки, история. Все действия — методы
+ * отмена заказа, сообщение клиенту и ответы клиента, перевыпуск гостевой ссылки, история, скачивание счёта (W-17). Все действия — методы
  * OrderWorkflow (W-13) и PaymentRequestService (W-16): правил здесь нет, только перевод EUR в центы и подтверждение
  * опасных действий (отмена, изменение цены, начало производства при долге > 0, §3.4) вторым нажатием.
  * Каждый запрос — только администратору, иначе 404.
@@ -213,6 +214,7 @@ class Card extends Component
                 ->where('subject_id', $order->id)->orderBy('id')->get(),
             'customer' => $order->user_id === null ? null : User::find($order->user_id),
             'pickup' => $meta->delivery === 'pickup',
+            'invoice' => app()->environment('demo') ? null : Invoice::where('order_id', $order->id)->first(),
         ]);
     }
 

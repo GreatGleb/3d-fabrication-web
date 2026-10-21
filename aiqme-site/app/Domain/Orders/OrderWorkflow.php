@@ -5,6 +5,8 @@ namespace App\Domain\Orders;
 use App\Domain\Audit\AuditLog;
 use App\Domain\Audit\Channel;
 use App\Domain\Integrations\IntegrationEvents;
+use App\Domain\Invoices\IssueInvoice;
+use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Orders\Models\OrderMessage;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\PriceRevision;
@@ -69,7 +71,7 @@ final class OrderWorkflow
 
     /**
      * Изменение подтверждённой цены до начала производства: с основанием и ссылкой на согласование, без открытых платёжных
-     * запросов; новая цена не ниже оплаченного и оставляет остаток 0 или ≥ 0,50 EUR. Строка delivery меняет цену (или
+     * запросов и до выпуска счёта (W-17); новая цена не ниже оплаченного и оставляет остаток 0 или ≥ 0,50 EUR. Строка delivery меняет цену (или
      * создаётся), удалить её нельзя.
      *
      * @param  array<int, int>  $linePrices  цена в центах по id строки заказа (все строки, кроме delivery)
@@ -85,6 +87,7 @@ final class OrderWorkflow
             $this->require($state->stage === ProductionStage::Confirmed && $state->started_at === null, 'price_locked');
             $this->require(trim($reason) !== '' && trim($agreement) !== '', 'reason_required');
             $this->require(! $this->openRequests($order)->exists(), 'open_request');
+            $this->require(! Invoice::where('order_id', $order->id)->exists(), 'invoice_issued');
             $revision = $this->setPrices($admin, $order, $state, $linePrices, $delivery, trim($reason), trim($agreement));
             $this->recordOrderEvent('order.price_changed', $order, $admin, 'Price changed (revision '.$revision->revision.')', $order->total->value, [
                 'revision' => $revision->revision,
@@ -369,6 +372,8 @@ final class OrderWorkflow
         ]);
         $state->update(['revision' => $revision->revision]);
         $order->refresh();
+        // Цена изменилась — проверка выпуска счёта после commit (§3.5, W-17): например, цена снижена до оплаченного.
+        IssueInvoice::dispatch($order->id)->afterCommit();
 
         return $revision;
     }

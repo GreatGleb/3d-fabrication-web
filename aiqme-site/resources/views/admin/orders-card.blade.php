@@ -1,6 +1,6 @@
 {{-- Карточка заказа (§1.4 Orders, W-14) в разметке adminOrder() прототипа: заголовок с номером и стадией, «Files & production
      settings», notice проверки и кнопки; ниже — разделы панелей: цена, оплата, производство и трек, сообщения и ответы,
-     гостевая ссылка, отмена, история. Не переносятся (D-21, §1.4): флажок «demo approval», упаковка и ярлык, «Customer
+     гостевая ссылка, отмена, история; скачивание счёта (W-17). Не переносятся (D-21, §1.4): флажок «demo approval», упаковка и ярлык, «Customer
      view» демо-кабинета, демо-тексты листа задания и его JSON. STL — только ссылки защищённой выдачи (route stl.download). --}}
 @php
     $locale = app()->getLocale();
@@ -164,6 +164,10 @@
                 @endforelse
             </tbody>
         </x-table>
+        {{-- Счёт (W-17): скачивание PDF; в демо-сборке блока нет (§8.7). --}}
+        @if ($invoice)
+            <div class="summary-row gap" data-invoice="{{ $invoice->label() }}"><a class="text-link" href="{{ route('invoices.download', $invoice->id) }}">{{ __('invoices.download', ['number' => $invoice->label()]) }}</a><b>{{ $money($invoice->total) }}</b></div>
+        @endif
         @if ($state->confirmed_at && $stage !== \App\Domain\Orders\ProductionStage::Cancelled)
             <form class="gap" id="order-request-form" wire:submit="requestPayment">
                 <x-field name="amount" type="number" step="0.01" min="0.5" :label="__('admin.orders.amount')" :value="$amount" wire:model="amount" />

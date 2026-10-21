@@ -3,7 +3,7 @@
      delivery», кнопки. Одна и та же в кабинете (владелец, $reorder) и на гостевой странице по секретной ссылке (§6.2).
      Не переносятся (D-21): «DEMONSTRATION ORDER», notice об имитации оплаты, «Demo completed», «Demo payable total»,
      «Prepaid collection», «View demo invoice», «View the staff workflow». Кнопка оплаты открытых запросов — страница
-     оплаты W-16 (гостю — по праву в сессии), счета — W-17. STL — только защищённая выдача (route stl.download), токена в адресах файлов нет. --}}
+     оплаты W-16 (гостю — по праву в сессии), скачивание счёта — W-17 (в демо-сборке нет). STL — только защищённая выдача (route stl.download), токена в адресах файлов нет. --}}
 @php
     $locale = app()->getLocale();
     $money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale);
@@ -88,6 +88,10 @@
                         @foreach ($payments as $payment)
                             <div class="summary-row" data-transaction="{{ $payment->type }}"><span>{{ $date($payment->captured_at ?? $payment->created_at) }} · {{ __('account.order.transactions.'.$payment->type) }}</span><b>{{ $payment->type === 'refund' ? '−' : '' }}{{ $money($payment->amount->value) }}</b></div>
                         @endforeach
+                    @endif
+                    @if ($invoice)
+                        <h3 class="gap">{{ __('account.invoices.heading') }}</h3>
+                        <div class="summary-row" data-invoice="{{ $invoice->label() }}"><a class="text-link" href="{{ route('invoices.download', $invoice->id) }}">{{ __('invoices.download', ['number' => $invoice->label()]) }}</a><b>{{ $money($invoice->total) }}</b></div>
                     @endif
                     <p class="gap">{{ __('calculator.checkout.deliveries.'.$meta->delivery) }}
                         @if ($meta->address)

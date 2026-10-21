@@ -1,6 +1,7 @@
 {{-- Оболочка админки (§1.4, W-08) в оформлении прототипа: верх страницы, меню вкладок (side-nav) и область вкладки.
      Не переносятся (D-21, §1.4): вводный текст «Demo administration…», notice прототипа, ярлык «ADMINISTRATION DEMO»
-     и переключатель ролей. В меню — только созданные вкладки (остальные добавляют свои задачи). Выход — POST с CSRF. --}}
+     и переключатель ролей. В меню — только созданные вкладки (остальные добавляют свои задачи); в демо-сборке — без
+     вкладок NOT_IN_DEMO (Settings счетов, §8.7). Выход — POST с CSRF. --}}
 @php($locale = app()->getLocale())
 <x-layout :title="__('account.admin.title')" :description="__('account.admin.title')" :canonical="route($locale.'.admin'.($tab === 'overview' ? '' : '.'.$tab))"
     :languages="['lt' => route('lt.admin'.($tab === 'overview' ? '' : '.'.$tab)), 'en' => route('en.admin'.($tab === 'overview' ? '' : '.'.$tab))]" noindex>
@@ -10,6 +11,7 @@
             <nav class="side-nav" aria-label="{{ __('admin.menu') }}">
                 @php($menuTab = \App\Http\Controllers\Admin\AdminController::HIDDEN_TABS[$tab] ?? $tab)
                 @foreach (\App\Http\Controllers\Admin\AdminController::TABS as $name => $icon)
+                    @continue(app()->environment('demo') && in_array($name, \App\Http\Controllers\Admin\AdminController::NOT_IN_DEMO, true))
                     <a @class(['active' => $name === $menuTab]) href="{{ route($locale.'.admin.'.$name) }}" @if ($name === $tab) aria-current="page" @endif><x-line-icon :name="$icon" /> {{ __('admin.tabs.'.$name) }}</a>
                 @endforeach
                 <button class="btn small secondary" type="submit" form="logout-form">{{ __('account.logout') }}</button>
