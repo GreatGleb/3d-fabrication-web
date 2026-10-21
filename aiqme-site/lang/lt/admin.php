@@ -30,6 +30,14 @@ return [
         'orders' => 'Užsakymai',
         'all_orders' => 'Visi užsakymai ↗',
         'failed' => 'Nepavykusių foninių užduočių: :count. Patikrinkite laiškų ir lentelės pristatymo būseną ir eilės žurnalą.',
+        // W-28: «платежи на сверку» — в прототипе нет, нейтральные надписи (docs/progress.md, W-28).
+        'review' => [
+            'notice' => 'Mokėjimų, kuriuos reikia patikrinti: :count. Patikrinkite juos Stripe ir užsakyme, tada pažymėkite kaip išspręstus.',
+            'columns' => ['order' => 'Užsakymas', 'item' => 'Įrašas', 'reason' => 'Priežastis'],
+            'request' => 'Mokėjimo užklausa :amount',
+            'event' => 'Stripe įvykis',
+            'resolve' => 'Pažymėti kaip išspręstą',
+        ],
     ],
     'orders' => [
         'heading' => 'Užsakymai ir gamybos patikra',

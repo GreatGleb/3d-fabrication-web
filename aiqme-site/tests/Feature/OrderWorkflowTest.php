@@ -24,20 +24,24 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Support\LunarCapture;
+use Tests\Support\SignedStripeEvents;
 use Tests\TestCase;
 
 /**
  * Правила заказа (W-13, §3.2–§3.4, §9.2 «Цена и производство», платёжные запросы без intent): тесты эксперимента
  * (подтверждение, ревизии, производство без оплаты, блокировка после старта, отмена без возврата) и исправления плана.
- * «Оплачено» — только тестовая фабрика capture (LunarCapture). Заказ — штатная заявка W-12: два STL, плата за заказ 5 EUR;
+ * «Оплачено» — тестовая фабрика capture (LunarCapture); тесты с оплатой (ревизия после аванса, уменьшение ниже оплаченного,
+ * отмена без возврата) проходят и с оплатой через подписанную фикстуру webhook (W-28). Заказ — штатная заявка W-12: два STL, плата за заказ 5 EUR;
  * подтверждение по умолчанию 60 + 55 + 5 EUR и доставка 30 EUR = 150 EUR (сценарий 2 §9.3).
  */
 class OrderWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+    use SignedStripeEvents;
 
     private User $admin;
 
@@ -54,6 +58,30 @@ class OrderWorkflowTest extends TestCase
         $this->admin = User::factory()->create();
         $this->admin->forceFill(['is_admin' => true])->save();
         $this->flow = app(OrderWorkflow::class);
+        $this->useWebhookSecret();
+    }
+
+    /** @return array<string, array{string}> */
+    public static function payments(): array
+    {
+        return ['capture factory' => ['factory'], 'signed webhook' => ['webhook']];
+    }
+
+    /**
+     * Оплата $cents: фабрикой capture или подписанным payment_intent.succeeded по новому запросу (фикстура сначала
+     * сохраняет у запроса stripe_intent_id, как pi_local эксперимента: пустой intent у pending — несовпадение, §3.3).
+     */
+    private function pay(Order $order, int $cents, string $via): void
+    {
+        if ($via === 'factory') {
+            LunarCapture::create($order, $cents);
+
+            return;
+        }
+        $request = $this->flow->requestPayment($this->admin, $order, $cents);
+        $request->update(['stripe_intent_id' => 'pi_test_'.$request->id]);
+        $this->sendStripe($this->succeededPayload($request, 'evt_test_'.$request->id))->assertOk();
+        $this->assertSame([PaymentRequest::PAID, false], [$request->fresh()->state, $request->fresh()->needs_review]);
     }
 
     /** Заявка через OrderSubmission (W-12): два куба 10 мм, PLA; гость — $user = null. */
@@ -236,10 +264,11 @@ class OrderWorkflowTest extends TestCase
         $this->assertSame(13500, $order->total->value);
     }
 
-    public function test_agreed_revision_after_advance_keeps_history_and_paid_amount(): void
+    #[DataProvider('payments')]
+    public function test_agreed_revision_after_advance_keeps_history_and_paid_amount(string $payment): void
     {
         $order = $this->confirmed();
-        LunarCapture::create($order, 4000);
+        $this->pay($order, 4000, $payment);
         $order = $this->flow->changePrice($this->admin, $order, $this->prices($order, 7000, 10000, 500), 3000, 'Agreed revised specification', 'customer reply «agree»');
         $this->assertSame(20500, $order->total->value);
         $this->assertSame(['total' => 20500, 'paid' => 4000, 'due' => 16500, 'payment_state' => 'partial'], $this->flow->balance($order));
@@ -251,10 +280,11 @@ class OrderWorkflowTest extends TestCase
         $this->assertSame(3, $this->state($order)->revision);
     }
 
-    public function test_revision_below_paid_amount_is_rejected(): void
+    #[DataProvider('payments')]
+    public function test_revision_below_paid_amount_is_rejected(string $payment): void
     {
         $order = $this->confirmed();
-        LunarCapture::create($order, 14000);
+        $this->pay($order, 14000, $payment);
         $this->assertRejected('below_paid', fn () => $this->flow->changePrice($this->admin, $order, $this->prices($order, 5000, 5000, 500), 3000, 'Reduction', 'agreed'));
         $this->assertSame(15000, $this->total($order));
         $this->assertSame(1, PriceRevision::count());
@@ -433,10 +463,11 @@ class OrderWorkflowTest extends TestCase
         $this->assertSame(PaymentRequest::PENDING, $withIntent->fresh()->state, 'запрос с intent отменяет W-16');
     }
 
-    public function test_cancel_voids_pending_requests_without_intent_and_does_not_refund(): void
+    #[DataProvider('payments')]
+    public function test_cancel_voids_pending_requests_without_intent_and_does_not_refund(string $payment): void
     {
         $order = $this->confirmed();
-        LunarCapture::create($order, 4000);
+        $this->pay($order, 4000, $payment);
         $pending = $this->flow->requestPayment($this->admin, $order, 5000);
         $withIntent = $this->request($order, PaymentRequest::PENDING, 1000, 'pi_test_not_real_3');
         $creating = $this->request($order, PaymentRequest::CREATING, 1000);

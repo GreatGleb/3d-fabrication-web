@@ -41,6 +41,14 @@ return [
         'orders' => 'Orders',
         'all_orders' => 'All orders ↗',
         'failed' => 'Failed background tasks: :count. Check the mail and table delivery status and the queue log.',
+        // W-28: «платежи на сверку» — в прототипе нет, нейтральные надписи (docs/progress.md, W-28).
+        'review' => [
+            'notice' => 'Payments to review: :count. Check them in Stripe and the order, then mark them as resolved.',
+            'columns' => ['order' => 'Order', 'item' => 'Item', 'reason' => 'Reason'],
+            'request' => 'Payment request :amount',
+            'event' => 'Stripe event',
+            'resolve' => 'Mark as resolved',
+        ],
     ],
     // W-14 из прототипа: «Orders & production review», «Search by order number», «Order search», колонки списка, «Manufacturing»,
     // «Manage», названия стадий (без «Paid»), «Files & production settings», notice проверки файла, «Next stage»,

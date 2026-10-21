@@ -2490,3 +2490,102 @@ AIQME site: data is not saved or sent.»; сообщение действий �
 - Параллельные вкладки клиента при создании intent — блокировки строк есть, отдельного теста конкурентности нет.
 - Демо-сборка `demo/` не пересобиралась (app.js получил модуль checkout; блоки оплаты в demo не выводятся — тест) — W-21.
 - Визуальный вид страницы оплаты — ждёт проверки пользователем (кадры выше; эталона прототипа для настоящей оплаты нет).
+
+## W-28: Webhook Stripe: исходы, аномалии, возвраты (локальный уровень) — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+### Сделано
+
+- `POST /webhooks/stripe` (`Webhooks\StripeController`, `routes/webhooks.php` — вне группы web, без сессии, cookie и
+  CSRF-middleware). Подпись `Stripe-Signature` по сырому телу и допуск по времени (300 с) — настоящий
+  `Stripe\Webhook::constructEvent` SDK 16.6 с секретом `STRIPE_WEBHOOK_SECRET` (`services.stripe.webhook_secret`,
+  `.env.example`); не задан, неподписанное, чужой секрет, просроченная подпись, не JSON, live вне production — 400 без
+  записи. Подписанное — всегда 200.
+- Миграция `2026_10_21_600000_create_payment_events_table`: `payment_events` (PK `event_id`, `type`, `digest` SHA-256 тела —
+  только для журнала, `payment_request_id` nullable, `result` applied/ignored/rejected/needs_review, `reviewed_at`) и
+  частичный уникальный индекс `lunar_transactions (reference) WHERE type = 'capture'`; модель `PaymentEvent`.
+- `App\Domain\Payments\StripeWebhook` — одна транзакция на событие: `insertOrIgnore` + блокировка строки события; повтор
+  `event_id` (в том числе с другим телом) — без эффекта, кроме `charge.refunded` с прежним `needs_review` без `reviewed_at`
+  (обрабатывается заново). `payment_intent.succeeded`: `api_version` старше 2022-11-15 — `needs_review` без capture; денег
+  нет — `rejected` (исход 4); запрос по `metadata.request_id` не найден (или не UUID) — `needs_review` без capture и без
+  ссылки (исход 3); иначе — сервис записи W-16. `payment_intent.payment_failed` и прочие типы — `ignored`;
+  «оплата не прошла» §5.1 (+ журнал) — только по найденному неоплаченному запросу. `charge.refunded` — заряд ищется только
+  среди capture по `reference`; не найден — `needs_review`; найден — `applied`.
+- `PaymentRecorder` (сервис записи W-16, теперь возвращает исход): уже записанный заряд по этому запросу — повтор
+  (`ignored`); по другому запросу — без capture, `needs_review` у запроса события (`charge_of_another_request`); не EUR — без
+  capture, `currency` (исход 3); иначе capture на `amount_received` (`reference` = заряд, `meta.request_id`), запрос → paid из
+  любого состояния; на сверку: переплата `overpaid` (приоритетно, «при любом исходе»), `intent_mismatch` (другой intent;
+  пустой — только у creating), `order_mismatch`, `amount_mismatch` (`amount` или `amount_received`), `cancelled_order`. Пустой
+  intent запроса заполняется из события. `recordRefund` — под блокировкой заказа и запроса capture: refund =
+  `amount_refunded` − уже записанные refund этого заряда (`parent_transaction_id` = capture), ≤ 0 — без эффекта.
+  События §5.1 `payment.succeeded`, `payment.needs_review`, `payment.failed`, `payment.refunded` и журнал (канал Stripe) — в
+  той же транзакции. W-16 (`PaymentRequestService`) использует `PaymentRecorder::captured()`.
+- Overview: блок «платежи на сверку» (`#overview-payment-review`): запросы с `needs_review` и события `needs_review` без
+  `reviewed_at`, ссылка на карточку заказа, кнопка «разобрано» (`resolveRequest` снимает флаг, `state` не меняется;
+  `resolveEvent` ставит `reviewed_at`), запись в журнал (`payment.review_resolved`, `payment.event_reviewed`). При
+  `APP_ENV=demo` блок не выводится.
+
+### Тексты (rules[8])
+
+В прототипе блока сверки нет — нейтральные надписи (`admin.overview.review.*`): «Payments to review: :count. Check them in
+Stripe and the order, then mark them as resolved.» · «Mokėjimų, kuriuos reikia patikrinti: :count. Patikrinkite juos Stripe ir
+užsakyme, tada pažymėkite kaip išspręstus.»; колонки «Order / Item / Reason» · «Užsakymas / Įrašas / Priežastis»;
+«Payment request :amount» · «Mokėjimo užklausa :amount»; «Stripe event» · «Stripe įvykis»; «Mark as resolved» ·
+«Pažymėti kaip išspręstą».
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- Действие «разобрано» — только в Overview (и для запросов, и для событий без заказа), не в карточке заказа.
+- Причина сверки выводится кодом (`currency`, `overpaid`, `intent_mismatch` …), без перевода; у события — его тип.
+- `review_reason` одно поле: `overpaid` перекрывает другую причину того же capture.
+- `charge.refunded` с найденным зарядом — `applied` и тогда, когда разница ≤ 0 (буквально по §3.3).
+- Событие «на сверку» без найденного запроса (исход 3 без запроса, неизвестный заряд возврата) в `integration_events` не
+  пишется: сущность outbox — числовой id, у события — `event_id` Stripe; оно видно в Overview. Журнал «разобрано» по такому
+  событию пишется с объектом-администратором.
+- livemode «по среде»: в production принимается только live, вне production — только test.
+- Пустой intent у запроса в `void` (creating → void) при пришедшей оплате — `intent_mismatch` (пусто совпадает только у
+  creating).
+- `LunarCapture` (тестовая фабрика) теперь по умолчанию выдаёт свой заряд на каждый вызов (новый уникальный индекс);
+  `LunarSetupTest` проверяет, что единственный маршрут со «stripe» — `webhooks/stripe`.
+
+### Тесты эксперимента → наши
+
+- StripeInstallmentsTest: два intent и подписанные webhook (через страницу оплаты W-16 и FakeStripe), неверная подпись
+  (отдельный тест) и пять вариантов отдельными тестами со свежим запросом 4000 и своим `latest_charge` (amount=1, id=pi_other —
+  capture 4000, paid, needs_review; usd — без capture, needs_review у события и запроса; amount_received=0, processing —
+  rejected), failed → succeeded → поздний failed, live-событие.
+- AcceptanceTest: полная оплата, аванс и остаток (в тесте двух intent), повтор события и тот же заряд, failed/requires_action,
+  неверная сумма (только `amount` — исход 2), неверная валюта (исход 3), неверная подпись, тот же заряд по другому запросу —
+  200, без второго capture, `needs_review`.
+- W-13 (`OrderWorkflowTest`): ревизия после аванса, уменьшение ниже оплаченного, отмена без возврата — DataProvider
+  «capture factory» и «signed webhook» (фикстура сначала сохраняет `stripe_intent_id`).
+
+### Проверки
+
+- `tests/Feature/StripeWebhookTest.php` → 26/26; вместе с PaymentRequests, OrderWorkflow, AdminOrders, CustomerAccount,
+  AdminShell → 113/113. Покрыто сверх перечисленного: capture хранит заряд и `meta.request_id`, индекс отклоняет второй
+  capture того же заряда и допускает refund; другой `order_id` и пустой intent у pending — исход 2, пустой у creating —
+  applied; старая версия API; второе списание по тому же запросу — своя capture; succeeded для cancelling/void и для
+  отменённого заказа; неизвестный запрос — без ссылки; переплата `overpaid` у второго оплаченного запроса на один остаток;
+  возвраты 10 + 15 EUR, повтор и меньший `amount_refunded`, возврат второго списания по своей capture, возврат до оплаты →
+  needs_review → повтор после оплаты → refund, повтор разобранного — без эффекта; откат capture и события при сбое записи
+  outbox (500, Stripe повторит); `/stripe/webhook` — 404, вне web, без Set-Cookie и строк `sessions`, при включённом CSRF
+  webhook — 400, форма — 419; Overview: выборки, «разобрано» с журналом, повторно не разбирается, клиенту — 404, demo — без
+  блока.
+- Мутации (по одной, восстановлены; каждая роняет StripeWebhookTest): без повтора charge.refunded; без проверки livemode;
+  без overpaid; тот же заряд по тому же запросу как чужой; refund без вычета прежних; «не прошла» после paid; без проверки
+  версии API; пустой intent у pending как совпадение; блок в demo.
+- `pint --dirty` → passed; `bin/check` → **OK**: Pint; Node 39/39; PHPUnit 603 (599 passed, 4 skipped); Vite.
+- `bin/browser-check --signed-in /en/account` → **OK (3828 проверок)**, включая вкладки админки (Overview) с поиском
+  маркеров D-21.
+- `git status --porcelain aiqme-site`: изменения и новые файлы только в app/, bootstrap/, config/, database/migrations/,
+  lang/, resources/views/, routes/, tests/, .env.example и docs/progress.md; бинарных файлов, .env, ключей и новых пакетов
+  нет; experiments/ не изменён.
+
+### Не проверено
+
+- Настоящие события Stripe (форма объекта версии 2025-02-24.acacia, `stripe listen`, повтор из Dashboard, ручной возврат
+  → `charge.refunded`) — уровень T, W-22.
+- Блок «платежи на сверку» в браузере: данных сверки в bin/browser-check нет (страница Overview проверена без блока);
+  вид блока — ждёт проверки пользователем.
+- Конкурентная доставка одного события (две параллельные транзакции) — опирается на `ON CONFLICT DO NOTHING` и блокировку
+  строки, отдельного теста нет.

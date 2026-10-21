@@ -507,7 +507,7 @@ class PaymentRequestsTest extends TestCase
         $this->assertDatabaseHas('activity_log', ['event' => 'payment.succeeded', 'subject_id' => $submitted->order->id]);
 
         // Уже записанный заряд пропускается: повторная запись — без второго capture.
-        $this->assertFalse(app(PaymentRecorder::class)->recordCapture($request, PaymentIntent::constructFrom($this->stripe->intents['pi_fake_1'])));
+        $this->assertSame(PaymentRecorder::ALREADY_RECORDED, app(PaymentRecorder::class)->recordCapture($request, PaymentIntent::constructFrom($this->stripe->intents['pi_fake_1'])));
         $this->assertCount(1, $this->captures($submitted));
         $this->assertSame(1, IntegrationEvent::where('type', 'payment.succeeded')->count());
         // Оплаченный запрос не отменяется и не проверяется (недопустимые переходы).

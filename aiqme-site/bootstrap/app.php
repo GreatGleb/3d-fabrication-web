@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        // Webhook (W-19, §6.3) — вне группы web: без сессии, cookie и CSRF.
+        // Webhook (W-19, W-28, §6.3) — вне группы web: без сессии, cookie и CSRF.
         then: fn () => Route::group([], __DIR__.'/../routes/webhooks.php'),
     )
     ->withMiddleware(function (Middleware $middleware): void {

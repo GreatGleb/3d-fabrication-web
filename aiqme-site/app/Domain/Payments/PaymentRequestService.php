@@ -173,7 +173,7 @@ final class PaymentRequestService
         } catch (ApiErrorException) {
             return 'error';
         }
-        if ($this->recorder->recordCapture($request, $intent)) {
+        if (PaymentRecorder::captured($this->recorder->recordCapture($request, $intent))) {
             return PaymentRequest::PAID;
         }
         if ($request->state === PaymentRequest::PENDING) {
@@ -295,7 +295,7 @@ final class PaymentRequestService
         } catch (ApiErrorException) {
             return 'error';
         }
-        if ($this->recorder->recordCapture($request, $intent)) {
+        if (PaymentRecorder::captured($this->recorder->recordCapture($request, $intent))) {
             return PaymentRequest::PAID;
         }
 

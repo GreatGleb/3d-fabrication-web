@@ -63,7 +63,9 @@ class LunarSetupTest extends TestCase
         $this->assertSame('1.5.0', InstalledVersions::getPrettyVersion('lunarphp/core'));
         $this->assertSame('v3.8.10', InstalledVersions::getPrettyVersion('livewire/livewire'));
 
-        $this->assertFalse(collect(Route::getRoutes()->getRoutes())->contains(fn ($route) => str_contains($route->uri(), 'stripe')));
+        // Единственный маршрут Stripe — webhook AIQME (W-28, §2.1).
+        $this->assertSame(['webhooks/stripe'], collect(Route::getRoutes()->getRoutes())->map(fn ($route) => $route->uri())
+            ->filter(fn (string $uri) => str_contains($uri, 'stripe'))->values()->all());
         $this->post('/stripe/webhook')->assertNotFound();
     }
 

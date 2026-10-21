@@ -47,12 +47,14 @@ return [
     /*
     | Stripe (W-16, §3.3, §5.5): публикуемый ключ для Payment Element и секретный ключ API — только в .env, свои для
     | каждой среды (test вне рабочей среды, live — только в production). Не заданы — «оплата временно недоступна».
-    | timeout — секунд на вызов API (вызов всегда вне транзакции БД, §2.6).
+    | timeout — секунд на вызов API (вызов всегда вне транзакции БД, §2.6). webhook_secret — секрет подписи endpoint
+    | /webhooks/stripe (W-28); не задан — webhook отвечает 400 без записи.
     */
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'timeout' => (int) env('STRIPE_TIMEOUT', 20),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
 ];
