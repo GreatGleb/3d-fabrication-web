@@ -230,7 +230,7 @@ class PublicPagesTest extends TestCase
         $this->assertCount(2, $xpath->query('//ul[contains(@class, "contact-details")]//a'), 'код компании и PVM — текст, не tel:');
         $this->assertSame('Open map ↗', Html::text($xpath->query('//div[@class="contact-map"]/a')->item(0)));
         $this->assertCount(0, $xpath->query('//iframe'));
-        $this->assertSame(['name', 'company', 'email', 'phone', 'service', 'description', 'attachments[]', 'deadline'],
+        $this->assertSame(['name', 'company', 'email', 'phone', 'service', 'description', 'attachments[]', 'deadline', 'website_hp'],
             array_map(fn ($field) => $field->getAttribute('name'), iterator_to_array($xpath->query('//form[@id="contact-form"]//*[@name and @name != "_token"]'))));
         $this->assertSame(['Choose a service', '3D scanning', '3D modelling & reverse engineering', '3D printing', 'CNC machining', 'Engraving', '3D modelling training', 'Equipment quotation'],
             Html::texts($xpath, '//select[@name="service"]/option'));

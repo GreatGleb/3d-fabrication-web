@@ -34,6 +34,12 @@ document.querySelectorAll('[data-modal]').forEach((modal) => {
     });
 });
 
+// Окно, открытое сервером (ответ формы, W-09): после закрытия фокус — на кнопку, открывающую окно data-modal-return.
+const autoOpen = document.querySelector('[data-modal][data-modal-autoopen]');
+if (autoOpen) {
+    open(autoOpen, document.querySelector(`[data-modal-open="${autoOpen.dataset.modalReturn ?? autoOpen.id}"]`));
+}
+
 document.addEventListener('click', (event) => {
     const trigger = event.target.closest('[data-modal-open]');
     const modal = trigger && document.getElementById(trigger.dataset.modalOpen);

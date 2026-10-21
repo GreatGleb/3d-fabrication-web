@@ -125,7 +125,8 @@ class AdminShellTest extends TestCase
 
         $overview = $this->get('/en/admin')->getContent();
         $this->assertStringContainsString('<h2>Your working day, at a glance.</h2>', $overview);
-        $this->assertStringContainsString('Information is being prepared', $overview);
+        $this->assertStringContainsString('<h3 class="gap">Project enquiries</h3>', $overview, 'W-09: заявки формы вместо заглушки');
+        $this->assertStringContainsString('No enquiries yet.', $overview);
         $this->assertStringNotContainsString('DEMO-1047', $overview);
         $this->assertStringContainsString('<h2>Darbo diena viename vaizde.</h2>', $this->get('/lt/administravimas/overview')->getContent());
     }

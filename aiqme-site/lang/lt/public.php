@@ -55,6 +55,18 @@ return [
         'topics' => 'Mokymų temos ir datos',
         'custom' => 'Užklausti individualios programos',
         'register' => 'Registruotis į mokymą ↗',
+        'modal_title' => 'Registracija į mokymą',
+        'name' => 'Vardas *',
+        'email' => 'El. paštas *',
+        'format' => 'Dalyvavimo būdas',
+        'formats' => [
+            'online' => 'Nuotoliniu būdu',
+            'aiqme' => 'AIQME patalpose',
+        ],
+        'participants' => 'Dalyviai',
+        'submit' => 'Patvirtinti registraciją',
+        'confirmed' => 'Registracija gauta',
+        'confirmed_text' => 'AIQME gavo jūsų registraciją.',
     ],
     'projects' => [
         'service' => 'Paslauga',
@@ -130,6 +142,7 @@ return [
         'description' => 'Užduoties aprašymas *',
         'files' => 'Failai ir nuotraukos',
         'deadline' => 'Pageidaujamas terminas (neprivaloma)',
+        'sent' => 'AIQME gavo jūsų užklausą. Pridėta failų: :count.',
     ],
     'products' => [
         'filters' => 'Filtrai',
@@ -184,5 +197,20 @@ return [
     ],
     'cart' => [
         'empty' => 'Krepšelis kol kas tuščias',
+    ],
+    'forms' => [
+        'required' => 'Užpildykite šį lauką.',
+        'email' => 'Įveskite teisingą el. pašto adresą.',
+        'max' => 'Per ilga reikšmė: iki :max simbolių.',
+        'min_text' => 'Įveskite bent :min simbolių.',
+        'choice' => 'Pasirinkite reikšmę iš sąrašo.',
+        'date' => 'Įveskite teisingą datą.',
+        'files_count' => 'Ne daugiau kaip :max failų.',
+        'file_size' => 'Failas viršija :max MB ribą',
+        'file_type' => 'Netinkamas failo tipas. Leidžiami: :types.',
+        'file_content' => 'Failo turinys neatitinka jo tipo.',
+        'participants' => 'Dalyvių skaičius — nuo :min iki :max.',
+        'rejected' => 'Užklausa nepriimta. Bandykite dar kartą.',
+        'throttle' => 'Per daug užklausų. Bandykite vėliau.',
     ],
 ];

@@ -1,9 +1,12 @@
 {{-- Поле формы прототипа (label.field): input, textarea или select ($options — значение => подпись). Ошибка валидации
-     выводится под полем и связана с ним (aria-invalid, aria-describedby); значение после ошибки — old(). --}}
-@props(['name', 'label', 'type' => 'text', 'value' => null, 'options' => []])
+     выводится под полем и связана с ним (aria-invalid, aria-describedby); значение после ошибки — old(). $id — когда
+     одинаковые поля есть в нескольких формах страницы (окна регистрации на обучение). У поля name[] (файлы) — ошибки
+     name и name.*. --}}
+@props(['name', 'label', 'type' => 'text', 'value' => null, 'options' => [], 'id' => null])
 @php
-    $id = 'field-'.str_replace(['[', ']', '.'], '-', $name);
-    $error = $errors->first($name);
+    $id ??= 'field-'.str_replace(['[', ']', '.'], '-', $name);
+    $key = str_ends_with($name, '[]') ? substr($name, 0, -2) : $name;
+    $error = $errors->first($key) ?: $errors->first($key.'.*');
     $current = old($name, $value);
     $aria = $error ? ['aria-invalid' => 'true', 'aria-describedby' => $id.'-error'] : [];
 @endphp

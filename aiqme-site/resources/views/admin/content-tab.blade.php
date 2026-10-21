@@ -47,6 +47,36 @@
     @elseif ($creating)
         <livewire:admin.content-editor :type="$creating->value" :key="'editor-new-'.$creating->value" />
     @endif
+    @isset ($registrations)
+        {{-- Панель «Mokymų registracijos» · «Training registrations» прототипа (W-09): регистрации со статусом письма. --}}
+        <div class="panel gap" id="training-registrations">
+            <h3>{{ __('admin.requests.training_heading') }}</h3>
+            @if ($registrations->isEmpty())
+                <p>{{ __('admin.requests.training_empty') }}</p>
+            @else
+                <x-table>
+                    <thead><tr><th>{{ __('admin.requests.fields.time') }}</th><th>{{ __('admin.requests.fields.name') }}</th><th>{{ __('admin.requests.fields.training') }}</th><th>{{ __('admin.requests.fields.format') }}</th><th>{{ __('admin.requests.fields.participants') }}</th><th>{{ __('admin.requests.fields.mail') }}</th></tr></thead>
+                    <tbody>
+                        @foreach ($registrations as $registration)
+                            <tr>
+                                <td>{{ $registration->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                                <td>{{ $registration->name }}<br><small><a href="mailto:{{ $registration->email }}">{{ $registration->email }}</a></small></td>
+                                <td>{{ $registration->training_title }}<br><small>{{ $registration->training_date }}</small></td>
+                                <td>{{ __('public.training.formats.'.$registration->format) }}</td>
+                                <td>{{ $registration->participants }}</td>
+                                <td>
+                                    @include('admin.partials.mail-status', ['event' => $registration->event])
+                                    @if ($registration->event?->mail_error)
+                                        <br><small>{{ $registration->event->mail_error }}</small>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </x-table>
+            @endif
+        </div>
+    @endisset
     @isset ($categories)
         <div class="panel gap" id="category-list">
             <h3>{{ __('admin.sections.category') }}</h3>

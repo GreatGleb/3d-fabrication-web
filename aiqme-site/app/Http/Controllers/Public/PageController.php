@@ -24,6 +24,9 @@ class PageController extends Controller
     /** Сколько последних новостей показывает лента главной. */
     private const HOME_NEWS = 6;
 
+    /** Предел текста описания из ссылки предзаполнения контактной формы (§1.2). */
+    public const MESSAGE_MAX = 2000;
+
     public function __construct(private readonly PublishedContent $content) {}
 
     public function home(): View
@@ -68,15 +71,29 @@ class PageController extends Controller
         ]);
     }
 
-    public function contact(): View
+    /**
+     * Контакты и форма обращения. Предзаполнение по контракту §1.2 (калькулятор, товар, услуга): GET service — slug
+     * опубликованной услуги, product — slug опубликованного товара (выбор «Equipment quotation» и название товара в
+     * описании), message — текст описания до 2000 символов (длиннее обрезается). Неизвестный slug игнорируется; значения
+     * выводятся с экранированием Blade; файлы так не передаются.
+     */
+    public function contact(Request $request): View
     {
         $locale = app()->getLocale();
         $contact = $this->content->page('contact', $locale);
+        $services = $this->content->list(ContentType::Service, $locale);
+        $query = fn (string $name): string => is_string($request->query($name)) ? trim($request->query($name)) : '';
+        $product = $query('product') !== '' ? $this->content->find(ContentType::Product, $locale, $query('product')) : null;
+        $service = $services->firstWhere('slug', $query('service'))?->slug ?? ($product ? 'equipment' : null);
 
         return view('public.contact', [
             ...$this->seo('contact', $contact, $contact?->title, __('pages.contact.description')),
             'contact' => $contact,
-            'services' => $this->content->list(ContentType::Service, $locale),
+            'services' => $services,
+            'prefill' => [
+                'service' => $service,
+                'description' => implode("\n", array_filter([$product?->title, mb_substr($query('message'), 0, self::MESSAGE_MAX)])),
+            ],
         ]);
     }
 

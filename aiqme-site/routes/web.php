@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\FormController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Public\ProductController;
 use App\Http\Controllers\Public\ProjectController;
@@ -36,6 +37,9 @@ foreach (StaticPages::LOCALES as $locale) {
                     default => Route::view($segment, 'pages.static', ['page' => $page])->name($page),
                 };
             }
+            // Формы W-09: отправка на адрес своей страницы; частота по IP — общий лимит обеих форм (throttle:forms).
+            Route::post(StaticPages::segment('contact', $locale), [FormController::class, 'contact'])->middleware('throttle:forms')->name('contact.store');
+            Route::post(StaticPages::segment('training', $locale), [FormController::class, 'training'])->middleware('throttle:forms')->name('training.store');
             Route::get(StaticPages::segment('services', $locale).'/{slug}', [ServiceController::class, 'show'])->name('services.show');
             Route::get(StaticPages::segment('projects', $locale).'/{slug}', [ProjectController::class, 'show'])->name('projects.show');
             Route::get(StaticPages::segment('products', $locale).'/{slug}', [ProductController::class, 'show'])->name('products.show');
@@ -77,6 +81,8 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
             foreach ([...array_keys(AdminController::TABS), ...array_keys(AdminController::HIDDEN_TABS)] as $tab) {
                 Route::get($tab, [AdminController::class, $tab])->name($locale.'.admin.'.$tab);
             }
+            // Вложение заявки контактной формы (W-09, §6.4): только скачивание (attachment, nosniff).
+            Route::get('requests/{contactRequest}/files/{index}', [AdminController::class, 'requestFile'])->whereNumber('index')->name($locale.'.admin.request-file');
         });
 }
 

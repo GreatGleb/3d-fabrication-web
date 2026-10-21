@@ -55,6 +55,18 @@ return [
         'topics' => 'Training topics and dates',
         'custom' => 'Request a custom programme',
         'register' => 'Register for a session ↗',
+        'modal_title' => 'Register for a session',
+        'name' => 'Name *',
+        'email' => 'Email *',
+        'format' => 'Participation',
+        'formats' => [
+            'online' => 'Online',
+            'aiqme' => 'At AIQME',
+        ],
+        'participants' => 'Participants',
+        'submit' => 'Confirm registration',
+        'confirmed' => 'Registration received',
+        'confirmed_text' => 'AIQME has received your registration.',
     ],
     'projects' => [
         'service' => 'Service',
@@ -130,6 +142,7 @@ return [
         'description' => 'Describe your task *',
         'files' => 'Files & photos',
         'deadline' => 'Target date (optional)',
+        'sent' => 'AIQME has received your enquiry. Files attached: :count.',
     ],
     'products' => [
         'filters' => 'Filters',
@@ -184,5 +197,20 @@ return [
     ],
     'cart' => [
         'empty' => 'Your basket is empty',
+    ],
+    'forms' => [
+        'required' => 'Fill in this field.',
+        'email' => 'Enter a valid email address.',
+        'max' => 'Too long: up to :max characters.',
+        'min_text' => 'Enter at least :min characters.',
+        'choice' => 'Choose a value from the list.',
+        'date' => 'Enter a valid date.',
+        'files_count' => 'No more than :max files.',
+        'file_size' => 'File exceeds the :max MB limit',
+        'file_type' => 'Unsupported file type. Allowed: :types.',
+        'file_content' => 'The file content does not match its type.',
+        'participants' => 'Participants: from :min to :max.',
+        'rejected' => 'The request was not accepted. Please try again.',
+        'throttle' => 'Too many requests. Please try again later.',
     ],
 ];

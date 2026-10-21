@@ -1,5 +1,6 @@
 {{-- Контакты (§1.2): реквизиты из page_text, ссылка на карту (без встроенной карты Google: внешний сервис, CSP и D-20),
-     форма проектного обращения. Серверную обработку формы добавляет W-09; демо-надписи формы не переносятся (D-21). --}}
+     форма проектного обращения (W-09: отправка, предзаполнение $prefill по §1.2, honeypot, результат в #contact-result
+     как в прототипе). Демо-надписи формы и флажок «I understand this is a demonstration enquiry…» не переносятся (D-21). --}}
 @php
     $locale = app()->getLocale();
     $serviceOptions = ['' => __('public.contact.choose_service')]
@@ -33,7 +34,7 @@
                     </div>
                     <p class="legal-note">{{ $contact->field('visit_note') }}</p>
                 </div>
-                <form class="panel" id="contact-form" method="post" action="{{ route($locale.'.contact') }}" enctype="multipart/form-data">
+                <form class="panel" id="contact-form" method="post" action="{{ route($locale.'.contact.store') }}" enctype="multipart/form-data">
                     @csrf
                     <h2>{{ $contact->field('form_title') }}</h2>
                     <p>{{ $contact->field('form_note') }}</p>
@@ -45,11 +46,20 @@
                         <x-field name="email" type="email" :label="__('public.contact.email')" required autocomplete="email" />
                         <x-field name="phone" type="tel" :label="__('public.contact.phone')" autocomplete="tel" />
                     </div>
-                    <x-field name="service" type="select" :label="__('public.contact.service')" :options="$serviceOptions" required />
-                    <x-field name="description" type="textarea" :label="__('public.contact.description')" required minlength="10" />
+                    <x-field name="service" type="select" :label="__('public.contact.service')" :options="$serviceOptions" :value="$prefill['service']" required />
+                    <x-field name="description" type="textarea" :label="__('public.contact.description')" :value="$prefill['description']" required minlength="10" />
                     <x-field name="attachments[]" type="file" :label="__('public.contact.files')" multiple accept=".stl,.step,.stp,.obj,.pdf,.jpg,.jpeg,.png" />
                     <x-field name="deadline" type="date" :label="__('public.contact.deadline')" />
+                    @include('public.partials.honeypot')
                     <x-button type="submit" arrow>{{ $contact->field('form_submit') }}</x-button>
+                    <div id="contact-result" role="status">
+                        @if (session()->has('contact_sent'))
+                            <div class="notice success gap">{{ __('public.contact.sent', ['count' => session('contact_sent')]) }}</div>
+                        @endif
+                        @error('form')
+                            <div class="notice error gap">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </form>
             </div>
         @endif

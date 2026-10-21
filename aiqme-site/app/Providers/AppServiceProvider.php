@@ -5,8 +5,11 @@ namespace App\Providers;
 use App\Domain\Content\UiTextLoader;
 use App\Models\User;
 use App\Support\UnregisteredLunarPanelManager;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Translation\Loader;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -46,6 +49,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Временные загрузки Livewire (медиа админки) — тот же предел, что у MediaFile (§6.4); по умолчанию Livewire — 12 МБ.
         config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.config('aiqme.media_max_kb')]]);
+
+        // Формы обращений и регистрации на обучение (W-09): общий лимит отправок с одного IP в час; превышение — 429.
+        RateLimiter::for('forms', fn (Request $request): Limit => Limit::perHour(config('aiqme.forms.per_hour'))->by($request->ip()));
 
         // Пароль — не короче 8 символов (§6.3); тот же minlength в формах входа, регистрации и сброса.
         Password::defaults(fn (): Password => Password::min(8));

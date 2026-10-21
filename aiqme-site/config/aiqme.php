@@ -47,6 +47,19 @@ return [
         ],
     ],
 
+    /*
+    | Формы обращений и регистрации на обучение (W-09, §6.4): получатель письма о новой заявке (клиенту писем нет, §5.1),
+    | ограничение частоты отправок с одного IP (обе формы вместе, в час) и вложения контактной формы — до 5 файлов
+    | по 15 МиБ, расширения прототипа. Это не утверждённые производственные пределы; в админке не редактируются.
+    */
+    'forms' => [
+        'mail_to' => 'info@aiqme.com',
+        'per_hour' => (int) env('AIQME_FORMS_PER_HOUR', 10),
+        'attachments_max_files' => 5,
+        'attachments_max_kb' => 15360,
+        'attachments_extensions' => ['stl', 'step', 'stp', 'obj', 'pdf', 'jpg', 'jpeg', 'png'],
+    ],
+
     'hero_video_source' => ['text' => 'Bosch / The Apic', 'url' => 'https://www.youtube.com/watch?v=1Nd_xg8QfXo'],
 
 ];

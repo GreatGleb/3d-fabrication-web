@@ -5,19 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Audit\AuditLog;
 use App\Domain\Content\ContentType;
 use App\Domain\Content\Models\ContentItem;
+use App\Domain\Forms\Models\ContactRequest;
+use App\Domain\Forms\Models\TrainingRegistration;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Spatie\Activitylog\Models\Activity;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Вкладки админки (§1.4): заготовка Overview (корень и overview), вкладки контента — списки типов и общий редактор
  * (?edit=<id>, ?new=<тип>) на одной странице, как в прототипе; translations — строки интерфейса (ui_text); audit — журнал.
  * W-08: overview, services (услуги; FAQ — W-26), content (page_text; статьи и новости — W-26), audit. W-26: products
  * (товары и бренды, панель категорий), categories (без пункта меню, как в прототипе — категории правятся из вкладки
- * товаров), projects, training, translations. Остальные вкладки добавляют W-11, W-14, W-17, W-18; до них их адресов нет.
+ * товаров), projects, training, translations. W-09: заявки форм в overview и training, скачивание вложений. Остальные
+ * вкладки добавляют W-11, W-14, W-17, W-18; до них их адресов нет.
  */
 class AdminController extends Controller
 {
@@ -43,9 +48,33 @@ class AdminController extends Controller
     /** Группы строк интерфейса во вкладке translations (меню, подвал, страницы, формы); тексты админки не правятся. */
     public const UI_TEXT_GROUPS = ['shell', 'public', 'pages', 'account'];
 
-    public function overview(): View
+    /**
+     * Overview: заявки контактной формы (W-09) — последние 100 со статусом письма; ?request=<id> — заявка целиком
+     * с вложениями (ссылка из письма AIQME). Метрики, заказы и предупреждения добавляет W-14.
+     */
+    public function overview(Request $request): View
     {
-        return view('admin.overview', ['tab' => 'overview']);
+        return view('admin.overview', [
+            'tab' => 'overview',
+            'requests' => ContactRequest::with('event')->latest('id')->limit(100)->get(),
+            'shown' => $request->filled('request') ? ContactRequest::with('event')->findOrFail((int) $request->query('request')) : null,
+            'serviceTitles' => ContentItem::where('type', ContentType::Service)->with('translations')->get()
+                ->mapWithKeys(fn (ContentItem $service): array => [$service->key => $service->translation(app()->getLocale())?->title ?? $service->key])
+                ->put('equipment', __('public.contact.equipment')),
+        ]);
+    }
+
+    /** Вложение заявки (§6.4): непрозрачный файл — только attachment с исходным именем, nosniff и private, no-store. */
+    public function requestFile(ContactRequest $contactRequest, int $index): StreamedResponse
+    {
+        $file = $contactRequest->attachments[$index] ?? abort(404);
+        abort_unless(Storage::disk('local')->exists($file['path']), 404);
+
+        return Storage::disk('local')->download($file['path'], $file['name'], [
+            'Content-Type' => 'application/octet-stream',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     public function products(Request $request): View
@@ -75,9 +104,12 @@ class AdminController extends Controller
         return $this->contentTab($request, 'content');
     }
 
+    /** Обучение: темы (W-26) и панель «Training registrations» прототипа — регистрации со статусом письма (W-09). */
     public function training(Request $request): View
     {
-        return $this->contentTab($request, 'training');
+        return $this->contentTab($request, 'training', [
+            'registrations' => TrainingRegistration::with('event')->latest('id')->limit(100)->get(),
+        ]);
     }
 
     /** Строки интерфейса: группа (?group=), ключ на правку (?edit=<ключ>) — только строки lang/ выбранных групп. */

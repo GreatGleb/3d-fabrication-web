@@ -42,6 +42,10 @@ W-25: каталог на данных фабрик tests/browser/ (4 товар
 sitemap.xml, фильтр и пустой результат, сравнение 4 товаров (CATALOG_PAGES); выбор для сравнения на странице товаров —
 check_compare (предел 4, панель «N/4», переход на сравнение с таблицей из 4 товаров).
 
+W-09: формы на данных фабрик — контактная форма /en/contact с двумя вложениями (сообщение об успехе, письмо AIQME в
+Mailpit без вложений, письма клиенту нет) и модалка регистрации на обучение на /en/training и странице услуги обучения
+(FORM_PAGES: открытие, Escape и возврат фокуса, отправка, окно подтверждения, письмо в Mailpit).
+
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
 и отрисованы; ответы 4xx на ресурсы ловит общая проверка страницы.
@@ -91,6 +95,8 @@ ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for pre
                                                       for tab in ('overview', 'services', 'content', 'audit', 'products',
                                                                   'categories', 'projects', 'training', 'translations')]
 MAILPIT = 'http://127.0.0.1:58025'
+# Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
+FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
 # Места медиа по умолчанию D-43 (W-33): страница => селекторы (все совпадения берут файл из /defaults/).
 DEFAULT_MEDIA = {
     '/en': ['.logo img', 'main .hero-video', 'main .service-feature-media > img'],
@@ -1111,6 +1117,101 @@ def check_password_reset(report, new_page, email, state):
     return password
 
 
+def mailpit_messages(query, expected=1):
+    """Письма Mailpit по запросу поиска: ждёт expected писем до 5 с; возвращает полные сообщения."""
+    messages = []
+    for _ in range(50):
+        messages = mailpit('GET', f'/api/v1/search?query={quote(query)}').get('messages', [])
+        if len(messages) >= expected:
+            break
+        time.sleep(0.1)
+    return [mailpit('GET', f'/api/v1/message/{message["ID"]}') for message in messages]
+
+
+def check_form_mail(report, where, token, subject, client_email, expected_html):
+    """Письмо о заявке — одно, на info@aiqme.com, без вложений, с данными формы; клиенту писем нет (W-09)."""
+    messages = mailpit_messages(token)
+    if not report.check(len(messages) == 1, f'{where}: писем в Mailpit с «{token}» {len(messages)}, ожидалось 1'):
+        return
+    message = messages[0]
+    report.check([to['Address'] for to in message.get('To', [])] == ['info@aiqme.com'], f'{where}: адресаты письма {message.get("To")}')
+    report.check(message.get('Subject') == subject, f'{where}: тема письма «{message.get("Subject")}»')
+    report.check(not message.get('Attachments'), f'{where}: к письму приложены файлы')
+    for text in expected_html:
+        report.check(text in message.get('HTML', ''), f'{where}: в письме нет «{text}»')
+    report.check(not mailpit_messages(f'to:"{client_email}"', expected=0), f'{where}: письмо ушло клиенту')
+
+
+def check_contact_form(report, new_page, path, width):
+    """Контактная форма (W-09): заполнение, два вложения, отправка, сообщение в #contact-result, письмо AIQME в Mailpit."""
+    where = f'{path} @{width} форма'
+    token = 'bc' + secrets.token_hex(6)
+    email = f'{token}@example.test'
+    context, page, problems = new_page(width, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    with tempfile.TemporaryDirectory() as directory:
+        pdf = Path(directory) / 'drawing.pdf'
+        pdf.write_bytes(b'%PDF-1.4\n%browser-check\n')
+        stl = Path(directory) / 'part.stl'
+        stl.write_text('solid part\nendsolid part\n')
+        form = page.locator('#contact-form')
+        form.locator('input[name=name]').fill(f'Ona {token}')
+        form.locator('input[name=email]').fill(email)
+        form.locator('select[name=service]').select_option('3d-printing')
+        form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
+        form.locator('input[type=file]').set_input_files([str(pdf), str(stl)])
+        with page.expect_navigation(wait_until='networkidle'):
+            form.locator('button[type=submit]').click()
+    result = page.locator('#contact-result').inner_text().strip()
+    report.check(result == 'AIQME has received your enquiry. Files attached: 2.', f'{where}: результат «{result}»')
+    report.check(urlparse(page.url).path == path, f'{where}: после отправки открылся {page.url}')
+    check_form_mail(report, where, token, 'Nauja projekto užklausa', email, [f'Ona {token}', '3D printing', '<td>2</td>'])
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
+def check_training_modal(report, new_page, path, width):
+    """Модалка регистрации на обучение (W-09): кнопка темы, Escape и возврат фокуса, отправка, подтверждение, письмо."""
+    where = f'{path} @{width} регистрация'
+    token = 'bt' + secrets.token_hex(6)
+    email = f'{token}@example.test'
+    context, page, problems = new_page(width, 900)
+    page.goto(BASE + path, wait_until='networkidle')
+    button = page.locator('a[data-training="cad-basics"]')
+    modal_id = button.get_attribute('data-modal-open') or ''
+    modal = page.locator(f'#{modal_id}')
+    button.click()
+    report.check(modal.is_visible() and urlparse(page.url).path == path, f'{where}: окно не открылось или ушли со страницы')
+    report.check(page.evaluate(f"document.getElementById('{modal_id}').contains(document.activeElement)"), f'{where}: фокус не в окне')
+    report.check(modal.locator('select[name=format] option').all_inner_texts() == ['Online', 'At AIQME'], f'{where}: варианты участия')
+    page.keyboard.press('Escape')
+    report.check(not modal.is_visible(), f'{where}: Escape не закрыл окно')
+    report.check(page.evaluate(f"document.activeElement.matches('[data-modal-open=\"{modal_id}\"]')"), f'{where}: фокус не вернулся на кнопку')
+
+    button.click()
+    modal.locator('input[name=name]').fill(f'Jonas {token}')
+    modal.locator('input[name=email]').fill(email)
+    modal.locator('select[name=format]').select_option('aiqme')
+    modal.locator('input[name=participants]').fill('3')
+    with page.expect_navigation(wait_until='networkidle'):
+        modal.locator('button[type=submit]').click()
+    confirmation = page.locator('#training-confirmation')
+    report.check(urlparse(page.url).path == path, f'{where}: после отправки открылся {page.url}')
+    report.check(confirmation.is_visible(), f'{where}: окно подтверждения не открылось')
+    text = confirmation.locator('[role=status]').inner_text().strip() if confirmation.count() else ''
+    report.check(text == 'AIQME has received your registration.', f'{where}: подтверждение «{text}»')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+    page.keyboard.press('Escape')
+    report.check(not confirmation.is_visible(), f'{where}: Escape не закрыл подтверждение')
+    report.check(page.evaluate(f"document.activeElement.matches('[data-modal-open=\"{modal_id}\"]')"), f'{where}: фокус не на кнопке темы')
+    check_form_mail(report, where, token, 'Mokymų registracija', email, [f'Jonas {token}', 'CAD basics', 'AIQME patalpose', '<td>3</td>'])
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     admin_email, admin_password = accounts['admin']
     client_email, client_password = accounts['client']
@@ -1248,6 +1349,10 @@ def main():
                 if path in ('/lt/produktai', '/en/products'):
                     for width, height in ((390, 844), (1440, 1000)):
                         check_compare(report, new_page, path, width, height)
+                if path == '/en/contact':
+                    check_contact_form(report, new_page, path, FORM_PAGES[path])
+                elif path in FORM_PAGES:
+                    check_training_modal(report, new_page, path, FORM_PAGES[path])
 
                 row = {'path': path, 'shots': {}}
                 for device, (width, height) in SHOTS.items():

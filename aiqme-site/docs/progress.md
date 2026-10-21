@@ -1247,7 +1247,102 @@ commit/push.
 
 Причина (оркестратор): ночь остановлена вручную — у пользователя пропадает интернет, работа прервана на середине. Работа — в git stash «night-blocked W-09».
 
+## W-09: Формы обращений, обучение, письма и outbox — выполнено (2026-10-20, продолжение прерванной ночи)
 
-## W-09: заблокирована ночным прогоном (2026-10-20 17:20)
+Работа прошлой сессии (код без тестов и без записи здесь) восстановлена в дереве; сверена с done, доделано недостающее.
 
-Причина (оркестратор): ночь остановлена сторожем — пропал интернет, работа прервана на середине. Работа — в git stash «night-blocked W-09».
+### Сделано
+
+- **Контактная форма** (`POST /lt/kontaktai`, `/en/contact` → `FormController@contact`): поля прототипа; значение услуги —
+  slug опубликованной услуги текущей локали или `equipment`. Запись `contact_requests` и событие `integration_events` —
+  в одной транзакции (`App\Domain\Forms\FormSubmissions`); ошибка записи удаляет сохранённые файлы. Успех — сообщение в
+  `#contact-result` (место результата прототипа): «AIQME has received your enquiry. Files attached: N.» ·
+  «AIQME gavo jūsų užklausą. Pridėta failų: N.».
+- **Вложения §6.4**: до 5 файлов по 15 МиБ, расширения прототипа (`config('aiqme.forms')`); PDF/JPEG/PNG — по сигнатуре;
+  STL/STEP/OBJ не разбираются. Хранение — диск `local` (`storage/app/private/contact-requests/<UUID>`), исходное имя, размер
+  и sha256 — в `attachments`. Выдача — только администратору (`/admin/requests/{id}/files/{n}`): `attachment`,
+  `application/octet-stream`, `nosniff`, `Cache-Control: private, no-store`. Ошибки вложений выводятся под полем файлов
+  (`x-field` для `name[]` берёт ошибки `name` и `name.*` — раньше они не показывались).
+- **Регистрация на обучение**: модалка (компонент W-03, `data-modal-open` на кнопках «Register for a session ↗» W-05/W-06) на
+  странице обучения и странице услуги обучения; поля training-form (name, email, format online/aiqme, participants 1–20).
+  Запись — `training_registrations` со снимком названия и даты; ответ — возврат на ту же страницу и окно подтверждения
+  (`data-modal-autoopen`, после закрытия фокус — на кнопку темы); ошибка проверки — снова открытое окно этой темы. Без JS
+  кнопка остаётся ссылкой в контакты с услугой обучения.
+- **Предзаполнение §1.2** (`PageController@contact`): GET `service` (slug услуги локали), `product` (slug товара → выбор
+  «Equipment quotation» и название товара первой строкой описания), `message` (обрезка до 2000 символов); неизвестные slug и
+  массивы игнорируются, вывод — экранированием Blade, файлы не передаются.
+- **Honeypot** `website_hp` (вне экрана, без Tab): заполнен — ошибка формы, записи нет, ложного успеха нет.
+  **Throttle** `throttle:forms` — общий лимит обеих форм по IP, `AIQME_FORMS_PER_HOUR` (по умолчанию 10/час); 429 —
+  страница `errors/429` в разметке 404.
+- **Outbox** (`App\Domain\Integrations\IntegrationEvents`): событие с каналами `mail_status`/`sheets_status` (pending), попытки,
+  последняя ошибка, время захвата. Задание `DeliverMail` (очередь `mail`, `afterCommit`) захватывает канал одним UPDATE
+  (pending/failed или sending старше 5 минут), при 0 строк выходит, отправляет вне транзакции, ставит sent/failed (ошибка
+  транспорта — `mail_error`, заявка остаётся). `aiqme:integration-retry` в планировщике `everyFiveMinutes`: pending/failed
+  старше 5 минут (по последнему захвату или созданию) и зависшие sending. Канал sheets не обрабатывается до W-18.
+- **Письмо** `FormSubmitted` на `info@aiqme.com` (LT): тип, имя, контакты, услуга/обучение, краткое описание (≤200),
+  число вложений, ссылка в админку; Reply-To — email клиента; вложений и полного текста нет; клиенту писем нет.
+- **Админка**: Overview — заявки (последние 100) со статусом письма, `?request=<id>` — заявка целиком с вложениями и ошибкой
+  письма (ссылка из письма); вкладка Training — панель «Training registrations» прототипа со статусом письма и ошибкой.
+  Заглушка Overview «Information is being prepared» заменена списком заявок (метрики — W-14). Вместо Livewire
+  `Admin/Requests*` из touches — обычный контроллер и Blade (проще; правки заявок нет).
+
+### Простейшие решения и нейтральные надписи (прототип их не показывает) — ждут проверки пользователем
+
+- Тексты модалки и подтверждений — из прототипа без демо-слов (D-21): «Register for a session» · «Registracija į mokymą»,
+  «Confirm registration» · «Patvirtinti registraciją», «Registration received» · «Registracija gauta».
+- Нейтральные надписи: результат форм («AIQME has received your enquiry. Files attached: N.», «AIQME has received your
+  registration.» и LT), сообщения проверки `public.forms.*`, 429 «Too many requests. Please try again later.», тема письма
+  обучения «Mokymų registracija», строка письма «Priedai ir visas tekstas peržiūrimi administravimo aplinkoje.», подписи и
+  статусы админки `admin.requests.*` (заголовок «Project enquiries» · «Projekto užklausos», «No enquiries yet.»).
+  «Nauja projekto užklausa» и «Mokymų registracijos»/«No registrations yet.» — из прототипа.
+- Письмо на LT, но название услуги/обучения в нём — на языке формы (как отправил клиент), без перевода.
+- Лимит частоты 10/час и лимиты вложений — не утверждённые производственные значения (§6.4).
+
+### Проверки
+
+- Новый `tests/Feature/FormsTest.php` (15 тестов): валидная форма — запись, приватные файлы (UUID, sha256), событие
+  sent/pending и одно письмо на info@aiqme.com с Reply-To клиента без вложений; письмо реальным mailer (array): тема, адресат,
+  число вложений, без полного текста; невалидная форма и вложения (6 файлов, >15 МиБ, .exe, .svg, поддельные PDF/JPEG/PNG) —
+  ничего не сохранено и не отправлено; 5 файлов на пределе, STL/STEP/OBJ с произвольными байтами принимаются; выдача
+  вложения — гостю и клиенту 404, администратору attachment/nosniff/no-store; honeypot в обеих формах; throttle общий для форм
+  и по IP; предзаполнение (slug локали, чужой и неизвестный slug, экранирование, обрезка до 2000 по символам, product, массивы,
+  файлы не передаются); модалка на 4 страницах обучения, регистрация и окно подтверждения, ошибка — окно снова открыто;
+  отказ транспорта → заявка сохранена, канал failed с ошибкой в Overview, в заявке и во вкладке Training, sheets pending;
+  расписание `*/5 * * * *`; выбор повтора (свежие pending/failed и недавний sending не берутся, sent не трогается);
+  два задания одного события — одно письмо; захват — один UPDATE, при 0 строк больше запросов нет; зависший sending
+  подбирается; sheets не меняется.
+- **Тесты ловят поломки** (временные мутации, откачены): захват без условия статуса; повтор без условия 5 минут; исключение
+  транспорта не перехвачено; без проверки сигнатуры; изменение sheets_status при отправке — каждый раз падают 1–4 теста.
+- Обновлены `PublicPagesTest` (поле honeypot в форме), `AdminShellTest` (Overview — список заявок вместо заглушки).
+  Исправлены ошибки прерванной сессии: Blade Overview не компилировался (смешение `@php(...)` и `@php … @endphp`),
+  `x-modal` с атрибутами менял разметку компонента W-03.
+- `bin/browser-check`: новые `check_contact_form` (/en/contact @1440: два вложения, результат, письмо в Mailpit на
+  info@aiqme.com с данными и числом файлов, без вложений; писем клиенту нет) и `check_training_modal` (/en/training @1440 и
+  /en/services/3d-modelling-training @390 на обучении фабрики cad-basics: открытие, фокус в окне, Escape и возврат фокуса,
+  отправка, окно подтверждения, Escape → фокус на кнопке темы, письмо в Mailpit). Проверка ловит поломку (получатель
+  письма изменён → FAIL «адресаты письма»).
+  - `bin/browser-check /en/contact /lt/kontaktai /en/training /lt/mokymai /en/services/3d-modelling-training
+    /lt/paslaugos/3d-modeliavimo-mokymai` → **`OK (849 проверок)`** (ширины, §7.1, маркеры D-21, сверка текста, формы).
+  - `bin/browser-check --signed-in /en/contact` → **`OK (2396 проверок)`** (вход, все вкладки админки, редакторы, форма).
+- `bin/check` → **`bin/check: OK`**: Pint passed; PHPUnit **398 тестов, 380 passed, 18 skipped** (прежние пропуски §4.6);
+  Vite build OK.
+- `git status --porcelain aiqme-site`: новые файлы только в app/, database/migrations, resources/views, tests/Feature.
+
+### Не проверено
+
+- Полный `bin/browser-check` без аргументов (~14 мин, дольше предела инструмента) — выполнит проверка оркестратора.
+- Список заявок в админке в браузере проверен только пустым (вход идёт до отправки форм); с данными — Feature-тестами.
+- Ручной просмотр модалки и списков админки — **ждёт проверки пользователем**.
+- Реальный SMTP (D-15) — уровень T, не проверялся; локально — Mailpit.
+
+### Повторная сверка (2026-10-21, после остановки сторожем сети)
+
+Работа восстановлена в дереве, код сверен с done (outbox: захват одним UPDATE, повтор `everyFiveMinutes`, sheets не
+трогается; формы, вложения, предзаполнение, модалка обучения, админка) — недостающего не найдено, кода не менялось.
+Проверки перезапущены в переднем плане:
+- `bin/check` → **`bin/check: OK`** (Pint passed; PHPUnit 398 тестов, 380 passed, 18 skipped; Vite build OK).
+- `bin/browser-check /en/contact /lt/kontaktai /en/training /lt/mokymai /en/services/3d-modelling-training
+  /lt/paslaugos/3d-modeliavimo-mokymai` → **`OK (849 проверок)`**; `bin/browser-check --signed-in /en/contact` →
+  **`OK (2396 проверок)`**.
+- `git status --porcelain aiqme-site`: новые файлы только в app/, database/migrations, resources/views, tests/Feature.
+Не проверено — как выше (полный browser-check, ручной просмотр, реальный SMTP D-15).
