@@ -1413,3 +1413,88 @@ commit/push.
 
 - Паритет с PHP — задача W-11 (PHP-ядра ещё нет).
 - Работа модуля в браузере (Vite-импорт, `TextDecoder('latin1')`) — подключит W-27; здесь только Node.
+
+## W-27 «Калькулятор: 5-шаговый интерфейс» — 2026-10-21, Claude Code (ночной прогон)
+
+### Сделано
+
+- `/lt/kalkuliatorius` · `/en/quote` — `CalculatorController` (в `routes/web.php` одна строка вместо заготовки
+  `pages.static`: без неё контроллер не подключить) и `resources/views/public/calculator.blade.php`: 5 шагов прототипа
+  (Files → Production → Review → Price → Checkout), сводка справа, «Need help? / Ask a specialist ↗», окно подтверждения
+  масштаба (`x-modal`). Тексты — `lang/{lt,en}/calculator.php` (EN — states-followup/quote-*, LT/EN — пары `t()` app.js).
+- `config/aiqme.php` → `calculator`: D-09 (PLA 1,24, PETG 1,27, ABS 1,04; `'0.10'` EUR/г; плата 500 центов, за файл 0;
+  заполнение по умолчанию 20 %), D-24 (250 мм), §6.4 (25 МиБ на файл, 10 файлов). В JS — `data-settings` (JSON), тексты —
+  `data-texts`, адрес контактов — `data-contact-url`. W-11 подставит настройки админки в те же атрибуты.
+- JS: `resources/js/calculator/quote.js` — состояние без DOM (класс `Quote`): `addFile(file)` проверяет формат/размер и
+  вызывает `addBuffer(name, ArrayBuffer)` — ту же функцию, точку входа для W-15; новая модель сразу активна, поздний разбор
+  заполняет только свою запись (удалённую — не возвращает), активную не меняет; оценка — `estimate()` ядра W-10 (центы ядра);
+  `specialistMessage()` — вступление, параметры, по строке на модель, обрезка моделей с конца до 2000 символов со строкой
+  «Models not listed: N.». `parse-worker.js` — разбор в Web Worker (500 000 треугольников ≈ 1 с в основном потоке — заметная
+  блокировка); без `Worker` — в основном потоке. `index.js` — DOM (подключён в `app.js`, работает только при `#quote`).
+- Шаг 1: STL; OBJ/STEP — «:name: specialist review required.» со ссылкой на контакты (имена попадают в message); иные
+  форматы, размер > лимита (до чтения), отказ ядра — ошибка, модель не добавляется; индикатор «Reading files...». Единицы и
+  масштаб по модели, окно «Before/After». Место просмотра — `.viewer[data-viewer]` с габаритом (`data-model-id` активной
+  модели); canvas, вращение и подпись — W-31. Шаг 2: без технологии; материал из конфигурации; заполнение 20/40/60/100 +
+  умолчание, «· recommended» только у него; цвет, качество, слой, обработка, срок Standard/Priority — пожелания с подписью.
+  Шаг 3: строки моделей и «Build size limits», предупреждения `open_mesh`/`exceeds_build_size` + «Get specialist help»;
+  не блокирует. Шаг 4: Part / Quantity / Estimate; сводка — модели, плата за заказ (и за файлы, если > 0), «Estimated total»
+  с подписью; без VAT/доставки/скидки. Шаг 5: контакты, VAT number (optional), доставка ES / самовывоз (адрес скрыт);
+  кнопка отправки `disabled` с подписью, имитации успеха нет.
+- CSS (`public.css`, 2 правила): `#quote [hidden]{display:none}` (классы прототипа перекрывали hidden) и
+  `.quote-layout>div{min-width:0}` — на 390 таблица шага 4 (min-width 550) растягивала страницу до 594 px.
+
+### Нейтральные надписи и упрощения (ждут проверки пользователем)
+
+- Вводный текст: «…review a preliminary price.» · «…peržiūrėkite preliminarią kainą.» (вместо «illustrative/demonstracinę»);
+  он же meta description.
+- Шаг 1: «STL, STEP and OBJ. You can select several files.» (без «In this prototype…»); «Up to :mb MB per file. STEP files
+  require specialist review.» — число из конфигурации (25), единица «MB», как в прототипе; «Upload a model.» · «Įkelkite
+  modelį.» (без «or choose a demonstration example»); «:name: up to :max files per quote.» · «:name: daugiausia :max failų
+  vienoje užklausoje.»; ошибки файла с префиксом имени («:name: File exceeds the 25 MB limit» и др. из прототипа).
+  `triangle_count` binary > 500 000 — «Too complex for preview; specialist review», прочие отказы — «Could not read geometry».
+- Окно масштаба: «This changes the physical size and price.» · «Pasikeis fizinis gaminio dydis ir kaina.».
+- Шаг 2: «Standard»/«Priority» · «Standartinė»/«Prioritetinė»; подпись «Colour, quality level, layer height, post-processing
+  and schedule are preferences and do not change the estimate.» · «Spalva, kokybės lygis, sluoksnio aukštis, apdirbimas ir
+  darbų eiga yra pageidavimai ir sąmatos nekeičia.»; количество 1–100 (лимит ядра; в прототипе 1000).
+- Шаг 3: «:name: the model surface is not closed (open mesh).» · «:name: modelio paviršius neuždaras (atviras tinklelis).»;
+  «:name: exceeds the 250 mm machine limit.» (без «illustrative»); «Geometry read.» (первое предложение прототипа).
+  Плашка «Manufacturing analysis is illustrative…» и демо-«success» не выводятся.
+- Шаг 4: LT столбец «Sąmata» (EN «Estimate» из задачи); фразы о сроках и «real system…» не выводятся.
+- Сводка: «PRELIMINARY ESTIMATE» · «PRELIMINARI SĄMATA»; «Order fee» · «Užsakymo mokestis»; «File fee» · «Failų mokestis»;
+  LT итог «Preliminari suma»; подпись «Preliminary estimate. Delivery and the final price are confirmed by the
+  administrator.» · «Preliminari sąmata. Pristatymą ir galutinę kainą patvirtina administratorius.». Без моделей — итог 0,00.
+- Шаг 5: «You can check out without an account.» (без «Use sample data only.»); самовывоз «Collection» · «Atsiėmimas»;
+  кнопка «Submit order» · «Pateikti užsakymą» (недоступна), подпись «Order submission is not available yet.» ·
+  «Užsakymo pateikimas dar neįjungtas.». Демо-плашки НДС, предоплаты и флажок согласия не выводятся.
+- Сообщение специалисту: «Please help review these files:» (прототип), затем «FDM / PLA, Infill: 20%, Colour: …»,
+  строки «- имя: 10.0 × 10.0 × 10.0 mm · Quantity: 1»; пометка «Models not listed: N.» · «Nenurodyta modelių: N.».
+  service — slug опубликованной услуги печати (нет — без service).
+- sessionStorage для метаданных шагов не используется (план — «можно»): после перезагрузки всё заново.
+
+### Проверки
+
+- `node --test tests/js/calculator-quote.test.js` → 9/9: File = ArrayBuffer (куб, 100 % → 512 центов, «€5.12» / «5,12 €»);
+  второй файл до окончания разбора первого — активен второй и его результат (управляемые обещания); удалённая модель не
+  возвращается; OBJ/STEP/PNG/размер — без разбора; >500 000 треугольников — too_complex; лимит файлов; единицы/масштаб
+  по модели, материал/заполнение общие, итог = строки + платы; сообщение на 10 моделях (длинные имена → ≤ 2000 и «Models
+  not listed: N», короткие → все 10). Мутации (активная после позднего разбора, возврат удалённой, без обрезки) роняют тест.
+- `tests/Feature/CalculatorPageTest.php` → 7/7: data-атрибуты = конфигурация, шаги LT/EN, подпись лимита из конфигурации
+  (10 МиБ → «10 MB»), шаг 2 без технологии и список заполнения (умолчание 30 → добавлено и «rekomenduojama» только у него),
+  столбцы, итог и подпись, VAT-код, отправка disabled, нет демо-фраз/VAT/технологий, ссылка специалиста.
+- `bin/browser-check /lt/kalkuliatorius /en/quote` → **OK (417 проверок)**; `check_calculator` на 390 и 1440 при отключённом
+  canvas: ошибки, масштаб с окном, шаги 1–5, итог «5,12 €»/«€5.12» = сумма строк сводки (512), нет кнопок технологии и
+  строк VAT/доставки/скидки, VAT-код есть, отправка недоступна; открытый тетраэдр — предупреждение, переход доступен;
+  ссылка специалиста заполняет контактную форму (услуга печати, описание); крупный binary ~25 МБ (333 000 вершин) — есть
+  индикация, интервал страницы < 400 мс, куб, выбранный следом, активен. Проверено, что без Worker проверка падает
+  («нет индикации», «страница замирала на ~700 мс»). Маркеры D-21 — по каждому шагу.
+- `bin/check` → **OK**: Pint; Node 29/29; PHPUnit 405 (387 passed, 18 skipped); Vite.
+- `git status --porcelain aiqme-site`: изменены bin/browser-check, config/aiqme.php, resources/css/public.css,
+  resources/js/app.js, routes/web.php; новые — контроллер, lang calculator, resources/js/calculator/{index,quote,parse-worker}.js,
+  шаблон, 2 теста. Бинарных файлов нет, новых npm-пакетов нет.
+
+### Не проверено
+
+- Полный `bin/browser-check` (все страницы и вход) не запускался — только страницы калькулятора.
+- Вид шагов рядом с эталоном — ждёт проверки пользователем (кадры: build/verification/browser-check/report.html).
+  Пустое место просмотра до W-31 — серая рамка с габаритом.
+- Drag-and-drop проверен только кодом (браузерная проверка выбирает файлы через input).

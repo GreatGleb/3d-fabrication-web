@@ -49,6 +49,13 @@ Mailpit без вложений, письма клиенту нет) и мода
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
 и отрисованы; ответы 4xx на ресурсы ловит общая проверка страницы.
+
+W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 — check_calculator (CALCULATOR_PAGES): 5 шагов на кубе 10 мм
+из tests/fixtures/stl/ (PLA, 100 %, qty 1 → итог 5,12 = сумма строк сводки) при отключённом canvas, ошибки OBJ/STEP, формата,
+размера (25 МиБ + 1 байт) и разбора, масштаб с окном подтверждения, шаг 3 без флажка сценария и открытый тетраэдр
+(предупреждение, переход доступен), шаг 4 и сводка без VAT/доставки/скидки, поле VAT-кода шага 5, отправка недоступна,
+ссылка специалиста заполняет контактную форму; крупный binary (~25 МБ) — индикация, страница не замирает (Web Worker),
+куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
 """
 import html
 import json
@@ -57,6 +64,7 @@ import re
 import secrets
 import shutil
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -76,6 +84,7 @@ BASE = f'http://{HOST}'
 DATABASE = 'aiqme_browser'
 OUT = APP / 'build' / 'verification' / 'browser-check'
 ALLOWLIST = APP / 'tests' / 'fixtures' / 'marker-allowlist.json'
+STL_FIXTURES = APP / 'tests' / 'fixtures' / 'stl'
 TEXT_ALLOWLIST = APP / 'tests' / 'fixtures' / 'text-allowlist.json'
 BLOCKS = APP / 'tests' / 'fixtures' / 'prototype-blocks.json'
 EVIDENCE = REPO / 'docs' / 'customer-prototype' / 'evidence' / 'audit-20261016'
@@ -97,6 +106,8 @@ ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for pre
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
+# Калькулятор W-27: 5 шагов, ошибки и лимиты на 390 и 1440 (check_calculator).
+CALCULATOR_PAGES = ['/lt/kalkuliatorius', '/en/quote']
 # Места медиа по умолчанию D-43 (W-33): страница => селекторы (все совпадения берут файл из /defaults/).
 DEFAULT_MEDIA = {
     '/en': ['.logo img', 'main .hero-video', 'main .service-feature-media > img'],
@@ -1171,6 +1182,200 @@ def check_contact_form(report, new_page, path, width):
     context.close()
 
 
+def calculator_files(directory):
+    """Файлы проверки калькулятора во временном каталоге: ошибки формата и размера, крупный binary STL (~25 МБ)."""
+    directory = Path(directory)
+    cube = (STL_FIXTURES / 'cube-10mm-binary.stl').read_bytes()
+    # 41 666 копий куба со сдвигом по X: ~500 000 треугольников и ~333 000 разных вершин, как у тяжёлой реальной модели.
+    count = 500000 // 12
+    template = [struct.unpack_from('<12fH', cube, 84 + i * 50) for i in range(12)]
+    triangles = b''.join(struct.pack('<12fH', *t[:3], t[3] + dx, *t[4:6], t[6] + dx, *t[7:9], t[9] + dx, *t[10:12], 0)
+                         for dx in range(0, count * 20, 20) for t in template)
+    files = {
+        'bracket.step': b'ISO-10303-21;\n',
+        'shell.obj': b'v 0 0 0\n',
+        'photo.png': b'\x89PNG\r\n\x1a\n',
+        'too-big.stl': b'\0' * (25 * 1024 * 1024 + 1),
+        'large.stl': b'\0' * 80 + (count * 12).to_bytes(4, 'little') + triangles,
+    }
+    for name, content in files.items():
+        (directory / name).write_bytes(content)
+    return {name: str(directory / name) for name in files}
+
+
+def check_calculator(report, new_page, path, width, allowlist, files):
+    """Калькулятор W-27: 5 шагов на кубе 10 мм (PLA, 100 %, qty 1 → 5,12), ошибки формата и лимитов, масштаб с
+    подтверждением, шаг 3 без флажка сценария (открытый тетраэдр — предупреждение, переход доступен), шаги 4 и сводка без
+    VAT/доставки/скидки, поздний результат крупного файла и индикация разбора, ссылка специалиста. canvas отключён:
+    расчёт не зависит от просмотра (W-31)."""
+    en = path.startswith('/en')
+    where = f'{path} @{width} калькулятор'
+    context, page, problems = new_page(width, 1000)
+    page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
+    page.goto(BASE + path, wait_until='networkidle')
+    error = page.locator('#quote-error')
+    upload = page.locator('#model-upload')
+    next_button = page.locator('[data-next]')
+
+    def click(selector):
+        # Кнопка по центру окна: липкая шапка и cookie-плашка не перекрывают её на 390.
+        page.locator(selector).first.evaluate('(node) => node.scrollIntoView({block: "center"})')
+        page.click(selector)
+
+    def panel():
+        return page.locator('[data-step-panel]:not([hidden])')
+
+    def fits(step):
+        scroll, client = document_fits(page)
+        report.check(scroll <= client, f'{where}: шаг {step} шире окна ({scroll} > {client})')
+        for hit in marker_hits(page, path, allowlist):
+            report.check(False, f'{where}: шаг {step}: маркер {hit}')
+
+    click('[data-next]')
+    report.check(error.inner_text().strip() == ('Upload a model.' if en else 'Įkelkite modelį.'), f'{where}: без файла — «{error.inner_text()}»')
+
+    # Ошибки формата и лимитов: OBJ/STEP — к специалисту со ссылкой на контакты, иное — отказ, моделей нет.
+    upload.set_input_files([files['bracket.step'], files['shell.obj'], files['photo.png'], files['too-big.stl'],
+                            str(STL_FIXTURES / 'truncated-binary.stl')])
+    page.wait_for_function("document.querySelector('#quote-error').innerText.includes('truncated')")
+    text = error.inner_text()
+    expected = (['bracket.step: specialist review required.', 'shell.obj: specialist review required.',
+                 'photo.png: unsupported format', 'too-big.stl: File exceeds the 25 MB limit', 'truncated-binary.stl: Could not read geometry']
+                if en else ['bracket.step: reikalinga specialisto peržiūra.', 'photo.png: nepalaikomas formatas',
+                            'too-big.stl: Failas viršija 25 MB ribą', 'truncated-binary.stl: Geometrijos nuskaityti nepavyko'])
+    for phrase in expected:
+        report.check(phrase in text, f'{where}: нет ошибки «{phrase}» в «{text}»')
+    contact = error.locator('a[data-specialist]').get_attribute('href') or ''
+    report.check('/contact?' in contact or '/kontaktai?' in contact, f'{where}: ссылка специалиста в ошибке «{contact}»')
+    report.check('bracket.step' in contact, f'{where}: OBJ/STEP не попали в message ссылки')
+    report.check(page.locator('[data-files] .file-row').count() == 0, f'{where}: после ошибок появились модели')
+
+    # Куб 10 мм; масштаб: неверный — ошибка без окна, 200 % — окно «было/будет», подтверждение, затем обратно 100 %.
+    upload.set_input_files(str(STL_FIXTURES / 'cube-10mm-binary.stl'))
+    page.wait_for_selector('[data-model]:not([hidden])')
+    row = page.locator('[data-files] .file-row').inner_text()
+    report.check(('Geometry ready to view · STL' if en else 'Geometrija paruošta peržiūrai · STL') in row, f'{where}: строка файла «{row}»')
+    dims = page.locator('[data-dimensions]')
+    report.check(dims.inner_text() == '10.0 × 10.0 × 10.0 mm', f'{where}: габарит «{dims.inner_text()}»')
+    page.fill('#model-scale', '0')
+    click('[data-apply-scale]')
+    report.check(page.locator('#scale-confirm').is_hidden(), f'{where}: окно масштаба открылось при 0 %')
+    report.check(('between 1 and 1000' if en else 'nuo 1 iki 1000') in error.inner_text(), f'{where}: нет ошибки масштаба')
+    page.fill('#model-scale', '200')
+    click('[data-apply-scale]')
+    modal = page.locator('#scale-confirm')
+    report.check(modal.is_visible(), f'{where}: окно подтверждения масштаба не открылось')
+    modal_text = modal.inner_text()
+    report.check('10.0 × 10.0 × 10.0 mm' in modal_text and '20.0 × 20.0 × 20.0 mm' in modal_text, f'{where}: окно масштаба «{modal_text}»')
+    click('[data-scale-confirm]')
+    report.check(modal.is_hidden() and dims.inner_text() == '20.0 × 20.0 × 20.0 mm', f'{where}: масштаб не применён «{dims.inner_text()}»')
+    page.select_option('#model-unit', 'mm')
+    page.fill('#model-scale', '100')
+    click('[data-apply-scale]')
+    click('[data-scale-confirm]')
+    report.check(dims.inner_text() == '10.0 × 10.0 × 10.0 mm', f'{where}: масштаб 100 % не вернулся')
+    fits(1)
+
+    # Шаг 2: без кнопок технологии; PLA, заполнение 100 %, количество 1.
+    click('[data-next]')
+    report.check(page.locator('[data-step-panel="1"]').is_visible(), f'{where}: шаг 2 не открылся')
+    report.check(page.locator('.tech-choices, [data-action=technology]').count() == 0, f'{where}: на шаге 2 есть кнопки технологии')
+    for technology in ('SLA', 'SLS', 'Metal'):
+        report.check(technology not in panel().inner_text(), f'{where}: на шаге 2 есть «{technology}»')
+    page.select_option('select[name=material]', 'PLA')
+    page.select_option('select[name=infill]', '100')
+    report.check(page.locator('[data-quantity]').input_value() == '1', f'{where}: количество не 1')
+    fits(2)
+
+    # Шаг 3: флажка сценария нет, предупреждений у замкнутого куба нет.
+    click('[data-next]')
+    report.check(page.locator('#simulate-risk, [data-step-panel="2"] input[type=checkbox]').count() == 0, f'{where}: на шаге 3 есть флажок')
+    report.check(page.locator('[data-warnings]').is_hidden(), f'{where}: у куба есть предупреждения')
+    label = next_button.inner_text().strip()
+    report.check(label == ('Continue' if en else 'Tęsti'), f'{where}: кнопка шага 3 «{label}»')
+    fits(3)
+
+    # Шаг 4: столбцы, строка 0,12, итог 5,12 = сумма строк сводки, без VAT/доставки/скидки.
+    click('[data-next]')
+    headers = page.locator('[data-step-panel="3"] th').all_inner_texts()
+    report.check(headers == (['Part', 'Quantity', 'Estimate'] if en else ['Detalė', 'Kiekis', 'Sąmata']), f'{where}: столбцы {headers}')
+    cells = page.locator('[data-price-rows] td').all_inner_texts()
+    line = '€0.12' if en else '0,12 €'
+    report.check(len(cells) == 3 and cells[1] == '1' and cells[2] == line, f'{where}: строка шага 4 {cells}')
+    total = page.locator('[data-total]')
+    expected_total = '€5.12' if en else '5,12 €'
+    report.check(total.inner_text() == expected_total, f'{where}: итог «{total.inner_text()}» вместо «{expected_total}»')
+    rows = [int(c) for c in page.locator('[data-summary-rows] [data-cents]').evaluate_all('(nodes) => nodes.map((n) => n.dataset.cents)')]
+    report.check(sum(rows) == int(total.get_attribute('data-cents')) == 512, f'{where}: строки сводки {rows} ≠ итог')
+    labels = page.locator('[data-summary-rows] .summary-row span').all_inner_texts()
+    report.check(labels == ['cube-10mm-binary.stl × 1', 'Order fee' if en else 'Užsakymo mokestis'], f'{where}: строки сводки {labels}')
+    label = next_button.inner_text().strip()
+    report.check(label == ('Proceed to checkout' if en else 'Pereiti prie užsakymo'), f'{where}: кнопка шага 4 «{label}»')
+    shown = (page.locator('[data-step-panel="3"]').inner_text() + '\n' + page.locator('.quote-summary').inner_text()).lower()
+    for phrase in ('vat', 'pvm', 'delivery (', 'pristatymas (', 'shipping', 'discount', 'nuolaida', 'unit', 'vnt.'):
+        report.check(phrase not in shown, f'{where}: в шаге 4 или сводке есть «{phrase}»')
+    fits(4)
+
+    # Шаг 5: поле VAT-кода есть, отправка недоступна, кнопок технологии нет.
+    click('[data-next]')
+    report.check(page.locator('#checkout-form').is_visible(), f'{where}: шаг 5 не открылся')
+    report.check(page.locator('#checkout-form input[name=vat_code]').is_visible(), f'{where}: нет поля VAT-кода')
+    report.check(page.locator('#checkout-form button[type=submit]').is_disabled(), f'{where}: отправка доступна до W-12')
+    report.check(page.locator('[data-actions]').is_hidden(), f'{where}: на шаге 5 видны кнопки шагов')
+    page.select_option('select[name=delivery]', 'pickup')
+    report.check(page.locator('[data-address]').is_hidden(), f'{where}: адрес виден при самовывозе')
+    fits(5)
+
+    # Ссылка специалиста: контактная форма с услугой печати и описанием модели и параметров.
+    href = page.locator('.help-box a[data-specialist]').get_attribute('href')
+    page.goto(href, wait_until='networkidle')
+    description = page.locator('textarea[name=description]').input_value()
+    report.check(description.startswith('Please help review these files:' if en else 'Prašau padėti įvertinti failus:')
+                 and 'cube-10mm-binary.stl: 10.0 × 10.0 × 10.0 mm' in description and 'FDM / PLA' in description,
+                 f'{where}: описание в контактной форме «{description[:200]}»')
+    report.check(page.locator('select[name=service]').input_value() == ('3d-printing' if en else '3d-spausdinimas'), f'{where}: услуга не печать')
+
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+    # Открытый тетраэдр: предупреждение «незамкнутая сетка» на шаге 3, переход дальше доступен.
+    context, page, problems = new_page(width, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    page.locator('#model-upload').set_input_files(str(STL_FIXTURES / 'tetrahedron-open-ascii.stl'))
+    page.wait_for_selector('[data-model]:not([hidden])')
+    click('[data-next]')
+    click('[data-next]')
+    warning = page.locator('[data-warning-list]')
+    report.check(warning.is_visible() and ('not closed' if en else 'neuždaras') in warning.inner_text(), f'{where}: нет предупреждения об открытой сетке')
+    click('[data-next]')
+    report.check(page.locator('[data-step-panel="3"]').is_visible(), f'{where}: предупреждение заблокировало переход')
+    for problem in problems:
+        report.check(False, f'{where} (тетраэдр): {problem}')
+    context.close()
+
+    # Крупный файл (~25 МБ, разбор в Web Worker) и сразу куб: индикация, страница не замирает, на экране — куб.
+    context, page, problems = new_page(width, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    page.evaluate("""() => { window.gaps = []; let last = performance.now();
+        window.ticker = setInterval(() => { const now = performance.now(); window.gaps.push(now - last); last = now; }, 20); }""")
+    page.locator('#model-upload').set_input_files(files['large.stl'])
+    try:
+        page.wait_for_selector('#upload-progress progress', timeout=5000)
+    except Exception:
+        report.check(False, f'{where}: нет индикации разбора крупного файла')
+    page.locator('#model-upload').set_input_files(str(STL_FIXTURES / 'cube-10mm-ascii.stl'))
+    page.wait_for_function("document.querySelectorAll('[data-files] .file-row').length === 2 && !document.querySelector('#upload-progress progress')", timeout=60000)
+    gap = page.evaluate('() => { clearInterval(window.ticker); return Math.max(...window.gaps); }')
+    report.check(gap < 400, f'{where}: страница замирала на {gap:.0f} мс при разборе крупного файла')
+    active = page.locator('[data-files] .file-row.active').inner_text()
+    report.check('cube-10mm-ascii.stl' in active and page.locator('[data-dimensions]').inner_text() == '10.0 × 10.0 × 10.0 mm',
+                 f'{where}: после позднего разбора крупного файла активна «{active}»')
+    for problem in problems:
+        report.check(False, f'{where} (крупный файл): {problem}')
+    context.close()
+
+
 def check_training_modal(report, new_page, path, width):
     """Модалка регистрации на обучение (W-09): кнопка темы, Escape и возврат фокуса, отправка, подтверждение, письмо."""
     where = f'{path} @{width} регистрация'
@@ -1349,6 +1554,11 @@ def main():
                 if path in ('/lt/produktai', '/en/products'):
                     for width, height in ((390, 844), (1440, 1000)):
                         check_compare(report, new_page, path, width, height)
+                if path in CALCULATOR_PAGES:
+                    with tempfile.TemporaryDirectory() as directory:
+                        files = calculator_files(directory)
+                        for width in (390, 1440):
+                            check_calculator(report, new_page, path, width, allowlist, files)
                 if path == '/en/contact':
                     check_contact_form(report, new_page, path, FORM_PAGES[path])
                 elif path in FORM_PAGES:

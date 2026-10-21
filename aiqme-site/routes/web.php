@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\CalculatorController;
 use App\Http\Controllers\Public\FormController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Public\ProductController;
@@ -27,9 +28,10 @@ foreach (StaticPages::LOCALES as $locale) {
             foreach (array_keys(StaticPages::PAGES) as $page) {
                 $segment = StaticPages::segment($page, $locale);
                 match (true) {
-                    // Страницы W-05/W-06/W-25 — из опубликованного контента; остальные — заготовки до своих задач.
+                    // Страницы W-05/W-06/W-25 — из опубликованного контента, калькулятор — W-27; остальные — заготовки до своих задач.
                     in_array($page, ['home', 'services', 'about', 'contact', 'faq', 'training', 'search'], true) => Route::get($segment, [PageController::class, $page])->name($page),
                     in_array($page, ['information', 'news', 'library'], true) => Route::get($segment, [ArticleController::class, $page])->name($page),
+                    $page === 'calculator' => Route::get($segment, CalculatorController::class)->name($page),
                     $page === 'projects' => Route::get($segment, [ProjectController::class, 'index'])->name($page),
                     $page === 'products' => Route::get($segment, [ProductController::class, 'index'])->name($page),
                     in_array($page, ['compare', 'cart'], true) => Route::get($segment, [ProductController::class, $page])->name($page),

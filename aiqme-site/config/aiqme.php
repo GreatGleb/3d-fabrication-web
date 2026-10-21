@@ -60,6 +60,23 @@ return [
         'attachments_extensions' => ['stl', 'step', 'stp', 'obj', 'pdf', 'jpg', 'jpeg', 'png'],
     ],
 
+    /*
+    | Калькулятор (W-27): примерные тарифы D-09 (не подтверждены: материалы и плотности г/см³, одна цена за грамм
+    | десятичной строкой, плата за заказ и за файл в центах, заполнение по умолчанию, %), габарит оборудования D-24 (мм)
+    | и лимиты приёма §6.4 (байт на файл, файлов в заявке). До W-11 страница передаёт их в JS через data-атрибуты;
+    | W-11 заменяет тарифы и габарит настройками админки.
+    */
+    'calculator' => [
+        'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04],
+        'rate_per_gram' => '0.10',
+        'order_fee_cents' => 500,
+        'file_fee_cents' => 0,
+        'default_infill' => 20,
+        'max_dimension_mm' => 250,
+        'max_file_bytes' => 25 * 1024 * 1024,
+        'max_files' => 10,
+    ],
+
     'hero_video_source' => ['text' => 'Bosch / The Apic', 'url' => 'https://www.youtube.com/watch?v=1Nd_xg8QfXo'],
 
 ];

@@ -18,3 +18,7 @@
 .gallery-view>img{display:block;width:100%;height:100%;object-fit:contain}
 .gallery-thumbs img{display:block;width:36px;height:36px;object-fit:cover}
 .compare-bar[hidden],.compare-bar [hidden]{display:none}
+/* Калькулятор W-27: hidden сильнее display классов прототипа (.quote-actions, .grid); на ≤ 900 px колонка шагов не
+   растягивается таблицей шага 4 (min-width 550 px) — таблица прокручивается в .data-table, как задумано прототипом. */
+#quote [hidden]{display:none}
+.quote-layout>div{min-width:0}
