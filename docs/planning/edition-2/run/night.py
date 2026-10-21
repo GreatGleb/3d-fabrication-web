@@ -47,8 +47,23 @@ DENY = [
 REVIEW_DENY = ["Write", "Edit", "NotebookEdit", "Read(./legacy-landing/instance/**)",
                "Read(./aiqme-site/experiments/**/.env)", "WebFetch", "WebSearch"]
 
-WORK_RE = re.compile(r'\{[^{}]*"status"\s*:\s*"(done|blocked)"[^{}]*\}', re.S)
-REVIEW_RE = re.compile(r'\{(?:[^{}]|\{[^{}]*\})*"verdict"\s*:\s*"(accept|reject)"(?:[^{}]|\{[^{}]*\})*\}', re.S)
+
+def last_json(text, key, values):
+    """Последний JSON-объект в тексте с key из values; скобки внутри строк ({id} в путях) не мешают.
+    Возвращает (объект, начало, конец) или None."""
+    decoder, found, i = json.JSONDecoder(), None, text.find("{")
+    while i != -1:
+        try:
+            obj, end = decoder.raw_decode(text, i)
+        except json.JSONDecodeError:
+            i = text.find("{", i + 1)
+            continue
+        if isinstance(obj, dict) and obj.get(key) in values:
+            found = (obj, i, end)
+            i = text.find("{", end)
+        else:
+            i = text.find("{", i + 1)
+    return found
 
 WORK_PROMPT = """Ты — ночной агент проекта AIQME. Человека рядом нет, вопросы задавать некому.
 
@@ -261,13 +276,10 @@ class Night:
         text, tokens, err = self.session(task, f"{task['id']}.work{rnd}", argv, prompt)
         if text is None:
             return None, tokens, err
-        matches = list(WORK_RE.finditer(text))
-        if not matches:
+        found = last_json(text, "status", ("done", "blocked"))
+        if not found:
             return None, tokens, "автор не вернул JSON-итог"
-        try:
-            return json.loads(matches[-1].group(0)), tokens, ""
-        except json.JSONDecodeError:
-            return None, tokens, "JSON-итог автора не читается"
+        return found[0], tokens, ""
 
     def judge(self, task, rnd, check_log):
         """Приёмщик только читает; вердикт accept/reject с замечаниями."""
@@ -283,11 +295,10 @@ class Night:
             return {"verdict": "reject", "findings": [], "summary": "приёмщик изменил дерево"}, tokens, "tampered"
         if text is None:
             return None, tokens, err
-        matches = list(REVIEW_RE.finditer(text))
-        try:
-            return json.loads(matches[-1].group(0)), tokens, ""
-        except (IndexError, json.JSONDecodeError):
+        found = last_json(text, "verdict", ("accept", "reject"))
+        if not found:
             return None, tokens, "приёмщик не вернул JSON-вердикт"
+        return found[0], tokens, ""
 
     def check(self, task, rnd):
         """bin/check и, когда он уже есть (с W-03), bin/browser-check — сверка вёрстки с прототипом (§9.1)."""
@@ -455,7 +466,8 @@ class Night:
                 text = json.loads(out.read_text()).get("result", "")
             except (json.JSONDecodeError, OSError):
                 continue
-            notes = WORK_RE.sub("", text).strip()
+            found = last_json(text, "status", ("done", "blocked"))
+            notes = (text[:found[1]] + text[found[2]:] if found else text).strip()
             if notes:
                 lines += ["", f"## Итог автора {out.name.split('.stdout')[0]}", "", notes[-2500:]]
         lines += ["", "Заблокированная работа — в `git stash list` (night-blocked W-xx); подробности — progress.md и логи рядом.",
