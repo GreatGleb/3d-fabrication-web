@@ -1,0 +1,30 @@
+solid fractional
+  facet normal 0 0 0
+    outer loop
+      vertex 0.1 0.2 0.3
+      vertex 0.7 9.87654321 1E-1
+      vertex 12.345678 .5 +1.5e0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0.1 0.2 0.3
+      vertex 12.345678 .5 +1.5e0
+      vertex 1.1 2.2 7.77777777
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0.1 0.2 0.3
+      vertex 1.1 2.2 7.77777777
+      vertex 0.7 9.87654321 1E-1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 12.345678 .5 +1.5e0
+      vertex 0.7 9.87654321 1E-1
+      vertex 1.1 2.2 7.77777777
+    endloop
+  endfacet
+endsolid fractional

@@ -64,6 +64,21 @@ PY
 step 'Pint (--test)'
 bin/php vendor/bin/pint --test
 
+step 'Node'
+# Node стоит через nvm и может отсутствовать в PATH (§9.1): берём новейший из nvm, системный Node 18 не подходит.
+# Без Node 22 проверка падает; путь передаётся PHPUnit-тестам в NODE_BINARY (паритет ядра, W-11).
+nvm_node_bin="$(ls -d "$HOME"/.nvm/versions/node/v*/bin 2>/dev/null | sort -V | tail -n 1 || true)"
+[[ -n "$nvm_node_bin" ]] && export PATH="$nvm_node_bin:$PATH"
+node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+(( node_major >= 22 )) || fail "нужен Node 22 (nvm), найден: $(command -v node || echo нет) v$node_major"
+NODE_BINARY="$(command -v node)"
+export NODE_BINARY
+echo "NODE_BINARY=$NODE_BINARY"
+
+step 'Node-тесты ядра калькулятора'
+# Node 22 не принимает каталог в --test, поэтому шаблон файлов.
+"$NODE_BINARY" --test 'tests/js/**/*.test.js'
+
 step 'PostgreSQL dev'
 docker compose -f docker-compose.dev.yml up -d --wait postgres >/dev/null
 echo OK
@@ -72,12 +87,6 @@ step 'PHPUnit'
 bin/php artisan test --compact </dev/null
 
 step 'Vite build'
-# Node стоит через nvm и может отсутствовать в PATH (§9.1): берём новейший из nvm, системный Node 18 Vite не запускает.
-nvm_node_bin="$(ls -d "$HOME"/.nvm/versions/node/v*/bin 2>/dev/null | sort -V | tail -n 1 || true)"
-[[ -n "$nvm_node_bin" ]] && export PATH="$nvm_node_bin:$PATH"
-node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
-(( node_major >= 22 )) || fail "нужен Node 22 (nvm), найден: $(command -v node || echo нет) v$node_major"
-echo "node: $(command -v node)"
 npm run build --silent >/dev/null
 [[ -f public/build/manifest.json ]] || fail 'нет public/build/manifest.json'
 echo OK
