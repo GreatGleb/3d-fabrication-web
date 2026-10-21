@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\OrderSubmission;
 use App\Domain\Pricing\CalculatorSettings;
 use App\Http\Controllers\Controller;
-use App\Models\StlPart;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Lunar\Models\Order;
 
 /**
  * Заявка на изготовление из шага 5 калькулятора (§3.1, W-12): один multipart-запрос fetch (файлы, параметры по файлу,
@@ -122,25 +119,5 @@ class OrderRequestController extends Controller
         abort_if($submitted === null, 404);
 
         return view('public.order-confirmation', ['submitted' => $submitted]);
-    }
-
-    /**
-     * Гостевая страница заказа по секретной ссылке (§6.2) — заготовка: номер, состав и оценка. Неверный номер или токен —
-     * 404; у заказа клиента гостевого токена нет. Право в сессии, оплату и полную карточку добавляют W-15 и W-16.
-     */
-    public function guest(int $number, string $token): View
-    {
-        $meta = OrderMeta::where('number', $number)->whereNotNull('guest_token_hash')->first();
-        abort_unless($meta !== null && hash_equals($meta->guest_token_hash, hash('sha256', $token)), 404);
-        $order = Order::with('lines.purchasable')->findOrFail($meta->order_id);
-
-        return view('public.order-guest', [
-            'number' => $meta->number,
-            'parts' => $order->lines->filter(fn ($line) => $line->purchasable instanceof StlPart)->map(fn ($line) => [
-                'name' => $line->purchasable->file->original_name,
-                'quantity' => $line->purchasable->parameters['quantity'],
-            ])->values(),
-            'totalCents' => $order->total->value,
-        ]);
     }
 }

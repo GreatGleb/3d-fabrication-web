@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
+use Lunar\Models\Transaction;
 
 /**
  * Заказ для bin/browser-check (W-14): гостевая заявка W-12 (два куба 10 мм из tests/fixtures/stl/, PLA, доставка) через
@@ -47,6 +48,39 @@ final class OrderFactory
         $flow->confirmPrice($admin, $order, array_combine($ids, [6000, 5500, 500]), 3000);
         $flow->requestPayment($admin, $order, 5000);
         $flow->setTracking($admin, $order, 'DPD', 'LT000000001');
+
+        return $order;
+    }
+
+    /**
+     * Заказ клиента для кабинета (W-15): куб 10 мм binary × 1, PLA, 100 %, самовывоз; цена подтверждена (деталь 30 EUR,
+     * плата 5 EUR), получен аванс 10 EUR (тестовая транзакция capture), сообщение администратора ждёт ответа клиента.
+     */
+    public static function clientOrderWithMessage(User $client, User $admin): Order
+    {
+        $order = app(OrderSubmission::class)->submit([
+            'submission_token' => (string) Str::uuid(),
+            'locale' => 'lt',
+            'contact' => ['name' => $client->name, 'email' => $client->email, 'phone' => '+370 600 00002', 'company' => null, 'company_code' => null, 'vat_code' => null],
+            'delivery' => 'pickup',
+            'address' => null,
+            'material' => 'PLA',
+            'infill' => 100,
+            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'parts' => [[
+                'file' => UploadedFile::fake()->createWithContent('cube-10mm-binary.stl', file_get_contents(base_path('tests/fixtures/stl/cube-10mm-binary.stl'))),
+                'unit' => 'mm',
+                'scale' => 100,
+                'quantity' => 1,
+            ]],
+        ], $client)->order;
+
+        [$part, $fee] = $order->lines()->orderBy('id')->get()->modelKeys();
+        $flow = app(OrderWorkflow::class);
+        $flow->confirmPrice($admin, $order, [$part => 3000, $fee => 500], null);
+        Transaction::create(['order_id' => $order->id, 'success' => true, 'type' => 'capture', 'driver' => 'browser-check', 'amount' => 1000,
+            'reference' => 'browser-check-charge-not-real', 'status' => 'settled', 'captured_at' => now(), 'meta' => []]);
+        $flow->postAdminMessage($admin, $order, 'Sienelė per plona: siūlome 1,2 mm.');
 
         return $order;
     }

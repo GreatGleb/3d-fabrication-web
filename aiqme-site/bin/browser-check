@@ -122,8 +122,8 @@ SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
                  '/lt/palyginimas?products=norda-s1-skeneris,vekta-p2-spausdintuvas,petg-gija,norda-cad',
                  '/en/compare?products=norda-s1-scanner,vekta-p2-printer,petg-filament,norda-cad']
-# Кабинет и админка после входа через форму (W-07); вкладки админки W-08, W-26 и W-11; вкладки W-15 добавят свои адреса.
-ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/account/addresses']
+# Кабинет и админка после входа через форму (W-07); вкладки кабинета W-15; вкладки админки W-08, W-26 и W-11.
+ACCOUNT_PAGES = [f'/{prefix}{tab}' for prefix in ('lt/paskyra', 'en/account') for tab in ('', '/overview', '/orders', '/models', '/addresses', '/invoices')]
 ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
                                                       for tab in ('overview', 'orders', 'services', 'content', 'audit', 'products',
                                                                   'categories', 'projects', 'training', 'translations',
@@ -218,10 +218,11 @@ def prepare(env):
     seeded = run(['bin/php', 'artisan', 'db:seed', f'--class={BROWSER_SEEDER}', '--force', '--no-interaction'],
                  env={**env, 'BROWSER_CLIENT_PASSWORD': client_password}).stdout
     client = re.search(r'client-\d+@aiqme\.test', seeded)
-    if not client:
-        sys.exit('FAIL: сидер tests/browser не создал клиента')
-    # Пароли остаются только в памяти процесса; входят ими через форму входа (W-07).
-    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password)}
+    guest = re.search(r'/en/order/\d+/[A-Za-z0-9_-]{43}', seeded)
+    if not client or not guest:
+        sys.exit('FAIL: сидер tests/browser не создал клиента или гостевую ссылку')
+    # Пароли и гостевая ссылка остаются только в памяти процесса; входят через форму входа (W-07).
+    return {'admin': ('admin@aiqme.test', admin_password), 'client': (client.group(0), client_password), 'guest_url': guest.group(0)}
 
 
 def build_assets():
@@ -1141,7 +1142,7 @@ def check_admin_order(report, new_page, state, allowlist):
         where = f'{prefix}/orders карточка @{width}'
         context, page, problems = new_page(width, height, storage_state=state)
         page.goto(BASE + prefix + '/orders', wait_until='networkidle')
-        page.locator('#admin-order-list a.btn').first.click()
+        page.locator('#admin-order-list a.btn').last.click()  # гостевой заказ фабрики — самый старый (заказы клиента W-15 новее)
         page.wait_for_load_state('networkidle')
         if not report.check(page.locator('#order-card').count() == 1, f'{where}: нет #order-card'):
             context.close()
@@ -1185,6 +1186,136 @@ def check_admin_order(report, new_page, state, allowlist):
             report.check(page.locator('#guest-link').count() == 0 and link not in page.content(), f'{where}: ссылка показана повторно')
         for problem in problems:
             report.check(False, f'{where}: {problem}')
+        context.close()
+
+
+def quote_from_saved_model(report, page, where, en):
+    """Калькулятор, открытый из кабинета с ?models=: модель скачана защищённой выдачей и разобрана; PLA, 100 %, qty 1 →
+    на шаге 4 итог 5,12 (D-09)."""
+    try:
+        page.wait_for_selector('[data-model]:not([hidden])', timeout=15000)
+    except Exception:
+        report.check(False, f'{where}: модель из кабинета не загрузилась в калькулятор')
+        return False
+    row = page.locator('[data-files] .file-row').all_inner_texts()
+    report.check(len(row) == 1 and 'cube-10mm-binary.stl' in row[0], f'{where}: строки файлов {row}')
+    report.check(page.locator('#quote-error .notice').count() == 0, f'{where}: ошибка «{page.locator("#quote-error").inner_text()}»')
+    for step in range(3):
+        page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+        page.click('[data-next]')
+        if step == 0:
+            page.select_option('select[name=material]', 'PLA')
+            page.select_option('select[name=infill]', '100')
+            report.check(page.locator('[data-quantity]').input_value() == '1', f'{where}: количество не 1')
+    total = page.locator('[data-total]').inner_text().replace('\xa0', ' ')
+    expected = '€5.12' if en else '5,12 €'
+    report.check(total == expected, f'{where}: итог шага 4 «{total}» вместо «{expected}»')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: шаг 4 шире окна ({scroll} > {client})')
+    return total == expected
+
+
+def check_customer_orders(report, new_page, state, guest_url, allowlist):
+    """W-15 на фабричных заказах (tests/browser/OrderFactory): карточка заказа клиента (стадия, аванс, сообщение и ответ),
+    «пересчитать» в Saved models (390, LT) и повторный заказ из карточки (1440, EN) — модель загружена в калькулятор, итог
+    5,12, отправка создаёт новый заказ с новой моделью; гостевая страница по ссылке — карточка и скачивание STL по праву
+    в сессии, чистый браузер без ссылки — 404 на STL. Ширина, маркеры D-21, консоль на 390 и 1440."""
+    def fits(page, where, path):
+        scroll, client = document_fits(page)
+        report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+        for hit in marker_hits(page, path, allowlist):
+            report.check(False, f'{where}: маркер {hit}')
+
+    for width, height, prefix, texts in ((390, 844, '/lt/paskyra', {'stage': 'Patvirtinta gamybai', 'paid': '10,00 €', 'recorded': 'Jūsų pasirinkimas užfiksuotas'}),
+                                         (1440, 1000, '/en/account', {'stage': 'Approved for production', 'paid': '€10.00', 'recorded': 'Your choice has been recorded'})):
+        where = f'{prefix}/orders карточка @{width}'
+        context, page, problems = new_page(width, height, storage_state=state)
+        page.goto(BASE + prefix + '/orders', wait_until='networkidle')
+        with page.expect_navigation(wait_until='networkidle'):
+            page.locator('#account-orders a.btn').first.click()
+        path = urlparse(page.url).path
+        if not report.check(page.locator('#customer-order').count() == 1, f'{where}: нет #customer-order ({page.url})'):
+            context.close()
+            continue
+        report.check(texts['stage'] in page.inner_text('#customer-order .status-title'), f'{where}: нет стадии «{texts["stage"]}»')
+        paid = page.inner_text('[data-paid]').replace('\xa0', ' ')
+        report.check(texts['paid'] in paid, f'{where}: оплачено «{paid}»')
+        report.check(page.locator('[data-transaction=capture]').count() == 1, f'{where}: нет поступившего платежа')
+        report.check(page.locator('#order-reply button').count() == 3, f'{where}: нет трёх кнопок ответа')
+        fits(page, where, path)
+        page.screenshot(path=str(OUT / 'shots' / f'account-order-card-{width}.png'), full_page=True)
+        if width == 1440:
+            with page.expect_navigation(wait_until='networkidle'):
+                page.click('#order-reply button[value=question]')
+            report.check(page.locator('[data-reply=question]').count() == 1 and texts['recorded'] in page.inner_text('#customer-order'),
+                         f'{where}: ответ клиента не записан')
+        for problem in problems:
+            report.check(False, f'{where}: {problem}')
+        context.close()
+
+    # «Пересчитать» в Saved models (390, LT): калькулятор с ?models=<id>.
+    where = '/lt/paskyra/models пересчитать @390'
+    context, page, problems = new_page(390, 844, storage_state=state)
+    page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
+    page.goto(BASE + '/lt/paskyra/models', wait_until='networkidle')
+    fits(page, where, '/lt/paskyra/models')
+    with page.expect_navigation(wait_until='networkidle'):
+        page.locator('[data-recalculate]').first.click()
+    report.check(re.search(r'[?&]models=\d+$', page.url) is not None, f'{where}: адрес калькулятора {page.url}')
+    quote_from_saved_model(report, page, where, en=False)
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+    # Повторный заказ из карточки (1440, EN): итог 5,12 и отправка — новый заказ и новая модель в кабинете.
+    where = '/en/account повторный заказ @1440'
+    context, page, problems = new_page(1440, 1000, storage_state=state)
+    page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
+    page.goto(BASE + '/en/account', wait_until='networkidle')
+    counts = {name: page.inner_text(f'[data-count={name}]') for name in ('orders', 'models')}
+    page.locator('#account-overview a.btn').first.click()
+    page.wait_for_load_state('networkidle')
+    with page.expect_navigation(wait_until='networkidle'):
+        page.click('[data-reorder]')
+    if quote_from_saved_model(report, page, where, en=True):
+        page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+        page.click('[data-next]')
+        page.select_option('select[name=delivery]', 'pickup')
+        page.fill('#checkout-form [name=phone]', '+370 600 00003')
+        page.locator('#checkout-form button[type=submit]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+        page.click('#checkout-form button[type=submit]')
+        page.wait_for_url('**/quote/submitted', timeout=30000)
+        page.wait_for_load_state('networkidle')
+        report.check(int(page.locator('[data-total]').get_attribute('data-cents') or -1) == 512, f'{where}: сумма новой заявки не 5,12')
+        page.goto(BASE + '/en/account', wait_until='networkidle')
+        after = {name: page.inner_text(f'[data-count={name}]') for name in ('orders', 'models')}
+        report.check(all(int(after[name]) == int(counts[name]) + 1 for name in counts), f'{where}: счётчики до {counts}, после {after}')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+    # Гостевая страница: карточка по ссылке, STL — по праву в сессии; чистый браузер без ссылки — 404.
+    stl = None
+    for width, height in ((390, 844), (1440, 1000)):
+        where = f'гостевая страница @{width}'
+        context, page, problems = new_page(width, height)
+        response = page.goto(BASE + guest_url, wait_until='networkidle')
+        report.check(response.status == 200 and page.locator('#customer-order').count() == 1, f'{where}: HTTP {response.status}')
+        report.check(page.locator('[data-payment-request] a, [data-reorder]').count() == 0, f'{where}: ссылка оплаты или повторного заказа')
+        fits(page, where, guest_url)
+        links = page.locator('#customer-order a[href*="/stl/"]').evaluate_all('links => links.map(link => link.href)')
+        report.check(len(links) == 2, f'{where}: ссылки STL {links}')
+        if links:
+            stl = links[0]
+            answer = page.request.get(stl)
+            report.check(answer.status == 200 and answer.headers.get('content-disposition', '').startswith('attachment'), f'{where}: скачивание STL гостем {answer.status}')
+        page.screenshot(path=str(OUT / 'shots' / f'guest-order-{width}.png'), full_page=True)
+        for problem in problems:
+            report.check(False, f'{where}: {problem}')
+        context.close()
+    if stl:
+        context, page, _ = new_page(1440, 1000)
+        report.check(page.request.get(stl).status == 404, 'STL гостевого заказа без права в сессии — не 404')
         context.close()
 
 
@@ -1477,7 +1608,9 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     fits('подтверждение')
     page.goto(guest, wait_until='networkidle')
     title = page.locator('h1').inner_text()
-    report.check(title == (f'Order No. {number}' if en else f'Užsakymas Nr. {number}'), f'{where}: гостевая страница «{title}»')
+    report.check(title == ('Order progress' if en else 'Užsakymo eiga'), f'{where}: гостевая страница «{title}»')
+    heading = page.locator('#customer-order h2').inner_text()
+    report.check(heading == (f'Order No. {number}' if en else f'Užsakymas Nr. {number}'), f'{where}: номер на гостевой странице «{heading}»')
     report.check('cube-10mm-binary.stl' in page.locator('[data-order-number]').inner_text(), f'{where}: на гостевой странице нет файла')
     fits('гостевая страница')
     wrong = page.goto(guest[:-4] + 'AAAA', wait_until='networkidle')
@@ -1659,7 +1792,9 @@ def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     log('== вход через форму: администратор и клиент')
     admin = sign_in(report, new_page, '/en/account/login', admin_email, admin_password, '/en/admin')
     client = sign_in(report, new_page, '/lt/paskyra/login', client_email, client_password, '/lt/paskyra')
-    check_private_pages(report, new_page, ACCOUNT_PAGES, client, '#address-form', allowlist, 'клиент')
+    check_private_pages(report, new_page, ACCOUNT_PAGES, client, '.account-layout', allowlist, 'клиент')
+    log('== кабинет: карточка, ответ, пересчитать и повторный заказ; гостевая страница (W-15)')
+    check_customer_orders(report, new_page, client, accounts['guest_url'], allowlist)
     check_private_pages(report, new_page, ADMIN_PAGES, admin, 'main h1', allowlist, 'администратор')
     log('== редактор контента админки (W-08)')
     check_admin_editor(report, new_page, admin)

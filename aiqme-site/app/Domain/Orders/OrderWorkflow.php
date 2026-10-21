@@ -266,17 +266,17 @@ final class OrderWorkflow
 
     /**
      * Ответ клиента (agree | question | cancel_request, §1.3): только записывается и виден администратору — ничего не
-     * отменяет и не меняет. Автор — владелец заказа; иначе отказ без записи (право гостя в сессии — W-15).
+     * отменяет и не меняет. Автор — владелец заказа или гость с правом на заказ в сессии (W-15); иначе отказ без записи.
      */
     public function recordCustomerReply(Order $order, string $kind, ?User $actor): OrderMessage
     {
-        if (! $this->access->owns($order, $actor)) {
+        if (! $this->access->isCustomer($order, $actor)) {
             throw new AuthorizationException;
         }
         $this->require(in_array($kind, OrderMessage::REPLIES, true), 'reply_invalid');
 
         return DB::transaction(function () use ($order, $kind, $actor): OrderMessage {
-            $message = OrderMessage::create(['order_id' => $order->id, 'user_id' => $actor->id, 'kind' => $kind]);
+            $message = OrderMessage::create(['order_id' => $order->id, 'user_id' => $actor?->id, 'kind' => $kind]);
             AuditLog::record('order.customer_replied', $order, Channel::Web, $actor, ['message_id' => $message->id, 'kind' => $kind]);
 
             return $message;

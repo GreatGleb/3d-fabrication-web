@@ -6,8 +6,10 @@
     $locale = app()->getLocale();
     $route = request()->route()->getName();
     $page = Str::after($route, $locale.'.');
+    // Параметры адреса (номер заказа карточки кабинета, W-15) — те же у версий страницы.
+    $parameters = $mode === 'new_password' ? [] : request()->route()->parameters();
     // Версии страницы для переключателя: та же форма на другом языке; у ссылки сброса с токеном — форма запроса ссылки.
-    $languages = $mode === 'new_password' ? [] : collect(StaticPages::PUBLIC_LOCALES)->mapWithKeys(fn ($l) => [$l => route($l.'.'.$page)])->all();
+    $languages = $mode === 'new_password' ? [] : collect(StaticPages::PUBLIC_LOCALES)->mapWithKeys(fn ($l) => [$l => route($l.'.'.$page, $parameters)])->all();
     $other = $locale === 'lt' ? 'en' : 'lt';
     $action = match ($mode) {
         'register' => route($locale.'.account.register.store'),
@@ -16,7 +18,7 @@
         default => route($locale.'.account.login.store'),
     };
 @endphp
-<x-layout :title="__('account.title')" :description="__('account.intro')" :canonical="$mode === 'new_password' ? null : route($route)"
+<x-layout :title="__('account.title')" :description="__('account.intro')" :canonical="$mode === 'new_password' ? null : route($route, $parameters)"
     :languages="$languages" :switch-url="route($other.'.account.reset')" noindex>
     <x-page-top :title="__('account.title')" :intro="__('account.intro')" />
     <div class="wrap page-content">

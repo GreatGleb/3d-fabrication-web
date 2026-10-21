@@ -3,6 +3,7 @@
 import { StlError } from './core/index.js';
 import { Quote, formatDimensions, formatMoney } from './quote.js';
 import { mountViewer } from './viewer/index.js';
+import { loadSavedModels, modelIds } from './saved-models.js';
 
 function parseInWorker(buffer) {
   return new Promise((resolve, reject) => {
@@ -272,6 +273,15 @@ function start(root) {
   });
 
   render();
+
+  // ?models=<id,…> из кабинета (W-15): модели заказов клиента загружаются как обычные файлы.
+  const ids = modelIds(location.search, settings.max_files);
+  if (ids.length) {
+    loadSavedModels(ids, (name, buffer) => quote.addBuffer(name, buffer)).then((results) => {
+      showErrors(results.filter((r) => r.error).map((r) => t(r.error, { name: r.name, max: settings.max_files })));
+      render();
+    });
+  }
 }
 
 const root = document.getElementById('quote');

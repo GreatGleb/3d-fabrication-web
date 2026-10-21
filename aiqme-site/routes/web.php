@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -62,9 +63,13 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
     Route::post($calculator, [OrderRequestController::class, 'store'])->middleware('throttle:orders')->name($locale.'.calculator.store');
     Route::middleware('cache.headers:private;no_store')->group(function () use ($locale, $calculator): void {
         Route::get($calculator.'/'.($locale === 'lt' ? 'pateikta' : 'submitted'), [OrderRequestController::class, 'confirmation'])->name($locale.'.order.confirmation');
-        Route::get($locale.'/'.($locale === 'lt' ? 'uzsakymas' : 'order').'/{number}/{token}', [OrderRequestController::class, 'guest'])
-            ->whereNumber('number')->name($locale.'.order.guest');
+        // Гостевая страница (W-15): верный токен пишет право на заказ в сессию; подбор токена ограничен частотой по IP.
+        Route::get($locale.'/'.($locale === 'lt' ? 'uzsakymas' : 'order').'/{number}/{token}', [OrderController::class, 'guest'])
+            ->whereNumber('number')->middleware('throttle:guest-orders')->name($locale.'.order.guest');
     });
+    // Ответ клиента на сообщение администратора (§1.3, W-15): владелец или гость с правом на заказ в сессии, иначе 404.
+    Route::post($locale.'/'.($locale === 'lt' ? 'uzsakymas' : 'order').'/{number}/reply', [OrderController::class, 'reply'])
+        ->whereNumber('number')->middleware('auth.session')->name($locale.'.order.reply');
 
     Route::prefix($locale.'/'.($locale === 'lt' ? 'paskyra' : 'account'))
         ->middleware('cache.headers:private;no_store')
@@ -80,7 +85,14 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
             Route::post('reset/{token}', [PasswordResetController::class, 'update'])->name($name.'.reset.update');
 
             Route::middleware('auth.session')->group(function () use ($name): void {
-                Route::get('/', [AccountController::class, 'addresses'])->name($name);
+                // Вкладки прототипа (W-15): корень — Overview; карточка заказа — только владельцу.
+                Route::get('/', [AccountController::class, 'overview'])->name($name);
+                Route::get('overview', [AccountController::class, 'overview'])->name($name.'.overview');
+                Route::get('orders', [AccountController::class, 'orders'])->name($name.'.orders');
+                Route::get('orders/{number}', [OrderController::class, 'show'])->whereNumber('number')->name($name.'.orders.show');
+                Route::get('models', [AccountController::class, 'models'])->name($name.'.models');
+                Route::post('models/{stlFile}/hide', [AccountController::class, 'hideModel'])->whereNumber('stlFile')->middleware('auth')->name($name.'.models.hide');
+                Route::get('invoices', [AccountController::class, 'invoices'])->name($name.'.invoices');
                 Route::get('addresses', [AccountController::class, 'addresses'])->name($name.'.addresses');
                 Route::post('addresses', [AccountController::class, 'updateAddresses'])->middleware('auth')->name($name.'.addresses.update');
                 Route::post('logout', [LoginController::class, 'destroy'])->middleware('auth')->name($name.'.logout');
@@ -100,7 +112,7 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
         });
 }
 
-// Защищённая выдача STL заказа (§6.4, W-32): владелец, администратор (право гостя в сессии — W-15); GET, HEAD и Range.
+// Защищённая выдача STL заказа (§6.4, W-32): владелец, администратор, гость с правом в сессии (W-15); GET, HEAD и Range.
 Route::get('stl/{stlFile}', StlDownloadController::class)->whereNumber('stlFile')->middleware('auth.session')->name('stl.download');
 
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');

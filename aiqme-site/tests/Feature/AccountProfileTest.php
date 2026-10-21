@@ -79,7 +79,7 @@ class AccountProfileTest extends TestCase
         $this->assertSame('UAB Detalė', $a->profile()->sole()->company);
         $this->assertSame('B company', $b->profile()->sole()->company);
         $this->assertNull($b->profile()->sole()->vat_code);
-        $this->actingAs($a)->get(route('en.account'))->assertSee('UAB Detalė')->assertDontSee('B company');
+        $this->actingAs($a)->get(route('en.account.addresses'))->assertSee('UAB Detalė')->assertDontSee('B company');
     }
 
     public function test_guest_gets_the_login_form_on_tabs_and_cannot_save(): void

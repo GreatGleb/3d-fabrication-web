@@ -2149,7 +2149,121 @@ užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Pre
 - Параллельная работа двух вкладок администратора с одним заказом — отдельного теста нет (блокировки — в OrderWorkflow).
 - Полный `bin/browser-check` без путей (все публичные страницы) не запускался: изменены только страницы админки.
 
+## W-15: Кабинет клиента и гостевая страница заказа — выполнено (2026-10-21, Claude Code, ночной прогон)
 
-## W-15: заблокирована ночным прогоном (2026-10-21 15:52)
+### Сделано
 
-Причина (оркестратор): ночь остановлена сторожем — пропал интернет, работа прервана на середине. Работа — в git stash «night-blocked W-15».
+- Вкладки кабинета прототипа (`account()` app.js): `/lt/paskyra/…` · `/en/account/…` — корень и `overview`, `orders`,
+  `orders/<номер>` (карточка), `models`, `addresses` (W-07), `invoices`; меню в порядке прототипа, иконки прототипа, выход.
+  Один шаблон `account/index` + `account/tabs/*` (прежний `account/addresses.blade.php` стал `tabs/addresses`). Гостю на
+  любой вкладке и на карточке — форма входа (200, §4.6); `auth.blade.php` передаёт параметры адреса (номер карточки) в
+  canonical и переключатель языка.
+- Overview: «Welcome, :name.», реальные счётчики заказов и моделей, последний заказ. Orders: номер, дата, «Manufacturing»,
+  стадия и состояние оплаты, сумма, «View». Saved models: STL заказов клиента (без скрытых) — «Download STL» (`/stl/<id>`),
+  «Recalculate» (`/en/quote?models=<id>`), «Remove from list» (POST с CSRF → `stl_files.hidden_at`, файл и строка заказа
+  остаются; чужая или уже скрытая — 404). Invoices — пустое состояние (список — W-17).
+- Карточка заказа (`account/order`, разметка `orderDetail()`): «Order progress», номер и стадия, timeline стадий (без
+  «Shipped» у самовывоза; у отменённого — причина вместо timeline); сообщения администратора — «Your decision is needed», текст,
+  ответы клиента с датой и три кнопки (у последнего сообщения) POST `/{lt/uzsakymas|en/order}/<номер>/reply`; «Order contents»
+  со ссылками защищённой выдачи; «Payment & delivery»: до подтверждения — «Estimated total», после — Total/Paid/Outstanding,
+  состояние оплаты, открытые платёжные запросы (состояние и сумма, без ссылки — кнопку добавит W-16), поступившие платежи и
+  возвраты из успешных транзакций Lunar (дата, вид, сумма — подтверждение аванса D-04), способ получения и адрес, трек или
+  «Tracking information appears after shipment preparation.»; владельцу — «Reorder with current pricing» (калькулятор с
+  `?models=<id файлов заказа>`). Карточка в кабинете — только владельцу (`OrderAccess::owns`), иначе 404.
+- Гостевая страница перенесена из `Public\OrderRequestController` в `Account\OrderController::guest` (та же карточка без
+  повторного заказа); шаблон-заготовка `public/order-guest` удалён. Верный токен пишет в сессию право «заказ + SHA-256 токена»
+  (`OrderAccess::grantGuest`); `OrderAccess::allows` и новый `isCustomer` (владелец или гость с правом) сверяют хеш с текущим
+  хешем заказа — после перевыпуска ссылки право не действует; у заказа клиента права гостя нет. По этому праву гость скачивает
+  STL (`/stl/<id>`, токена в адресе нет) и отвечает администратору. `OrderWorkflow::recordCustomerReply` проверяет
+  `isCustomer` (гость — `user_id` = null). Гостевая страница — `throttle:guest-orders` (30 запросов в минуту с IP,
+  `aiqme.orders.guest_per_minute`), превышение — 429.
+- Калькулятор: `resources/js/calculator/saved-models.js` — id из `?models=` (числа, без повторов, ≤ max_files), скачивание
+  `/stl/<id>` в ArrayBuffer, имя из Content-Disposition, `Quote.addBuffer` (тот же разбор ядра); ответ не 200 и сбой сети —
+  пропуск без сообщения. Единицы/масштаб/количество — по умолчанию (mm, 100 %, 1), оценка — по текущим настройкам; отправка —
+  обычный multipart (новые `stl_files`).
+- Миграция `2026_10_21_500000_add_hidden_at_to_stl_files`.
+- Вне touches (минимально): `Public/OrderRequestController` (удалён метод `guest`), `config/aiqme.php` и
+  `AppServiceProvider` (лимит гостевой страницы), `app/Models/StlFile.php` (hidden_at), `bin/browser-check`, тесты W-07/W-02
+  (корень кабинета теперь Overview).
+
+### Тексты (rules[8])
+
+Из app.js (`account()`, `orderDetail()`, `orderList()`): вкладки «Apžvalga/Overview», «Užsakymai/Orders», «Išsaugoti
+modeliai/Saved models», «Sąskaitos/Invoices»; «Your orders and next steps, at a glance.», «Latest order», «Order history»,
+«View», «No saved models yet», «Upload your first model», «Recalculate», «Order progress», «Current status», «Pending»,
+«Payment & delivery», «Tracking information appears after shipment preparation.», «Your decision is needed», «Your choice has
+been recorded…», подписи трёх ответов (как в W-14), «Order contents» (W-12), колонки и стадии (W-14). С удалённым словом
+«Demo» (D-21): «Welcome, :name.» (было «Welcome, Demo customer.»), метрики «Orders»/«Užsakymai» и «Saved models» (было
+«Demo orders», «Models in this session»), «Done»/«Atlikta» (было «Demo completed»/«Demo atlikta»), «Tracking»/«Sekimas»
+(было «Demo tracking»), «Reorder with current pricing»/«Pakartoti su aktualia kaina». Не перенесены: метрика скидки
+(персональная скидка не реализуется), «DEMONSTRATION ORDER» (вместо него eyebrow калькулятора «AIQME / MANUFACTURING ORDER»),
+notice имитации оплаты, «View demo invoice», «View the staff workflow», «Prepaid collection», пояснения прототипа о
+метаданных сессии (Saved models) и о макетах превью (Invoices). Нейтральные (в прототипе нет): «No orders yet.»/«Užsakymų dar
+nėra.», «Download STL»/«Atsisiųsti STL», «Remove from list»/«Pašalinti iš sąrašo», «The model was removed from the list. The
+order file is kept.»/«Modelis pašalintas iš sąrašo. Užsakymo failas išsaugotas.», «No invoices yet.»/«Sąskaitų dar nėra.»,
+«Payments»/«Mokėjimai», «Payment»/«Mokėjimas», «Refund»/«Grąžinimas»; суммы и состояния оплаты — строки W-14.
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- Повторный заказ загружает только файлы: единицы, масштаб и количество прежнего заказа не переносятся (адрес `?models=`
+  содержит только id). Повторный заказ создаёт новые строки `stl_files`, поэтому в Saved models появляется ещё одна копия той
+  же модели (без объединения по sha256).
+- Кнопки ответа — у последнего сообщения администратора и остаются после ответа (можно ответить ещё раз; все ответы видны
+  администратору). Ответ на отменённый заказ не запрещён (W-13 не запрещает).
+- Лимит гостевой страницы — все запросы (не только неверные) 30/мин с IP; лимит ответа отдельно не ограничен.
+- Карточка заказа в кабинете — только владельцу; администратор смотрит заказы в админке (404 в кабинете).
+- Номер заказа клиента в кабинете — `/orders/<номер>` (как DEMO-1047 прототипа, `whereNumber`); `/orders/DEMO-1047` — 404.
+
+### Проверки
+
+- `tests/Feature/CustomerAccountTest.php` → 9/9 (210 утверждений): вкладки только со своими заказами и моделями (клиент A,
+  клиент B, гостевой заказ), счётчики, последний заказ, строки истории (тип, стадия, оплата, дата), ссылки моделей, пустые
+  состояния, Invoices; карточка — владельцу, клиенту B, администратору и на гостевой заказ — 404, гостю — вход; карточка до и
+  после подтверждения: стадия, 7 шагов timeline, итог/оплачено/долг, открытый запрос 40 EUR без ссылки и без адресов оплаты,
+  платёж и возврат (дата, сумма; неуспешная транзакция скрыта), трек, ссылки STL, ссылка повторного заказа с id файлов;
+  гостевая страница: посетитель, клиент B и гость с правом на другой заказ — 404 на адреса без токена/с чужим токеном, на STL
+  (GET, HEAD, Range) и на ответ, записей нет; верный токен — no-store, noindex, токена нет в main, STL по праву в сессии
+  (200/HEAD/206), после перевыпуска ссылки — 404, по новой ссылке — снова 200; лимит 3/мин — 4-й запрос 429, верный токен с
+  того же IP 429, другой IP 200, через минуту 200; сообщение и три кнопки, ответы клиента B, администратора, посетителя — 404,
+  неизвестный вид — ошибка, без записей; ответ владельца записан (заказ не отменён), гостя — с `user_id` null, гость на чужой
+  заказ — 404; скрытие модели: чужая — 404, посетитель — на вход, своя — скрыта, файл на диске, в карточке и скачивается,
+  повтор — 404; калькулятор с чужим id не раскрывает имя, `/stl/<чужой>` — 404.
+- `tests/js/calculator-saved-models.test.js` → 3/3: разбор `?models=`, имя из Content-Disposition, 404 и сбой сети
+  пропускаются, модели проходят разбор ядра в Quote.
+- Мутации (восстановлены): право без сверки хеша, без записи права, скрытие чужой модели, ответ без проверки прав, без
+  лимита, чужие заказы в списке, карточка через `allows` — тесты падают. Не ловится: удаление условия «у заказа клиента права
+  гостя нет» (право на такой заказ получить нельзя — у него нет гостевого токена; условие оставлено как защита).
+- Обновлены: `PrototypeRoutesTest` (строки §4.6 вкладок overview/orders/models/invoices больше не пропускаются — гостю
+  форма входа, клиенту своя вкладка), `AuthTest`, `AccountProfileTest` (корень кабинета — Overview).
+- `bin/check` → **OK**: Pint passed; Node 39/39; PHPUnit 545 (541 passed, 4 skipped); Vite.
+- `bin/browser-check --signed-in /en/quote` → **OK (3997 проверок)**: 12 адресов кабинета на 320–1440 (ширина, §7.1, маркеры
+  D-21, консоль); новая `check_customer_orders` на фабричных заказах (`OrderFactory::clientOrderWithMessage` — куб 10 мм,
+  цена подтверждена, аванс 10 EUR, сообщение; гостевой заказ W-14 со ссылкой из сидера): карточка клиента на 390 (LT) и
+  1440 (EN) — стадия, оплачено, платёж, три кнопки, ответ «Request clarification» записан; «Perskaičiuoti» из Saved models
+  (390, LT) и «Reorder» из карточки (1440, EN) — модель загружена в калькулятор, PLA, 100 %, qty 1 → итог «5,12 €» · «€5.12»,
+  отправка — подтверждение 512 центов, счётчики заказов и моделей +1; гостевая страница 390/1440 — карточка без ссылок оплаты
+  и повторного заказа, скачивание STL по праву в сессии, чистый браузер — 404. `check_admin_order` открывает теперь самый
+  старый (гостевой) заказ списка. Первый прогон один раз упал на `ui_text @1440: текст файла не вернулся` (проверка W-26,
+  которую задача не меняла; вероятно, ожидание «Saved.» срабатывает по сообщению первого сохранения) — повтор прошёл.
+- `bin/browser-check /lt/kalkuliatorius` → **OK (276)**: гостевая страница после отправки — h1 «Užsakymo eiga», h2 «Užsakymas
+  Nr. N».
+- `git status --porcelain aiqme-site`: изменения и новые файлы только в app/, bin/, config/, database/migrations/, lang/,
+  resources/, routes/, tests/ и docs/progress.md; бинарных файлов, .env, ключей и новых пакетов нет; experiments/ не изменён.
+
+### Не проверено
+
+- Визуальная сверка с прототипом — ждёт проверки пользователем (кадры `build/verification/browser-check/shots/
+  account-order-card-*.png`, `guest-order-*.png`, `*paskyra*-signed-in-*.png`, `*account*-signed-in-*.png`). Эталонных
+  кадров вкладок после входа в evidence нет (снимки — форма входа); карточка сверена с DOM `en__account__orders__DEMO-1047`.
+- Полный `bin/browser-check` без путей (все публичные страницы) не запускался: публичные шаблоны, кроме гостевой страницы и
+  калькулятора (только JS загрузки), не менялись.
+- Кнопка оплаты открытых запросов и тест «не выводится при APP_ENV=demo» — W-16; список счетов — W-17.
+
+### Продолжение после остановки сторожем сети (2026-10-21, Claude Code)
+
+- Работу из прерванной сессии сверил с done[0–8] задачи: всё сделано, кода не менял.
+- Перепроверка: `bin/check` → **OK** (Pint; Node 39/39; PHPUnit 545: 541 passed, 4 skipped; Vite);
+  `bin/browser-check --signed-in /en/quote` → **OK (3997 проверок)**, в том числе сценарий кабинета, карточки, гостевой
+  страницы, «пересчитать» и повторного заказа (итог 5,12 · 5.12); `bin/browser-check /lt/kalkuliatorius` → **OK (276)**;
+  `git status --porcelain aiqme-site`: новые файлы только в app/, database/migrations/, resources/, tests/.
+- «Не проверено» — как выше (визуальная сверка ждёт проверки пользователем).

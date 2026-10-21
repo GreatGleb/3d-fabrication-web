@@ -92,7 +92,7 @@ class AuthTest extends TestCase
             ->assertRedirect(route('en.account'));
         $this->assertNotSame($before, $session);
 
-        $this->browse('GET', route('en.account'), session: $session)->assertOk()->assertSee('Addresses &amp; company details', false);
+        $this->browse('GET', route('en.account'), session: $session)->assertOk()->assertSee('Welcome, ')->assertSee('id="account-overview"', false);
         // Админка клиенту — 404.
         $this->browse('GET', route('en.admin'), session: $session)->assertNotFound();
     }
@@ -177,7 +177,7 @@ class AuthTest extends TestCase
         $this->assertFalse($user->is_admin);
         $this->assertSame('Ona Onaitė', $user->name);
         $this->assertTrue(Hash::check('long-enough-1', $user->password));
-        $this->browse('GET', route('lt.account'), session: $session)->assertOk()->assertSee('Adresai ir įmonės duomenys');
+        $this->browse('GET', route('lt.account'), session: $session)->assertOk()->assertSee('Sveiki, Ona Onaitė.');
         $this->browse('GET', route('lt.admin'), session: $session)->assertNotFound();
     }
 
@@ -235,7 +235,7 @@ class AuthTest extends TestCase
         Mail::fake();
         $this->client();
         $old = $this->signIn('jonas@aiqme.test');
-        $this->browse('GET', route('lt.account'), session: $old)->assertOk()->assertSee('address-form', false);
+        $this->browse('GET', route('lt.account'), session: $old)->assertOk()->assertSee('account-overview', false);
 
         $url = $this->requestResetLink('jonas@aiqme.test');
         $this->assertStringStartsWith(config('app.url').'/lt/paskyra/reset/', $url);
@@ -249,7 +249,7 @@ class AuthTest extends TestCase
 
         // Следующий запрос прежней сессии ведёт на вход (AuthenticateSession), а не в кабинет.
         $this->browse('GET', route('lt.account'), session: $old)->assertRedirect(route('lt.account.login'));
-        $this->browse('GET', route('lt.account'), session: $old)->assertOk()->assertDontSee('address-form', false);
+        $this->browse('GET', route('lt.account'), session: $old)->assertOk()->assertDontSee('account-overview', false);
 
         // Старый пароль больше не подходит, новый — подходит; ссылка одноразовая.
         $this->post(route('lt.account.login.store'), ['email' => 'jonas@aiqme.test', 'password' => self::PASSWORD])->assertSessionHasErrors('email');
