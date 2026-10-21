@@ -1845,3 +1845,118 @@ užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Pre
 ## W-32: заблокирована ночным прогоном (2026-10-21 07:52)
 
 Причина (оркестратор): автор не вернул JSON-итог. Работа — в git stash «night-blocked W-32».
+
+## W-19 «Telegram-бот контента (локальный уровень)» — 2026-10-21, Claude Code (ночной прогон)
+
+### Сделано
+
+- Таблицы §2.5 (миграция `2026_10_21_300000_create_telegram_tables`): `telegram_bindings` — одна строка (администратор,
+  привязанные Telegram `user.id`/`chat.id`, SHA-256 кода и его срок, последняя ошибка Bot API без токена),
+  `telegram_dialogs` — контекст диалога чата со сроком 30 минут, `telegram_updates` — принятые `update_id`.
+- `app/Domain/Integrations/Telegram/TelegramClient` — тонкий клиент Bot API на HTTP-клиенте Laravel без пакетов (`call()`
+  для sendMessage, answerCallbackQuery, getFile, setWebhook, deleteWebhook, getUpdates; `download()` файла). Любая ошибка
+  сети/API → `TelegramException`, из сообщения вырезан токен (и его urlencode-вид) до записи в журнал (`Log::warning`)
+  и в последнюю ошибку привязки; исходное исключение дальше не передаётся. `editMessageText` не понадобился: бот
+  отвечает новыми сообщениями.
+- `TelegramUpdates::receive()` — общий приём для webhook и poll: `insertOrIgnore` `update_id`, повтор — без эффекта, затем
+  `TelegramBot::handle()`; ошибка обработки — `report()`, апдейт остаётся принятым.
+- `TelegramBot` — один общий диалог для всех 9 типов, зарегистрированных в `ContentTypes` (кода на отдельный тип нет):
+  меню типов → список записей (+ «Add a draft +», кроме page_text) → запись (состояние LT/EN, атрибуты meta, назначения
+  медиа) → язык → пронумерованные поля формы `ContentTypes::toForm()` (пути `Arr::dot`: title, slug, SEO, поля, части
+  записей pairs/records, у records — пустая запись для новой) → новый текст → `ContentTypes::fromForm()` →
+  `ContentService::saveDraft()` с каналом `telegram` и ревизией кнопки → предпросмотр → `publish`/`unpublish` LT или EN.
+  Атрибуты meta — кнопками вариантов (select/choices) или текстом (date/url), проверка `ContentTypes::metaRules()`,
+  запись `ContentService::updateItem()`. Новая запись — заголовок LT, у типов со slug затем адрес LT (он же ключ, как
+  в веб-редакторе). Кнопки несут id записи, у правки и публикации — ревизию перевода: устаревшая отклоняется
+  («This button is outdated…») и ничего не меняет. Конфликт ревизии при вводе текста: правка не сохраняется, бот
+  показывает текущую версию поля и присланный текст (§4.2). `edited_message` не обрабатывается. Удаления нет.
+- Доступ: только `chat.type = private`, `from.id` и `chat.id` привязки, привязанный пользователь всё ещё администратор
+  (Gate `admin`); остальным — ни одного ответа. Привязка — `/start <код>`: код с экрана Integrations (32 случайных байта
+  base64url, 43 символа, 10 минут, одноразовый, в БД только SHA-256); неверный код — нейтральное «The code is invalid or
+  has expired.», 5 неверных попыток с одного `user.id` за 10 минут блокируют и верный код (RateLimiter по user.id).
+- Медиа: фото (наибольший размер), видео или файл-документ только после кнопки назначения записи; размер из апдейта и
+  getFile ≤ `aiqme.media_max_kb` (20 МБ), больше — «The bot accepts files up to 20 MB. Upload larger files in the web
+  administration.» без getFile; файл скачивается во временный файл и сохраняется `ContentService::addMedia()` — та же
+  проверка `MediaFile` по сигнатуре и то же имя UUID с расширением по сигнатуре, что у W-08; имя документа Telegram не
+  используется; SVG и чужая сигнатура отклоняются.
+- Ответы бота — после записи; сбой Telegram при ответе не отменяет правку (ответ теряется, ошибка — в журнале и на
+  экране Integrations). Язык ответов — `from.language_code` (`lt` → LT, иначе EN).
+- Webhook `POST /webhooks/telegram` (`App\Http\Controllers\Webhooks\TelegramController`, `routes/webhooks.php`,
+  подключён через `then:` в `bootstrap/app.php`) — вне группы web: без сессии, cookie и CSRF. Заголовок
+  `X-Telegram-Bot-Api-Secret-Token` сравнивается `hash_equals` с `TELEGRAM_WEBHOOK_SECRET`; неверный или пустой секрет —
+  403 без записи; тело без целого `update_id` — 400.
+- Команды: `aiqme:telegram-webhook` (setWebhook: `APP_URL/webhooks/telegram`, `secret_token`, `allowed_updates`
+  message/callback_query; секрет не по `^[A-Za-z0-9_-]{1,256}$` — отказ без запросов); `aiqme:telegram-poll [--once]`
+  (только `APP_ENV=local`: deleteWebhook, getUpdates с offset в цикле до остановки, апдейты — `TelegramUpdates::receive`).
+- Экран Integrations (W-18 не выполнена — экран создан здесь): вкладка `integrations` в меню перед «Audit log», как
+  в прототипе; Livewire `App\Livewire\Admin\Integrations` — раздел Telegram: «NOT CONNECTED»/«CONNECTED», время привязки,
+  «бот не настроен» (без значений секретов), последняя ошибка, кнопка кода и команда `/start <код>`. Карточки TEJA, Bambu,
+  «Banking & shipping», описание прототипа о ролях/экспорте и кнопка демо-CSV не перенесены. W-18 добавит свои разделы.
+- `config/services.php` — `telegram.token`/`telegram.webhook_secret` из `.env`; в `.env.example` — пустые
+  `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`.
+- Тексты (rules[8]). Из прототипа: вкладка «Integracijos»/«Integrations», «Integracijos ir duomenų eiga»/«Integrations &
+  data flow», «NEPRIJUNGTA»/«NOT CONNECTED», «Telegram»; реплики «Pirmiausia sukurkite juodraštį.»/«Create a draft
+  first.», «Peržiūrėti juodraštį»/«Preview draft», «Peržiūra: …»/«Preview: …», «Būsena: juodraštis. Publikavimui reikia
+  atskiro administratoriaus patvirtinimo.»/«Status: draft. Publication requires a separate administrator confirmation.»;
+  кнопки публикации, состояния, «Draft saved.», «Saved.», «File uploaded.», «Add a draft +», подписи полей и сообщения
+  проверки — существующие строки `lang/*/admin.php`, `content.php`. Нейтральные (в прототипе нет): «PRIJUNGTA»/«CONNECTED»,
+  «Paskutinė klaida»/«Last error», «Asmeninis pokalbis susietas: …»/«Private chat linked: …», «Boto prieigos duomenys
+  nenustatyti serveryje.»/«Bot credentials are not set on the server.», «Gauti susiejimo kodą»/«Get a link code»,
+  «Per :minutes min. nusiųskite botui šią komandą:»/«Send this command to the bot within :minutes min:» и все строки
+  `lang/*/telegram.php`, кроме перечисленных из прототипа (меню типов и названия типов, «← Atgal»/«← Back», ответы на код,
+  вопросы о заголовке, URL, поле, атрибуте и медиа, «+ :collection», отказы по медиа, устаревшая кнопка, конфликт).
+  Демо-реплики чата прототипа (оплата, заявка, DEMO-1047, статус, экспорт клиентов) не перенесены (§4.5, D-21).
+- Решения без указаний плана (простейший вариант): обработка апдейта синхронно в запросе webhook (без очереди); контекст
+  диалога 30 минут; лимит 5 неверных кодов / 10 минут; подпись к фото не используется (медиа — только в контексте записи
+  по кнопке назначения, alt задаётся в вебе); ответы новыми сообщениями; строки `telegram_updates` не очищаются
+  (одна короткая строка на апдейт); списки записей — все записи типа одним сообщением без страниц (тест сидера проверяет ≤100 кнопок только у вида перевода);
+  RU-перевод в боте не редактируется (только LT/EN, §4.5).
+- Тесты: `AdminShellTest` — меню с «Integracijos»/«Integrations», запрет фразы `telegram` заменён на адреса вкладки
+  имитатора (`admin/telegram`), т. к. на экране Integrations есть раздел Telegram; `PrototypeRoutesTest` — integrations
+  проверяется (строка 13: 200 администратору, 404 гостю и клиенту) и `Livewire::flushState()` в setUp: статический флаг
+  автоподключения ресурсов Livewire после рендера вкладки иначе переходил в следующие тесты процесса. `bin/browser-check`
+  — integrations в ADMIN_PAGES.
+
+### Проверки
+
+- `tests/Feature/TelegramBotTest.php` → 17/17 (1202 утверждения), всё на `Http::fake`, токен `test-bot-token-not-real`,
+  секрет `test-webhook-secret-not-real`: webhook с включённой проверкой CSRF (подмена `PreventRequestForgery`; контроль —
+  POST формы контактов без токена → 419) — неверный и пустой секрет 403, не 419, без `Set-Cookie` и без записи; маршрут
+  без middleware `web`; код привязки с экрана (только SHA-256 в БД, 43 символа), неверный код не привязывает и отвечает
+  одной нейтральной фразой без кнопок, 5 неверных попыток блокируют верный код для этого user.id, другой user.id
+  привязывается, повтор кода не работает, просроченный код и код бывшего администратора не привязывают; чужой user.id,
+  чужой chat.id, группа — ни одного запроса к Telegram и без изменений; заказы/клиенты/заявки — на любые команды и текст
+  только меню типов контента, e-mail и имена клиентов не уходят ни в один запрос; правка из бота — черновик (публичная
+  страница без изменений, веб-редактор показывает текст), публикация EN из бота видна на /en, LT не меняется, журнал —
+  канал telegram, снятие с публикации → 404; правка в вебе видна в боте, устаревшие кнопки публикации и правки ничего не
+  меняют (и не трогают другую запись); конфликт ревизии — обе версии в ответе, сохранена веб-версия; повтор `update_id`
+  и `edited_message` — без эффекта; истёкший контекст; все 9 типов: число кнопок полей = числу полей формы ContentTypes,
+  ≤100 кнопок, callback_data ≤64 байт, текст ≤4000; новый проект (неверный slug отклонён), атрибут кнопкой, публикация
+  только LT → 200 /lt, 404 /en; медиа: без контекста — отказ, SVG-документ и чужая сигнатура отклонены, PNG с именем
+  `evil.php.jpg` сохранён как `<uuid>.png`; видео 21 МБ — понятный отказ без getFile; сетевая ошибка (`failedConnection`,
+  сообщение с адресом и токеном) — правка сохранена, в журнале и последней ошибке токена нет (`/bot[token]/sendMessage`),
+  экран Integrations показывает ошибку; `aiqme:telegram-webhook` — адрес, тело setWebhook, отказ на 4 неверных секретах
+  без запросов, 256 символов — успех, ответ 401 — вывод без токена; `aiqme:telegram-poll --once` — отказ вне local без
+  запросов, в local: deleteWebhook → getUpdates (offset 0, allowed_updates) → ответ только на новый апдейт (повтор уже
+  принятого update_id без эффекта).
+- Мутации (восстановлены): без вырезания токена, без дедупликации, без лимита попыток, без сверки chat.id, без проверки
+  ревизии кнопки правки, приём при пустом секрете — тесты падают. Удаление проверки `chat.type = private` тесты не
+  ловят: групповой chat.id всегда отличается от привязанного личного, отказ даёт сверка chat.id (проверка оставлена как
+  явное правило §4.5).
+- `vendor/bin/pint --dirty` → passed; `bin/check` → **OK**: PHPUnit 484 (468 passed, 16 skipped), Vite.
+- `bin/browser-check --signed-in /lt /en` → **OK (3472 проверки)**, включая `/lt/administravimas/integrations` и
+  `/en/admin/integrations` (ширина, §7.1, маркеры D-21, консоль) на 390 и 1440.
+- `git status --porcelain aiqme-site`: изменены `.env.example`, `AdminController.php`, `bin/browser-check`,
+  `bootstrap/app.php`, `config/services.php`, `lang/{lt,en}/admin.php`, `AdminShellTest.php`, `PrototypeRoutesTest.php`;
+  новые — команды Telegram*, `app/Domain/Integrations/Telegram/`, `app/Http/Controllers/Webhooks/`,
+  `app/Livewire/Admin/Integrations.php`, миграция, `lang/{lt,en}/telegram.php`, два шаблона admin, `routes/webhooks.php`,
+  `TelegramBotTest.php`. Бинарных файлов, .env, ключей и новых пакетов нет.
+
+### Не проверено
+
+- Реальный Bot API (уровень T, W-22): форматы апдейтов — по документации Telegram, фикстуры записаны вручную, не сняты
+  с настоящего бота; `aiqme:telegram-poll` в бесконечном цикле и Ctrl+C не запускались (только `--once`).
+- Скачивание файла до 20 МБ по сети и время обработки синхронного webhook с таким файлом — не измерялись.
+- Вид экрана Integrations и раздел Telegram — кадры `build/verification/browser-check/shots/*integrations*` ждут
+  проверки пользователем; удобство диалога в настоящем клиенте Telegram — ждёт проверки пользователем (W-22).
+- Сценарий 5 §9.3 (W-30) не собирался.

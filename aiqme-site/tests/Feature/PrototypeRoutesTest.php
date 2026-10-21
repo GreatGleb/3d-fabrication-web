@@ -9,6 +9,7 @@ use App\Domain\Content\Models\ContentItem;
 use App\Models\User;
 use Database\Seeders\PrototypeContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\PageHead;
 use Tests\TestCase;
@@ -19,7 +20,8 @@ use Tests\TestCase;
  * библиотеки — 200, их дубли в /informacija/, /naujienos/ — 404, демо-проекты — 404, пока черновики, 200 после публикации (W-06);
  * демо-товары — 404 и после сидера (W-25); вход, регистрация, восстановление — 200, кабинет (корень и вкладка addresses) —
  * форма входа гостю и кабинет клиенту, корень админки — 200 администратору и 404 гостю и клиенту (W-07); вкладки админки
- * overview, services, content, audit — так же (W-08); products, categories, projects, training, translations (W-26).
+ * overview, services, content, audit — так же (W-08); products, categories, projects, training, translations (W-26);
+ * integrations (W-19, раздел Telegram).
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -32,11 +34,19 @@ class PrototypeRoutesTest extends TestCase
     private const LATER_TABS = [
         10 => ['overview' => 'W-15', 'orders' => 'W-15', 'models' => 'W-15', 'invoices' => 'W-15'],
         // Админка: overview, services, content, audit и корень — W-08; products, categories, projects, training,
-        // translations — W-26; остальные вкладки — свои задачи.
+        // translations — W-26; integrations — W-19; остальные вкладки — свои задачи.
         13 => [
-            'orders' => 'W-14', 'customers' => 'W-14', 'calculator' => 'W-11', 'integrations' => 'W-18', 'settings' => 'W-17',
+            'orders' => 'W-14', 'customers' => 'W-14', 'calculator' => 'W-11', 'settings' => 'W-17',
         ],
     ];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Вкладка integrations (W-19) рендерит Livewire-компонент: статический флаг автоподключения ресурсов Livewire
+        // сбрасывается только flushState, иначе он переходит в следующие тесты процесса и меняет HTML публичных страниц.
+        Livewire::flushState();
+    }
 
     /** @return array{rows: array<int, string>, routes: list<array{path: string, row: int}>} */
     private static function fixture(): array

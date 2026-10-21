@@ -57,6 +57,7 @@ W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 �
 ссылка специалиста заполняет контактную форму; крупный binary (~25 МБ) — индикация, страница не замирает (Web Worker),
 куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
 
+W-19: вкладка Integrations (раздел Telegram) — в ADMIN_PAGES.
 W-11: вкладка Calculator админки — в ADMIN_PAGES; check_calculator_settings на 390 и 1440: форма без расползания и ошибок
 консоли/CSP; на 1440 габарит 300 мм сохраняется через Livewire, пометка «Not confirmed» у него снимается, /en/quote выводит
 300 в data-settings; затем габарит возвращается к 250.
@@ -119,7 +120,7 @@ ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/acc
 ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
                                                       for tab in ('overview', 'services', 'content', 'audit', 'products',
                                                                   'categories', 'projects', 'training', 'translations',
-                                                                  'calculator')]
+                                                                  'calculator', 'integrations')]
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}

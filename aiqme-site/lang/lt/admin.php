@@ -12,6 +12,7 @@ return [
         'content' => 'Informacija ir SEO',
         'training' => 'Mokymai',
         'translations' => 'LT / EN turinys',
+        'integrations' => 'Integracijos',
         'audit' => 'Veiksmų istorija',
         'categories' => 'Kategorijos',
     ],
@@ -187,5 +188,19 @@ return [
         'save' => 'Išsaugoti parametrus',
         'saved' => 'Išsaugota.',
         'invalid' => 'Patikrinkite reikšmę.',
+    ],
+    // W-19 из прототипа: вкладка «Integracijos», заголовок «Integracijos ir duomenų eiga», «NEPRIJUNGTA», «Telegram»;
+    // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19).
+    'integrations' => [
+        'heading' => 'Integracijos ir duomenų eiga',
+        'not_connected' => 'NEPRIJUNGTA',
+        'connected' => 'PRIJUNGTA',
+        'last_error' => 'Paskutinė klaida',
+        'telegram' => [
+            'bound' => 'Asmeninis pokalbis susietas: :time.',
+            'not_configured' => 'Boto prieigos duomenys nenustatyti serveryje.',
+            'get_code' => 'Gauti susiejimo kodą',
+            'code_hint' => 'Per :minutes min. nusiųskite botui šią komandą:',
+        ],
     ],
 ];

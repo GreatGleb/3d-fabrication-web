@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    /*
+    | Telegram-бот контента (W-19, §5.4): токен бота и секрет webhook (1–256 символов A-Z, a-z, 0-9, _ и -).
+    | Значения — только в .env; в репозитории и интерфейсе их нет.
+    */
+    'telegram' => [
+        'token' => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+    ],
+
 ];

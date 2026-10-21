@@ -22,6 +22,7 @@ return [
         'content' => 'Content & SEO',
         'training' => 'Training',
         'translations' => 'LT / EN content',
+        'integrations' => 'Integrations',
         'audit' => 'Audit log',
         'categories' => 'Categories',
     ],
@@ -197,5 +198,19 @@ return [
         'save' => 'Save parameters',
         'saved' => 'Saved.',
         'invalid' => 'Check the value.',
+    ],
+    // W-19 из прототипа: вкладка «Integrations», заголовок «Integrations & data flow», «NOT CONNECTED», «Telegram»;
+    // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19).
+    'integrations' => [
+        'heading' => 'Integrations & data flow',
+        'not_connected' => 'NOT CONNECTED',
+        'connected' => 'CONNECTED',
+        'last_error' => 'Last error',
+        'telegram' => [
+            'bound' => 'Private chat linked: :time.',
+            'not_configured' => 'Bot credentials are not set on the server.',
+            'get_code' => 'Get a link code',
+            'code_hint' => 'Send this command to the bot within :minutes min:',
+        ],
     ],
 ];

@@ -22,7 +22,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * W-08: overview, services (услуги; FAQ — W-26), content (page_text; статьи и новости — W-26), audit. W-26: products
  * (товары и бренды, панель категорий), categories (без пункта меню, как в прототипе — категории правятся из вкладки
  * товаров), projects, training, translations. W-09: заявки форм в overview и training, скачивание вложений. Остальные
- * вкладки добавляют W-14, W-17, W-18; до них их адресов нет. W-11: calculator — настройки калькулятора (Livewire CalculatorSettings).
+ * вкладки добавляют W-14, W-17, W-18; до них их адресов нет. W-11: calculator — настройки калькулятора (Livewire CalculatorSettings). W-19: integrations — раздел Telegram
+ * (Livewire Integrations; остальные подключения — W-18).
  */
 class AdminController extends Controller
 {
@@ -30,7 +31,8 @@ class AdminController extends Controller
     public const TABS = [
         'overview' => 'settings', 'products' => 'settings', 'services' => 'settings', 'calculator' => 'settings',
         'projects' => 'settings',
-        'content' => 'settings', 'training' => 'settings', 'translations' => 'settings', 'audit' => 'settings',
+        'content' => 'settings', 'training' => 'settings', 'translations' => 'settings', 'integrations' => 'settings',
+        'audit' => 'settings',
     ];
 
     /** Вкладки без пункта меню => пункт меню, который они подсвечивают. */
@@ -127,6 +129,11 @@ class AdminController extends Controller
         abort_if($editing !== null && ! in_array($editing, self::uiTextKeys(strtok($editing, '.') ?: ''), true), 404);
 
         return view('admin.translations', ['tab' => 'translations', 'group' => $group, 'keys' => $keys, 'editing' => $editing]);
+    }
+
+    public function integrations(): View
+    {
+        return view('admin.integrations', ['tab' => 'integrations']);
     }
 
     public function audit(): View
