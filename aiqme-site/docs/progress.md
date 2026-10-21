@@ -2049,3 +2049,102 @@ užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Pre
 - Параллельные вызовы (две вкладки администратора) — блокировки строк есть, отдельного теста конкурентности нет.
 - Действия в интерфейсе — W-14 (админка), W-15 (кабинет, гостевая ветка ответа); отмена запросов с intent и в creating
   при отмене заказа — W-16; блокировка цены после выпуска счёта — W-17; проекция событий в листы — W-18.
+
+## W-14: Админка: обзор, заказы, клиенты — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+### Сделано
+
+- Вкладки `orders` и `customers` в меню в порядке прототипа (Overview, Orders, Products, Services, Calculator, Customers, …);
+  маршруты `/lt/administravimas/orders|customers` · `/en/admin/orders|customers` — 404 всем, кроме администратора.
+- `App\Livewire\Admin\Overview` (на Overview над заявками W-09): метрики «Awaiting technical review» (стадия review),
+  «Awaiting payment» (заказы с открытым платёжным запросом), «In production» (in_production и quality_check), новые
+  обращения и регистрации на обучение за 7 дней; последние 10 заказов; предупреждение «Failed background tasks: N» —
+  строки `failed_jobs` плюс события outbox с `mail_status` или `sheets_status` = failed. `/admin?order=<id>` (ссылка из
+  письма W-12) переадресует в карточку заказа.
+- `App\Livewire\Admin\Orders\Index`: поиск по началу номера, фильтр по стадии, последние 100 заказов; таблица прототипа
+  (Order/Type/Status/Total, «Manage»), общая с Overview (`admin/partials/order-rows`).
+- `App\Livewire\Admin\Orders\Card` (`?order=<id>`, под списком, как `#admin-order-detail`): файлы со ссылками скачивания
+  только через `route('stl.download')` (W-32), параметры и пожелания, серверные размеры, объём, масса, оценка и
+  предупреждения; контакты, способ получения и адрес, ссылка на карточку клиента; цены строк в EUR и строка доставки:
+  подтверждение (review) и изменение с основанием и согласованием (confirmed); оплата (итог, оплачено, долг, состояние),
+  запросы и отмена pending без intent, новый запрос; начало производства и «Next stage»; перевозчик и трек; сообщение
+  клиенту и ответы клиента («Customer response» + подписи трёх кнопок прототипа); перевыпуск гостевой ссылки (только у
+  гостевого заказа); отмена с причиной; история (ревизии цены и журнал заказа). Все изменения вызывают методы
+  `OrderWorkflow`; отказы правил выводятся в карточке (`@error('workflow')`). Опасные действия (отмена, изменение цены,
+  начало производства при долге > 0) — первое нажатие показывает `#order-confirm` с «Confirm»/«Back», действие —
+  только после «Confirm»; при долге `startProduction` получает `debtConfirmed: true` только после подтверждения.
+- Лист задания Bambu («Bambu Studio staff handoff» → «Staff job handoff»): номер, файлы (ссылки защищённой выдачи),
+  количество, материал, заполнение, пожелания, единицы, масштаб, текст прототипа без «Demo job sheet…». Кнопок передачи на
+  принтер и JSON-выгрузки нет.
+- `OrderWorkflow::reissueGuestLink` (новый метод сервиса W-13): новый токен, в БД — только SHA-256, журнал
+  `order.guest_link_reissued` без токена; у заказа клиента — отказ `not_guest`. Карточка показывает новую ссылку один раз
+  с предупреждением; следующий запрос компонента её сбрасывает. Ссылку страницы оплаты для клиента добавит W-16.
+- `App\Livewire\Admin\Customers`: зарегистрированные клиенты (без администраторов) с числом заказов; карточка
+  (`?customer=<id>`): контакты, «Addresses & company details» из `customer_profiles`, заказы; «Guest contacts» — контакты
+  гостевых заявок со ссылкой на заказ. Без CSV и массовых операций (ссылку на Google Таблицу добавит W-18).
+- Подписи событий заказа в журнале (`admin.audit.events.order.*`).
+- `tests/browser/OrderFactory.php`: гостевая заявка через OrderSubmission (два куба), цена 60 + 55 + 5 + доставка 30 EUR
+  подтверждена, запрос на 50 EUR, трек DPD — через OrderWorkflow; вызывается из `BrowserDataSeeder`.
+- `bin/browser-check`: `orders`, `customers` в ADMIN_PAGES; `check_admin_order` на 390 (LT) и 1440 (EN).
+
+### Тексты
+
+- Из прототипа (app.js, dom.html admin orders/overview): «Orders & production review», «Search by order number»,
+  «Order search», колонки, «Manufacturing», «Manage», стадии (Technical review, Approved for production, In production,
+  Quality inspection, Ready to ship, Shipped, Completed), «Files & production settings», notice проверки файла,
+  «Next stage», «Bambu Studio staff handoff», «Staff job handoff», текст листа задания, «Customer response»,
+  «Approve the proposed revision», «Request clarification», «Request cancellation», «Customer explanation & proposed
+  solution», «Awaiting technical review», «Orders», «All orders ↗», «Delivery», «Total», «Paid», вкладки «Orders»,
+  «Customers» (и пары LT).
+- Нейтральные (в прототипе нет): «Cancelled»/«Atšaukta» (стадия), «Awaiting payment», «New enquiries (7 days)»,
+  «Training registrations (7 days)», «Failed background tasks: …», «All», «No orders found.», File, Parameters,
+  «Size and volume», Estimate, «Download STL», Quantity, Units, «Scale, %», Customer/Guest, Contacts, «Delivery method»,
+  Address, «Customer card», Price, подсказка о пустой доставке, «Confirm price», «Change price», «Reason for the change»,
+  «Customer agreement (e.g. …)», Payment, Outstanding, состояния оплаты и запросов, «Payment requests», «No payment
+  requests.», «Amount, €», «Request payment», «Cancel request», Production, Carrier, «Tracking number», «Save tracking»,
+  Messages, «No messages yet.», «Send to the customer», «Guest link» и подсказка, «Issue a new guest link», «New guest link —
+  shown only once…», «Cancel order», «Cancellation reason», «Cancelled: …», тексты подтверждений, Confirm/Back, History,
+  «Price revision N», сообщения об успехе, «Enter an amount in euros…», заголовок «Customers» (без «& export»), «Guest
+  contacts» и подписи списка клиентов, `orders.workflow.not_guest`, подписи событий журнала заказа; LT — переводы этих фраз.
+
+### Решения по неопределённому (простейший вариант)
+
+- «Ждут оплаты» — заказы с открытым (creating/pending/cancelling) запросом; «в производстве» — in_production и quality_check;
+  «новые» обращения и регистрации — за 7 дней (статуса «обработано» нет).
+- «Неудачные фоновые задания» — `failed_jobs` + каналы outbox в failed.
+- Подтверждение опасных действий — второе нажатие в карточке (проверяется сервером), а не `confirm()` браузера.
+- Ссылка гостю — на языке заявки (`order_meta.locale`). Колонка «Type» всегда «Manufacturing» (покупки каталога нет, D-12).
+- Тест `AuthTest` Overview: Livewire-компонент добавляет к `Cache-Control` «no-cache, must-revalidate, max-age=0»; проверка
+  изменена на наличие `no-store` и `private` (как в AdminShellTest).
+
+### Проверки
+
+- `tests/Feature/AdminOrdersTest.php` → 17/17 (362 утверждения): вкладки только администратору (гость и клиент 404,
+  компоненты для клиента 404), тексты прототипа без демо-фраз; метрики и порядок последних заказов, предупреждение (2 =
+  событие с ошибкой письма + failed_jobs), переадресация `?order=`; поиск и фильтр; подтверждение цены с доставкой (ревизия
+  1, итог 150 EUR, событие); отказы правил OrderWorkflow видны без изменений (цена 0, запрос больше долга, цена ниже
+  оплаченного); изменение цены — подтверждение, «Back», затем ревизия 2 с основанием; запрос и отмена без intent, запрос с
+  intent не отменяется, чужой запрос — 404; начало производства при долге — подтверждение, без долга — сразу; стадии, shipped
+  без трека — отказ, трек, самовывоз ready → completed; отмена — подтверждение, причина обязательна, открытый запрос → void;
+  сообщение и три ответа клиента в карточке (EN и LT); ссылки STL — только `/stl/<id>`, скачивание администратором —
+  attachment, гостю 404; лист Bambu — параметры, пожелания, ссылки, без пути storage, без форм и кнопок передачи;
+  перевыпуск: старая ссылка 404, новая 200, токена нет в журнале, после следующего запроса ссылка не показывается; у заказа
+  клиента перевыпуска нет; клиенты, число заказов, карточка с профилем, гостевые контакты, администратор — 404.
+- Мутации (восстановлены): отмена без подтверждения, ссылка не сбрасывается, старт без подтверждения долга, ссылки на
+  storage, изменение цены без подтверждения — тесты падают.
+- `PrototypeRoutesTest`: строки orders/customers больше не пропускаются (200 администратору, 404 гостю и клиенту).
+- `bin/check` → **OK**: PHPUnit 536 (524 passed, 12 skipped), JS 36/36, Vite.
+- `bin/browser-check --signed-in /en/contact` → **OK (3150 проверок)**: все вкладки админки, включая orders и customers,
+  на 320–1440; `check_admin_order` 390/1440: карточка фабричного заказа без расползания, маркеров и ошибок консоли/CSP,
+  стадия, открытый запрос, трек, ссылки листа задания и скачивание, подтверждение отмены и «Back», на 1440 — новая гостевая
+  ссылка открывается в чистом браузере и после перезагрузки не показывается. Первый прогон нашёл маркер «example» в
+  подписи согласования — заменено на «e.g.».
+- `git status --porcelain aiqme-site`: изменённые и новые файлы только в app/, lang/, resources/views/admin/, tests/, bin/
+  и docs/progress.md; бинарных файлов, .env, ключей и новых пакетов нет.
+
+### Не проверено
+
+- Визуальная сверка карточки с прототипом — ждёт проверки пользователем (кадры: `build/verification/browser-check/shots/
+  admin-order-card-390.png`, `-1440.png`).
+- Параллельная работа двух вкладок администратора с одним заказом — отдельного теста нет (блокировки — в OrderWorkflow).
+- Полный `bin/browser-check` без путей (все публичные страницы) не запускался: изменены только страницы админки.

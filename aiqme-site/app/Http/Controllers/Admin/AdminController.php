@@ -8,11 +8,13 @@ use App\Domain\Content\Models\ContentItem;
 use App\Domain\Forms\Models\ContactRequest;
 use App\Domain\Forms\Models\TrainingRegistration;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Lunar\Models\Order;
 use Spatie\Activitylog\Models\Activity;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -22,15 +24,17 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * W-08: overview, services (услуги; FAQ — W-26), content (page_text; статьи и новости — W-26), audit. W-26: products
  * (товары и бренды, панель категорий), categories (без пункта меню, как в прототипе — категории правятся из вкладки
  * товаров), projects, training, translations. W-09: заявки форм в overview и training, скачивание вложений. Остальные
- * вкладки добавляют W-14, W-17, W-18; до них их адресов нет. W-11: calculator — настройки калькулятора (Livewire CalculatorSettings). W-19: integrations — раздел Telegram
+ * вкладки добавляют W-17, W-18; до них их адресов нет. W-14: overview — метрики, последние заказы и предупреждение
+ * (Livewire Overview); orders — список, поиск и карточка заказа (?order=<id>, Livewire Orders\Index и Orders\Card);
+ * customers — клиенты, карточка клиента (?customer=<id>) и гостевые контакты (Livewire Customers). W-11: calculator — настройки калькулятора (Livewire CalculatorSettings). W-19: integrations — раздел Telegram
  * (Livewire Integrations; остальные подключения — W-18).
  */
 class AdminController extends Controller
 {
     /** Вкладки в порядке меню прототипа => иконка. */
     public const TABS = [
-        'overview' => 'settings', 'products' => 'settings', 'services' => 'settings', 'calculator' => 'settings',
-        'projects' => 'settings',
+        'overview' => 'settings', 'orders' => 'settings', 'products' => 'settings', 'services' => 'settings',
+        'calculator' => 'settings', 'customers' => 'settings', 'projects' => 'settings',
         'content' => 'settings', 'training' => 'settings', 'translations' => 'settings', 'integrations' => 'settings',
         'audit' => 'settings',
     ];
@@ -53,10 +57,15 @@ class AdminController extends Controller
 
     /**
      * Overview: заявки контактной формы (W-09) — последние 100 со статусом письма; ?request=<id> — заявка целиком
-     * с вложениями (ссылка из письма AIQME). Метрики, заказы и предупреждения добавляет W-14.
+     * с вложениями (ссылка из письма AIQME). Метрики, заказы и предупреждения — Livewire Overview (W-14). ?order=<id> —
+     * ссылка из письма о заявке (W-12): переход в карточку заказа.
      */
-    public function overview(Request $request): View
+    public function overview(Request $request): View|RedirectResponse
     {
+        if ($request->filled('order')) {
+            return redirect()->route(app()->getLocale().'.admin.orders', ['order' => (int) $request->query('order')]);
+        }
+
         return view('admin.overview', [
             'tab' => 'overview',
             'requests' => ContactRequest::with('event')->latest('id')->limit(100)->get(),
@@ -78,6 +87,20 @@ class AdminController extends Controller
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /** Заказы (§1.4 Orders): список с поиском и фильтром; ?order=<id> — карточка заказа под списком, как в прототипе. */
+    public function orders(Request $request): View
+    {
+        $order = $request->filled('order') ? Order::findOrFail((int) $request->query('order')) : null;
+
+        return view('admin.orders', ['tab' => 'orders', 'orderId' => $order?->id]);
+    }
+
+    /** Клиенты (§1.4 Customers): список, гостевые контакты; ?customer=<id> — карточка клиента. */
+    public function customers(Request $request): View
+    {
+        return view('admin.customers', ['tab' => 'customers', 'customerId' => $request->filled('customer') ? (int) $request->query('customer') : null]);
     }
 
     public function products(Request $request): View

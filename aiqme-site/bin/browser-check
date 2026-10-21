@@ -71,6 +71,13 @@ W-12: заявка гостя до подтверждения в том же с�
 W-31: просмотр модели (Canvas 2D) на тех же страницах — check_viewer на 390 и 1440: пиксели модели на canvas после загрузки
 куба, ArrowRight / «+» / кнопки / колесо / перетаскивание меняют toDataURL, сброс возвращает исходный, колесо не листает
 страницу; модель 500 000 треугольников — время кадра в заметках отчёта (< 100 мс).
+
+W-14: вкладки orders и customers — в ADMIN_PAGES (Overview — с метриками и последними заказами); карточка заказа фабрики
+tests/browser/OrderFactory (гостевой заказ: цена подтверждена, открыт запрос оплаты, введён трек) — check_admin_order на 390
+(LT) и 1440 (EN): переход «Valdyti» · «Manage», без расползания документа, маркеров D-21 и ошибок консоли/CSP; стадия, открытый
+запрос и трек на месте; лист задания Bambu — ссылки /stl/<id>, скачивание администратором — attachment; «Atšaukti užsakymą» ·
+«Cancel order» сначала спрашивает подтверждение, «Atgal» · «Back» ничего не меняет; на 1440 перевыпуск гостевой ссылки —
+новая ссылка показана, открывается в чистом браузере, после перезагрузки карточки не показывается.
 """
 import html
 import json
@@ -118,9 +125,9 @@ CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
 # Кабинет и админка после входа через форму (W-07); вкладки админки W-08, W-26 и W-11; вкладки W-15 добавят свои адреса.
 ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/account/addresses']
 ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
-                                                      for tab in ('overview', 'services', 'content', 'audit', 'products',
+                                                      for tab in ('overview', 'orders', 'services', 'content', 'audit', 'products',
                                                                   'categories', 'projects', 'training', 'translations',
-                                                                  'calculator', 'integrations')]
+                                                                  'calculator', 'customers', 'integrations')]
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
@@ -1127,6 +1134,60 @@ def check_calculator_settings(report, new_page, state):
         context.close()
 
 
+def check_admin_order(report, new_page, state, allowlist):
+    """Карточка заказа W-14 на фабричном заказе (tests/browser/OrderFactory) на 390 (LT) и 1440 (EN)."""
+    for width, height, prefix, texts in ((390, 844, '/lt/administravimas', {'stage': 'Patvirtinta gamybai', 'open': 'Atvira', 'back': 'Atgal'}),
+                                         (1440, 1000, '/en/admin', {'stage': 'Approved for production', 'open': 'Open', 'back': 'Back'})):
+        where = f'{prefix}/orders карточка @{width}'
+        context, page, problems = new_page(width, height, storage_state=state)
+        page.goto(BASE + prefix + '/orders', wait_until='networkidle')
+        page.locator('#admin-order-list a.btn').first.click()
+        page.wait_for_load_state('networkidle')
+        if not report.check(page.locator('#order-card').count() == 1, f'{where}: нет #order-card'):
+            context.close()
+            continue
+        path = urlparse(page.url).path + '?' + urlparse(page.url).query
+        report.check(texts['stage'] in page.inner_text('#order-card .status-title'), f'{where}: нет стадии «{texts["stage"]}»')
+        report.check(texts['open'] in page.inner_text('#order-payment'), f'{where}: нет открытого запроса оплаты')
+        report.check(page.input_value('#field-trackingNumber') == 'LT000000001', f'{where}: нет трека')
+        page.click('#order-card button[aria-controls="bambu-job"]')
+        page.wait_for_selector('#bambu-job')
+        links = page.locator('#bambu-job a').evaluate_all('links => links.map(link => link.getAttribute("href"))')
+        report.check(len(links) == 2 and all(re.fullmatch(re.escape(BASE) + r'/stl/\d+', link or '') for link in links),
+                     f'{where}: ссылки листа задания {links}')
+        if links:
+            response = page.request.get(links[0])
+            report.check(response.status == 200 and response.headers.get('content-disposition', '').startswith('attachment'),
+                         f'{where}: скачивание STL {response.status} {response.headers.get("content-disposition")}')
+        scroll, client = document_fits(page)
+        report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+        for hit in marker_hits(page, path, allowlist):
+            report.check(False, f'{where}: маркер {hit}')
+        page.click('#order-cancel-form button[type=submit]')
+        page.wait_for_selector('#order-confirm')
+        page.click(f'#order-confirm button:has-text("{texts["back"]}")')
+        page.wait_for_selector('#order-confirm', state='detached')
+        report.check(texts['stage'] in page.inner_text('#order-card .status-title'), f'{where}: заказ изменился после «{texts["back"]}»')
+        page.screenshot(path=str(OUT / 'shots' / f'admin-order-card-{width}.png'), full_page=True)
+        if width == 1440:
+            with page.expect_response(lambda r: r.request.method == 'POST' and 'livewire' in r.url):
+                page.click('#order-guest-link button')
+            page.wait_for_selector('#guest-link')
+            link = page.get_attribute('#guest-link', 'href') or ''
+            guest_context, guest_page, guest_problems = new_page(1440, 1000)
+            response = guest_page.goto(link, wait_until='networkidle')
+            report.check(response.status == 200 and guest_page.locator('[data-order-number]').count() == 1,
+                         f'{where}: новая гостевая ссылка — HTTP {response.status}')
+            for problem in guest_problems:
+                report.check(False, f'{where} гостевая страница: {problem}')
+            guest_context.close()
+            page.reload(wait_until='networkidle')
+            report.check(page.locator('#guest-link').count() == 0 and link not in page.content(), f'{where}: ссылка показана повторно')
+        for problem in problems:
+            report.check(False, f'{where}: {problem}')
+        context.close()
+
+
 def mailpit(method, path):
     with urlopen(Request(MAILPIT + path, method=method), timeout=5) as response:
         body = response.read().decode()
@@ -1606,6 +1667,8 @@ def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     check_admin_editors_w26(report, new_page, admin)
     log('== настройки калькулятора (W-11)')
     check_calculator_settings(report, new_page, admin)
+    log('== карточка заказа (W-14)')
+    check_admin_order(report, new_page, admin, allowlist)
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], client, 404, 'клиент')
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], None, 404, 'гость')
     check_russian(report, new_page, ru_paths, admin)

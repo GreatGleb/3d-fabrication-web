@@ -11,7 +11,7 @@ use RuntimeException;
  * bin/php artisan db:seed --class='Tests\browser\BrowserDataSeeder' (пароль клиента — в BROWSER_CLIENT_PASSWORD,
  * его создаёт bin/browser-check и не пишет в файлы и журналы). Данные следующих задач добавляются сюда из фабрик tests/browser/.
  * W-05: 2 бренда и 2 новости; W-06: проект LT+EN (услуги modelling и scanning) и обучение; W-25: 4 товара с брендом и категорией;
- * W-33: опубликованный черновик проекта prototype. Медиа не загружаются: места прототипа показывают файлы по умолчанию D-43.
+ * W-33: опубликованный черновик проекта prototype; W-14: гостевой заказ с подтверждённой ценой, открытым запросом и треком. Медиа не загружаются: места прототипа показывают файлы по умолчанию D-43.
  */
 class BrowserDataSeeder extends Seeder
 {
@@ -25,9 +25,11 @@ class BrowserDataSeeder extends Seeder
         $client = ClientFactory::new()->create(['password' => $password]);
         $this->command?->info('Клиент: '.$client->email);
 
-        $content = ContentFactory::as(User::where('is_admin', true)->firstOrFail());
+        $admin = User::where('is_admin', true)->firstOrFail();
+        $content = ContentFactory::as($admin);
         $content->homeTickers();
         $content->publicSections();
         $content->catalog();
+        OrderFactory::confirmedWithRequestAndTracking($admin);
     }
 }

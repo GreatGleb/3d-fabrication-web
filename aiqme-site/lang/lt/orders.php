@@ -24,6 +24,7 @@ return [
         'tracking_pickup' => 'Atsiimamiems užsakymams sekimo numerio nėra.',
         'not_cancellable' => 'Įvykdyto ar atšaukto užsakymo atšaukti negalima.',
         'message_invalid' => 'Įveskite pranešimą (iki 5000 simbolių).',
+        'not_guest' => 'Tai registruoto kliento užsakymas: svečio nuorodos nėra.',
         'reply_invalid' => 'Nežinomas atsakymas.',
     ],
 ];

@@ -25,6 +25,7 @@ return [
         'tracking_pickup' => 'Collection orders have no tracking number.',
         'not_cancellable' => 'A completed or cancelled order cannot be cancelled.',
         'message_invalid' => 'Enter a message (up to 5000 characters).',
+        'not_guest' => 'This is a registered customer order: it has no guest link.',
         'reply_invalid' => 'Unknown reply.',
     ],
 ];

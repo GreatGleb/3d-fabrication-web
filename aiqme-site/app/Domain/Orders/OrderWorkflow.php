@@ -244,6 +244,27 @@ final class OrderWorkflow
     }
 
     /**
+     * Перевыпуск гостевой ссылки (§3.3, §6.2, W-14): новый токен, в БД — только его SHA-256, прежняя ссылка перестаёт
+     * работать. Открытый токен возвращается один раз для показа администратору и нигде не записывается (журнал — без него).
+     * У заказа клиента гостевой ссылки нет.
+     */
+    public function reissueGuestLink(User $admin, Order $order): string
+    {
+        $this->authorize($admin);
+
+        return DB::transaction(function () use ($admin, $order): string {
+            [$order] = $this->lock($order);
+            $meta = OrderMeta::where('order_id', $order->id)->lockForUpdate()->firstOrFail();
+            $this->require($order->user_id === null && $meta->guest_token_hash !== null, 'not_guest');
+            $token = OrderSubmission::guestToken();
+            $meta->update(['guest_token_hash' => hash('sha256', $token)]);
+            AuditLog::record('order.guest_link_reissued', $order, Channel::Web, $admin);
+
+            return $token;
+        });
+    }
+
+    /**
      * Ответ клиента (agree | question | cancel_request, §1.3): только записывается и виден администратору — ничего не
      * отменяет и не меняет. Автор — владелец заказа; иначе отказ без записи (право гостя в сессии — W-15).
      */

@@ -145,8 +145,11 @@ class AuthTest extends TestCase
         $this->admin();
         $session = $this->signIn('admin@aiqme.test', locale: 'en');
 
-        $this->browse('GET', route('en.admin'), session: $session)->assertOk()->assertSee('AIQME management workspace')
-            ->assertHeader('Cache-Control', 'no-store, private');
+        // Overview содержит Livewire-компонент (W-14): Livewire добавляет no-cache, must-revalidate, max-age=0 к private, no-store.
+        $cache = $this->browse('GET', route('en.admin'), session: $session)->assertOk()->assertSee('AIQME management workspace')
+            ->headers->get('Cache-Control');
+        $this->assertStringContainsString('no-store', $cache);
+        $this->assertStringContainsString('private', $cache);
         $this->browse('GET', route('lt.admin'), session: $session)->assertOk()->assertSee('AIQME valdymo aplinka');
         $this->browse('GET', '/ru/', session: $session)->assertOk()->assertHeader('X-Robots-Tag', 'noindex, nofollow');
     }

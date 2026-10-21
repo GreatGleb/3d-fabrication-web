@@ -1,12 +1,13 @@
 {{-- Overview (§1.4): заголовок прототипа и заявки контактной формы (W-09) — список со статусом письма и заявка целиком
      (?request=<id>, ссылка из письма AIQME): поля, полный текст, вложения (скачивание), ошибка письма. Метрики, последние
-     заказы и предупреждения добавляет W-14. Демо-метрики, заказ DEMO-1047 и notice «…simulated in the browser» не
+     заказы и предупреждение о неудачных фоновых заданиях — Livewire Overview (W-14). Демо-метрики, заказ DEMO-1047 и notice «…simulated in the browser» не
      переносятся (D-21). --}}
 @php
     $locale = app()->getLocale();
 @endphp
 @component('admin.shell', ['tab' => $tab])
     <h2>{{ __('admin.overview.heading') }}</h2>
+    <livewire:admin.overview />
     @if ($shown)
         <div class="panel gap" id="request-{{ $shown->id }}">
             <h3>{{ __('admin.requests.contact_item', ['id' => $shown->id]) }}</h3>
