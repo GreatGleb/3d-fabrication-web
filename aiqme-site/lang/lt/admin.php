@@ -1,12 +1,13 @@
 <?php
 
-// Админка (§1.4, W-08, W-26): источники и нейтральные надписи — см. lang/en/admin.php и docs/progress.md (W-08, W-26).
+// Админка (§1.4, W-08, W-26, W-11): источники и нейтральные надписи — см. lang/en/admin.php и docs/progress.md (W-08, W-26, W-11).
 return [
     'menu' => 'Administravimo meniu',
     'tabs' => [
         'overview' => 'Apžvalga',
         'products' => 'Produktai',
         'services' => 'Paslaugos',
+        'calculator' => 'Kalkuliatorius',
         'projects' => 'Projektai',
         'content' => 'Informacija ir SEO',
         'training' => 'Mokymai',
@@ -168,5 +169,20 @@ return [
             'failed' => 'Nepavyko',
             'none' => '—',
         ],
+    ],
+    'calculator' => [
+        'heading' => 'Medžiagos, parametrai ir kainodara',
+        'material' => 'Medžiaga',
+        'density' => 'Tankis, g/cm³',
+        'rate' => 'Kaina už gramą, €',
+        'order_fee' => 'Užsakymo mokestis, €',
+        'file_fee' => 'Mokestis už failą, €',
+        'default_infill' => 'Numatytasis užpildas, %',
+        'max_dimension' => 'Įrangos kraštinė, mm',
+        'unconfirmed' => 'Nepatvirtinta',
+        'materials_hint' => 'Užpildykite tuščią eilutę, kad pridėtumėte medžiagą; ištrinkite pavadinimą, kad ją pašalintumėte.',
+        'save' => 'Išsaugoti parametrus',
+        'saved' => 'Išsaugota.',
+        'invalid' => 'Patikrinkite reikšmę.',
     ],
 ];

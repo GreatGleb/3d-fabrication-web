@@ -1,7 +1,8 @@
 {{-- Калькулятор (§1.2, W-27): 5 шагов прототипа (quote()) на ядре W-10, расчёт — в браузере, resources/js/calculator/.
      Без выбора технологии (FDM, D-37), без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров
      и флажка сценария риска (D-21). Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 до W-12 не отправляется.
-     Тарифы, габарит и лимиты — data-settings из config('aiqme.calculator'), тексты для JS — data-texts. --}}
+     data-settings — тарифы, заполнение по умолчанию и габарит из настроек админки (W-11) и лимиты файлов из
+     config('aiqme.calculator'); тексты для JS — data-texts. --}}
 @php
     $locale = app()->getLocale();
     $infills = collect([20, 40, 60, 100, $settings['default_infill']])->unique()->sort()->values();

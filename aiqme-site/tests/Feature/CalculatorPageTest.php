@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Pricing\CalculatorSettings;
 use Database\Seeders\PrototypeContentSeeder;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -9,7 +10,7 @@ use Tests\Support\Html;
 use Tests\TestCase;
 
 /**
- * Калькулятор W-27 (§1.2): разметка 5 шагов, значения D-09/D-24/§6.4 из конфигурации в data-атрибутах, шаг 2 без
+ * Калькулятор W-27 (§1.2): разметка 5 шагов, значения D-09/D-24 (настройки W-11) и §6.4 (конфигурация) в data-атрибутах, шаг 2 без
  * технологии (D-37), шаг 4 и сводка без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей (D-21),
  * ссылка специалиста по контракту предзаполнения. Поведение шагов в браузере — bin/browser-check, логика — tests/js/.
  */
@@ -22,13 +23,15 @@ class CalculatorPageTest extends TestCase
         return Html::xpath($this->get($path)->assertOk()->getContent());
     }
 
-    public function test_settings_and_texts_come_from_config_through_data_attributes(): void
+    public function test_settings_and_texts_come_through_data_attributes(): void
     {
         $root = $this->page('/en/quote')->query('//*[@id="quote"]')->item(0);
 
-        $this->assertSame(config('aiqme.calculator'), json_decode($root->getAttribute('data-settings'), true));
-        $this->assertSame(['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], config('aiqme.calculator.materials'));
-        $this->assertSame(['0.10', 500, 0, 20, 250, 26214400, 10], array_values(array_slice(config('aiqme.calculator'), 1)));
+        // Чистая БД после migrate: начальные настройки W-11 (D-09, D-24) и лимиты config (§6.4).
+        $this->assertSame([
+            'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 26214400, 'max_files' => 10,
+        ], json_decode($root->getAttribute('data-settings'), true));
         $texts = json_decode($root->getAttribute('data-texts'), true);
         $this->assertSame('Reading files...', $texts['reading']);
         $this->assertSame(25, $texts['mb']);
@@ -86,7 +89,8 @@ class CalculatorPageTest extends TestCase
         $this->assertSame(['Standard', 'Priority'], Html::texts($en, '//select[@name="term"]/option'));
         $this->assertStringContainsString('do not change the estimate', Html::text($en->query('//*[@data-step-panel="1"]')->item(0)));
 
-        config(['aiqme.calculator.default_infill' => 30]);
+        $settings = app(CalculatorSettings::class);
+        $settings->save(['default_infill' => 30] + $settings->values());
         $lt = $this->page('/lt/kalkuliatorius');
         $this->assertSame(['20 %', '30 % · rekomenduojama', '40 %', '60 %', '100 %'], Html::texts($lt, '//select[@name="infill"]/option'));
         $this->assertSame('30', $lt->query('//select[@name="infill"]/option[@selected]')->item(0)->getAttribute('value'));

@@ -57,6 +57,10 @@ W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 �
 ссылка специалиста заполняет контактную форму; крупный binary (~25 МБ) — индикация, страница не замирает (Web Worker),
 куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
 
+W-11: вкладка Calculator админки — в ADMIN_PAGES; check_calculator_settings на 390 и 1440: форма без расползания и ошибок
+консоли/CSP; на 1440 габарит 300 мм сохраняется через Livewire, пометка «Not confirmed» у него снимается, /en/quote выводит
+300 в data-settings; затем габарит возвращается к 250.
+
 W-31: просмотр модели (Canvas 2D) на тех же страницах — check_viewer на 390 и 1440: пиксели модели на canvas после загрузки
 куба, ArrowRight / «+» / кнопки / колесо / перетаскивание меняют toDataURL, сброс возвращает исходный, колесо не листает
 страницу; модель 500 000 треугольников — время кадра в заметках отчёта (< 100 мс).
@@ -102,11 +106,12 @@ SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 CATALOG_PAGES = ['/lt/produktai?category=printers', '/en/products?q=zzzz',
                  '/lt/palyginimas?products=norda-s1-skeneris,vekta-p2-spausdintuvas,petg-gija,norda-cad',
                  '/en/compare?products=norda-s1-scanner,vekta-p2-printer,petg-filament,norda-cad']
-# Кабинет и админка после входа через форму (W-07); вкладки админки W-08 и W-26; вкладки W-15 добавят свои адреса.
+# Кабинет и админка после входа через форму (W-07); вкладки админки W-08, W-26 и W-11; вкладки W-15 добавят свои адреса.
 ACCOUNT_PAGES = ['/lt/paskyra', '/lt/paskyra/addresses', '/en/account', '/en/account/addresses']
 ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for prefix in ('lt/administravimas', 'en/admin')
                                                       for tab in ('overview', 'services', 'content', 'audit', 'products',
-                                                                  'categories', 'projects', 'training', 'translations')]
+                                                                  'categories', 'projects', 'training', 'translations',
+                                                                  'calculator')]
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
@@ -1079,6 +1084,36 @@ def check_admin_editors_w26(report, new_page, state):
     context.close()
 
 
+def check_calculator_settings(report, new_page, state):
+    """Вкладка настроек калькулятора (W-11) в браузере: форма на 390 и 1440 без расползания и ошибок консоли/CSP; на 1440
+    сохранение габарита через Livewire видно в data-settings /en/quote, затем прежнее значение возвращается."""
+    for width, height in ((390, 844), (1440, 1000)):
+        where = f'/en/admin/calculator @{width}'
+        context, page, problems = new_page(width, height, storage_state=state)
+        page.goto(BASE + '/en/admin/calculator', wait_until='networkidle')
+        report.check(page.locator('#pricing-form').count() == 1, f'{where}: нет #pricing-form')
+        scroll, client = document_fits(page)
+        report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+        if width == 1440:
+            report.check('Build size, mm · Not confirmed' in page.inner_text('#pricing-form'), f'{where}: нет пометки габарита')
+            for value in ('300', '250'):
+                page.fill('#field-maxDimension', value)
+                # Плашка «Saved.» прошлого сохранения ещё видна — ждём ответ именно этого запроса Livewire.
+                with page.expect_response(lambda r: r.request.method == 'POST' and 'livewire' in r.url):
+                    page.click('#pricing-form button[type=submit]')
+                page.wait_for_selector('#pricing-form .notice.success:has-text("Saved.")')
+                public = page.context.new_page()
+                public.goto(BASE + '/en/quote', wait_until='networkidle')
+                shown = json.loads(public.get_attribute('#quote', 'data-settings'))['max_dimension_mm']
+                report.check(shown == int(value), f'{where}: на /en/quote габарит {shown}, сохранено {value}')
+                public.close()
+            report.check('Not confirmed' not in page.locator('#field-maxDimension').locator('xpath=..').inner_text(),
+                         f'{where}: пометка габарита не снята после изменения')
+        for problem in problems:
+            report.check(False, f'{where}: {problem}')
+        context.close()
+
+
 def mailpit(method, path):
     with urlopen(Request(MAILPIT + path, method=method), timeout=5) as response:
         body = response.read().decode()
@@ -1518,6 +1553,8 @@ def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     check_admin_editor(report, new_page, admin)
     log('== редакторы W-26')
     check_admin_editors_w26(report, new_page, admin)
+    log('== настройки калькулятора (W-11)')
+    check_calculator_settings(report, new_page, admin)
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], client, 404, 'клиент')
     check_status(report, new_page, ADMIN_PAGES + ru_paths[:3], None, 404, 'гость')
     check_russian(report, new_page, ru_paths, admin)

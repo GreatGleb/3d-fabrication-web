@@ -9,12 +9,15 @@
 // «Manufacturer», «YouTube URL (optional)», «Training format» и его варианты, «Compatibility», «Features & specifications»,
 // «Text», «Date» (без «Demo»); подписи вариантов раздела статьи и применения проекта — из lang/public.php. Остальное —
 // нейтральные надписи, перечисленные в docs/progress.md (W-26).
+// W-11 из прототипа: вкладка Calculator, «Materials, settings & pricing», «Save parameters», «Build size, mm» (без «Demo»);
+// остальные подписи настроек калькулятора — нейтральные, перечислены в docs/progress.md (W-11).
 return [
     'menu' => 'Administration menu',
     'tabs' => [
         'overview' => 'Overview',
         'products' => 'Products',
         'services' => 'Services',
+        'calculator' => 'Calculator',
         'projects' => 'Projects',
         'content' => 'Content & SEO',
         'training' => 'Training',
@@ -176,5 +179,20 @@ return [
             'failed' => 'Failed',
             'none' => '—',
         ],
+    ],
+    'calculator' => [
+        'heading' => 'Materials, settings & pricing',
+        'material' => 'Material',
+        'density' => 'Density, g/cm³',
+        'rate' => 'Price per gram, €',
+        'order_fee' => 'Order fee, €',
+        'file_fee' => 'Fee per file, €',
+        'default_infill' => 'Default infill, %',
+        'max_dimension' => 'Build size, mm',
+        'unconfirmed' => 'Not confirmed',
+        'materials_hint' => 'Fill in the empty row to add a material; clear a name to remove it.',
+        'save' => 'Save parameters',
+        'saved' => 'Saved.',
+        'invalid' => 'Check the value.',
     ],
 ];

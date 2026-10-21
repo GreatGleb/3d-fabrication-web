@@ -11,7 +11,7 @@ const bytes = (name) => readFileSync(new URL(name, fixtures));
 const buffer = (name) => { const b = bytes(name); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
 const file = (name, content = bytes(name)) => new File([content], name);
 
-// Значения config('aiqme.calculator') по умолчанию (D-09, D-24, §6.4).
+// Начальные настройки калькулятора (D-09, D-24) и лимиты config('aiqme.calculator') (§6.4).
 const settings = {
   materials: { PLA: 1.24, PETG: 1.27, ABS: 1.04 }, rate_per_gram: '0.10', order_fee_cents: 500, file_fee_cents: 0,
   default_infill: 20, max_dimension_mm: 250, max_file_bytes: 25 * 1024 * 1024, max_files: 10,

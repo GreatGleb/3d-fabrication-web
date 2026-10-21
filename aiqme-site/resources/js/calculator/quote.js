@@ -24,7 +24,7 @@ export const formatMoney = (cents, locale) =>
 
 export class Quote {
   // settings: { materials, rate_per_gram, order_fee_cents, file_fee_cents, default_infill, max_dimension_mm, max_file_bytes,
-  // max_files } из config('aiqme.calculator'); onChange — после любого изменения моделей (в том числе позднего разбора).
+  // max_files } из data-settings страницы (настройки админки W-11 и лимиты config); onChange — после любого изменения моделей (в том числе позднего разбора).
   constructor(settings, { parse = async (buffer) => parseStl(buffer), onChange = () => {} } = {}) {
     this.settings = settings;
     this.parse = parse;
