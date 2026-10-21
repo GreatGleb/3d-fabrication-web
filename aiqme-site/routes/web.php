@@ -14,6 +14,7 @@ use App\Http\Controllers\Public\ProductController;
 use App\Http\Controllers\Public\ProjectController;
 use App\Http\Controllers\Public\ServiceController;
 use App\Http\Controllers\Public\SitemapController;
+use App\Http\Controllers\StlDownloadController;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\RestrictRussianToAdmin;
 use App\Support\Seo\StaticPages;
@@ -98,6 +99,9 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
             Route::get('requests/{contactRequest}/files/{index}', [AdminController::class, 'requestFile'])->whereNumber('index')->name($locale.'.admin.request-file');
         });
 }
+
+// Защищённая выдача STL заказа (§6.4, W-32): владелец, администратор (право гостя в сессии — W-15); GET, HEAD и Range.
+Route::get('stl/{stlFile}', StlDownloadController::class)->whereNumber('stlFile')->middleware('auth.session')->name('stl.download');
 
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
 

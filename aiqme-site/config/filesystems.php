@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Маршрут шаблона storage/{path} отключён: приватные файлы выдают только контроллеры с проверкой прав (§6.4, W-32).
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

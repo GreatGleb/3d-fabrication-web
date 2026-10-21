@@ -1960,3 +1960,14 @@ užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Pre
 - Вид экрана Integrations и раздел Telegram — кадры `build/verification/browser-check/shots/*integrations*` ждут
   проверки пользователем; удобство диалога в настоящем клиенте Telegram — ждёт проверки пользователем (W-22).
 - Сценарий 5 §9.3 (W-30) не собирался.
+
+## W-32: продолжение после блокировки — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+- Работа прошлой сессии восстановлена в дереве (`OrderAccess`, `StlDownloadController`, маршрут `stl.download`,
+  `'serve' => false` у диска `local`, `StlDownloadTest`); сверена с done[0–3] — недостающего нет, код не менялся.
+  Восстановленный `progress.md` был старше HEAD (терял записи «W-32 заблокирована» и W-19) — возвращён из HEAD, эта
+  запись добавлена в конец.
+- Проверки: `tests/Feature/StlDownloadTest.php` → 6/6 (114 утверждений); `route:list --path=storage` — маршрутов нет;
+  `pint --dirty` → passed; `bin/check` → **OK** (PHPUnit 490: 474 passed, 16 skipped; Vite).
+- `git status --porcelain aiqme-site`: те же пять файлов задачи и `docs/progress.md`; бинарных файлов, .env, ключей нет.
+- Не проверено: как в записи выше (HEAD/Range на nginx — W-20; право гостя в сессии — W-15).
