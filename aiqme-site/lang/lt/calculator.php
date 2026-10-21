@@ -22,6 +22,13 @@ return [
         'apply_scale' => 'Patvirtinti vienetus ir mastelį, perskaičiuoti',
         'scale_note' => 'Pakeitimai taikomi tik šiai detalei. Patikrinkite bent vieną žinomą matmenį. Peržiūra nėra gamybinio tinkamumo analizė.',
     ],
+    'viewer' => [
+        'label' => 'GEOMETRIJOS PERŽIŪRA · Sukite vilkdami',
+        'aria' => '3D peržiūra. Rodyklėmis sukite, pliusu ar minusu keiskite mastelį.',
+        'zoom_in' => 'Priartinti',
+        'zoom_out' => 'Atitolinti',
+        'reset' => 'Atkurti vaizdą',
+    ],
     'scale_modal' => [
         'title' => 'Patvirtinkite naują dydį',
         'note' => 'Pasikeis fizinis gaminio dydis ir kaina.',

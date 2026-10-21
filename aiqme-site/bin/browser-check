@@ -56,6 +56,10 @@ W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 �
 (предупреждение, переход доступен), шаг 4 и сводка без VAT/доставки/скидки, поле VAT-кода шага 5, отправка недоступна,
 ссылка специалиста заполняет контактную форму; крупный binary (~25 МБ) — индикация, страница не замирает (Web Worker),
 куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
+
+W-31: просмотр модели (Canvas 2D) на тех же страницах — check_viewer на 390 и 1440: пиксели модели на canvas после загрузки
+куба, ArrowRight / «+» / кнопки / колесо / перетаскивание меняют toDataURL, сброс возвращает исходный, колесо не листает
+страницу; модель 500 000 треугольников — время кадра в заметках отчёта (< 100 мс).
 """
 import html
 import json
@@ -106,7 +110,7 @@ ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for pre
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
-# Калькулятор W-27: 5 шагов, ошибки и лимиты на 390 и 1440 (check_calculator).
+# Калькулятор W-27: 5 шагов, ошибки и лимиты на 390 и 1440 (check_calculator); просмотр W-31 (check_viewer).
 CALCULATOR_PAGES = ['/lt/kalkuliatorius', '/en/quote']
 # Места медиа по умолчанию D-43 (W-33): страница => селекторы (все совпадения берут файл из /defaults/).
 DEFAULT_MEDIA = {
@@ -1183,7 +1187,7 @@ def check_contact_form(report, new_page, path, width):
 
 
 def calculator_files(directory):
-    """Файлы проверки калькулятора во временном каталоге: ошибки формата и размера, крупный binary STL (~25 МБ)."""
+    """Файлы проверки калькулятора во временном каталоге: ошибки формата и размера, крупные binary STL (~25 МБ)."""
     directory = Path(directory)
     cube = (STL_FIXTURES / 'cube-10mm-binary.stl').read_bytes()
     # 41 666 копий куба со сдвигом по X: ~500 000 треугольников и ~333 000 разных вершин, как у тяжёлой реальной модели.
@@ -1191,12 +1195,17 @@ def calculator_files(directory):
     template = [struct.unpack_from('<12fH', cube, 84 + i * 50) for i in range(12)]
     triangles = b''.join(struct.pack('<12fH', *t[:3], t[3] + dx, *t[4:6], t[6] + dx, *t[7:9], t[9] + dx, *t[10:12], 0)
                          for dx in range(0, count * 20, 20) for t in template)
+    # Те же копии куба решёткой 35 × 35 × 35 (шаг 20 мм) — компактная модель для просмотра W-31.
+    grid = b''.join(struct.pack('<12fH', *t[:3], t[3] + dx, t[4] + dy, t[5] + dz, t[6] + dx, t[7] + dy, t[8] + dz,
+                                t[9] + dx, t[10] + dy, t[11] + dz, 0)
+                    for dx, dy, dz in ((i % 35 * 20, i // 35 % 35 * 20, i // 1225 * 20) for i in range(count)) for t in template)
     files = {
         'bracket.step': b'ISO-10303-21;\n',
         'shell.obj': b'v 0 0 0\n',
         'photo.png': b'\x89PNG\r\n\x1a\n',
         'too-big.stl': b'\0' * (25 * 1024 * 1024 + 1),
         'large.stl': b'\0' * 80 + (count * 12).to_bytes(4, 'little') + triangles,
+        'large-grid.stl': b'\0' * 80 + (count * 12).to_bytes(4, 'little') + grid,
     }
     for name, content in files.items():
         (directory / name).write_bytes(content)
@@ -1373,6 +1382,86 @@ def check_calculator(report, new_page, path, width, allowlist, files):
                  f'{where}: после позднего разбора крупного файла активна «{active}»')
     for problem in problems:
         report.check(False, f'{where} (крупный файл): {problem}')
+    context.close()
+
+
+def check_viewer(report, new_page, path, width, files):
+    """Просмотр модели W-31 (Canvas 2D): на кубе из tests/fixtures/stl/ на canvas есть пиксели модели (не только фон и сетка),
+    ArrowRight, «+», кнопка масштаба, колесо и перетаскивание меняют toDataURL, сброс возвращает исходный снимок; модель
+    500 000 треугольников (во временном каталоге) рисуется прореженной — время кадра в заметках отчёта."""
+    where = f'{path} @{width} просмотр'
+    context, page, problems = new_page(width, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    canvas = page.locator('#model-canvas')
+    page.locator('#model-upload').set_input_files(str(STL_FIXTURES / 'cube-10mm-binary.stl'))
+    page.wait_for_selector('[data-model]:not([hidden])')
+    canvas.evaluate('(node) => node.scrollIntoView({block: "center"})')
+    # Пиксели модели: заливка граней rgb(15·s, 105·s, 245·s) непрозрачна; сетка — полупрозрачная серо-голубая.
+    model_pixels = """(canvas) => { const d = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+        let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255 && d[i] < 20 && d[i + 2] > 120) n++; return n; }"""
+    pixels = canvas.evaluate(model_pixels)
+    report.check(pixels > 1000, f'{where}: на canvas нет пикселей модели ({pixels})')
+    snapshot = lambda: canvas.evaluate('(node) => node.toDataURL()')
+    initial = snapshot()
+    canvas.focus()
+    page.keyboard.press('ArrowRight')
+    report.check(snapshot() != initial, f'{where}: ArrowRight не изменил изображение')
+    reset = page.locator('[data-reset-view]')
+    reset.click()
+    report.check(snapshot() == initial, f'{where}: после сброса изображение не совпало с исходным')
+    def box():
+        canvas.evaluate('(node) => node.scrollIntoView({block: "center"})')
+        return canvas.bounding_box()
+
+    def wheel(delta):
+        b = box()
+        page.mouse.move(b['x'] + b['width'] / 2, b['y'] + b['height'] / 2)
+        page.mouse.wheel(0, delta)
+
+    def drag():
+        b = box()
+        page.mouse.move(b['x'] + 100, b['y'] + 100)
+        page.mouse.down()
+        page.mouse.move(b['x'] + 160, b['y'] + 130)
+        page.mouse.up()
+
+    for action, name in ((lambda: (canvas.focus(), page.keyboard.press('+')), 'клавиша +'),
+                         (lambda: page.locator('[data-zoom-in]').click(), 'кнопка +'),
+                         (lambda: page.locator('[data-zoom-out]').click(), 'кнопка −'),
+                         (lambda: wheel(100), 'колесо'), (drag, 'перетаскивание')):
+        action()
+        report.check(snapshot() != initial, f'{where}: {name} не изменил изображение')
+        reset.click()
+        report.check(snapshot() == initial, f'{where}: после «{name}» сброс не вернул исходное изображение')
+    box()
+    scroll = page.evaluate('window.scrollY')
+    wheel(300)
+    page.wait_for_timeout(300)
+    # Без preventDefault колесо на 300 сдвинуло бы страницу на сотни px; на 390 положение дрожит на 2–3 px (раскладка).
+    moved = abs(page.evaluate('window.scrollY') - scroll)
+    report.check(moved < 50, f'{where}: колесо над canvas прокрутило страницу на {moved} px')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+    # Модель предельного размера: рисуется прореженной; кадр — синхронная перерисовка по ArrowRight.
+    context, page, problems = new_page(width, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    page.locator('#model-upload').set_input_files(files['large-grid.stl'])
+    page.wait_for_selector('[data-model]:not([hidden])', timeout=60000)
+    canvas = page.locator('#model-canvas')
+    canvas.evaluate('(node) => node.scrollIntoView({block: "center"})')
+    frames = canvas.evaluate("""(node) => Array.from({ length: 10 }, () => { const start = performance.now();
+        node.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' })); return performance.now() - start; })""")
+    pixels = canvas.evaluate(model_pixels)
+    report.check(pixels > 100, f'{where}: модель 500 000 треугольников не нарисована ({pixels})')
+    worst = max(frames)
+    report.check(worst < 100, f'{where}: кадр модели 500 000 треугольников {worst:.0f} мс (≥ 100)')
+    note = f'W-31 {path} @{width}: кадр 500 000 треугольников — медиана {sorted(frames)[5]:.1f} мс, максимум {worst:.1f} мс'
+    report.notes.append(note)
+    log(f'   {note}')
+    for problem in problems:
+        report.check(False, f'{where} (крупная модель): {problem}')
     context.close()
 
 
@@ -1559,6 +1648,7 @@ def main():
                         files = calculator_files(directory)
                         for width in (390, 1440):
                             check_calculator(report, new_page, path, width, allowlist, files)
+                            check_viewer(report, new_page, path, width, files)
                 if path == '/en/contact':
                     check_contact_form(report, new_page, path, FORM_PAGES[path])
                 elif path in FORM_PAGES:

@@ -22,6 +22,13 @@ return [
         'apply_scale' => 'Confirm units & scale, recalculate',
         'scale_note' => 'Changes apply to this part only. Verify at least one known dimension. The viewer is not a manufacturing suitability analysis.',
     ],
+    'viewer' => [
+        'label' => 'GEOMETRY VIEW · Drag to rotate',
+        'aria' => '3D viewer. Use arrow keys to rotate and plus or minus to zoom.',
+        'zoom_in' => 'Zoom in',
+        'zoom_out' => 'Zoom out',
+        'reset' => 'Reset view',
+    ],
     'scale_modal' => [
         'title' => 'Confirm the new size',
         'note' => 'This changes the physical size and price.',

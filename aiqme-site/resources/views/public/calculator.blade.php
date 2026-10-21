@@ -1,6 +1,6 @@
 {{-- Калькулятор (§1.2, W-27): 5 шагов прототипа (quote()) на ядре W-10, расчёт — в браузере, resources/js/calculator/.
      Без выбора технологии (FDM, D-37), без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров
-     и флажка сценария риска (D-21). Место просмотра — .viewer (сам просмотр Canvas 2D — W-31). Шаг 5 до W-12 не отправляется.
+     и флажка сценария риска (D-21). Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 до W-12 не отправляется.
      Тарифы, габарит и лимиты — data-settings из config('aiqme.calculator'), тексты для JS — data-texts. --}}
 @php
     $locale = app()->getLocale();
@@ -30,7 +30,10 @@
                     <div id="upload-progress" role="status"></div>
                     <div data-files></div>
                     <div data-model hidden>
-                        <div class="viewer" data-viewer><span class="viewer-dim" data-dimensions></span></div>
+                        <div class="viewer" data-viewer><span class="viewer-label">{{ __('calculator.viewer.label') }}</span>
+                            <canvas id="model-canvas" tabindex="0" role="img" aria-label="{{ __('calculator.viewer.aria') }}"></canvas>
+                            <span class="viewer-dim" data-dimensions></span>
+                            <div class="viewer-controls"><button type="button" data-zoom-in aria-label="{{ __('calculator.viewer.zoom_in') }}">+</button><button type="button" data-zoom-out aria-label="{{ __('calculator.viewer.zoom_out') }}">−</button><button type="button" data-reset-view aria-label="{{ __('calculator.viewer.reset') }}">↺</button></div></div>
                         <div class="grid two form-grid">
                             <x-field name="unit" type="select" id="model-unit" :label="__('calculator.files.units')"
                                      :options="['mm' => 'mm', 'cm' => 'cm', 'in' => __('calculator.files.inches')]" />

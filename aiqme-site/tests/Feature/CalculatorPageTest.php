@@ -50,6 +50,22 @@ class CalculatorPageTest extends TestCase
         $this->assertSame(1, $en->query('//*[@data-viewer and contains(@class, "viewer")]')->length, 'место просмотра W-31');
     }
 
+    public function test_viewer_canvas_and_controls_of_prototype_in_both_locales(): void
+    {
+        foreach ([
+            '/en/quote' => ['GEOMETRY VIEW · Drag to rotate', '3D viewer. Use arrow keys to rotate and plus or minus to zoom.', ['Zoom in', 'Zoom out', 'Reset view']],
+            '/lt/kalkuliatorius' => ['GEOMETRIJOS PERŽIŪRA · Sukite vilkdami', '3D peržiūra. Rodyklėmis sukite, pliusu ar minusu keiskite mastelį.', ['Priartinti', 'Atitolinti', 'Atkurti vaizdą']],
+        ] as $path => [$label, $aria, $buttons]) {
+            $page = $this->page($path);
+            $this->assertSame($label, Html::text($page->query('//*[@data-viewer]/span[@class="viewer-label"]')->item(0)));
+            $canvas = $page->query('//*[@data-viewer]/canvas')->item(0);
+            $this->assertSame([$aria, '0', 'img'], [$canvas->getAttribute('aria-label'), $canvas->getAttribute('tabindex'), $canvas->getAttribute('role')]);
+            $controls = $page->query('//*[@data-viewer]/div[@class="viewer-controls"]/button');
+            $this->assertSame($buttons, array_map(fn ($button) => $button->getAttribute('aria-label'), iterator_to_array($controls)));
+            $this->assertSame(['+', '−', '↺'], Html::texts($page, '//*[@data-viewer]/div[@class="viewer-controls"]/button'));
+        }
+    }
+
     public function test_size_limit_label_comes_from_config(): void
     {
         $this->assertSame('Up to 25 MB per file. STEP files require specialist review.',

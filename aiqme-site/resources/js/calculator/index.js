@@ -1,7 +1,8 @@
 // Интерфейс калькулятора (W-27): 5 шагов прототипа поверх Quote (quote.js) и ядра W-10. Разбор — в Web Worker;
-// без Worker — в основном потоке. Просмотр модели (Canvas 2D) добавляет W-31 в .viewer; расчёт от него не зависит.
+// без Worker — в основном потоке. Просмотр модели (Canvas 2D, W-31) — в .viewer; расчёт от него не зависит.
 import { StlError } from './core/index.js';
 import { Quote, formatDimensions, formatMoney } from './quote.js';
+import { mountViewer } from './viewer/index.js';
 
 function parseInWorker(buffer) {
   return new Promise((resolve, reject) => {
@@ -32,6 +33,7 @@ function start(root) {
   const selectedText = (name) => root.querySelector(`[name=${name}]`).selectedOptions[0].text;
 
   let step = 0;
+  const viewer = mountViewer($('[data-viewer]'));
   let specialistFiles = []; // OBJ/STEP: в сообщение специалисту, без разбора
   const quote = new Quote(settings, {
     parse: typeof Worker === 'function' ? parseInWorker : undefined,
@@ -106,6 +108,7 @@ function start(root) {
         $('[data-viewer]').dataset.modelId = active.id;
         $('#model-unit').value = active.unit;
         $('#model-scale').value = active.scale;
+        viewer.show(active.model);
       }
       $('[data-dimensions]').textContent = formatDimensions(quote.measure(active).dimensionsMm);
     }
