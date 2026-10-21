@@ -23,21 +23,24 @@ final class IntegrationEvents
     public const RETRY_AFTER_MINUTES = 5;
 
     /**
-     * Записывает событие (вызывать в транзакции изменения) и ставит письмо в очередь после commit.
+     * Записывает событие (вызывать в транзакции изменения) и ставит письмо в очередь после commit. События без письма
+     * (§5.1: цена, платёжные запросы, стадии — только Sheets) — $mail = false, канал mail = none.
      *
      * @param  array<string, mixed>  $data  данные письма и листа Events (summary, amount)
      */
-    public function record(string $type, Model $entity, array $data): IntegrationEvent
+    public function record(string $type, Model $entity, array $data, bool $mail = true): IntegrationEvent
     {
         $event = IntegrationEvent::create([
             'type' => $type,
             'entity_type' => $entity->getTable(),
             'entity_id' => $entity->getKey(),
             'data' => $data,
-            'mail_status' => 'pending',
+            'mail_status' => $mail ? 'pending' : 'none',
             'sheets_status' => 'pending',
         ]);
-        DeliverMail::dispatch($event->id)->afterCommit();
+        if ($mail) {
+            DeliverMail::dispatch($event->id)->afterCommit();
+        }
 
         return $event;
     }

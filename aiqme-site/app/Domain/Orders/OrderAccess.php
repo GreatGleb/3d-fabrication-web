@@ -19,6 +19,12 @@ final class OrderAccess
             return false;
         }
 
-        return $user->is_admin || ($order->user_id !== null && (int) $order->user_id === $user->id);
+        return $user->is_admin || $this->owns($order, $user);
+    }
+
+    /** Владелец заказа: вошедший клиент с user_id заказа (гостевой заказ владельца не имеет). */
+    public function owns(Order $order, ?User $user): bool
+    {
+        return $user !== null && $order->user_id !== null && (int) $order->user_id === $user->id;
     }
 }

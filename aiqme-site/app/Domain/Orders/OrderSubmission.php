@@ -4,6 +4,7 @@ namespace App\Domain\Orders;
 
 use App\Domain\Integrations\IntegrationEvents;
 use App\Domain\Orders\Models\OrderMeta;
+use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Pricing\CalculatorSettings;
 use App\Domain\Pricing\EstimateService;
 use App\Domain\Pricing\StlAnalyzer;
@@ -29,8 +30,8 @@ use Throwable;
  * Отправка заявки на изготовление (§3.1, W-12) — гостем или вошедшим клиентом. Каждый STL проверяет StlAnalyzer, оценку
  * пересчитывает EstimateService по текущим настройкам (клиентская сумма не используется). Файлы сохраняются на диск local
  * под именем UUID, затем в одной транзакции: корзина Lunar (строки StlPart с quantity = 1 и служебная OrderCharge fee, если
- * плата > 0) → заказ через RequestCartValidator, порядковый номер (OrderNumber), order_meta с хешем гостевого токена и
- * событие outbox «заявка отправлена» (письмо на info@aiqme.com после commit, канал sheets — pending). Ошибка после записи
+ * плата > 0) → заказ через RequestCartValidator, порядковый номер (OrderNumber), order_meta с хешем гостевого токена,
+ * состояние production_states в стадии review (W-13) и событие outbox «заявка отправлена» (письмо на info@aiqme.com после commit, канал sheets — pending). Ошибка после записи
  * файлов удаляет их — сирот нет. Повтор токена отправки с теми же данными возвращает тот же заказ (гостю — с новым
  * гостевым токеном, прежний перестаёт действовать), с другими данными — отказ.
  */
@@ -175,6 +176,7 @@ final class OrderSubmission
             'address' => $data['address'],
             'settings' => $estimate['settings'],
         ]);
+        ProductionState::create(['order_id' => $order->id]);
         $this->events->record('order.submitted', $order, [
             'kind' => 'order',
             'number' => $meta->number,

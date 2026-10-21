@@ -1971,3 +1971,81 @@ užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Pre
   `pint --dirty` → passed; `bin/check` → **OK** (PHPUnit 490: 474 passed, 16 skipped; Vite).
 - `git status --porcelain aiqme-site`: те же пять файлов задачи и `docs/progress.md`; бинарных файлов, .env, ключей нет.
 - Не проверено: как в записи выше (HEAD/Range на nginx — W-20; право гостя в сессии — W-15).
+
+## W-13: Правила заказа: цена, производство, отмена — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+### Сделано
+
+- Миграция `2026_10_21_400000_create_order_workflow_tables.php`: `production_states` (стадия, `confirmed_at`, `started_at`,
+  ревизия, перевозчик, трек, причина отмены), `price_revisions` (было/стало по id строк, основание, согласование, автор;
+  уникально `(order_id, revision)`), `payment_requests` (все поля §2.5: `public_id`, сумма, валюта, `state`,
+  `needs_review`, `review_reason`, `stripe_intent_id`, `idempotency_key`, `intent_first_attempt_at`; зарядов нет),
+  `order_messages`. Модели `ProductionState`, `PriceRevision`, `OrderMessage` (Domain/Orders/Models), `PaymentRequest`
+  (Domain/Payments/Models), перечисление `ProductionStage`.
+- `App\Domain\Orders\OrderWorkflow`: `confirmPrice` (review → confirmed, ревизия 1; цена каждой строки, StlPart > 0,
+  fee ≥ 0; строка delivery создаётся как `OrderLine` с purchasable `OrderCharge` delivery в той же транзакции),
+  `changePrice` (до начала производства, основание и согласование обязательны, нет открытых запросов creating/pending/
+  cancelling, цена ≥ оплачено, остаток 0 или ≥ 50 центов; строка delivery меняет цену, удалить её нельзя),
+  `requestPayment` (pending без intent, ≥ 50 центов, ≤ долг − открытые запросы, остаток 0 или ≥ 50), `cancelPaymentRequest`
+  (только pending без intent → void), `startProduction` (без оплаты можно; при долге — флаг `debtConfirmed`, §3.4
+  «система спрашивает подтверждение»), `advance` (строго на одну стадию вперёд; shipped — при доставке и с треком;
+  самовывоз ready → completed), `setTracking`, `cancel` (с причиной; pending без intent → void в той же транзакции,
+  запросы с intent и creating не трогаются — W-16; возврата нет), `postAdminMessage`, `recordCustomerReply` (только
+  владелец по `OrderAccess::owns`, иначе `AuthorizationException` без записи; ответ ничего не меняет), `balance`.
+  Права — в сервисе (Gate `admin`). Каждое изменение — под блокировкой строки заказа и состояния, событие
+  `integration_events` (`order.price_confirmed`, `order.price_changed`, `payment_request.created`,
+  `payment_request.cancelled`, `order.stage_changed`, `order.tracking_set`, `order.cancelled`) и журнал в той же транзакции.
+- `IntegrationEvents::record(..., mail: false)` — события §5.1 без письма: канал `mail = none`, задание письма не ставится.
+- `OrderSubmission` (W-12) создаёт `production_states` в стадии review вместе с заказом; `OrderAccess::owns()` выделен
+  из `allows()`; `OrderCharge::DELIVERY`.
+- Метода записи оплаты нет; «оплачено» в тестах — `tests/Support/LunarCapture` (транзакция Lunar capture).
+- Тексты: в прототипе сообщений правил нет — нейтральные фразы в `lang/{lt,en}/orders.php` (`orders.workflow.*`:
+  cancelled, already_confirmed, not_confirmed, price_locked, reason_required, open_request, every_line, line_price,
+  delivery_required, below_paid, rest_too_small, request_too_small, request_too_large, request_rest_too_small,
+  request_not_cancellable, stage_invalid, debt_unconfirmed, tracking_required, tracking_pickup, not_cancellable,
+  message_invalid, reply_invalid). Шаблонов задача не добавляет — поиск маркеров `bin/browser-check` не требуется.
+
+### Решения по неопределённому (простейший вариант)
+
+- Переходы «только вперёд» — строго на следующую стадию, без пропусков; review → confirmed только через `confirmPrice`,
+  confirmed → in_production только через `startProduction`; для заказа с доставкой ready → completed запрещён (через shipped).
+- Первое подтверждение цены основания не требует (§3.2 требует его для изменения); `price_revisions.reason/agreement`
+  у ревизии 1 пусты. Согласование — одна строка (текст или ссылка на ответ клиента).
+- Строку delivery можно подтвердить с ценой 0; доставка добавляется независимо от выбранного способа получения
+  (проверки «только при ship» нет). Цены строк fee/delivery пишутся и в `order_charges.amount`; `stl_parts.estimate`
+  (серверная оценка) не меняется.
+- Трек можно ввести или исправить до completed (не для самовывоза); ответ клиента без текста (три кнопки §1.3);
+  сообщение администратора — до 5000 символов. Lunar `orders.status` не меняется: стадия — в `production_states`.
+- Частичный уникальный индекс `lunar_transactions (reference) WHERE type = 'capture'` не создан — его потребует запись
+  capture (W-16/W-28).
+
+### Проверки
+
+- `tests/Feature/OrderWorkflowTest.php` (§9.2 «Цена и производство», запросы без intent) → 29/29 (272 утверждения):
+  подтверждение всех строк с fee 0 и одной delivery, «каждой строке — цена», повторное подтверждение отклонено; ревизия
+  заказа с доставкой меняет ту же строку (не добавляет вторую), удалить delivery нельзя, добавить при ревизии можно;
+  основание и согласование обязательны; ревизия после аванса сохраняет историю и «оплачено»; ниже оплаченного — отказ;
+  остаток 1, 30, 49 центов — отказ, 50 и 0 — успех; открытые creating/pending/cancelling блокируют изменение, void/paid —
+  нет; после старта цена заблокирована; производство без подтверждённой цены — отказ, без оплаты — только с
+  подтверждением долга, оплата стадию не меняет; переходы вперёд по одной, назад и через стадию — отказ, shipped без
+  трека — отказ, самовывоз ready → completed; запросы: только после подтверждения и не для отменённого, 49 — отказ,
+  оставляющий 30 центов — отказ, резерв открытых (включая creating/cancelling) и оплаченного; отмена запроса без intent →
+  void, с intent — отказ; отмена заказа: pending без intent → void, с intent и creating без изменений, возврата нет,
+  дальнейшие действия отклонены, completed не отменяется; 9 методов администратора от клиента — `AuthorizationException`
+  без изменений; команд `aiqme:*` с order/payment нет; события и журнал (типы, `mail_status = none`, номер, сумма) и
+  откат изменения при сбое записи события (уровень транзакции события = уровень изменения); сообщения и три ответа,
+  «прошу отменить» не отменяет заказ и запрос; ответ от другого клиента, посетителя, администратора и на гостевой заказ —
+  отказ без записи.
+- Мутации (восстановлены): открытые = только pending; без проверки остатка запроса; отмена заказа без void; ответ с
+  `allows` вместо `owns` (пускает администратора); без проверки остатка ревизии; shipped без трека — тесты падают.
+- `pint --dirty` → fixed (форматирование), `bin/check` → **OK**: PHPUnit 519 (503 passed, 16 skipped), JS 36/36, Vite.
+- `git status --porcelain aiqme-site`: изменены `IntegrationEvents.php`, `OrderAccess.php`, `OrderSubmission.php`,
+  `OrderCharge.php`, `docs/progress.md`; новые — модели, `OrderWorkflow.php`, `ProductionStage.php`, `Domain/Payments/`,
+  миграция, `lang/{lt,en}/orders.php`, `OrderWorkflowTest.php`, `tests/Support/LunarCapture.php`. Бинарных файлов,
+  .env, ключей и новых пакетов нет.
+
+### Не проверено
+
+- Параллельные вызовы (две вкладки администратора) — блокировки строк есть, отдельного теста конкурентности нет.
+- Действия в интерфейсе — W-14 (админка), W-15 (кабинет, гостевая ветка ответа); отмена запросов с intent и в creating
+  при отмене заказа — W-16; блокировка цены после выпуска счёта — W-17; проекция событий в листы — W-18.
