@@ -2267,3 +2267,99 @@ order file is kept.»/«Modelis pašalintas iš sąrašo. Užsakymo failas išsa
   страницы, «пересчитать» и повторного заказа (итог 5,12 · 5.12); `bin/browser-check /lt/kalkuliatorius` → **OK (276)**;
   `git status --porcelain aiqme-site`: новые файлы только в app/, database/migrations/, resources/, tests/.
 - «Не проверено» — как выше (визуальная сверка ждёт проверки пользователем).
+
+## W-24: Демо-сборка для GitHub Pages (только фронтенд) — выполнено (2026-10-21, Claude Code, ночной прогон)
+
+### Что сделано
+
+- `app/Console/Commands/DemoExport.php` — `aiqme:demo-export`: отказ при APP_ENV=production первой строкой (ни одного
+  запроса к БД); затем `DROP/CREATE DATABASE aiqme_demo`, переключение подключения и проверка `select current_database()`
+  (не `aiqme_demo`, например из-за DB_URL, — отказ до DemoSeeder и Auth::login); в `finally` — возврат подключения и
+  `DROP DATABASE aiqme_demo`, удаление `build/demo-storage`. В демо-режиме: `env` = demo, кэш/сессия/почта — array,
+  очередь — null, `Http::preventStrayRequests()`, диски local/public — в игнорируемом `build/demo-storage`. migrate,
+  `aiqme:bootstrap`, PrototypeContentSeeder, DemoSeeder; рендер через HTTP-ядро в процессе (`URL::forceRootUrl` с базовым
+  путём): публичные адреса строк 2 и 11 §4.6 из `tests/fixtures/prototype-routes.json` (обязательно 200), строки 6 — если
+  200 (демо-проекты не опубликованы → не выводятся), без `?category=…`; кабинет (`''`, overview, orders, models, addresses)
+  — `Auth::login` клиента, админка (корень, `AdminController::TABS` и `HIDDEN_TABS`) — администратора. Итого 100 страниц
+  + корневой `index.html` (переадресация на `lt/`).
+- Постобработка (Dom\HTMLDocument PHP 8.4): адреса → `/3d-fabrication-web/aiqme-site/demo/…`, маршрут → `…/index.html`;
+  удалены комментарии, скрипт и стили Livewire, `wire:*` (элементы с `wire:click|submit|change` получают `data-demo-form`),
+  `nonce`, CSRF (`meta csrf-token`, `_token`) и `submission_token`; формы POST, формы без action и поиск
+  (`data-live-search` снимается — живого поиска нет) — без `action`, с `data-demo-form`; GET-фильтры списков остаются
+  (`?category=…` отдаёт тот же статический список); `#quote` калькулятора — `data-demo-form`; ссылки на неэкспортированные
+  адреса (карточки заказов, `/stl/…`, счета) и ссылки с `?` на страницах кабинета и админки — `data-demo-form`; форма входа —
+  `data-demo-redirect` в демо-кабинет. В каждую страницу — `meta robots noindex, nofollow`, баннер `[data-demo-banner]`
+  «DEMO · пояснение» на языке страницы и `demo.js`. Команда сама падает, если в выводе остались `livewire`/`wire:` или хост
+  без базового пути. Сборка — во временный `build/demo-export`, `demo/` заменяется только после успеха; повторная сборка
+  даёт тот же результат (проверено `diff -r`).
+- Статика: `public/build` (в JS путь Web Worker `/build/assets/` переписан под базовый путь), `public/defaults` (D-43),
+  `favicon.ico`, `resources/js/demo.js` (без сборки Vite: обычный скрипт).
+- `resources/js/demo.js`: в фазе перехвата `submit` внутри `[data-demo-form]` и щелчки по `a|button[data-demo-form]` —
+  `preventDefault` + `stopImmediatePropagation`, всплывающее «Demo: data is not saved.» · «Demo: duomenys neišsaugomi.»
+  (`role=status`); отправка калькулятора (W-12, fetch) не вызывается. Проверка полей браузером (required) работает до submit.
+- `database/seeders/DemoSeeder.php`: отказ, если БД не `aiqme_demo`; администратор `admin@aiqme.test` и клиент
+  `klientas@aiqme.test` («Jonas Petraitis») со случайными паролями (не выводятся); два заказа куба 10 мм через
+  OrderSubmission: заказ клиента с подтверждённой ценой (30 + 5 EUR) и сообщением администратора, гостевая заявка
+  (5,12 EUR). Платёжных запросов и платежей нет. STL — во временный `build/demo-storage`.
+- `bin/demo-build`: Node из nvm, PostgreSQL dev, `npm run build`, `APP_ENV=demo APP_DEBUG=false aiqme:demo-export`.
+- `bin/demo-check` (Python, bundled Chromium Playwright, без PHP/БД): раздаёт `demo/` своим `http.server` под
+  `/3d-fabrication-web/aiqme-site/demo/` (порт 8792). Файлы: баннер «DEMO» с пояснением языка `<html lang>`, ровно одна
+  `meta robots noindex, nofollow`, формы POST без action с `data-demo-form`, все `src/href/poster` с базовым путём,
+  внутренние ссылки без `data-demo-form` ведут на файлы сборки; нет `wire:`, `livewire`, CSRF, путей `docs/customer`,
+  `customer-prototype`, `evidence/`, `source-backup`, ключей (`sk_…`, `whsec_`, `private_key`, PEM, `base64:`) и значений
+  APP_KEY/DB_PASSWORD из `.env`; e-mail — только `@aiqme.test` и публичный `info@aiqme.com` контента прототипа; нет STL,
+  `.env`, файлов > 1 МБ (кроме `hero-engineering.mp4`). Браузер: все 101 страница — 200, баннер виден, нет ошибок консоли,
+  pageerror, ответов ≥ 400 и запросов вне сборки (прерываются); места D-43 на `/en`, `/lt`, `/en/services`,
+  `/en/services/engraving`, `/en/about` — файлы `defaults/` загружены (naturalWidth > 0, видео hero и постер), favicon 200;
+  калькулятор `/en/quote` и `/lt/kalkuliatorius`: куб 10 мм → «10.0 × 10.0 × 10.0 mm», PLA, 100 %, qty 1 → «€5.12» · «5,12 €»
+  (data-cents 512), отправка шага 5 — демо-сообщение, адрес тот же, только GET-запросы; контактная форма (пустая не
+  проходит проверку полей, заполненная — сообщение); поиск — без запросов при вводе, Enter — сообщение; `?category=printers`
+  открывает список; вход ведёт в демо-кабинет без вкладки Invoices, «Sign out» — сообщение; «Manage» в админке и
+  сохранение настроек калькулятора — сообщение; нигде нет запросов кроме GET.
+- Счета (§8.7, «независимо от порядка задач»): в `account/index.blade.php` пункт Invoices не выводится при
+  APP_ENV=demo; маршрут invoices в экспорт не входит. Блоки оплаты карточки заказа не экспортируются (карточек в демо нет —
+  ссылки на них дают демо-сообщение).
+
+### Тексты (rules[8])
+
+Пометки «ДЕМО» в прототипе нет (D-21 её убирает с сайта) — нейтральные надписи `lang/{lt,en}/demo.php`: «DEMO» ·
+«Demonstracinė versija, ne veikianti AIQME svetainė: duomenys neišsaugomi ir nesiunčiami.» · «Demo version, not the working
+AIQME site: data is not saved or sent.»; сообщение действий — «Demo: duomenys neišsaugomi.» · «Demo: data is not saved.».
+Маркер D-21 «demo» в демо-сборке ожидаем; bin/browser-check демо не обходит.
+
+### Решения по неопределённому (простейший вариант) — ждут проверки пользователем
+
+- Карточки заказов (кабинет `/orders/<n>`, админка `?order=`), карточки клиентов, редакторы `?edit=`/`?new=` и выдача STL
+  в демо не экспортируются: ссылки на них показывают демо-сообщение (снимок по запросу с параметрами потребовал бы
+  отдельных файлов; карточка кабинета содержит блок оплаты).
+- Демо-проекты не опубликованы (строка 6 §4.6 — 404 до публикации): фото проектов D-43 в демо не выводятся (done[8]
+  «если демо-данные их публикуют»); список проектов — пустое состояние. Товаров нет — заглушка каталога.
+- Вход ведёт в Overview демо-кабинета (§1.6 «переход в кабинет демонстрационный»); регистрация и сброс — демо-сообщение.
+- Баннер — обычный блок над шапкой (жёлтый, встроенный стиль), не из CSS прототипа.
+- Даты и номера демо-заказов — по дню сборки.
+
+### Проверки
+
+- `bin/demo-build` → «Демо-сборка: 100 страниц в demo/»; БД `aiqme_demo` после сборки удалена (`pg_database` пуст).
+- `bin/demo-check` → **OK: 11189 проверок, 0 провалов, 101 страница**. Самопроверка детекторов: в копии сборки удалён
+  баннер, изменён robots, добавлены внешняя картинка, мёртвая ссылка и `wire:click` — 8 провалов, каждый пойман.
+- `tests/Feature/DemoExportTest.php` → 2/2: production — отказ, ни одного SQL-запроса, aiqme_demo нет; DB_URL на
+  aiqme_test — отказ «не в aiqme_demo», рабочая БД (число таблиц, пользователей, демо-пользователей) не изменилась,
+  Auth::guest, окружение testing, aiqme_demo удалена. Мутации: без проверки production и без проверки current_database —
+  тесты падают (восстановлено). `AccountProfileTest::test_invoices_tab_is_hidden_in_the_demo_build` — в testing ссылка
+  Invoices есть, в demo — нет.
+- `bin/check` → **OK**: Pint; Node 39/39; PHPUnit 548 (544 passed, 4 skipped); Vite.
+- `bin/browser-check --signed-in /en/account` → **OK (3821 проверок)** (маркеры D-21 и консоль кабинета после правки шаблона).
+- `git status --porcelain aiqme-site`: новые файлы — app/Console/Commands, bin/demo-build, bin/demo-check,
+  database/seeders, lang/*/demo.php, resources/js/demo.js, tests/Feature и сборка `demo/` (7,3 МБ; крупнее 1 МБ только
+  `defaults/hero-engineering.mp4`); `.env`, ключей и STL нет; experiments/ не изменён.
+
+### Не проверено
+
+- Публикация на GitHub Pages не выполнялась (commit/push `demo/` — только по разрешению пользователя, D-16); проверено
+  локально через `http.server` под тем же базовым путём (Pages, как и http.server, переадресует `…/lt/paslaugos` на `…/`).
+- Визуальный просмотр демо — ждёт проверки пользователем (кадры `build/verification/demo/*.png`: главная 1440/390,
+  кабинет, список заказов админки и демо-сообщение).
+- Объём куба 1 см³ в интерфейсе не выводится и в демо отдельно не проверялся: проверены габарит 10 × 10 × 10 и итог 5,12
+  (тот же итог, что у bin/browser-check W-27 на этом кубе); объём ядра проверяют Node-тесты W-10.
+- W-16/W-17/W-28 скрывают свои блоки в демо-режиме сами; W-21 пересобирает демо и повторяет `bin/demo-check`.

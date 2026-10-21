@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Демо-сборка для GitHub Pages (W-24, §8.7): ресурсы Vite, затем aiqme:demo-export с APP_ENV=demo в aiqme-site/demo/.
+# Нужен Docker для PostgreSQL из docker-compose.dev.yml (команда создаёт и удаляет БД aiqme_demo). Проверка — bin/demo-check.
+# Публикация (commit и push demo/) — только по явному разрешению пользователя.
+set -euo pipefail
+app_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$app_root"
+
+[[ ! -f bootstrap/cache/config.php ]] || { echo 'FAIL: есть bootstrap/cache/config.php; bin/php artisan config:clear' >&2; exit 1; }
+nvm_node_bin="$(ls -d "$HOME"/.nvm/versions/node/v*/bin 2>/dev/null | sort -V | tail -n 1 || true)"
+[[ -n "$nvm_node_bin" ]] && export PATH="$nvm_node_bin:$PATH"
+docker compose -f docker-compose.dev.yml up -d --wait postgres >/dev/null
+npm run build --silent >/dev/null
+APP_ENV=demo APP_DEBUG=false bin/php artisan aiqme:demo-export --no-interaction </dev/null

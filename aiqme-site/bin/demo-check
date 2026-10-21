@@ -1,0 +1,298 @@
+#!/usr/bin/env python3
+"""Проверка демо-сборки aiqme-site/demo/ (W-24, §8.7) по образцу legacy-landing/scripts/check_github_pages_ui.py.
+
+Запуск: aiqme-site/bin/demo-check (после bin/demo-build). Без PHP и БД: папка раздаётся python3 -m http.server под
+подкаталогом /3d-fabrication-web/aiqme-site/demo/ (как на GitHub Pages), браузер — bundled Chromium Playwright.
+
+Файлы: на каждой HTML-странице баннер «DEMO» с пояснением на языке страницы и meta robots noindex; нет wire:, livewire,
+CSRF-токенов и action у форм POST; внутренние ссылки без data-demo-form ведут на файлы сборки; нет секретов (.env,
+ключи), e-mail вне aiqme.test и публичного адреса контента, путей материалов заказчика (docs/customer…, evidence,
+source-backup), STL и файлов больше 1 МБ, кроме ролика hero D-43.
+Браузер: все страницы отвечают 200 без JS-ошибок и запросов вне статических файлов того же origin и базового пути;
+места медиа D-43 (логотип, favicon, hero с постером, «О нас», иллюстрации услуг) берут файлы defaults/ и не пусты;
+калькулятор на кубе 10 мм (габарит 10.0 × 10.0 × 10.0 mm, PLA, 100 %, qty 1 → итог 5,12) и «отправить заявку» — демо-сообщение
+без запроса POST; контактная форма, поиск, вход, действия кабинета и админки — демо-сообщение (вход — переход в демо-кабинет).
+"""
+import functools
+import http.server
+import json
+import re
+import sys
+import tempfile
+import threading
+from pathlib import Path
+
+from playwright.sync_api import sync_playwright
+
+APP = Path(__file__).resolve().parents[1]
+DEMO = APP / 'demo'
+BASE = '/3d-fabrication-web/aiqme-site/demo'
+PORT = 8792
+ORIGIN = f'http://127.0.0.1:{PORT}'
+CUBE = APP / 'tests' / 'fixtures' / 'stl' / 'cube-10mm-binary.stl'
+NOTICE = {'lt': 'Demonstracinė versija, ne veikianti AIQME svetainė', 'en': 'Demo version, not the working AIQME site'}
+MESSAGE = {'lt': 'Demo: duomenys neišsaugomi.', 'en': 'Demo: data is not saved.'}
+ALLOWED_EMAIL = re.compile(r'^(info@aiqme\.com|[a-z0-9._-]+@aiqme\.test)$')
+# Места медиа по умолчанию D-43 (как DEFAULT_MEDIA bin/browser-check, без неопубликованных в демо проектов).
+DEFAULT_MEDIA = {
+    '/en': ['.logo img', 'main .hero-video', 'main .service-feature-media > img'],
+    '/lt': ['.logo img', 'main .hero-video', 'main .service-feature-media > img'],
+    '/en/services': ['.logo img', 'main .service-feature-media > img'],
+    '/en/services/engraving': ['main .media-frame > img'],
+    '/en/about': ['main .split-image > img'],
+}
+TEXT_SUFFIXES = {'.html', '.js', '.css', '.json', '.svg'}
+
+failures, passed = [], 0
+
+
+def check(ok, message):
+    global passed
+    if ok:
+        passed += 1
+    else:
+        failures.append(message)
+    return ok
+
+
+def page_path(file):
+    """demo/en/quote/index.html → /en/quote; demo/index.html → '' (переадресация на /lt/)."""
+    return '/' + str(file.parent.relative_to(DEMO)).removeprefix('.') if file.parent != DEMO else ''
+
+
+def secrets():
+    values = []
+    env = APP / '.env'
+    if env.exists():
+        for line in env.read_text().splitlines():
+            key, _, value = line.partition('=')
+            if key.strip() in ('APP_KEY', 'DB_PASSWORD', 'MAIL_PASSWORD', 'STRIPE_SECRET', 'TELEGRAM_BOT_TOKEN') and len(value.strip()) > 6:
+                values.append(value.strip().strip('"'))
+    return values
+
+
+def check_files():
+    pages = sorted(DEMO.rglob('index.html'))
+    check(len(pages) > 50, f'страниц в demo/ мало: {len(pages)}')
+    known = {page_path(file) for file in pages}
+    forbidden = [re.compile(p, re.I) for p in (r'wire:', r'livewire', r'csrf-token', r'name="_token"', r'docs/customer',
+                                                 r'customer-prototype', r'evidence/', r'source-backup', r'sk_(test|live)_',
+                                                 r'whsec_', r'private_key', r'BEGIN [A-Z ]*PRIVATE KEY', r'base64:[A-Za-z0-9+/]{20}')]
+    hidden = secrets()
+    for file in DEMO.rglob('*'):
+        if file.is_dir():
+            continue
+        name = file.relative_to(DEMO)
+        check(file.suffix.lower() != '.stl' and not file.name.startswith('.env'), f'{name}: STL или .env в сборке')
+        check(file.stat().st_size <= 1024 * 1024 or file.name == 'hero-engineering.mp4', f'{name}: больше 1 МБ')
+        if file.suffix not in TEXT_SUFFIXES:
+            continue
+        text = file.read_text(encoding='utf-8')
+        for pattern in forbidden:
+            check(not pattern.search(text), f'{name}: найдено «{pattern.pattern}»')
+        for value in hidden:
+            check(value not in text, f'{name}: значение секрета из .env')
+        for email in set(re.findall(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', text)):
+            check(ALLOWED_EMAIL.match(email.lower()), f'{name}: e-mail {email}')
+
+    for file in pages:
+        where = str(file.relative_to(DEMO))
+        html = file.read_text(encoding='utf-8')
+        lang = (re.search(r'<html[^>]*\slang="([a-z]+)"', html) or [None, ''])[1]
+        check(lang in NOTICE, f'{where}: lang «{lang}»')
+        banner = re.search(r'<div data-demo-banner[^>]*data-message="([^"]*)"[^>]*>(.*?)</div>', html, re.S)
+        if check(banner is not None, f'{where}: нет баннера DEMO') and lang in NOTICE:
+            check(banner[1] == MESSAGE[lang], f'{where}: сообщение «{banner[1]}»')
+            check('<b>DEMO</b>' in banner[2] and NOTICE[lang] in banner[2], f'{where}: баннер «{banner[2]}»')
+        robots = re.findall(r'<meta name="robots" content="([^"]*)"', html)
+        check(robots == ['noindex, nofollow'], f'{where}: meta robots {robots}')
+        for form in re.findall(r'<form\b[^>]*>', html):
+            if re.search(r'method="post"', form, re.I):
+                check('data-demo-form' in form and 'action=' not in form, f'{where}: форма POST {form[:120]}')
+        for tag in re.findall(r'<a\b[^>]*>', html):
+            href = (re.search(r'\shref="([^"]*)"', tag) or [None, ''])[1]
+            if not href.startswith(BASE + '/') or 'data-demo-form' in tag:
+                check(not href.startswith('/') or href.startswith(BASE + '/'), f'{where}: ссылка без базового пути {href}')
+                continue
+            target = href[len(BASE):].split('?')[0].split('#')[0].rstrip('/')
+            exists = target in known or (DEMO / target.lstrip('/')).is_file()
+            check(exists, f'{where}: ссылка на отсутствующий файл {href}')
+        for src in re.findall(r'\s(?:src|href|poster)="(/[^"]*)"', html):
+            check(src.startswith(BASE + '/'), f'{where}: ресурс без базового пути {src}')
+    return sorted(known - {''}), pages
+
+
+def serve():
+    root = Path(tempfile.mkdtemp(prefix='aiqme-demo-check-'))
+    (root / BASE.strip('/')).parent.mkdir(parents=True)
+    (root / BASE.strip('/')).symlink_to(DEMO)
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+    handler = functools.partial(Quiet, directory=str(root))
+    server = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
+def main():
+    if not (DEMO / 'index.html').exists():
+        sys.exit('FAIL: нет aiqme-site/demo/ — сначала bin/demo-build')
+    paths, _ = check_files()
+    try:
+        server = serve()
+    except OSError as error:
+        sys.exit(f'FAIL: порт {PORT} занят ({error})')
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+
+        def new_page(width=1440, height=1000):
+            context = browser.new_context(viewport={'width': width, 'height': height})
+            page = context.new_page()
+            problems, requests = [], []
+
+            def route(request_route, request):
+                requests.append((request.method, request.url))
+                if request.url.startswith(ORIGIN + BASE + '/') or request.url.startswith(('data:', 'blob:')):
+                    request_route.continue_()
+                else:
+                    problems.append(f'запрос вне сборки {request.method} {request.url}')
+                    request_route.abort()
+
+            context.route('**/*', route)
+            page.on('console', lambda message: message.type == 'error' and problems.append(f'console: {message.text}'))
+            page.on('pageerror', lambda error: problems.append(f'pageerror: {error}'))
+            page.on('response', lambda response: response.status >= 400 and problems.append(f'{response.status} {response.url}'))
+            return context, page, problems, requests
+
+        def message_shown(page, lang):
+            page.wait_for_selector('[data-demo-message]', timeout=3000)
+            return page.inner_text('[data-demo-message]') == MESSAGE[lang]
+
+        # Все страницы: 200, баннер виден, без ошибок и чужих запросов.
+        context, page, problems, _ = new_page()
+        for path in [''] + paths:
+            response = page.goto(ORIGIN + BASE + path + '/', wait_until='load')
+            check(response is not None and response.status == 200, f'{path or "/"}: ответ {response and response.status}')
+            if not path:
+                page.wait_for_url(ORIGIN + BASE + '/lt/')  # корень — переадресация на /lt/
+            page.wait_for_timeout(50)
+            lang = page.get_attribute('html', 'lang')
+            banner = page.locator('[data-demo-banner]')
+            if check(banner.count() == 1 and banner.is_visible(), f'{path or "/"}: баннер DEMO не виден'):
+                check(NOTICE.get(lang, '?') in banner.inner_text(), f'{path or "/"}: пояснение не на языке {lang}')
+            for problem in problems:
+                check(False, f'{path or "/"}: {problem}')
+            problems.clear()
+        context.close()
+
+        # Места медиа D-43.
+        for path, selectors in DEFAULT_MEDIA.items():
+            context, page, problems, _ = new_page()
+            page.goto(ORIGIN + BASE + path + '/', wait_until='networkidle')
+            favicon = page.get_attribute('link[rel=icon]', 'href') or ''
+            check(favicon.startswith(BASE + '/defaults/') and page.request.get(ORIGIN + favicon).status == 200, f'{path}: favicon {favicon}')
+            for selector in selectors:
+                # Картинки с loading=lazy грузятся у окна: прокручиваем к каждой и ждём загрузку.
+                for node in page.locator(selector).all():
+                    node.scroll_into_view_if_needed()
+                page.wait_for_load_state('networkidle')
+                items = page.locator(selector).evaluate_all("""(nodes) => nodes.map((node) => node.tagName === 'VIDEO'
+                    ? {src: node.currentSrc || node.querySelector('source')?.src || '', poster: node.poster, ok: node.readyState > 0 || node.networkState !== 3}
+                    : {src: node.currentSrc || node.src, ok: node.complete && node.naturalWidth > 0})""")
+                check(len(items) > 0, f'{path}: нет «{selector}»')
+                for item in items:
+                    check(f'{BASE}/defaults/' in item['src'] and item['ok'], f'{path} {selector}: {item}')
+                    if 'poster' in item:
+                        check(f'{BASE}/defaults/' in item['poster'] and page.request.get(item['poster']).status == 200, f'{path}: постер {item}')
+            for problem in problems:
+                check(False, f'{path} медиа: {problem}')
+            context.close()
+
+        # Калькулятор: куб 10 мм → 10.0 × 10.0 × 10.0 mm, PLA, 100 %, qty 1 → итог 5,12; отправка — демо-сообщение без POST.
+        for path, lang, total in (('/en/quote', 'en', '€5.12'), ('/lt/kalkuliatorius', 'lt', '5,12 €')):
+            context, page, problems, requests = new_page()
+            page.goto(ORIGIN + BASE + path + '/', wait_until='networkidle')
+            page.set_input_files('#model-upload', str(CUBE))
+            page.wait_for_selector('[data-model]:not([hidden])')
+            dims = page.inner_text('[data-dimensions]')
+            check(dims == '10.0 × 10.0 × 10.0 mm', f'{path}: габарит «{dims}»')
+            page.click('[data-next]')
+            page.select_option('select[name=material]', 'PLA')
+            page.select_option('select[name=infill]', '100')
+            check(page.input_value('[data-quantity]') == '1', f'{path}: количество не 1')
+            page.click('[data-next]')
+            page.click('[data-next]')
+            shown = page.inner_text('[data-total]').replace('\xa0', ' ')
+            check(shown == total and page.get_attribute('[data-total]', 'data-cents') == '512', f'{path}: итог «{shown}» вместо «{total}»')
+            page.click('[data-next]')
+            page.select_option('select[name=delivery]', 'pickup')
+            page.fill('#checkout-form input[name=name]', 'Jonas Petraitis')
+            page.fill('#checkout-form input[name=email]', 'klientas@aiqme.test')
+            page.fill('#checkout-form input[name=phone]', '+370 600 00002')
+            page.click('#checkout-form button[type=submit]')
+            check(message_shown(page, lang), f'{path}: нет демо-сообщения после отправки')
+            check(page.url == ORIGIN + BASE + path + '/', f'{path}: после отправки адрес {page.url}')
+            check(all(method == 'GET' for method, _ in requests), f'{path}: запросы не GET {[r for r in requests if r[0] != "GET"]}')
+            for problem in problems:
+                check(False, f'{path} калькулятор: {problem}')
+            context.close()
+
+        # Формы и действия: демо-сообщение без запросов, кроме входа (переход в демо-кабинет).
+        context, page, problems, requests = new_page()
+        page.goto(ORIGIN + BASE + '/en/contact/', wait_until='networkidle')
+        page.click('#contact-form button[type=submit]')
+        check(page.locator('[data-demo-message]').count() == 0, '/en/contact: пустая форма прошла проверку полей браузера')
+        page.fill('#contact-form [name=name]', 'Jonas Petraitis')
+        page.fill('#contact-form [name=email]', 'klientas@aiqme.test')
+        page.select_option('#contact-form [name=service]', index=1)
+        page.fill('#contact-form [name=description]', 'Reikia nuskenuoti detalę.')
+        page.click('#contact-form button[type=submit]')
+        check(message_shown(page, 'en'), '/en/contact: нет демо-сообщения')
+
+        page.goto(ORIGIN + BASE + '/lt/paieska/', wait_until='networkidle')
+        before = len(requests)
+        page.fill('main form[role=search] input[name=q]', '3D')
+        page.wait_for_timeout(600)
+        check(len(requests) == before, f'/lt/paieska: живой поиск сделал запрос {requests[before:]}')
+        page.press('main form[role=search] input[name=q]', 'Enter')
+        check(message_shown(page, 'lt'), '/lt/paieska: нет демо-сообщения поиска')
+
+        page.goto(ORIGIN + BASE + '/en/products/?category=printers', wait_until='networkidle')
+        check(page.url.endswith('/en/products/?category=printers') and page.locator('main').count() == 1, '/en/products?category=…: не открылся список')
+
+        page.goto(ORIGIN + BASE + '/en/account/login/', wait_until='networkidle')
+        page.fill('#auth-form [name=email]', 'klientas@aiqme.test')
+        page.fill('#auth-form [name=password]', 'not-a-real-password')
+        page.click('#auth-form button[type=submit]')
+        page.wait_for_url(ORIGIN + BASE + '/en/account/')
+        check(page.locator('.side-nav').count() == 1, '/en/account/login: вход не привёл в демо-кабинет')
+        check('Invoices' not in page.inner_text('.side-nav'), '/en/account: в меню есть раздел счетов')
+        page.click('.side-nav button[form=logout-form]')
+        check(message_shown(page, 'en') and page.url.endswith('/en/account/'), '/en/account: выход без демо-сообщения')
+
+        page.goto(ORIGIN + BASE + '/en/admin/orders/', wait_until='networkidle')
+        manage = page.locator('main a[data-demo-form]').first
+        check(manage.count() == 1, '/en/admin/orders: нет ссылки карточки заказа с data-demo-form')
+        manage.click()
+        check(message_shown(page, 'en') and page.url.endswith('/en/admin/orders/'), '/en/admin/orders: карточка без демо-сообщения')
+        page.goto(ORIGIN + BASE + '/lt/administravimas/calculator/', wait_until='networkidle')
+        page.click('main form button[type=submit]')
+        check(message_shown(page, 'lt'), '/lt/administravimas/calculator: сохранение без демо-сообщения')
+        check(all(method == 'GET' for method, _ in requests), f'формы: запросы не GET {[r for r in requests if r[0] != "GET"]}')
+        for problem in problems:
+            check(False, f'формы: {problem}')
+        context.close()
+        browser.close()
+    server.shutdown()
+
+    print(f'bin/demo-check: {passed} проверок, {len(failures)} провалов, {len(paths) + 1} страниц')
+    for failure in failures:
+        print('FAIL:', failure)
+    sys.exit(1 if failures else 0)
+
+
+if __name__ == '__main__':
+    main()

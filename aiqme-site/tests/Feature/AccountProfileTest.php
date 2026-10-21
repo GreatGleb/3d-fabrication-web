@@ -38,6 +38,19 @@ class AccountProfileTest extends TestCase
         $this->assertStringNotContainsString('Demonstration data', $html);
     }
 
+    public function test_invoices_tab_is_hidden_in_the_demo_build(): void
+    {
+        $client = User::factory()->create();
+        $this->actingAs($client)->get(route('en.account'))->assertOk()->assertSee(route('en.account.invoices'));
+
+        $this->app['env'] = 'demo';
+        $html = $this->get(route('en.account'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString(route('en.account.invoices'), $html);
+        $this->assertStringNotContainsString('Invoices', $html);
+        $this->assertStringContainsString(route('en.account.models'), $html);
+    }
+
     public function test_profile_is_saved_in_customer_profiles_and_shown_again(): void
     {
         $client = User::factory()->create();

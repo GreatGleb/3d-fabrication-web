@@ -5,6 +5,10 @@
     $locale = app()->getLocale();
     $route = $tab === 'overview' ? 'account' : 'account.'.$tab;
     $icons = ['overview' => 'user', 'orders' => 'cart', 'models' => 'box', 'addresses' => 'user', 'invoices' => 'user'];
+    // Демо-сборка (W-24, §8.7): раздела счетов в демо нет.
+    if (app()->environment('demo')) {
+        unset($icons['invoices']);
+    }
 @endphp
 <x-layout :title="__('account.customer_title')" :description="__('account.intro')" :canonical="route($locale.'.'.$route)"
     :languages="['lt' => route('lt.'.$route), 'en' => route('en.'.$route)]" noindex>
