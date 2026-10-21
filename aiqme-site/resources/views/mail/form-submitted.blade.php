@@ -1,4 +1,4 @@
-{{-- Письмо AIQME о заявке формы (W-09, §5.2): минимум данных и ссылка в админку; вложений и полного текста нет.
+{{-- Письмо AIQME о заявке формы (W-09, §5.2) и о заявке на изготовление (W-12: номер, файлы, предварительная сумма): минимум данных и ссылка в админку; вложений и полного текста нет.
      Тема — «Nauja projekto užklausa» прототипа; подписи — поля форм прототипа; остальное — нейтральные надписи (progress.md). --}}
 @php
     $rows = array_filter([
@@ -6,11 +6,12 @@
         __('admin.requests.fields.email') => $data['email'],
         __('admin.requests.fields.phone') => $data['phone'] ?? null,
         __('admin.requests.fields.company') => $data['company'] ?? null,
-        __('admin.requests.fields.'.($data['kind'] === 'training' ? 'training' : 'service')) => $data['subject'],
+        __('admin.requests.fields.'.match ($data['kind']) { 'training' => 'training', 'order' => 'order', default => 'service' }) => $data['subject'],
         __('admin.requests.fields.format') => isset($data['format']) ? __('public.training.formats.'.$data['format']) : null,
         __('admin.requests.fields.participants') => $data['participants'] ?? null,
         __('admin.requests.fields.description') => $data['kind'] === 'contact' ? $data['summary'] : null,
-        __('admin.requests.fields.files') => $data['kind'] === 'contact' ? $data['attachments'] : null,
+        __('admin.requests.fields.files') => match ($data['kind']) { 'contact' => $data['attachments'], 'order' => $data['summary'], default => null },
+        __('admin.requests.fields.estimate') => $data['kind'] === 'order' ? $data['amount'].' EUR' : null,
     ], fn ($value) => $value !== null && $value !== '');
 @endphp
 <!DOCTYPE html>

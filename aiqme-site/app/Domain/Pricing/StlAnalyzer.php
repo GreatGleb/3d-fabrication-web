@@ -11,6 +11,9 @@ use InvalidArgumentException;
  */
 final class StlAnalyzer
 {
+    /** Версия анализатора в результате анализа файла заявки (stl_files.analysis, §2.5). */
+    public const VERSION = 1;
+
     public const MAX_BYTES = 25 * 1024 * 1024;
 
     public const MAX_TRIANGLES = 500000;

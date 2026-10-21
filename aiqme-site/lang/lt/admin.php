@@ -138,6 +138,7 @@ return [
     'requests' => [
         'contact_subject' => 'Nauja projekto užklausa',
         'training_subject' => 'Mokymų registracija',
+        'order_subject' => 'Naujas gamybos užsakymas',
         'admin_note' => 'Priedai ir visas tekstas peržiūrimi administravimo aplinkoje.',
         'contact_heading' => 'Projekto užklausos',
         'contact_empty' => 'Užklausų dar nėra.',
@@ -155,6 +156,8 @@ return [
             'training' => 'Mokymai',
             'description' => 'Užduoties aprašymas',
             'files' => 'Failai ir nuotraukos',
+            'order' => 'Užsakymas',
+            'estimate' => 'Preliminari suma',
             'deadline' => 'Pageidaujamas terminas',
             'format' => 'Dalyvavimo būdas',
             'participants' => 'Dalyviai',

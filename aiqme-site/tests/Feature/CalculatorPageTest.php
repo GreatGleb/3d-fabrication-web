@@ -105,9 +105,10 @@ class CalculatorPageTest extends TestCase
             Html::text($en->query('//aside/p[@class="legal-note"]')->item(0)));
         $this->assertSame(1, $en->query('//form[@id="checkout-form"]//input[@name="vat_code"]')->length);
         $this->assertSame(['Delivery throughout the EU', 'Collection'], Html::texts($en, '//select[@name="delivery"]/option'));
+        // Отправка заявки включена (W-12): кнопка доступна, надписи «недоступно» нет.
         $submit = $en->query('//form[@id="checkout-form"]//button[@type="submit"]')->item(0);
-        $this->assertTrue($submit->hasAttribute('disabled'));
-        $this->assertSame('Order submission is not available yet.', Html::text($en->query('//*[@id="quote-unavailable"]')->item(0)));
+        $this->assertSame(['Submit order', false], [Html::text($submit), $submit->hasAttribute('disabled')]);
+        $this->assertSame(0, $en->query('//*[@id="quote-unavailable"]')->length);
 
         $lt = $this->page('/lt/kalkuliatorius');
         $this->assertSame(['Detalė', 'Kiekis', 'Sąmata'], Html::texts($lt, '//*[@data-step-panel="3"]//th'));

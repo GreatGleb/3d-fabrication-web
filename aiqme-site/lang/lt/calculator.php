@@ -84,13 +84,26 @@ return [
         'address' => 'Gatvė ir namo numeris *',
         'postcode' => 'Pašto kodas *',
         'submit' => 'Pateikti užsakymą',
-        'unavailable' => 'Užsakymo pateikimas dar neįjungtas.',
     ],
     'summary' => [
         'eyebrow' => 'PRELIMINARI SĄMATA',
         'title' => 'Užsakymo suvestinė',
         'total' => 'Preliminari suma',
         'note' => 'Preliminari sąmata. Pristatymą ir galutinę kainą patvirtina administratorius.',
+    ],
+    // Užsakymo pateikimas (W-12): neutralūs tekstai (prototipe jų nėra), išvardyti aiqme-site/docs/progress.md.
+    'submit' => [
+        'conflict' => 'Šis užsakymas jau pateiktas su kitais duomenimis. Atnaujinkite puslapį ir bandykite dar kartą.',
+        'too_large_request' => 'Failai per dideli išsiųsti: iki :mb MB vienam failui.',
+        'quantity' => 'Kiekis: nuo 1 iki 100.',
+    ],
+    'order' => [
+        'submitted_title' => 'Užsakymas pateiktas',
+        'submitted_text' => 'AIQME gavo jūsų užsakymą Nr. :number. Administratorius peržiūrės failus ir patvirtins kainą.',
+        'guest_link' => 'Jūsų užsakymo nuoroda. Išsaugokite ją: ji rodoma tik vieną kartą.',
+        'account_text' => 'Užsakymas išsaugotas jūsų paskyroje.',
+        'title' => 'Užsakymas Nr. :number',
+        'contents' => 'Užsakymo turinys',
     ],
     'help' => [
         'title' => 'Reikia pagalbos?',
@@ -128,5 +141,7 @@ return [
         'message_intro' => 'Prašau padėti įvertinti failus:',
         'message_more' => 'Nenurodyta modelių: :count.',
         'infill' => 'Užpildas',
+        'submit_failed' => 'Užsakymas neišsiųstas. Bandykite dar kartą.',
+        'throttle' => 'Per daug užklausų. Bandykite vėliau.',
     ],
 ];

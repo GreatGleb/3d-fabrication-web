@@ -70,6 +70,15 @@ return [
         'max_files' => 10,
     ],
 
+    /*
+    | Заявки на изготовление (W-12, §3.1): ограничение частоты отправок с одного IP (в час; превышение — 429 без записи)
+    | и первый порядковый номер заказа (счётчик counters; номер выдаёт UPDATE … RETURNING). В админке не редактируются.
+    */
+    'orders' => [
+        'per_hour' => (int) env('AIQME_ORDERS_PER_HOUR', 10),
+        'first_number' => (int) env('AIQME_ORDERS_FIRST_NUMBER', 1),
+    ],
+
     'hero_video_source' => ['text' => 'Bosch / The Apic', 'url' => 'https://www.youtube.com/watch?v=1Nd_xg8QfXo'],
 
 ];

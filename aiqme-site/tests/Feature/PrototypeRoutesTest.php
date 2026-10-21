@@ -104,7 +104,9 @@ class PrototypeRoutesTest extends TestCase
 
         // canonical — адрес route() без завершающего «/» и без query; адрес со «/» отдаёт то же содержимое.
         $this->assertSame(config('app.url').rtrim($plainPath, '/'), PageHead::canonical($withSlash->getContent()));
-        $this->assertSame($withoutSlash->getContent(), $withSlash->getContent());
+        // Токен отправки заявки калькулятора (W-12) — новый UUID на каждый показ формы.
+        $token = fn (string $html): string => preg_replace('/name="submission_token" value="[0-9a-f-]{36}"/', 'name="submission_token"', $html);
+        $this->assertSame($token($withoutSlash->getContent()), $token($withSlash->getContent()));
     }
 
     /** Демо-проект D-11: черновик сидера — 404; после публикации своей локали — 200 по тому же адресу. */

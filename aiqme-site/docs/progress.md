@@ -1661,3 +1661,138 @@ commit/push.
 
 - `bin/browser-check` (полный, все страницы) → **OK (12949 проверок)**, включая оба сохранения 300 → 250.
 - `bin/check` → **OK**: Pint; Node 36/36; PHPUnit 440 (422 passed, 18 skipped); Vite.
+
+## W-12 «Отправка заявки на изготовление» — 2026-10-21, Claude Code (ночной прогон)
+
+### Сделано
+
+- Миграция `2026_10_21_200000_create_order_tables`: `counters` (имя → значение), `stl_files` (владелец user_id или заказ
+  order_id, путь UUID, исходное имя, размер, sha256, треугольники, `analysis` с версией анализатора), `stl_parts`
+  (параметры, измерения, оценка в центах), `order_charges` (вид, сумма, заказ), `order_meta` (номер unique, хеш гостевого
+  токена unique, `submission_token` unique, `submission_digest`, локаль, контакты, получение, адрес, снимок настроек).
+- Модели `StlFile`, `StlPart`, `OrderCharge` (Purchasable; общее — трейт `Domain/Orders/PricedLine`: цена Lunar = итог
+  строки в центах, quantity в корзине всегда 1, налоговый класс по умолчанию), `Domain/Orders/Models/OrderMeta`.
+- `Domain/Orders/OrderSubmission` (§3.1): StlAnalyzer по каждому файлу (отказ — 422 с именем файла, тексты ядра JS),
+  пересчёт `EstimateService` по текущим настройкам (клиентская сумма не читается), отпечаток данных, повтор токена; файлы на
+  диск local `stl/<uuid>.stl`, затем одна транзакция: корзина Lunar → StlPart × n (+ OrderCharge `fee`, если плата > 0) →
+  `createOrder()` через `RequestCartValidator` → `placed_at`, привязка файлов и fee к заказу, сверка суммы заказа с оценкой,
+  `order_meta`, событие outbox `order.submitted`. Любая ошибка после записи файлов удаляет их; конфликт уникальности
+  `submission_token` (параллельная отправка) — ответ тем же заказом.
+- `Domain/Orders/RequestCartValidator` (из эксперимента): только StlPart и OrderCharge, quantity = 1; 1–10 строк StlPart
+  (fee не считается); `parameters.quantity` 1–100; файл — владельца корзины и ещё без заказа (у гостя сравнение user_id
+  null === null само по себе ничего не доказывает, §6.1). `Domain/Orders/OrderNumber` — генератор номера Lunar:
+  `insertOrIgnore` строки счётчика (первый номер — `AIQME_ORDERS_FIRST_NUMBER`, по умолчанию 1) и
+  `UPDATE counters … RETURNING value`; номер пишется в `reference` и `order_meta.number`.
+- Команда `aiqme:bootstrap`: языки lt (по умолчанию) и en, EUR по умолчанию, канал webstore, группа retail, налоговая зона
+  и класс по умолчанию, ставок нет; `firstOrCreate` — повтор ничего не меняет. Добавлена в `bin/setup` и в подготовку
+  `bin/browser-check` после `migrate:fresh`.
+- `OrderRequestController`: POST на адрес калькулятора (`/lt/kalkuliatorius`, `/en/quote`, middleware `throttle:orders` —
+  `AIQME_ORDERS_PER_HOUR`, по умолчанию 10 в час по IP), honeypot `website_hp` как у форм W-09 (ошибка формы, без номера);
+  ответ 201 `{redirect}`; номер, сумма и гостевая ссылка — во flash сессии. Подтверждение `/lt/kalkuliatorius/pateikta` ·
+  `/en/quote/submitted` (без только что отправленной заявки — 404). Гостевая страница-заготовка `/lt/uzsakymas/<номер>/<токен>`
+  · `/en/order/<номер>/<токен>`: номер, файлы × количество, предварительная сумма; неверный номер или токен — 404. Обе — noindex,
+  `Cache-Control: no-store, private`.
+- Гостевой токен — 32 байта base64url, в БД только SHA-256; повтор с тем же токеном отправки перевыпускает его (прежняя
+  ссылка — 404). Заказ клиента: `user_id` заказа и файлов, гостевого токена нет, на подтверждении — ссылка в кабинет.
+- Калькулятор: форма шага 5 — `@csrf`, скрытый `submission_token` (UUID на каждый показ формы), honeypot; профиль вошедшего
+  клиента подставлен (имя профиля или аккаунта, email аккаунта, компания, коды, адрес, город, индекс). `index.js` отправляет
+  один `FormData` fetch-запросом: поля формы, параметры шага 2 и по каждой модели файл (байты из записи модели — `quote.js`
+  хранит `buffer`), единицы, масштаб, количество; 422 — ошибки под полями, прочие — списком; 429/413/сбой — понятные тексты.
+  Подпись «отправка недоступна» и `disabled` убраны.
+- Тело больше `post_max_size` (`PostTooLargeException`, до маршрута и локали) — JSON 413 с текстом о лимите на языке
+  адреса (`bootstrap/app.php`); файл больше `upload_max_filesize` — 422 «File exceeds the 25 MB limit».
+- Письмо: тот же `FormSubmitted` (kind `order`): тема «Naujas gamybos užsakymas», имя, контакты, номер, файлы, предварительная
+  сумма, ссылка в админку `?order=<id>` (вкладки заказов ещё нет — W-14). Канал sheets — `pending`.
+- Вне touches (минимально): `StlAnalyzer::VERSION` (версия анализатора в `stl_files.analysis`, §2.5), обработчик 413 в
+  `bootstrap/app.php`, `.env.example` (2 переменные), `bin/setup`, нормализация токена отправки в `PrototypeRoutesTest`
+  (сравнение страниц «со / и без /» — токен новый на каждый показ).
+
+### Тексты (rules[8])
+
+В прототипе подтверждения и гостевой страницы нет (он создаёт демо-заказ и открывает его карточку). Из прототипа:
+«Order contents» · «Užsakymo turinys», «MANUFACTURING ORDER» (eyebrow калькулятора), «Estimated total» и подпись сводки.
+Нейтральные надписи: «Order submitted» · «Užsakymas pateiktas»; «AIQME has received your order No. :number. The
+administrator will review the files and confirm the price.» · «AIQME gavo jūsų užsakymą Nr. :number. Administratorius
+peržiūrės failus ir patvirtins kainą.» (по образцу «AIQME has received your enquiry» W-09); «Your order link. Save it: it is
+shown only once.» · «Jūsų užsakymo nuoroda. Išsaugokite ją: ji rodoma tik vieną kartą.»; «The order is saved in your
+account.» · «Užsakymas išsaugotas jūsų paskyroje.»; «Order No. :number» · «Užsakymas Nr. :number»; «This order has already
+been submitted with other details. Reload the page and try again.» · «Šis užsakymas jau pateiktas su kitais duomenimis.
+Atnaujinkite puslapį ir bandykite dar kartą.»; «The files are too large to send: up to :mb MB per file.» · «Failai per
+dideli išsiųsti: iki :mb MB vienam failui.»; «Quantity: from 1 to 100.» · «Kiekis: nuo 1 iki 100.»; «The order was not sent.
+Please try again.» · «Užsakymas neišsiųstas. Bandykite dar kartą.»; письмо: «New manufacturing order» · «Naujas gamybos
+užsakymas», поля «Order» · «Užsakymas», «Estimated total» · «Preliminari suma». Остальные сообщения — тексты форм W-09 и ядра.
+
+### Простейшие решения (ждут проверки пользователем)
+
+- Номер и гостевая ссылка передаются странице подтверждения через flash сессии (сессии зашифрованы, §6.3); после
+  перезагрузки подтверждения — 404, ссылка не показывается повторно.
+- Статус заказа Lunar не меняется (черновой `awaiting-payment` Lunar), ставится только `placed_at`: стадии производства —
+  W-13. Lunar `Customer` и адреса заказа Lunar не создаются: контакты и адрес — в `order_meta`.
+- На `/ru/quote` (только администратор) отправки нет: маршрут заявки — только lt/en (локаль заявки — lt/en), кнопка недоступна.
+- Заполнение принимается любым целым 0–100 (EstimateService), интерфейс предлагает список прототипа.
+- Отказ сервера по `triangle_count` (> 500 000) — текст «Could not read geometry», а не «Too complex» (интерфейс такие файлы
+  отклоняет раньше).
+- `aiqme:bootstrap` создаёт только отсутствующие записи и существующие не исправляет (например, другую валюту по умолчанию).
+- В отпечаток отправки входят пользователь, локаль, контакты, получение, адрес, параметры и по файлу sha256, имя, единицы,
+  масштаб, количество.
+
+### Тесты эксперимента (orders-comparison/shared/Tests) → наши
+
+`test_submission_persists_two_private_stl_lines_without_payment` → `OrderSubmissionTest::test_guest_submission_…` (две
+приватные строки, разные sha256, без транзакций, файл не в public); `test_empty_basket_and_bad_quantity_are_rejected` →
+`test_invalid_input_…` и `OrderCartTest::test_quantity_…`, `test_cart_with_only_a_fee_…`;
+`test_other_buyer_cannot_…_attach_to_private_basket` → `OrderCartTest::test_file_of_another_owner_or_already_ordered…`;
+повтор `submit` того же basket → `test_double_submit_…`; `test_order_list_does_not_expose_another_buyers_order` →
+`test_guest_order_is_not_visible_…`, `test_signed_in_client_owns_the_order_…`. Тесты корзины (add/change/remove — у нас
+корзина собирается сервером за один запрос), скачивания STL (W-32), оплаты и цены (W-13, W-16, W-28) здесь не переносились.
+
+### Проверки
+
+- `tests/Feature/OrderSubmissionTest.php` → 18/18: гость — заказ Lunar 549 центов = сумма строк = сумма на подтверждении
+  (37 за qty 3, а не 3 × 12; 12; fee 500), quantity строк 1, `parameters.quantity`, налог 0, клиентские `total`/`cents`
+  игнорируются, файлы приватные (UUID, sha256), `order_meta` (контакты, адрес, локаль, снимок), токен 43 символа, в БД только
+  хеш; гостевая ссылка LT/EN — 200, чужой токен/номер — 404, подтверждение только один раз; двойная отправка — один заказ,
+  одно событие, 2 файла, старая ссылка 404, новая 200; тот же токен с другими данными — 422 без записей; номера 1001–1003 из
+  счётчика; событие в транзакции, письмо на info@aiqme.com (Reply-To клиента, тема, файлы, 5.49 EUR), sheets pending; сбой
+  после записи файлов (исключение в `order_meta`) — нет файлов, заказов, событий, писем, номер не израсходован (следующий —
+  1); сбой почты — заказ остаётся, mail failed; honeypot — 422 без номера и записей; лимит 2/час — третья 429 без файлов,
+  заказа, события и письма, другой IP — принят; `UPLOAD_ERR_INI_SIZE` — «File exceeds the 25 MB limit» (LT/EN); тело
+  261 МБ — 413 с понятным текстом LT/EN; 12 видов неверного ввода (битые STL, масштаб, количество, единицы, 11 файлов,
+  материал, заполнение, пустые поля, email, токен) и пустая заявка — 422 без записей; самовывоз без адреса, локаль lt/en;
+  клиент — владелец заказа и файлов, без гостевой ссылки, любой токен — 404 и для клиента B; профиль подставлен в форму
+  (профиль, аккаунт без профиля, гость — пусто); форма шага 5 — action, CSRF, honeypot, UUID, кнопка доступна.
+- `tests/Feature/OrderCartTest.php` → 7/7: `aiqme:bootstrap` — данные и отсутствие ставок, повтор через 5 минут не меняет
+  ни одной строки (тест сначала поймал `updateOrCreate`, менявший `updated_at` валюты, — заменено на `firstOrCreate`);
+  10 StlPart + fee — заказ 555 центов без налога; 11 StlPart, только fee, `parameters.quantity` 101, quantity 2 в корзине,
+  файл чужого клиента, файл клиента в гостевой корзине, файл уже размещённого заказа — отказ; `reference` 7, 8; откат
+  транзакции не расходует номер.
+- `tests/Feature/OrderNumberConcurrencyTest.php` → 2/2: 4 отдельных процесса PHP одновременно по 15 номеров (каждая
+  транзакция держит строку счётчика 2 мс) — 60 номеров 1–60 без повторов, последовательности процессов перемежаются.
+  Мутация (SELECT + UPDATE вместо `UPDATE … RETURNING`) роняет тест; восстановлено.
+- `CalculatorPageTest`, `PrototypeRoutesTest` обновлены; `tests/js/calculator-quote.test.js` — байты файла в записи модели.
+- `bin/browser-check /lt/kalkuliatorius /en/quote` → **OK (537 проверок)**: в `check_calculator` (canvas отключён) пустая
+  форма шага 5 → 422, ошибки «Fill in this field.» · «Užpildykite šį lauką.» под именем, email, телефоном (3, адрес при
+  самовывозе не требуется); заполненная → подтверждение с номером, `data-cents` 512 = итог калькулятора, гостевая ссылка
+  `/en/order/<n>/…` · `/lt/uzsakymas/<n>/…` открывает «Order No. n» с файлом куба, чужой токен — 404; ширина и маркеры D-21
+  на подтверждении и гостевой странице (первый прогон поймал ширину ссылки на 390 px — добавлен перенос `overflow-wrap`).
+- `bin/browser-check`: полный прогон одним запуском не уложился в 10 минут переднего плана (прерван на обходе страниц; до
+  обхода в блоке входа/админки была 1 ошибка, текст не сохранился — отчёт пишется в конце). Поэтому: `--signed-in /en/faq`
+  (вход, кабинет, все вкладки админки, редакторы, настройки калькулятора, сброс пароля) → **OK (2550)**; 80 адресов
+  route:list + sitemap.xml (без калькулятора) тремя частями → **OK (3176, 3542, 2561)**.
+- `bin/check` → **OK**: Pint; Node 36/36; PHPUnit 467 (449 passed, 18 skipped); Vite.
+- `git status --porcelain aiqme-site`: изменены .env.example, StlAnalyzer, CalculatorController, AppServiceProvider,
+  bin/browser-check, bin/setup, bootstrap/app.php, config/aiqme.php, lang/{en,lt}/{admin,calculator}.php, calculator JS
+  (index.js, quote.js), шаблоны письма и калькулятора, routes/web.php, 3 теста; новые — Console/Commands/Bootstrap.php,
+  app/Domain/Orders/, OrderRequestController, модели OrderCharge/StlFile/StlPart, миграция, 2 шаблона, 3 теста. Бинарных
+  файлов, .env и ключей нет; новых пакетов нет.
+
+### Не проверено
+
+- Параллельная отправка с одним токеном отправки (ветка конфликта уникальности `submission_token` → тот же заказ)
+  проверена только последовательно; параллельность проверена на выдаче номеров.
+- Сбой канала sheets не откатывает заказ — канал не обрабатывается до W-18.
+- Вид страницы подтверждения и гостевой страницы — эталона в прототипе нет; ждёт проверки пользователем.
+- Ошибка полного `bin/browser-check` до обхода страниц не воспроизвелась при повторе блока входа; полного прогона одним
+  запуском в эту ночь нет (обход разбит на части, 82 адреса против 91 в полном прогоне: список собран из route:list и
+  sitemap.xml вручную).
+- Право гостя в сессии, ограничение частоты гостевой страницы, защищённая выдача STL — W-15, W-32.

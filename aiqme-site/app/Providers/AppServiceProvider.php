@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Domain\Content\UiTextLoader;
+use App\Domain\Orders\OrderNumber;
+use App\Domain\Orders\RequestCartValidator;
 use App\Models\User;
 use App\Support\UnregisteredLunarPanelManager;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -52,6 +54,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Формы обращений и регистрации на обучение (W-09): общий лимит отправок с одного IP в час; превышение — 429.
         RateLimiter::for('forms', fn (Request $request): Limit => Limit::perHour(config('aiqme.forms.per_hour'))->by($request->ip()));
+
+        // Заявки на изготовление (W-12, §3.1): своя частота по IP; корзина Lunar → заказ без адресов Lunar, через
+        // валидатор заявки; номер заказа — порядковый из счётчика counters.
+        RateLimiter::for('orders', fn (Request $request): Limit => Limit::perHour(config('aiqme.orders.per_hour'))->by($request->ip()));
+        config([
+            'lunar.cart.validators.order_create' => [RequestCartValidator::class],
+            'lunar.orders.reference_generator' => OrderNumber::class,
+        ]);
 
         // Пароль — не короче 8 символов (§6.3); тот же minlength в формах входа, регистрации и сброса.
         Password::defaults(fn (): Password => Password::min(8));

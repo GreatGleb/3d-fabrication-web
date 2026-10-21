@@ -148,6 +148,7 @@ return [
     'requests' => [
         'contact_subject' => 'New project enquiry',
         'training_subject' => 'Training registration',
+        'order_subject' => 'New manufacturing order',
         'admin_note' => 'View attachments and the full text in administration.',
         'contact_heading' => 'Project enquiries',
         'contact_empty' => 'No enquiries yet.',
@@ -165,6 +166,8 @@ return [
             'training' => 'Training',
             'description' => 'Describe your task',
             'files' => 'Files & photos',
+            'order' => 'Order',
+            'estimate' => 'Estimated total',
             'deadline' => 'Target date',
             'format' => 'Participation',
             'participants' => 'Participants',

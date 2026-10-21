@@ -84,13 +84,26 @@ return [
         'address' => 'Street address *',
         'postcode' => 'Postal code *',
         'submit' => 'Submit order',
-        'unavailable' => 'Order submission is not available yet.',
     ],
     'summary' => [
         'eyebrow' => 'PRELIMINARY ESTIMATE',
         'title' => 'Order summary',
         'total' => 'Estimated total',
         'note' => 'Preliminary estimate. Delivery and the final price are confirmed by the administrator.',
+    ],
+    // Order submission (W-12): neutral texts (no prototype equivalent), listed in aiqme-site/docs/progress.md.
+    'submit' => [
+        'conflict' => 'This order has already been submitted with other details. Reload the page and try again.',
+        'too_large_request' => 'The files are too large to send: up to :mb MB per file.',
+        'quantity' => 'Quantity: from 1 to 100.',
+    ],
+    'order' => [
+        'submitted_title' => 'Order submitted',
+        'submitted_text' => 'AIQME has received your order No. :number. The administrator will review the files and confirm the price.',
+        'guest_link' => 'Your order link. Save it: it is shown only once.',
+        'account_text' => 'The order is saved in your account.',
+        'title' => 'Order No. :number',
+        'contents' => 'Order contents',
     ],
     'help' => [
         'title' => 'Need help?',
@@ -128,5 +141,7 @@ return [
         'message_intro' => 'Please help review these files:',
         'message_more' => 'Models not listed: :count.',
         'infill' => 'Infill',
+        'submit_failed' => 'The order was not sent. Please try again.',
+        'throttle' => 'Too many requests. Please try again later.',
     ],
 ];

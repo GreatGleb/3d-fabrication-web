@@ -70,6 +70,58 @@ function start(root) {
     return url.toString();
   }
 
+  // Заявка (W-12, §3.1): один multipart-запрос — контакты и получение из формы шага 5 (с CSRF, токеном отправки и
+  // honeypot), параметры шага 2 и по каждой модели файл, единицы, масштаб и количество. Сумму сервер считает сам.
+  // Ошибки проверки — под полями формы, остальные — списком; успех — страница подтверждения.
+  const form = $('#checkout-form');
+
+  function showFieldErrors(errors) {
+    form.querySelectorAll('small[data-error]').forEach((node) => node.remove());
+    form.querySelectorAll('[aria-invalid]').forEach((node) => node.removeAttribute('aria-invalid'));
+    const general = [];
+    Object.entries(errors).forEach(([key, messages]) => {
+      const field = form.querySelector(`[name="${key}"]:not([type=hidden])`);
+      if (field?.closest('label.field')) {
+        field.setAttribute('aria-invalid', 'true');
+        field.closest('label.field').insertAdjacentHTML('beforeend', `<small data-error>${html(messages[0])}</small>`);
+      } else {
+        general.push(...messages);
+      }
+    });
+    showErrors(general);
+  }
+
+  async function submitOrder() {
+    const data = new FormData(form);
+    ['material', 'infill', 'color', 'quality', 'layer', 'finish', 'term'].forEach((name) => data.set(name, root.querySelector(`[name=${name}]`).value));
+    quote.ready.forEach((entry, i) => {
+      data.append(`parts[${i}][file]`, new Blob([entry.buffer]), entry.name);
+      data.append(`parts[${i}][unit]`, entry.unit);
+      data.append(`parts[${i}][scale]`, entry.scale);
+      data.append(`parts[${i}][quantity]`, entry.quantity);
+    });
+    const button = form.querySelector('[type=submit]');
+    button.disabled = true;
+    try {
+      const response = await fetch(form.action, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok && body.redirect) {
+        location.assign(body.redirect);
+        return;
+      }
+      if (response.status === 422) showFieldErrors(body.errors ?? {});
+      else showErrors([response.status === 429 ? texts.throttle : response.status === 413 && body.message ? body.message : texts.submit_failed]);
+    } catch {
+      showErrors([texts.submit_failed]);
+    }
+    button.disabled = false;
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitOrder();
+  });
+
   function goTo(next) {
     step = next;
     showErrors([]);

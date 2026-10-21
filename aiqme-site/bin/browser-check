@@ -53,13 +53,19 @@ W-33: медиа прототипа по умолчанию (D-43) на данн
 W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 — check_calculator (CALCULATOR_PAGES): 5 шагов на кубе 10 мм
 из tests/fixtures/stl/ (PLA, 100 %, qty 1 → итог 5,12 = сумма строк сводки) при отключённом canvas, ошибки OBJ/STEP, формата,
 размера (25 МиБ + 1 байт) и разбора, масштаб с окном подтверждения, шаг 3 без флажка сценария и открытый тетраэдр
-(предупреждение, переход доступен), шаг 4 и сводка без VAT/доставки/скидки, поле VAT-кода шага 5, отправка недоступна,
+(предупреждение, переход доступен), шаг 4 и сводка без VAT/доставки/скидки, поле VAT-кода шага 5,
 ссылка специалиста заполняет контактную форму; крупный binary (~25 МБ) — индикация, страница не замирает (Web Worker),
 куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
 
 W-11: вкладка Calculator админки — в ADMIN_PAGES; check_calculator_settings на 390 и 1440: форма без расползания и ошибок
 консоли/CSP; на 1440 габарит 300 мм сохраняется через Livewire, пометка «Not confirmed» у него снимается, /en/quote выводит
 300 в data-settings; затем габарит возвращается к 250.
+
+W-12: заявка гостя до подтверждения в том же сценарии check_calculator (canvas отключён): пустая форма шага 5 — ошибки
+сервера под полями имени, email и телефона, заказа нет; заполненная — страница подтверждения с номером, суммой 5,12 (те же
+центы, что итог калькулятора) и гостевой ссылкой; ссылка открывает гостевую страницу с номером и файлом, ссылка с чужим
+токеном — 404. Подготовка БД — aiqme:bootstrap после migrate:fresh (канал и EUR Lunar); страницы подтверждения
+(ORDER_CONFIRMATION_PAGES) в общий обход не входят — без только что отправленной заявки они 404.
 
 W-31: просмотр модели (Canvas 2D) на тех же страницах — check_viewer на 390 и 1440: пиксели модели на canvas после загрузки
 куба, ArrowRight / «+» / кнопки / колесо / перетаскивание меняют toDataURL, сброс возвращает исходный, колесо не листает
@@ -100,6 +106,8 @@ EVIDENCE = REPO / 'docs' / 'customer-prototype' / 'evidence' / 'audit-20261016'
 CONTENT_SEEDERS: list[str] = ['Database\\Seeders\\PrototypeContentSeeder']
 BROWSER_SEEDER = 'Tests\\browser\\BrowserDataSeeder'
 NOT_FOUND_PAGES = ['/lt/nera-tokio', '/en/missing-page']
+# Подтверждение заявки W-12: только сразу после отправки (иначе 404) — проверяется в check_calculator.
+ORDER_CONFIRMATION_PAGES = ['/lt/kalkuliatorius/pateikta', '/en/quote/submitted']
 # Поиск с результатами и без (W-06): страница поиска без запроса — из route:list.
 SEARCH_PAGES = ['/lt/paieska?q=3D', '/en/search?q=3D', '/en/search?q=zzzz']
 # Каталог (W-25): фильтр, пустой результат и сравнение 4 товаров фабрики tests/browser/ContentFactory::catalog().
@@ -155,7 +163,9 @@ def run(args, *, env=None, stdin=None, check=True):
 def browser_env():
     env = dict(os.environ)
     env.update({'DB_DATABASE': DATABASE, 'QUEUE_CONNECTION': 'sync', 'APP_URL': BASE, 'APP_ENV': 'local',
-                'APP_DEBUG': 'false'})
+                'APP_DEBUG': 'false',
+                # Заявки W-12 одного прогона (несколько страниц, ширин и ошибочных отправок) — с одного IP; лимит поднят.
+                'AIQME_ORDERS_PER_HOUR': '100'})
     return env
 
 
@@ -185,6 +195,8 @@ def prepare(env):
     if not database or database[-1] != DATABASE:
         sys.exit(f'FAIL: приложение подключено не к {DATABASE}: {" ".join(database)}')
     run(['bin/php', 'artisan', 'migrate:fresh', '--force', '--no-interaction'], env=env)
+    # Базовые данные Lunar (канал, EUR, налоговые зона и класс): без них заявка калькулятора не создаёт заказ (W-12).
+    run(['bin/php', 'artisan', 'aiqme:bootstrap', '--no-interaction'], env=env)
     for seeder in CONTENT_SEEDERS:
         run(['bin/php', 'artisan', 'db:seed', f'--class={seeder}', '--force', '--no-interaction'], env=env)
 
@@ -242,7 +254,7 @@ def pages_from_routes(env):
         if '{' in uri:
             continue
         first = uri.split('/')[0]
-        if '/' + uri in ADMIN_PAGES:
+        if '/' + uri in ADMIN_PAGES or '/' + uri in ORDER_CONFIRMATION_PAGES:
             continue
         if first in ('lt', 'en'):
             public.append('/' + uri)
@@ -1360,18 +1372,56 @@ def check_calculator(report, new_page, path, width, allowlist, files):
         report.check(phrase not in shown, f'{where}: в шаге 4 или сводке есть «{phrase}»')
     fits(4)
 
-    # Шаг 5: поле VAT-кода есть, отправка недоступна, кнопок технологии нет.
+    # Шаг 5: поле VAT-кода есть, кнопок шагов нет; адрес скрыт при самовывозе.
     click('[data-next]')
     report.check(page.locator('#checkout-form').is_visible(), f'{where}: шаг 5 не открылся')
     report.check(page.locator('#checkout-form input[name=vat_code]').is_visible(), f'{where}: нет поля VAT-кода')
-    report.check(page.locator('#checkout-form button[type=submit]').is_disabled(), f'{where}: отправка доступна до W-12')
     report.check(page.locator('[data-actions]').is_hidden(), f'{where}: на шаге 5 видны кнопки шагов')
     page.select_option('select[name=delivery]', 'pickup')
     report.check(page.locator('[data-address]').is_hidden(), f'{where}: адрес виден при самовывозе')
     fits(5)
+    href = page.locator('.help-box a[data-specialist]').get_attribute('href')
+
+    # Заявка W-12 (canvas отключён): пустая форма — ошибки сервера под полями, заказа нет; заполненная — подтверждение.
+    submit = page.locator('#checkout-form button[type=submit]')
+    report.check(submit.is_enabled(), f'{where}: отправка недоступна')
+    with page.expect_response(lambda response: response.request.method == 'POST') as answer:
+        click('#checkout-form button[type=submit]')
+    report.check(answer.value.status == 422, f'{where}: пустая форма — ответ {answer.value.status}, а не 422')
+    page.wait_for_selector('#checkout-form small[data-error]')
+    problems[:] = [problem for problem in problems if problem != f'422 {BASE}{path}']  # ожидаемый ответ проверки
+    required = 'Fill in this field.' if en else 'Užpildykite šį lauką.'
+    for name in ('name', 'email', 'phone'):
+        field = page.locator(f'#checkout-form [name={name}]')
+        error = field.locator('xpath=..').locator('small[data-error]')
+        report.check(field.get_attribute('aria-invalid') == 'true' and error.count() == 1 and error.inner_text() == required,
+                     f'{where}: нет ошибки под полем {name}')
+    report.check(page.locator('#checkout-form small[data-error]').count() == 3, f'{where}: лишние ошибки полей при самовывозе')
+    shown_cents = int(page.locator('[data-total]').get_attribute('data-cents'))
+    page.fill('#checkout-form [name=name]', 'Ona Petraitė')
+    page.fill('#checkout-form [name=email]', 'ona@example.test')
+    page.fill('#checkout-form [name=phone]', '+370 600 00000')
+    click('#checkout-form button[type=submit]')
+    page.wait_for_url('**/' + ('quote/submitted' if en else 'kalkuliatorius/pateikta'), timeout=30000)
+    page.wait_for_load_state('networkidle')
+    number = page.locator('[data-order-number]').get_attribute('data-order-number') or ''
+    confirmed_cents = int(page.locator('[data-total]').get_attribute('data-cents') or -1)
+    report.check(number.isdigit(), f'{where}: на подтверждении нет номера заказа')
+    report.check(confirmed_cents == shown_cents == 512, f'{where}: сумма подтверждения {confirmed_cents}, на экране калькулятора {shown_cents}')
+    sent = 'AIQME has received your order No. ' if en else 'AIQME gavo jūsų užsakymą Nr. '
+    report.check(sent + number in page.locator('.notice.success').inner_text(), f'{where}: нет текста подтверждения с номером')
+    guest = page.locator('a[data-guest-link]').get_attribute('href') or ''
+    report.check(guest.startswith(BASE + ('/en/order/' if en else '/lt/uzsakymas/') + number + '/'), f'{where}: гостевая ссылка «{guest}»')
+    fits('подтверждение')
+    page.goto(guest, wait_until='networkidle')
+    title = page.locator('h1').inner_text()
+    report.check(title == (f'Order No. {number}' if en else f'Užsakymas Nr. {number}'), f'{where}: гостевая страница «{title}»')
+    report.check('cube-10mm-binary.stl' in page.locator('[data-order-number]').inner_text(), f'{where}: на гостевой странице нет файла')
+    fits('гостевая страница')
+    wrong = page.goto(guest[:-4] + 'AAAA', wait_until='networkidle')
+    report.check(wrong.status == 404, f'{where}: гостевая ссылка с чужим токеном — {wrong.status}')
 
     # Ссылка специалиста: контактная форма с услугой печати и описанием модели и параметров.
-    href = page.locator('.help-box a[data-specialist]').get_attribute('href')
     page.goto(href, wait_until='networkidle')
     description = page.locator('textarea[name=description]').input_value()
     report.check(description.startswith('Please help review these files:' if en else 'Prašau padėti įvertinti failus:')

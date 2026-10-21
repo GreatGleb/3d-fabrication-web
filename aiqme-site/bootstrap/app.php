@@ -5,6 +5,7 @@ use App\Http\Middleware\SetLocaleFromPath;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -23,4 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // Тело больше post_max_size PHP отбрасывает целиком (до маршрута и локали): заявке калькулятора (W-12) — понятное
+        // сообщение о лимите файлов на языке адреса вместо пустой ошибки 413.
+        $exceptions->render(function (PostTooLargeException $exception, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+            app()->setLocale($request->segment(1) === 'lt' ? 'lt' : 'en');
+
+            return response()->json(['message' => __('calculator.submit.too_large_request', [
+                'mb' => intdiv(config('aiqme.calculator.max_file_bytes'), 1024 * 1024),
+            ])], 413);
+        });
     })->create();

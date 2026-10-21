@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\CalculatorController;
 use App\Http\Controllers\Public\FormController;
+use App\Http\Controllers\Public\OrderRequestController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Public\ProductController;
 use App\Http\Controllers\Public\ProjectController;
@@ -54,6 +55,16 @@ foreach (StaticPages::LOCALES as $locale) {
 // /lt/administravimas/ · /en/admin/ — 404 всем, кроме вошедшего администратора, вход — через форму кабинета.
 // auth.session (AuthenticateSession) завершает прежние сессии после смены пароля сбросом (§6.3).
 foreach (StaticPages::PUBLIC_LOCALES as $locale) {
+    // Заявка на изготовление (W-12, §3.1): отправка шага 5 на адрес калькулятора (частота по IP — throttle:orders),
+    // подтверждение сразу после отправки и гостевая страница заказа по секретной ссылке (§6.2) — не кэшируются.
+    $calculator = $locale.'/'.StaticPages::segment('calculator', $locale);
+    Route::post($calculator, [OrderRequestController::class, 'store'])->middleware('throttle:orders')->name($locale.'.calculator.store');
+    Route::middleware('cache.headers:private;no_store')->group(function () use ($locale, $calculator): void {
+        Route::get($calculator.'/'.($locale === 'lt' ? 'pateikta' : 'submitted'), [OrderRequestController::class, 'confirmation'])->name($locale.'.order.confirmation');
+        Route::get($locale.'/'.($locale === 'lt' ? 'uzsakymas' : 'order').'/{number}/{token}', [OrderRequestController::class, 'guest'])
+            ->whereNumber('number')->name($locale.'.order.guest');
+    });
+
     Route::prefix($locale.'/'.($locale === 'lt' ? 'paskyra' : 'account'))
         ->middleware('cache.headers:private;no_store')
         ->group(function () use ($locale): void {

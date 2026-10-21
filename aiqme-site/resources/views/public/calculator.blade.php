@@ -1,6 +1,7 @@
 {{-- Калькулятор (§1.2, W-27): 5 шагов прототипа (quote()) на ядре W-10, расчёт — в браузере, resources/js/calculator/.
      Без выбора технологии (FDM, D-37), без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров
-     и флажка сценария риска (D-21). Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 до W-12 не отправляется.
+     и флажка сценария риска (D-21). Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 отправляет заявку fetch-запросом
+     multipart (W-12): токен отправки — UUID формы, профиль вошедшего клиента ($buyer) подставлен в поля.
      data-settings — тарифы, заполнение по умолчанию и габарит из настроек админки (W-11) и лимиты файлов из
      config('aiqme.calculator'); тексты для JS — data-texts. --}}
 @php
@@ -100,29 +101,31 @@
                     <div class="notice gap">{{ __('calculator.price.note') }}</div>
                 </section>
 
-                <form class="panel" id="checkout-form" data-step-panel="4" hidden novalidate>
+                <form class="panel" id="checkout-form" data-step-panel="4" hidden novalidate method="post" action="{{ Route::has($locale.'.calculator.store') ? route($locale.'.calculator.store') : '' }}">
+                    @csrf
+                    <input type="hidden" name="submission_token" value="{{ \Illuminate\Support\Str::uuid() }}">
+                    @include('public.partials.honeypot')
                     <h2>{{ __('calculator.checkout.title') }}</h2>
                     <p>{{ __('calculator.checkout.intro') }}</p>
                     <div class="grid two form-grid">
-                        <x-field name="name" :label="__('calculator.checkout.name')" required autocomplete="name" />
-                        <x-field name="email" type="email" :label="__('calculator.checkout.email')" required autocomplete="email" />
-                        <x-field name="company" :label="__('calculator.checkout.company')" autocomplete="organization" />
-                        <x-field name="company_code" :label="__('calculator.checkout.company_code')" />
-                        <x-field name="vat_code" :label="__('calculator.checkout.vat_code')" />
+                        <x-field name="name" :label="__('calculator.checkout.name')" :value="$buyer['name'] ?? null" required autocomplete="name" />
+                        <x-field name="email" type="email" :label="__('calculator.checkout.email')" :value="$buyer['email'] ?? null" required autocomplete="email" />
+                        <x-field name="company" :label="__('calculator.checkout.company')" :value="$buyer['company'] ?? null" autocomplete="organization" />
+                        <x-field name="company_code" :label="__('calculator.checkout.company_code')" :value="$buyer['company_code'] ?? null" />
+                        <x-field name="vat_code" :label="__('calculator.checkout.vat_code')" :value="$buyer['vat_code'] ?? null" />
                         <x-field name="phone" type="tel" :label="__('calculator.checkout.phone')" required autocomplete="tel" />
                     </div>
                     <x-field name="delivery" type="select" :label="__('calculator.checkout.delivery')" :options="__('calculator.checkout.deliveries')" />
                     <div class="grid two form-grid" data-address>
                         <x-field name="country" type="select" :label="__('calculator.checkout.country')" :options="__('calculator.countries')" required />
-                        <x-field name="city" :label="__('calculator.checkout.city')" required autocomplete="address-level2" />
-                        <x-field name="address" :label="__('calculator.checkout.address')" required autocomplete="street-address" />
-                        <x-field name="postcode" :label="__('calculator.checkout.postcode')" required autocomplete="postal-code" />
+                        <x-field name="city" :label="__('calculator.checkout.city')" :value="$buyer['city'] ?? null" required autocomplete="address-level2" />
+                        <x-field name="address" :label="__('calculator.checkout.address')" :value="$buyer['address'] ?? null" required autocomplete="street-address" />
+                        <x-field name="postcode" :label="__('calculator.checkout.postcode')" :value="$buyer['postcode'] ?? null" required autocomplete="postal-code" />
                     </div>
                     <div class="quote-actions">
                         <button type="button" class="btn secondary" data-back>← {{ __('calculator.back') }}</button>
-                        <button type="submit" class="btn" disabled aria-describedby="quote-unavailable">{{ __('calculator.checkout.submit') }} <x-line-icon name="arrow" /></button>
+                        <button type="submit" class="btn" @disabled(! Route::has($locale.'.calculator.store'))>{{ __('calculator.checkout.submit') }} <x-line-icon name="arrow" /></button>
                     </div>
-                    <p class="legal-note gap" id="quote-unavailable">{{ __('calculator.checkout.unavailable') }}</p>
                 </form>
 
                 <div class="quote-actions" data-actions>

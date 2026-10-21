@@ -47,9 +47,10 @@ export class Quote {
 
   // Модель из ArrayBuffer — общая точка входа для выбранного файла, повторного заказа и «пересчитать» (W-15).
   // Новая модель сразу становится активной; поздний результат разбора заполняет только свою запись и активную не меняет.
+  // Байты файла остаются в записи: заявка (W-12) отправляет их на сервер.
   async addBuffer(name, buffer) {
     if (this.models.length >= this.settings.max_files) return { name, error: 'too_many' };
-    const entry = { id: this.nextId++, name, unit: 'mm', scale: 100, quantity: 1, model: null };
+    const entry = { id: this.nextId++, name, buffer, unit: 'mm', scale: 100, quantity: 1, model: null };
     this.models.push(entry);
     this.active = this.models.length - 1;
     this.onChange();

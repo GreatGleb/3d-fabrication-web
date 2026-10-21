@@ -15,4 +15,6 @@ grep -q '^APP_KEY=base64:' .env || bin/php artisan key:generate --no-interaction
 npm ci --no-audit --no-fund
 docker compose -f docker-compose.dev.yml up -d --wait
 bin/php artisan migrate --no-interaction
+# Базовые данные Lunar для заявок (W-12): канал, языки, EUR, налоговые зона и класс; идемпотентно.
+bin/php artisan aiqme:bootstrap --no-interaction
 echo 'Готово. Администратор: bin/php artisan aiqme:make-admin <email> (D-29). Boost MCP: bin/boost-install.'

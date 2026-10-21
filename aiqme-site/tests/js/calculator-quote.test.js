@@ -43,6 +43,9 @@ describe('добавление моделей', () => {
     assert.equal(a.totalCents, 512);
     assert.deepEqual(b.lines.map((l) => l.cents), a.lines.map((l) => l.cents));
     assert.equal(b.totalCents, a.totalCents);
+    // Байты файла остаются в записи модели — их отправляет заявка (W-12).
+    const bytes = new Uint8Array(buffer('cube-10mm-binary.stl'));
+    for (const quote of [fromBuffer, fromFile]) assert.deepEqual(new Uint8Array(quote.models[0].buffer), bytes);
     assert.equal(formatMoney(a.totalCents, 'en'), '€5.12');
     assert.equal(formatMoney(a.totalCents, 'lt'), '5,12 €');
   });
