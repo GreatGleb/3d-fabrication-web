@@ -1,0 +1,16 @@
+# Контекст образа — чистый экспорт (bin/build-context, git archive); здесь — то, что в образ не попадает и там.
+experiments/
+build/
+demo/
+storage/
+bootstrap/cache/*.php
+public/build
+public/hot
+public/storage
+.env*
+!.env.example
+node_modules/
+vendor/
+tests/fixtures/
+.codex/
+.mcp.json

@@ -3,6 +3,13 @@
 
 Запуск: aiqme-site/bin/browser-check [путь …]   (без путей — все GET-страницы /lt и /en из route:list и две 404)
         --signed-in с путями — ещё и проверки после входа (кабинет, админка, редакторы), как в полном прогоне
+        --base-url http://127.0.0.1:<порт> --compose-file docker-compose.prod.yml — сценарий W-20 в локальном prod-compose
+        (проект aiqme-prod, build/prod-local/.env; иной адрес, файл или проект — отказ до любых действий): compose config
+        (порты только у web на 127.0.0.1, .env только для чтения, лимиты, журналы), образы app и web, healthy web, доверенный
+        прокси = шлюз сети, администратор через aiqme:make-admin --password-stdin в exec, заявка гостя (2 STL, один —
+        500 000 треугольников) → цена 150 EUR → запрос аванса 40 EUR → производство → трек → страница оплаты и возврат
+        с client_secret; заявка из 10 STL по 500 000 треугольников (время — в отчёте); /storage/… из тома и PHP-файл
+        из тома; журнал web без токенов, но с GET /lt. Без migrate:fresh, своей БД и запуска сервера; отчёт — prod-summary.md.
 
 Подготовка: своя БД aiqme_browser dev-PostgreSQL — migrate:fresh, сидеры контента, данные tests/browser/,
 администратор (aiqme:make-admin --password-stdin, D-29) и клиент со случайными паролями на каждый запуск.
@@ -1850,8 +1857,406 @@ def evidence_shot(path, device):
     return None
 
 
+# ---------- W-20: сценарий в локальном prod-compose (--base-url … --compose-file docker-compose.prod.yml) ----------
+
+PROD_ENV = APP / 'build' / 'prod-local' / '.env'
+PROD_COMPOSE = APP / 'docker-compose.prod.yml'
+PROD_PROJECT = 'aiqme-prod'
+PHP_SERVICES = ('app', 'worker', 'scheduler')
+
+
+def env_values(file):
+    values = {}
+    for line in file.read_text(encoding='utf-8').splitlines():
+        if '=' in line and not line.lstrip().startswith('#'):
+            key, value = line.split('=', 1)
+            values[key.strip()] = value.strip().strip('"')
+    return values
+
+
+def prod_target(argv):
+    """Разбор и проверка цели режима prod-compose — до любых действий (Docker, БД, браузер): только 127.0.0.1/localhost,
+    только docker-compose.prod.yml проекта aiqme-prod и build/prod-local/.env (AIQME_ENV_FILE, порт web). Иначе — отказ."""
+    def refuse(reason):
+        sys.exit(f'FAIL: режим --base-url отказан до любых действий: {reason}')
+
+    options = {}
+    rest = list(argv)
+    while rest:
+        name = rest.pop(0)
+        if name not in ('--base-url', '--compose-file') or not rest or name in options:
+            refuse(f'ожидается ровно --base-url <адрес> --compose-file docker-compose.prod.yml, получено {" ".join(argv)}')
+        options[name] = rest.pop(0)
+    if set(options) != {'--base-url', '--compose-file'}:
+        refuse('нужны оба параметра: --base-url и --compose-file')
+    url = urlparse(options['--base-url'])
+    if url.scheme != 'http' or url.hostname not in ('127.0.0.1', 'localhost') or url.path not in ('', '/') or url.query:
+        refuse(f'адрес {options["--base-url"]} — только http://127.0.0.1:<порт> или http://localhost:<порт>')
+    compose = (APP / options['--compose-file']).resolve()
+    if compose != PROD_COMPOSE or not compose.is_file():
+        refuse(f'compose-файл {options["--compose-file"]} — только docker-compose.prod.yml')
+    if not re.search(rf'^name:\s*{PROD_PROJECT}\s*$', compose.read_text(encoding='utf-8'), re.M):
+        refuse(f'в docker-compose.prod.yml нет name: {PROD_PROJECT}')
+    if not PROD_ENV.is_file():
+        refuse('нет build/prod-local/.env')
+    values = env_values(PROD_ENV)
+    if values.get('AIQME_ENV_FILE') != 'build/prod-local/.env':
+        refuse('в build/prod-local/.env AIQME_ENV_FILE не build/prod-local/.env')
+    if url.port is None or str(url.port) != values.get('AIQME_WEB_PORT'):
+        refuse(f'порт {url.port} не совпадает с AIQME_WEB_PORT={values.get("AIQME_WEB_PORT")} в build/prod-local/.env')
+    return f'http://{url.hostname}:{url.port}', values
+
+
+def compose_cmd(*args):
+    return ['docker', 'compose', '--env-file', 'build/prod-local/.env', '-f', 'docker-compose.prod.yml', *args]
+
+
+def artisan(*args, stdin=None):
+    return run(compose_cmd('exec', '-T', '-u', 'www-data', 'app', 'php', 'artisan', *args), stdin=stdin)
+
+
+def check_prod_compose(report):
+    """docker compose config: порты только у web и только 127.0.0.1; .env — только для чтения во всех PHP-сервисах,
+    без env_file; worker — один процесс с очередью sheets; лимиты ресурсов и ротация журналов у всех сервисов."""
+    services = json.loads(run(compose_cmd('config', '--format', 'json')).stdout)['services']
+    for name, service in services.items():
+        ports = service.get('ports', [])
+        if name == 'web':
+            report.check(ports and all(port.get('host_ip') == '127.0.0.1' for port in ports), f'compose: порты web {ports}')
+        else:
+            report.check(not ports, f'compose: у {name} есть ports {ports}')
+        limits = service.get('deploy', {}).get('resources', {}).get('limits', {})
+        report.check(bool(limits.get('memory')) and bool(limits.get('cpus')), f'compose: у {name} нет deploy.resources.limits')
+        options = service.get('logging', {}).get('options', {})
+        report.check(bool(options.get('max-size')) and bool(options.get('max-file')), f'compose: у {name} нет ротации журналов')
+        report.check('env_file' not in service, f'compose: у {name} env_file')
+    for name in PHP_SERVICES:
+        mounts = [v for v in services[name].get('volumes', []) if v.get('target') == '/var/www/html/.env']
+        report.check(len(mounts) == 1 and mounts[0].get('read_only') and mounts[0].get('source') == str(PROD_ENV),
+                     f'compose: .env в {name} {mounts}')
+    for name in ('worker', 'scheduler'):
+        report.check(services[name].get('user') == 'www-data', f'compose: {name} не от www-data')
+    command = ' '.join(services['worker'].get('command') or [])
+    report.check('queue:work' in command and 'sheets' in command and services['worker'].get('deploy', {}).get('replicas', 1) == 1,
+                 f'compose: worker {command}')
+    return services
+
+
+def check_prod_image(report, services):
+    """Образ app: расширения §2.1, gd с JPEG/WebP/FreeType, лимиты §6.4, нет лишних файлов; web: curl для healthcheck."""
+    image, web_image = services['app']['image'], services['web']['image']
+    modules = run(['docker', 'run', '--rm', image, 'php', '-m']).stdout.split()
+    for extension in ('bcmath', 'intl', 'gd', 'pdo_pgsql', 'pgsql', 'zip', 'exif', 'OPcache'):
+        report.check(extension in modules, f'образ: нет расширения {extension}')
+    gd = run(['docker', 'run', '--rm', image, 'php', '-r',
+              'echo json_encode(array_intersect_key(gd_info(), array_flip(["JPEG Support", "WebP Support", "FreeType Support"])));']).stdout
+    report.check(json.loads(gd) == {'JPEG Support': True, 'WebP Support': True, 'FreeType Support': True}, f'образ: gd_info {gd}')
+    info = run(['docker', 'run', '--rm', image, 'php', '-i']).stdout
+    for key, value in (('upload_max_filesize', '25M'), ('post_max_size', '260M'), ('max_file_uploads', '20'), ('memory_limit', '512M')):
+        report.check(re.search(rf'^{key} => {value} => {value}$', info, re.M) is not None, f'образ: php -i {key} не {value}')
+    fpm = run(['docker', 'run', '--rm', image, 'php-fpm', '-i']).stdout
+    report.check(re.search(r'^max_execution_time => 120 => 120$', fpm, re.M) is not None, 'образ: PHP-FPM max_execution_time не 120')
+    fpm_config = run(['docker', 'run', '--rm', image, 'php-fpm', '-tt']).stderr
+    report.check(re.search(r'clear_env = yes', fpm_config) is not None, 'образ: PHP-FPM без clear_env = yes')
+    found = run(['docker', 'run', '--rm', image, 'find', '/var/www/html', '-path', '/var/www/html/vendor', '-prune', '-o',
+                 '(', '-name', '.env', '-o', '-name', 'experiments', '-o', '-name', 'instance', '-o', '-path', '*/tests/fixtures',
+                 '-o', '-path', '/var/www/html/bootstrap/cache/config.php', ')', '-print']).stdout.split()
+    report.check(found == [], f'образ: лишние файлы {found}')
+    link = run(['docker', 'run', '--rm', image, 'readlink', '/var/www/html/public/storage']).stdout.strip()
+    report.check(link == '../storage/app/public', f'образ: public/storage → {link}')
+    tools = run(['docker', 'run', '--rm', web_image, 'sh', '-c', 'command -v curl || true']).stdout.strip()
+    report.check(tools != '', 'образ web: нет curl для healthcheck')
+
+
+def check_prod_runtime(report, values):
+    """web — healthy; доверенный прокси после optimize — шлюз сети проекта; APP_ENV production и APP_DEBUG false."""
+    rows = [json.loads(line) for line in run(compose_cmd('ps', '--format', 'json')).stdout.splitlines() if line.strip()]
+    health = {row['Service']: row.get('Health', '') for row in rows}
+    report.check(health.get('web') == 'healthy', f'compose ps: web {health.get("web")!r}')
+    report.check({'app', 'web', 'worker', 'scheduler', 'db'} <= set(health), f'compose ps: сервисы {sorted(health)}')
+    gateway = run(['docker', 'network', 'inspect', f'{PROD_PROJECT}_default', '--format', '{{(index .IPAM.Config 0).Gateway}}']).stdout.strip()
+    trusted = artisan('config:show', 'aiqme.trusted_proxies').stdout.split()
+    report.check(gateway and trusted and trusted[-1] == gateway, f'aiqme.trusted_proxies {trusted[-1:]} ≠ шлюз сети {gateway}')
+    cached = run(compose_cmd('exec', '-T', 'app', 'test', '-f', 'bootstrap/cache/config.php'), check=False).returncode == 0
+    report.check(cached, 'в app нет bootstrap/cache/config.php — не выполнен optimize (§8.3)')
+    for key, expected in (('app.env', 'production'), ('app.debug', 'false')):
+        shown = artisan('config:show', key).stdout.split()
+        report.check(shown[-1:] == [expected], f'{key} = {shown[-1:]}')
+    report.check(values.get('STRIPE_SECRET', '') == '' and values.get('GOOGLE_SHEETS_KEY_BASE64', '') == ''
+                 and values.get('TELEGRAM_BOT_TOKEN', '') == '', 'в build/prod-local/.env заданы ключи внешних сервисов')
+
+
+def submit_quote(report, new_page, files, where, ship):
+    """Калькулятор /en/quote (canvas отключён): файлы → PLA, 100 % → шаг 5 → заявка. Возвращает (номер, гостевая ссылка,
+    секунды от отправки до страницы подтверждения)."""
+    context, page, problems = new_page(1440, 1000, intercept=False)
+    page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
+    page.goto(BASE + '/en/quote', wait_until='networkidle')
+    page.locator('#model-upload').set_input_files(files)
+    page.wait_for_function(f"document.querySelectorAll('[data-files] .file-row').length === {len(files)}"
+                           " && !document.querySelector('#upload-progress progress')", timeout=300000)
+    report.check(page.locator('#quote-error .notice').count() == 0, f'{where}: ошибка калькулятора «{page.locator("#quote-error").inner_text()}»')
+    for step in range(4):
+        page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+        page.click('[data-next]')
+        if step == 0:
+            page.select_option('select[name=material]', 'PLA')
+            page.select_option('select[name=infill]', '100')
+    form = '#checkout-form'
+    page.fill(f'{form} [name=name]', 'Ona TEST')
+    page.fill(f'{form} [name=email]', 'ona@example.test')
+    page.fill(f'{form} [name=phone]', '+370 600 00000')
+    if ship:
+        page.select_option(f'{form} select[name=delivery]', 'ship')
+        page.select_option(f'{form} select[name=country]', 'LT')
+        page.fill(f'{form} [name=city]', 'Vilnius')
+        page.fill(f'{form} [name=address]', 'Gedimino pr. 1')
+        page.fill(f'{form} [name=postcode]', 'LT-01103')
+    else:
+        page.select_option(f'{form} select[name=delivery]', 'pickup')
+    page.locator(f'{form} button[type=submit]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+    started = time.monotonic()
+    page.click(f'{form} button[type=submit]')
+    try:
+        page.wait_for_url('**/quote/submitted', timeout=300000)
+    except Exception as error:
+        report.check(False, f'{where}: нет страницы подтверждения: {error}')
+        context.close()
+        return None, None, None
+    seconds = time.monotonic() - started
+    page.wait_for_load_state('networkidle')
+    number = page.locator('[data-order-number]').get_attribute('data-order-number') or ''
+    guest = page.locator('a[data-guest-link]').get_attribute('href') or ''
+    report.check(number.isdigit() and guest.startswith(f'{BASE}/en/order/{number}/'), f'{where}: номер {number!r}, ссылка {guest!r}')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+    return number, guest, seconds
+
+
+def admin_card(page, number):
+    page.goto(BASE + '/en/admin/orders', wait_until='networkidle')
+    page.click(f'#admin-order-list tr:has(strong:text-is("{number}")) a.btn')
+    page.wait_for_selector('#order-card')
+    page.wait_for_load_state('networkidle')
+
+
+def admin_scenario(report, new_page, state, number):
+    """Администратор (вход через форму): STL скачивается; цена 150 EUR = 70 + 45 + плата 5 и доставка 30 → запрос аванса
+    40 EUR (Stripe не вызывается) → производство при долге 110 EUR после подтверждения → трек."""
+    where = f'админка, заказ {number}'
+    context, page, problems = new_page(1440, 1000, storage_state=state)
+    admin_card(page, number)
+    page.click('#order-card button[aria-controls="bambu-job"]')
+    page.wait_for_selector('#bambu-job')
+    links = page.locator('#bambu-job a').evaluate_all('links => links.map(link => link.href)')
+    report.check(len(links) == 2, f'{where}: ссылок STL {links}')
+    for link in links:
+        response = page.request.get(link)
+        report.check(response.status == 200 and response.headers.get('content-disposition', '').startswith('attachment'),
+                     f'{where}: скачивание {link} — {response.status}')
+    prices = page.locator('#order-price-form input[name^="prices."]')
+    report.check(prices.count() == 3, f'{where}: полей цены {prices.count()} (две детали и плата)')
+    for index, value in enumerate(('70', '45', '5')[:prices.count()]):
+        prices.nth(index).fill(value)
+    page.fill('#order-price-form [name=delivery]', '30')
+    page.click('#order-price-form button[type=submit]')
+    page.wait_for_selector('#order-card .status-title .tag:text-is("Approved for production")')
+    total = page.locator('#order-payment .summary-row').first.inner_text().replace('\xa0', ' ')
+    report.check('€150.00' in total, f'{where}: итог после подтверждения «{total}»')
+
+    page.fill('#order-request-form [name=amount]', '40')
+    page.click('#order-request-form button[type=submit]')
+    page.wait_for_selector('#order-card .notice.success:text-is("Payment request created.")')
+    report.check('€40.00' in page.inner_text('#order-payment').replace('\xa0', ' '), f'{where}: нет запроса 40 EUR')
+
+    page.click('#order-card .buttons button:has-text("In production")')
+    page.wait_for_selector('#order-confirm')
+    report.check('€150.00' in page.inner_text('#order-confirm').replace('\xa0', ' '), f'{where}: подтверждение без долга 150 EUR')
+    page.click('#order-confirm button:text-is("Confirm")')
+    page.wait_for_selector('#order-card .status-title .tag:text-is("In production")')
+
+    page.fill('#order-tracking-form [name=carrier]', 'DPD')
+    page.fill('#order-tracking-form [name=trackingNumber]', 'TEST-TRACK-1')
+    page.click('#order-tracking-form button[type=submit]')
+    page.wait_for_selector('#order-card .notice.success:text-is("Tracking saved.")')
+    page.screenshot(path=str(OUT / 'shots' / 'prod-admin-order.png'), full_page=True)
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
+def guest_scenario(report, new_page, guest, number, secret):
+    """Гость по ссылке: стадия «в производстве», трек, оплата — страница оплаты (без ключей Stripe — «недоступна»)
+    и возврат после 3DS с payment_intent_client_secret. Возвращает адрес страницы оплаты."""
+    where = f'гостевая страница {number}'
+    context, page, problems = new_page(1440, 1000)
+    response = page.goto(guest, wait_until='networkidle')
+    report.check(response.status == 200 and page.locator('#customer-order').count() == 1, f'{where}: HTTP {response.status}')
+    tracking = page.locator('[data-tracking]').inner_text() if page.locator('[data-tracking]').count() else ''
+    report.check(tracking == 'Tracking: DPD TEST-TRACK-1', f'{where}: трек «{tracking}»')
+    report.check('In production' in page.inner_text('#customer-order'), f'{where}: нет стадии In production')
+    links = page.locator('#customer-order a[href*="/stl/"]').evaluate_all('links => links.map(link => link.href)')
+    for link in links:
+        # Referer с токеном, как у перехода по ссылке страницы: ответ ~25 МБ nginx буферизует (предупреждение с referrer).
+        answer = page.request.get(link, headers={'Referer': guest})
+        report.check(answer.status == 200, f'{where}: скачивание {link} гостем — {answer.status}')
+    report.check(len(links) == 2, f'{where}: ссылки STL {links}')
+    checkout = page.locator('a[data-checkout-link]')
+    checkout_url = ''
+    if report.check(checkout.count() == 1, f'{where}: кнопок оплаты {checkout.count()}'):
+        checkout_url = checkout.get_attribute('href')
+        checkout.click()
+        page.wait_for_load_state('networkidle')
+        report.check(page.locator('#checkout[data-checkout-status="unavailable"]').count() == 1, f'{where}: страница оплаты {page.url}')
+        back = page.goto(f'{checkout_url}?payment_intent=pi_test_prodlocal&payment_intent_client_secret=pi_test_prodlocal_secret_{secret}'
+                         '&redirect_status=succeeded', wait_until='networkidle')
+        report.check(back.status == 200, f'{where}: возврат на страницу оплаты — {back.status}')
+    page.screenshot(path=str(OUT / 'shots' / 'prod-guest-order.png'), full_page=True)
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+    return checkout_url
+
+
+def check_storage_volume(report):
+    """Файл в томе storage/app/public отдаёт nginx по /storage/… (200, nosniff); PHP-файл оттуда не исполняется."""
+    target = 'storage/app/public'
+    with tempfile.TemporaryDirectory() as directory:
+        png = png_file(directory, 'test.png').read_bytes()
+    marker = secrets.token_hex(8)
+    subprocess.run(compose_cmd('exec', '-T', '-u', 'www-data', 'app', 'sh', '-c', f'cat > {target}/w20-test.png'), cwd=APP, input=png, check=True)
+    subprocess.run(compose_cmd('exec', '-T', '-u', 'www-data', 'app', 'sh', '-c', f'cat > {target}/w20-x.php'), cwd=APP,
+                   input=f'<?php echo "EXEC-{marker}-" . (6 * 7);'.encode(), check=True)
+    try:
+        with urlopen(BASE + '/storage/w20-test.png', timeout=10) as response:
+            report.check(response.status == 200 and response.read() == png and response.headers.get('X-Content-Type-Options') == 'nosniff'
+                         and response.headers.get('Referrer-Policy') == 'same-origin',
+                         f'/storage/w20-test.png: {response.status} {dict(response.headers)}')
+        try:
+            with urlopen(BASE + '/storage/w20-x.php', timeout=10) as response:
+                status, body = response.status, response.read().decode(errors='replace')
+        except OSError as error:
+            status, body = getattr(error, 'code', 0), ''
+        report.check(status in (200, 403, 404) and f'EXEC-{marker}-42' not in body, f'/storage/w20-x.php исполнен или ответ {status}: {body[:80]}')
+        try:
+            status = urlopen(BASE + '/.htaccess', timeout=10).status
+        except OSError as error:
+            status = getattr(error, 'code', 0)
+        report.check(status == 403, f'/.htaccess (dot-файл public/) — {status}, а не 403')
+    finally:
+        run(compose_cmd('exec', '-T', '-u', 'www-data', 'app', 'rm', '-f', f'{target}/w20-test.png', f'{target}/w20-x.php'))
+
+
+def prod_main(argv):
+    global BASE, HOST
+    BASE, values = prod_target(argv)
+    HOST = urlparse(BASE).netloc
+    os.chdir(APP)
+    report = Report()
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / 'shots').mkdir(exist_ok=True)
+    started = time.strftime('%Y-%m-%dT%H:%M:%S')
+    log(f'== prod-compose {PROD_PROJECT}: {BASE}')
+    services = check_prod_compose(report)
+    log('== образы app и web')
+    check_prod_image(report, services)
+    log('== состояние сервисов')
+    check_prod_runtime(report, values)
+
+    # Администратор (D-29): случайный пароль только в stdin docker compose exec и в памяти процесса.
+    admin_email, admin_password = 'admin@aiqme.test', secrets.token_urlsafe(24)
+    artisan('aiqme:make-admin', admin_email, '--name=AIQME', '--password-stdin', '--no-interaction', stdin=admin_password + '\n')
+    secret = secrets.token_urlsafe(24)
+    reset_token = secrets.token_hex(32)
+    tokens = {}
+    timings = {}
+    with tempfile.TemporaryDirectory() as directory, sync_playwright() as playwright:
+        files = calculator_files(directory)
+        large = [str(Path(directory) / f'large-{index:02}.stl') for index in range(1, 11)]
+        for path in large:
+            shutil.copyfile(files['large.stl'], path)
+        browser = playwright.chromium.launch()
+
+        def new_page(width, height, storage_state=None, intercept=True):
+            context = browser.new_context(viewport={'width': width, 'height': height}, storage_state=storage_state)
+
+            def foreign(url):
+                return url.startswith(('http:', 'https:', 'ws:', 'wss:')) and urlparse(url).netloc != HOST
+
+            def abort(route):
+                report.external.add(route.request.url)
+                return route.abort()
+
+            # Перехват Playwright закрывал вкладку на POST заявки из 10 файлов (~250 МБ): там чужие хосты только
+            # фиксируются (их запросы и так запрещает CSP), на остальных страницах — прерываются.
+            if intercept:
+                context.route(foreign, abort)
+            page = context.new_page()
+            problems = []
+            page.on('request', lambda r: report.external.add(r.url) if foreign(r.url) else None)
+            page.on('console', lambda m: problems.append(f'console {m.type}: {m.text}')
+                    if (m.type in ('error', 'warning') or 'Content Security Policy' in m.text)
+                    and not m.text.startswith('Failed to load resource') else None)
+            page.on('pageerror', lambda error: problems.append(f'pageerror: {error}'))
+            page.on('response', lambda r: problems.append(f'{r.status} {r.url}') if r.status >= 400 and r.request.resource_type != 'document' else None)
+            return context, page, problems
+
+        log('== заявка гостя: куб 10 мм и STL 500 000 треугольников, доставка')
+        number, guest, seconds = submit_quote(report, new_page, [str(STL_FIXTURES / 'cube-10mm-binary.stl'), files['large.stl']],
+                                              'заявка из 2 STL', ship=True)
+        if number:
+            timings['2 STL (куб и 500 000 треугольников)'] = seconds
+            tokens['гостевой токен'] = guest.rsplit('/', 1)[-1]
+            state = sign_in(report, new_page, '/en/account/login', admin_email, admin_password, '/en/admin')
+            log('== администратор: цена, запрос аванса, производство, трек')
+            admin_scenario(report, new_page, state, number)
+            log('== гость: трек и страница оплаты')
+            guest_scenario(report, new_page, guest, number, secret)
+            tokens['client_secret'] = secret
+        log('== заявка из 10 STL по 500 000 треугольников')
+        number10, _, seconds10 = submit_quote(report, new_page, large, 'заявка из 10 STL', ship=False)
+        if number10:
+            timings['10 STL по 500 000 треугольников'] = seconds10
+        # Ссылка сброса пароля (маршрут W-07): токен в пути не должен попасть в журнал доступа.
+        context, page, _ = new_page(1440, 1000)
+        page.goto(f'{BASE}/en/account/reset/{reset_token}?email=ona%40example.test', wait_until='networkidle')
+        tokens['токен сброса'] = reset_token
+        context.close()
+        browser.close()
+    with urlopen(BASE + '/lt', timeout=10) as response:
+        report.check(response.status == 200, f'GET /lt — {response.status}')
+
+    log('== том storage: /storage/… и PHP-файл')
+    check_storage_volume(report)
+
+    log('== журнал web')
+    logs = run(compose_cmd('logs', '--no-log-prefix', '--since', started, 'web')).stdout
+    report.check(re.search(r'"GET /lt HTTP/1\.1" 200 ', logs) is not None, 'журнал web не содержит обычного запроса GET /lt (журнал выключен?)')
+    for name, token in tokens.items():
+        report.check(token not in logs, f'журнал web содержит {name}')
+    report.check('http://' not in logs and 'Referer' not in logs, 'журнал web содержит Referer')
+
+    report.check(not report.external, f'запросы к чужим хостам: {sorted(report.external)}')
+    lines = [f'# bin/browser-check --base-url {BASE} — {time.strftime("%Y-%m-%d %H:%M")}', '',
+             f'- Итог: {"FAIL" if report.failures else "OK"}; проверок пройдено {report.passed}, ошибок {len(report.failures)}.',
+             '- Время от отправки заявки до страницы подтверждения: ' + '; '.join(f'{k} — {v:.1f} с' for k, v in timings.items()),
+             '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'), ''] + [f'- FAIL {f}' for f in report.failures]
+    (OUT / 'prod-summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    for name, value in timings.items():
+        log(f'   время заявки ({name}): {value:.1f} с')
+    if report.failures:
+        log(f'\nbin/browser-check --base-url: FAIL ({len(report.failures)})')
+        for failure in report.failures:
+            log(' - ' + failure)
+        sys.exit(1)
+    log(f'\nbin/browser-check --base-url: OK ({report.passed} проверок); отчёт {OUT / "prod-summary.md"}')
+
+
 def main():
     os.chdir(APP)
+    if '--base-url' in sys.argv or '--compose-file' in sys.argv:
+        return prod_main(sys.argv[1:])
     arguments = [a for a in sys.argv[1:] if not a.startswith('-')]
     env = browser_env()
     log('== подготовка БД aiqme_browser')

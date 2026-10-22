@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Чистый контекст образа (W-20, §8.3): tar файлов, которые попадут в Git (git ls-files -co --exclude-standard aiqme-site),
+# без experiments/ — build/context.tar, и он же распакованный в build/context/ (AIQME_BUILD_CONTEXT=build/context для
+# docker compose -f docker-compose.prod.yml build). Рабочее дерево (vendor/, node_modules/, .env, storage/) в контекст не идёт.
+set -euo pipefail
+app_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(cd "$app_root/.." && pwd)"
+tarball="$app_root/build/context.tar"
+context="$app_root/build/context"
+mkdir -p "$app_root/build"
+
+git -C "$repo_root" ls-files -co --exclude-standard -z -- aiqme-site \
+    | while IFS= read -r -d '' path; do
+        relative="${path#aiqme-site/}"
+        # Удалённые, но ещё отслеживаемые файлы пропускаются: в Git после commit их тоже не будет.
+        [[ "$relative" == experiments/* ]] || [[ ! -e "$repo_root/$path" && ! -L "$repo_root/$path" ]] || printf '%s\0' "$relative"
+    done \
+    | tar -C "$app_root" --null --no-recursion -T - -cf "$tarball"
+
+rm -rf "$context"
+mkdir -p "$context"
+tar -C "$context" -xf "$tarball"
+echo "$tarball ($(tar -tf "$tarball" | wc -l) файлов) → $context"

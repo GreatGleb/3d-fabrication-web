@@ -90,6 +90,13 @@ return [
         'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID'),
     ],
 
+    /*
+    | Доверенные прокси (W-20, §6.6): адреса или подсети через запятую, не «*» — подсеть внешней сети общего прокси или,
+    | когда web опубликован на 127.0.0.1:<порт>, шлюз сети Compose-проекта (docker network inspect, поле Gateway).
+    | Пусто — X-Forwarded-* не принимаются. Читает App\Http\Middleware\TrustProxies в момент запроса.
+    */
+    'trusted_proxies' => env('TRUSTED_PROXIES', ''),
+
     'hero_video_source' => ['text' => 'Bosch / The Apic', 'url' => 'https://www.youtube.com/watch?v=1Nd_xg8QfXo'],
 
 ];

@@ -1,0 +1,10 @@
+# Пример общего обратного прокси хоста для AIQME (D-35, §8.1): Caddy с автоматическим TLS перед web на 127.0.0.1.
+# Порт — AIQME_WEB_PORT из .env проекта. Директивы log нет: журнала доступа нет (Referer с гостевым токеном не пишется, §6.2).
+# Таймаута ответа у reverse_proxy по умолчанию нет; X-Forwarded-For/Proto Caddy передаёт сам — приложение доверяет им
+# только от адресов TRUSTED_PROXIES (шлюз сети проекта aiqme, §6.6).
+aiqme.com {
+    request_body {
+        max_size 260MB
+    }
+    reverse_proxy 127.0.0.1:8080
+}

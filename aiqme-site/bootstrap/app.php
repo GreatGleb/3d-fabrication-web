@@ -2,10 +2,12 @@
 
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocaleFromPath;
+use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Middleware\TrustProxies as FrameworkTrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         then: fn () => Route::group([], __DIR__.'/../routes/webhooks.php'),
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Доверенные прокси читаются из config в момент запроса (W-20, §6.6).
+        $middleware->replace(FrameworkTrustProxies::class, TrustProxies::class);
         $middleware->append(SetLocaleFromPath::class);
         $middleware->append(SecurityHeaders::class);
         // Гость на действии кабинета и сессия, завершённая после смены пароля (AuthenticateSession), — на вход своей локали.

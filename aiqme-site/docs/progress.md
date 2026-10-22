@@ -2856,3 +2856,116 @@ been issued, so the price cannot be changed.»; ошибки и «Saved.» — �
 - Реальные Stripe test, Google Таблица, Telegram и SMTP/Mailpit — уровень T (W-22).
 - Сценарий 2 в локальном prod-compose без шагов оплаты — после W-20.
 - Вид страниц сценариев в браузере (bin/browser-check не запускался: шаблоны не менялись) — ждёт проверки пользователем.
+
+## W-20: Эксплуатационный пакет I: образ, prod-compose, nginx и прокси — выполнено (2026-10-22, Claude Code, ночной прогон)
+
+### Сделано
+
+- `docker/Dockerfile`: стадии `php` (php:8.4-fpm-trixie, `docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp`,
+  `docker-php-ext-install bcmath intl gd pdo_pgsql pgsql zip exif opcache`, php.ini-production + `docker/php/aiqme.ini` §6.4),
+  `vendor` (`composer install --no-dev`, composer из `composer:2.8.12`), `assets` (node:22-trixie-slim, vendor/ через
+  `COPY --from`, `npm ci && npm run build`), `app` (public/build, bootstrap/cache и storage/{framework/…,logs,app/…} от
+  www-data, относительная симлинка `public/storage → ../storage/app/public`), `web` (nginx:1.30-trixie + весь public/ образа app).
+- `docker/php/zz-aiqme-fpm.conf`: `clear_env = yes` — официальный образ в `docker.conf` ставит `clear_env = no`.
+- `docker-compose.prod.yml` (`name: aiqme-prod`): app, worker (`queue:work --queue=default,mail,sheets`, один процесс, www-data),
+  scheduler (`schedule:work`, www-data), web (только `127.0.0.1:${AIQME_WEB_PORT:-8080}`, healthcheck `curl /up`, том storage
+  `:ro`), db (postgres:17-trixie); именованные тома `storage`, `db-data`; `.env` — bind `${AIQME_ENV_FILE:-./.env}` →
+  `/var/www/html/.env` read_only во все PHP-сервисы, env_file нет; json-file max-size 10m / max-file 3 у всех;
+  `deploy.resources.limits` из `.env` с умолчаниями.
+- `docker/nginx/default.conf`: PHP только `location ~ ^/index\.php(/|$)`, `location ~ /\.(?!well-known) { deny all; }`,
+  `client_max_body_size 260m`, `fastcgi_read_timeout 120s`, nosniff и Referrer-Policy (always) на статике и /storage/,
+  `map $request_uri $loggable` (гостевые /lt/uzsakymas/, /en/order/, сброс /lt/paskyra/reset/, /en/account/reset/, оплата
+  /lt/apmokejimas/, /en/checkout/) и формат журнала без `$http_referer`.
+- `docker/proxy/Caddyfile.example` (D-35: без `log`, `request_body max_size 260MB`) и `nginx-proxy.conf.example` (тот же map,
+  `client_max_body_size 260m`, `proxy_read_timeout 120s`).
+- `bin/build-context` → `build/context.tar` и `build/context/` из `git ls-files -co --exclude-standard aiqme-site` без
+  experiments/; `.dockerignore` — список задачи.
+- Доверенные прокси: `config('aiqme.trusted_proxies')` ← `TRUSTED_PROXIES`; `App\Http\Middleware\TrustProxies` (подкласс,
+  читает config в момент запроса) заменяет штатный в `bootstrap/app.php`; тест `TrustProxiesTest`.
+- `.env.example` — шаблон рабочей среды (APP_ENV=production, APP_DEBUG=false, SESSION_SECURE_COOKIE=true,
+  SESSION_ENCRYPT=true, LOG_CHANNEL=stderr, DB_HOST=db, TRUSTED_PROXIES, переменные compose). `bin/setup` (вне touches,
+  иначе новый клон получил бы production-.env для разработки) создаёт dev-`.env` из шаблона с локальными значениями sed.
+- `bin/browser-check --base-url … --compose-file docker-compose.prod.yml` — режим W-20 (описан в шапке скрипта); тест
+  отказов `BrowserCheckProdTargetTest` (заглушка docker в PATH доказывает, что до отказа docker не вызывался).
+- `bin/check`: шаг «docker-compose.prod.yml: ports только у web и только на 127.0.0.1» (config по `.env.example`).
+- `docs/operations.md` — образ, сборка, развёртывание, локальный prod-compose.
+
+### Решения по неопределённому (простейший вариант)
+
+- Режим размещения web один — `127.0.0.1:<AIQME_WEB_PORT>` с Caddy на хосте; доверенный прокси — шлюз сети проекта.
+  Вариант «web во внешней сети общего прокси» не делался (две схемы сетей в одном compose — лишнее).
+- Контекст сборки в compose — `${AIQME_BUILD_CONTEXT:-.}`: на сервере каталог git archive, локально `build/context`.
+- Лимиты ресурсов по умолчанию (не измерены, W-29): app 1g/1.0, worker 768m/0.5, scheduler 256m/0.25, web 256m/0.5,
+  db 512m/1.0. Порт web по умолчанию 8080, локально 8792.
+- Error log nginx — уровень `error`: на уровне warn nginx пишет `referrer:` при буферизации тел и ответов (скачивание STL
+  со страницы гостя — Referer с токеном); §6.2 допускает в error_log только ошибки (413, таймаут). Найдено проверкой журнала.
+- nginx находит app через DNS Docker (`resolver 127.0.0.11`, переменная в `fastcgi_pass`): после `restart app` адрес
+  сменился, и web отвечал 502.
+- Журнал доступа PHP-FPM (stderr app) оставлен: он пишет только `"GET /index.php"` без пути и query — токенов нет.
+- Ссылка сброса в проверке журнала — путь маршрута сброса со случайным токеном (nginx фильтрует по пути; письмо не нужно).
+
+### Локальный prod-compose: отличия build/prod-local/.env от шаблона
+
+APP_URL=http://127.0.0.1:8792, случайный APP_KEY, SESSION_SECURE_COOKIE=false, MAIL_MAILER=log,
+DB_PASSWORD=prod-local-only-not-a-secret, AIQME_ORDERS_PER_HOUR=100, AIQME_ENV_FILE=build/prod-local/.env,
+AIQME_BUILD_CONTEXT=build/context, AIQME_WEB_PORT=8792, TRUSTED_PROXIES=172.23.0.1 (шлюз `aiqme-prod_default`);
+ключи Stripe, Google, Telegram пустые; права 0644. Файл игнорируется Git.
+
+### Закреплённые теги образов
+
+php:8.4-fpm-trixie, node:22-trixie-slim, composer:2.8.12, nginx:1.30-trixie (nginx 1.30.6, curl есть), postgres:17-trixie.
+
+### Проверки
+
+- Финальный прогон с нуля: `down -v` (только aiqme-prod) → `bin/build-context` (566 файлов) → `build` → `up -d --wait` →
+  `migrate --force` → `aiqme:bootstrap` → `db:seed --class=Database\Seeders\PrototypeContentSeeder` (первый раз «создано 36»,
+  повторно «создано 0, уже было 36») → `optimize` → `restart worker scheduler`.
+- `bin/browser-check --base-url http://127.0.0.1:8792 --compose-file docker-compose.prod.yml` → **OK (82 проверки)**:
+  compose config (ports только у web, все host_ip 127.0.0.1; .env read_only в app/worker/scheduler; лимиты и ротация у всех;
+  worker с sheets); образ app (php -m: §2.1 + exif, OPcache; gd JPEG/WebP/FreeType = true; php -i 25M/260M/20/512M;
+  php-fpm max_execution_time 120; clear_env = yes; нет .env, experiments, instance, tests/fixtures,
+  bootstrap/cache/config.php; public/storage → ../storage/app/public); web: curl есть, `compose ps` — healthy;
+  `config:show aiqme.trusted_proxies` = шлюз 172.23.0.1 после optimize; app.env production, app.debug false;
+  администратор — `aiqme:make-admin --password-stdin` в `exec -T -u www-data`, вход через форму.
+  Сценарий 2 §9.3 без оплаты: заявка гостя из 2 STL (куб и 500 000 треугольников ≈ 23,8 МиБ, доставка) → STL скачивает
+  администратор → цена 70 + 45 + 5 и доставка 30 = 150 EUR → запрос аванса 40 EUR → «In production» с подтверждением
+  долга 150 EUR → трек DPD TEST-TRACK-1 → гость видит стадию и трек, скачивает STL, открывает страницу оплаты
+  («недоступна» без ключей) и возврат с payment_intent_client_secret. /storage/w20-test.png из тома — 200 + nosniff +
+  Referrer-Policy; /storage/w20-x.php — текст, не исполнен; /.htaccess — 403. Журнал web: есть `"GET /lt HTTP/1.1" 200`, нет
+  гостевого токена, токена сброса, client_secret и Referer. Запросов к чужим хостам нет.
+- Время от отправки до страницы подтверждения: 2 STL — 2,7 с; **10 STL по 500 000 треугольников (≈250 МБ) — 14,4 с**
+  (прежние прогоны 13,8–14,6 с) — меньше 60 с, таймауты 120 с не менялись.
+- Очередь: jobs 0, failed_jobs 0; worker выполнил DeliverMail и ProjectSheets; события sheets — pending (ключей нет, ожидаемо).
+- Мутации (правка конфига в контейнере web + reload, затем пересоздание), каждая поймана: убран `/en/order/` из map →
+  «журнал содержит гостевой токен»; убран `/en/checkout/` → «client_secret»; `access_log off` → «нет GET /lt»;
+  PHP-location `\.php(/|$)` → «/storage/w20-x.php исполнен» (EXEC-…-42); без nosniff → провал /storage/w20-test.png;
+  старый образ web с warn в error_log → «гостевой токен» и «Referer». PHPUnit: без замены TrustProxies в bootstrap —
+  2 из 4 тестов TrustProxiesTest падают; без проверки хоста в prod_target — 2 из 8 BrowserCheckProdTargetTest падают.
+- `bin/php vendor/bin/pint --dirty --format agent` — passed.
+- `bin/check` → **OK**: Pint, Node 39/39, PHPUnit 649 (647 passed, 2 skipped — вкладка calculator в PrototypeRoutesTest,
+  как раньше), Vite; новый шаг prod-compose ports — OK.
+- `git status --porcelain aiqme-site`: новые docker/, docker-compose.prod.yml, .dockerignore, bin/build-context,
+  app/Http/Middleware/TrustProxies.php, docs/operations.md, два теста; изменены .env.example, bin/{browser-check,check,setup},
+  bootstrap/app.php, config/aiqme.php, docs/progress.md. Бинарных файлов, .env, ключей нет; experiments/ не изменён;
+  build/ (context, prod-local/.env, отчёты) игнорируется.
+
+### Не проверено
+
+- Сервер, домен, TLS и настоящий Caddy/nginx-прокси: примеры docker/proxy/ не запускались (уровень P, W-23); режим web во
+  внешней сети прокси не реализован. HSTS — runbook W-23.
+- Оплата в prod-compose (по задаче — PHPUnit W-16/W-28 и уровень T W-22); почта (MAIL_MAILER=log), Sheets и Telegram без ключей.
+- bin/setup на чистом клоне целиком не запускался — проверена только генерация dev-.env из шаблона.
+- Лимиты ресурсов не измерены (W-29); копии, расписание и runbook — W-29.
+- Ручной просмотр кадров build/verification/browser-check/shots/prod-*.png — ждёт проверки пользователем.
+- Контейнеры aiqme-prod оставлены запущенными (порт 127.0.0.1:8792); остановить — `docker compose --env-file
+  build/prod-local/.env -f docker-compose.prod.yml down`.
+
+### W-20, доработка после приёмки (2026-10-22)
+
+- Замечание «bin/check красный» (W-20.check0.log): упал `StripeWebhookTest::test_capture_stores_the_charge_…` — digest
+  сравнивался с `hash` от **повторно собранного** тела события, а `eventPayload()` пишет `created => time()`; при переходе
+  секунды между отправкой и проверкой тела различались. Нестабильный тест W-28, с изменениями W-20 не связан
+  (W-20 не трогает webhook и тесты оплаты). Исправлено: тело строится один раз и переиспользуется в проверке, как уже
+  сделано в `test_duplicate_event_…`. Код приложения не менялся.
+- `bin/php vendor/bin/phpunit --filter StripeWebhookTest` — 26/26 passed.
+- `bin/check` → **OK** (exit 0): Pint, Node, PHPUnit 649 (647 passed, 2 skipped), prod-compose ports, Vite.

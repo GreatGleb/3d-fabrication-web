@@ -9,7 +9,15 @@ cd "$app_root"
 mkdir -p bootstrap/cache storage/logs storage/framework/{cache/data,sessions,testing,views} \
     storage/app/private storage/app/public
 
-[[ -f .env ]] || cp .env.example .env
+# .env.example — шаблон рабочей среды (W-20); для разработки поверх него — локальные значения dev-compose и Mailpit.
+if [[ ! -f .env ]]; then
+    sed -e 's/^APP_ENV=.*/APP_ENV=local/' -e 's/^APP_DEBUG=.*/APP_DEBUG=true/' -e 's|^APP_URL=.*|APP_URL=http://localhost:8000|' \
+        -e 's/^LOG_CHANNEL=.*/LOG_CHANNEL=stack/' -e 's/^LOG_LEVEL=.*/LOG_LEVEL=debug/' \
+        -e 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' -e 's/^DB_PORT=.*/DB_PORT=55440/' -e 's/^DB_PASSWORD=.*/DB_PASSWORD=local-dev-only-not-a-secret/' \
+        -e 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' \
+        -e 's/^MAIL_HOST=.*/MAIL_HOST=127.0.0.1/' -e 's/^MAIL_PORT=.*/MAIL_PORT=51025/' \
+        .env.example > .env
+fi
 bin/php /usr/local/bin/composer install --no-interaction
 grep -q '^APP_KEY=base64:' .env || bin/php artisan key:generate --no-interaction
 npm ci --no-audit --no-fund

@@ -158,13 +158,15 @@ class StripeWebhookTest extends TestCase
     {
         $order = $this->order()->order;
         $request = $this->pending($order);
-        $this->sendStripe($this->succeededPayload($request, 'evt_test_paid'))->assertOk();
+        // Тело строится один раз: в нём created = time(), повторная сборка на границе секунды даёт другой digest.
+        $payload = $this->succeededPayload($request, 'evt_test_paid');
+        $this->sendStripe($payload)->assertOk();
 
         $capture = Transaction::where('order_id', $order->id)->where('type', 'capture')->sole();
         $this->assertSame(['ch_test_'.$request->public_id, 4000, 'stripe', true], [$capture->reference, $capture->amount->value, $capture->driver, (bool) $capture->success]);
         $this->assertSame($request->public_id, $capture->meta['request_id']);
         $this->assertSame($request->id, PaymentEvent::findOrFail('evt_test_paid')->payment_request_id);
-        $this->assertSame(hash('sha256', $this->succeededPayload($request, 'evt_test_paid')), PaymentEvent::findOrFail('evt_test_paid')->digest);
+        $this->assertSame(hash('sha256', $payload), PaymentEvent::findOrFail('evt_test_paid')->digest);
 
         // Частичный уникальный индекс (reference) WHERE type = 'capture': второй capture того же заряда невозможен,
         // refund с тем же reference — допустим.

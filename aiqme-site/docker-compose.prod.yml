@@ -1,0 +1,114 @@
+# Рабочий Compose-проект AIQME (W-20, §8.1, §8.3). Образ — из чистого экспорта (AIQME_BUILD_CONTEXT: на сервере каталог
+# git archive, «.»; локально — build/context из bin/build-context). Команды — с --env-file того же .env, что монтируется
+# в PHP-сервисы: docker compose --env-file <.env> -f docker-compose.prod.yml …; artisan — exec -T -u www-data app php artisan ….
+# Портов наружу нет, кроме web на 127.0.0.1 (перед ним — общий прокси хоста, docker/proxy/). .env монтируется только
+# для чтения (env_file не используется: PHP-FPM с clear_env = yes переменные окружения рабочим процессам не передаёт).
+# Лимиты ресурсов — из .env; значения по умолчанию не измерены (измерение — W-29).
+name: aiqme-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+x-php: &php
+  image: aiqme-prod-app:latest
+  build:
+    context: ${AIQME_BUILD_CONTEXT:-.}
+    dockerfile: docker/Dockerfile
+    target: app
+  restart: unless-stopped
+  logging: *logging
+  volumes:
+    - storage:/var/www/html/storage
+    # Длинная запись: путь без «./» (AIQME_ENV_FILE=build/prod-local/.env) — тоже файл, а не имя тома.
+    - type: bind
+      source: ${AIQME_ENV_FILE:-./.env}
+      target: /var/www/html/.env
+      read_only: true
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *php
+    deploy:
+      resources:
+        limits:
+          memory: ${AIQME_APP_MEMORY:-1g}
+          cpus: "${AIQME_APP_CPUS:-1.0}"
+
+  worker:
+    <<: *php
+    user: www-data
+    # Один процесс на все очереди (D-03), в том числе sheets.
+    command: ["php", "artisan", "queue:work", "--queue=default,mail,sheets"]
+    deploy:
+      resources:
+        limits:
+          memory: ${AIQME_WORKER_MEMORY:-768m}
+          cpus: "${AIQME_WORKER_CPUS:-0.5}"
+
+  scheduler:
+    <<: *php
+    user: www-data
+    command: ["php", "artisan", "schedule:work"]
+    deploy:
+      resources:
+        limits:
+          memory: ${AIQME_SCHEDULER_MEMORY:-256m}
+          cpus: "${AIQME_SCHEDULER_CPUS:-0.25}"
+
+  web:
+    image: aiqme-prod-web:latest
+    build:
+      context: ${AIQME_BUILD_CONTEXT:-.}
+      dockerfile: docker/Dockerfile
+      target: web
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "127.0.0.1:${AIQME_WEB_PORT:-8080}:80"
+    volumes:
+      - storage:/var/www/html/storage:ro
+    depends_on:
+      - app
+    # /up проходит через app (у app своего HTTP нет).
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: ${AIQME_WEB_MEMORY:-256m}
+          cpus: "${AIQME_WEB_CPUS:-0.5}"
+
+  db:
+    image: postgres:17-trixie
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-aiqme}
+      POSTGRES_USER: ${DB_USERNAME:-aiqme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD в .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    deploy:
+      resources:
+        limits:
+          memory: ${AIQME_DB_MEMORY:-512m}
+          cpus: "${AIQME_DB_CPUS:-1.0}"
+
+volumes:
+  storage:
+  db-data:

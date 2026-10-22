@@ -46,6 +46,18 @@ if bad or count == 0:
 print(f"OK {count} записей ports")
 '
 
+step 'docker-compose.prod.yml: ports только у web и только на 127.0.0.1 (W-20)'
+# Шаблон .env.example вместо секретов; пароль БД — только для подстановки в config.
+DB_PASSWORD=bin-check-not-a-secret docker compose --env-file .env.example -f docker-compose.prod.yml config --format json | python3 -c '
+import json, sys
+services = json.load(sys.stdin)["services"]
+web = services["web"].get("ports", [])
+other = {name: s["ports"] for name, s in services.items() if name != "web" and s.get("ports")}
+if other or not web or any(port.get("host_ip") != "127.0.0.1" for port in web):
+    sys.exit(f"ports: web {web}, другие {other}")
+print(f"OK web {len(web)} записей ports на 127.0.0.1, у остальных нет")
+'
+
 step 'Зависимости: lunarphp/stripe не установлен'
 python3 - <<'PY'
 import json, sys
