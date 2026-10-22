@@ -2711,3 +2711,106 @@ been issued, so the price cannot be changed.»; ошибки и «Saved.» — �
   вкладка Settings в экспорт не входит, блоки счетов в демо скрыты (тест).
 - Содержание счёта для бухгалтерии (обязательные реквизиты, формулировки, ставка) — до рабочего выпуска подтверждает
   бухгалтер (D-04/D-05/D-22/D-23/D-34, W-23); Sheets-проекция номера счёта — W-18.
+
+## W-18: Google Таблицы (локальный уровень) — выполнено (2026-10-22, Claude Code, ночной прогон)
+
+### Сделано
+
+- **Пакет** `google/auth` v1.55.2 (`^1.55`, разрешён §2.1/§5.3) с новыми зависимостями `firebase/php-jwt` v7.2.1 и
+  `psr/cache` 3.0.0 — `bin/php /usr/local/bin/composer require`; guzzle 8.2.0 и psr7 3.1.0 уже были. Других пакетов нет.
+- `app/Domain/Integrations/Sheets/`: `SheetsClient` (интерфейс `getValues(range)`, `batchUpdate(data)`); `HttpSheetsClient`
+  на HTTP-клиенте Laravel (`GET …/values/{range}`, `POST …/values:batchUpdate` с `valueInputOption=RAW`, токен Bearer,
+  429 → повтор через 2/5/15 с, прочие ошибки — сразу исключение); `TokenProvider` + `GoogleTokenProvider` (google/auth
+  `ServiceAccountCredentials`, scope spreadsheets, ключ — JSON в base64 из `.env`, токен в памяти процесса до истечения);
+  `SheetsProjector` (upsert по ключу в колонке A, строки из БД, пересборка); задания `ProjectSheets` (очередь `sheets`,
+  `WithoutOverlapping` по ключу сущности `sheets:<таблица>:<id>`, releaseAfter 10 с, tries 5) и `RebuildSheets`.
+- `IntegrationEvents`: `record()` ставит `ProjectSheets` в очередь `sheets` `afterCommit` для каждого события; общий захват
+  канала одним UPDATE (`deliver`) для mail и sheets; `deliverSheets` без ключа/ID таблицы канал не захватывает (событие
+  остаётся pending); `retry()` (бывший `retryMail`) подбирает оба канала, sheets — только при подключении. Доменный код
+  W-09…W-17 и запись событий не менялись.
+- Листы и колонки — ровно §5.3, заголовки английские, все значения — строки (RAW), деньги `123.45`, время UTC
+  `Y-m-d H:i:s`, неизвестное — пустая строка (не 0). Сущности по событию: заказ → Orders + Contacts + Events; платёжный
+  запрос → Payments + Orders + Events; счёт → Orders (Invoice No) + Events; обращение/обучение → Requests + Contacts +
+  Events. Заголовок пишется в строку 1 каждым batchUpdate (идемпотентно). Один batchUpdate на событие, чтения — по одному
+  на затронутый лист (до 4 чтений + 1 запись; квота 60/мин обычными событиями не достигается).
+- `aiqme:sheets-rebuild` (routes/console.php): без подключения — ошибка и код 1; иначе только ставит `RebuildSheets` в
+  очередь `sheets`. Задание по каждому листу: чтение занятых строк, заголовок + строки из БД + пустые значения до
+  прежнего конца листа, пакетами ≤ 5 000 строк на запрос. Писем и событий нет.
+- Конфигурация: `config/aiqme.php` → `sheets.key` (`GOOGLE_SHEETS_KEY_BASE64`) и `sheets.spreadsheet_id`
+  (`GOOGLE_SHEETS_SPREADSHEET_ID`, реестр секретов §6 — «ID таблицы»), обе строки с пояснением в `.env.example`. Файла
+  ключа и монтирования нет. Привязки в `AppServiceProvider`.
+- Integrations: панели Stripe (ключ, секрет и секрет webhook заданы?), почта (транспорт не log/array; последняя ошибка
+  канала mail), Google Sheets (подключено/«не подключено», последняя ошибка канала sheets, поле ссылки на таблицу,
+  ссылка «Open Google Sheet ↗»), Telegram (как в W-19). Шаблон `integrations-telegram` заменён `integrations-panel`
+  (корень Livewire — сетка `.grid.two`). Ссылка — `settings.sheets_url` = `{"url": …}`, только `https://`, до 500
+  символов, пустое поле удаляет её; выводится в Integrations и Customers. Секреты и ID таблицы в интерфейсе не показываются.
+
+### Решения по неопределённому (простейший вариант)
+
+- **Request ID** — `contact-<id>` / `training-<id>`: у двух таблиц заявок свои последовательности id, ключ должен быть
+  уникален в одном листе. Service/Training обращения — ключ услуги (`printing`, `equipment`), обучения — «название · дата»;
+  Summary обучения — `Format: <online|aiqme>; participants: <n>`.
+- **Updated** заказа — время последнего события outbox с этим номером заказа (все события заказа, запросов и счёта несут
+  `number`), иначе время создания. **Files** — число STL заказа. **Tracking** — «перевозчик трек». **Stripe reference** —
+  заряд capture, если оплачено, иначе PaymentIntent. **Confirmed price / Due** — пусто до подтверждения цены.
+- **Contacts**: email в нижнем регистре; имя/телефон/компания/код/VAT — профиль зарегистрированного клиента, иначе самая
+  свежая запись (заказ, обращение, обучение), где поле есть; Registered — есть пользователь с этим email; Last activity —
+  время самой свежей записи. Платёжные события и счёт Contacts не трогают (в их данных нет email). Пересборка — по всем
+  email из заказов, обращений и регистраций (пользователь без единой заявки в лист не попадает: события регистрации нет).
+- **Events.Entity** — `Order <номер>` (заказ и счёт), `Payment <public_id>`, `Request contact-<id>` / `training-<id>`.
+- Листы `Orders`, `Requests`, `Contacts`, `Payments`, `Events` в таблице должен создать владелец (записано в
+  `.env.example`): создание листов через `spreadsheets:batchUpdate` не добавлялось. Без листа запрос падает → канал
+  failed с текстом ошибки в Integrations и Overview.
+- Нейтральные надписи (в прототипе Sheets/Stripe/почты на экране Integrations нет): EN «Email», «Credentials are not set on
+  the server.», «The service account key and spreadsheet ID are not set on the server. Events are kept and sent once
+  connected.», «Google Sheet link», «Open Google Sheet ↗», «Save link», «Saved.», «Enter an https:// link.»; LT
+  «El. paštas», «Prieigos duomenys nenustatyti serveryje.», «Paslaugos paskyros raktas ir lentelės ID nenustatyti
+  serveryje. Įvykiai saugomi ir bus išsiųsti prijungus.», «Google Sheets nuoroda», «Atidaryti Google Sheets ↗»,
+  «Išsaugoti nuorodą», «Išsaugota.», «Įveskite https:// nuorodą.». «Stripe», «Google Sheets», «Telegram» — названия.
+
+### Проверки
+
+- `tests/Feature/SheetsTest.php` → **14/14** (§9.2 «Sheets»): HttpSheetsClient через `Http::fake` — точные адреса чтения и
+  `values:batchUpdate`, `Authorization: Bearer` заглушки, тело `{"valueInputOption":"RAW","data":…}` с формулой как есть,
+  к `oauth2.googleapis.com` запросов нет; 429, 429, 200 → 3 запроса и задержки 2000/5000 мс (`Sleep::fake`), четыре 429 →
+  исключение; 403 — без повтора. GoogleTokenProvider на RSA-ключе, сгенерированном тестом в памяти (в репозитории ключа
+  нет), со своим обработчиком HTTP вместо сети: grant jwt-bearer, iss/scope в JWT, второй вызов из кэша; не-base64 —
+  исключение. Полный цикл W-12/W-13/W-16/W-28/W-17 (заявка, подтверждение и изменение цены, запрос и его отмена,
+  payment_failed и payment.succeeded подписанными webhook, счёт TEST-7, производство, трек, стадия) — каждое событие в
+  Events, все каналы sheets `sent`, одна строка Orders с 95.00/95.00/0.00/paid/«DPD TEST-TRACK-1»/TEST-7, две строки
+  Payments (paid с зарядом и временем, void), Contacts с кодом компании; неподтверждённый заказ — пустые цена/долг. Отмена,
+  возврат 10 EUR (Paid 30.00, Due 65.00, partial), обращение и регистрация на обучение (W-09) — в Requests/Contacts/Events.
+  Два задания одной сущности при изменённой между ними БД → одна строка с последним треком; задания — очередь `sheets`,
+  `afterCommit`, `WithoutOverlapping` с ключом сущности; повтор не пишет (уже sent), после сброса статуса — без дублей.
+  Перестановка и удаление строк в фейке → обновляются нужные строки, удалённая дописывается снизу; формула в имени
+  остаётся текстом. Contacts: Registered no → yes после появления пользователя (без события), Last activity — время новой
+  записи, пересборка даёт ту же строку. Без ключа: pending, к листу ни одного запроса, retry sheets не ставит, Integrations
+  — «NOT CONNECTED … not set on the server»; после подключения retry доставляет, «CONNECTED», ключа и ID в HTML нет.
+  Сбой Sheets → mail sent, sheets failed с ошибкой (видна в Integrations), retry → sheets sent, письмо одно
+  (`Mail::assertSent … 1`); падающий SMTP → sheets sent, retry повторяет только почту, записей в лист нет. Пересборка:
+  команда под `Queue::fake` только ставит `RebuildSheets` на `sheets` (чтений и записей нет); задание на 5 101 событии —
+  запросы ≤ 5 000 строк (`Events!A1`, `Events!A5001`), ручная строка и значение в колонке B ниже конца очищены, лишний
+  заказ удалён, писем нет; без ID таблицы команда — код 1. Ссылка: http:// отклоняется, https сохраняется в settings,
+  видна в Integrations и Customers (LT/EN), пустое поле удаляет; клиенту — 404.
+- Мутации (по одной, восстановлены, сверено `cmp`): upsert всегда дописью (5 провалов), пересборка без очистки (1), канал
+  sheets без проверки подключения (1), retry без sheets (2), постановка без afterCommit (1), без кода компании (1),
+  Registered всегда no (1).
+- `bin/check` → **OK**: Pint, Node 39/39, PHPUnit 632 (630 passed, 2 skipped — вкладка calculator в PrototypeRoutesTest,
+  как раньше), Vite.
+- `bin/browser-check --signed-in /en/account` → **OK (4016 проверок)**, включая `/lt/administravimas/integrations`,
+  `/en/admin/integrations`, `/lt/administravimas/customers`, `/en/admin/customers` (ширина, маркеры D-21, консоль/CSP).
+  Кадр 1440 Integrations просмотрен: четыре панели в сетке прототипа.
+- `git status --porcelain aiqme-site`: изменения в app/, config/, lang/, resources/views/admin/, routes/console.php,
+  composer.json/lock, .env.example, tests/Feature/SheetsTest.php, tests/Support/FakeSheets.php, docs/progress.md;
+  бинарных файлов, .env, ключей нет; experiments/ не изменён.
+
+### Не проверено
+
+- Реальная Google Таблица и настоящий обмен токена (уровень T, W-22): запросов к Google не было; GoogleTokenProvider
+  проверен только на своём обработчике HTTP, путь по умолчанию (Guzzle google/auth) не вызывался.
+- Один worker очереди `sheets` — W-20 (здесь только имя очереди у заданий). Задание при занятой блокировке
+  WithoutOverlapping возвращается в очередь — в тестах (sync) не воспроизводилось.
+- Ссылка на таблицу в браузерной проверке не показана (в данных фабрик её нет); вид панелей на телефоне и формы ссылки —
+  ждёт проверки пользователем. Демо-сборка не пересобиралась (W-21); вкладка Integrations в демо — статическая.
+- Производительность пересборки на больших объёмах: строки заказов и контактов собираются запросами на каждую запись
+  (N+1); на объёмах MVP это допустимо, на десятках тысяч заказов не измерялось.

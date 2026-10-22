@@ -81,6 +81,15 @@ return [
         'first_number' => (int) env('AIQME_ORDERS_FIRST_NUMBER', 1),
     ],
 
+    /*
+    | Google Таблицы (W-18, §5.3): ключ сервисного аккаунта (JSON в base64) и ID таблицы — только в .env. Не заданы —
+    | канал sheets не обрабатывается, события копятся pending. Ссылка на таблицу для админки — в settings (sheets_url).
+    */
+    'sheets' => [
+        'key' => env('GOOGLE_SHEETS_KEY_BASE64'),
+        'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID'),
+    ],
+
     'hero_video_source' => ['text' => 'Bosch / The Apic', 'url' => 'https://www.youtube.com/watch?v=1Nd_xg8QfXo'],
 
 ];

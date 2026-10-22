@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Domain\Content\UiTextLoader;
+use App\Domain\Integrations\Sheets\GoogleTokenProvider;
+use App\Domain\Integrations\Sheets\HttpSheetsClient;
+use App\Domain\Integrations\Sheets\SheetsClient;
+use App\Domain\Integrations\Sheets\TokenProvider;
 use App\Domain\Orders\OrderNumber;
 use App\Domain\Orders\RequestCartValidator;
 use App\Models\User;
@@ -46,6 +50,11 @@ class AppServiceProvider extends ServiceProvider
 
             return new StripeClient(['api_key' => config('services.stripe.secret') ?: null, 'stripe_version' => ApiVersion::CURRENT]);
         });
+
+        // Google Таблицы (W-18, §5.3): токен сервисного аккаунта из .env (один на процесс worker), клиент Sheets API на
+        // HTTP-клиенте Laravel; тесты подменяют поставщика токена заглушкой, клиент — фейком сетки.
+        $this->app->singleton(TokenProvider::class, fn (): GoogleTokenProvider => new GoogleTokenProvider(config('aiqme.sheets.key')));
+        $this->app->bind(SheetsClient::class, fn ($app): HttpSheetsClient => new HttpSheetsClient($app->make(TokenProvider::class), (string) config('aiqme.sheets.spreadsheet_id')));
 
         // ui_text: значения из БД поверх lang/ на уровне переводчика (§4.1), __() в любом шаблоне их учитывает.
         $this->app->extend('translation.loader', fn (Loader $files): UiTextLoader => new UiTextLoader($files));

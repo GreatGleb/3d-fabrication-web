@@ -178,6 +178,7 @@ return [
         'empty' => 'No customers yet.',
         'details' => 'Addresses & company details',
         'guests' => 'Guest contacts',
+        'sheet' => 'Open Google Sheet ↗',
         'guests_empty' => 'No guest orders yet.',
     ],
     'list' => [
@@ -378,12 +379,22 @@ return [
         'save' => 'Save',
     ],
     // W-19 из прототипа: вкладка «Integrations», заголовок «Integrations & data flow», «NOT CONNECTED», «Telegram»;
-    // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19).
+    // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19, W-18).
     'integrations' => [
         'heading' => 'Integrations & data flow',
         'not_connected' => 'NOT CONNECTED',
         'connected' => 'CONNECTED',
         'last_error' => 'Last error',
+        'not_configured' => 'Credentials are not set on the server.',
+        'mail' => 'Email',
+        'sheets' => [
+            'not_configured' => 'The service account key and spreadsheet ID are not set on the server. Events are kept and sent once connected.',
+            'url' => 'Google Sheet link',
+            'open' => 'Open Google Sheet ↗',
+            'save' => 'Save link',
+            'saved' => 'Saved.',
+            'invalid' => 'Enter an https:// link.',
+        ],
         'telegram' => [
             'bound' => 'Private chat linked: :time.',
             'not_configured' => 'Bot credentials are not set on the server.',

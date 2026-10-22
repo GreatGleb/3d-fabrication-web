@@ -1,7 +1,11 @@
-{{-- Клиенты (W-14): карточка выбранного клиента, список зарегистрированных клиентов и гостевые контакты. --}}
+{{-- Клиенты (W-14): карточка выбранного клиента, список зарегистрированных клиентов и гостевые контакты; вместо выгрузки
+     CSV — ссылка на Google Таблицу из Integrations (W-18), если она сохранена. --}}
 @php($locale = app()->getLocale())
 <div>
     <h2>{{ __('admin.customers.heading') }}</h2>
+    @if ($sheetsUrl)
+        <p><a id="customers-sheet" href="{{ $sheetsUrl }}" target="_blank" rel="noopener noreferrer">{{ __('admin.customers.sheet') }}</a></p>
+    @endif
     @if ($customer)
         <div class="panel gap" id="customer-card">
             <h3>{{ $customer->name }}</h3>

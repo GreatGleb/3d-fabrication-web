@@ -1,9 +1,7 @@
 {{-- Вкладка «Integracijos ir duomenų eiga» · «Integrations & data flow» (§1.4) в разметке прототипа (.grid.two, .panel,
-     .tag). W-19 — раздел Telegram; Stripe, почту и Google Таблицы добавляет W-18. Карточки TEJA, Bambu Studio,
+     .tag): Stripe, почта и Google Таблицы (W-18), Telegram (W-19) — admin.integrations-panel. Карточки TEJA, Bambu Studio,
      «Banking & shipping» и кнопка демо-CSV прототипа не переносятся (§1.4, D-21). --}}
 @component('admin.shell', ['tab' => $tab])
     <h2>{{ __('admin.integrations.heading') }}</h2>
-    <div class="grid two gap">
-        <livewire:admin.integrations />
-    </div>
+    <livewire:admin.integrations />
 @endcomponent

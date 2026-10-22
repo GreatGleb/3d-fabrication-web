@@ -13,7 +13,7 @@ use Livewire\Component;
 /**
  * Вкладка Customers (§1.4, W-14): зарегистрированные клиенты (без администраторов) с числом заказов, карточка клиента
  * (?customer=<id>: контакты, «Addresses & company details» из customer_profiles и заказы) и гостевые контакты — контакты
- * заявок гостевых заказов. Последние 100 записей; без выгрузки CSV (вместо неё — ссылка на Google Таблицу, W-18).
+ * заявок гостевых заказов. Последние 100 записей; без выгрузки CSV (вместо неё — ссылка на Google Таблицу из Integrations, W-18).
  * Только администратору, иначе 404.
  */
 class Customers extends Component
@@ -49,6 +49,7 @@ class Customers extends Component
 
         return view('admin.customers-panel', [
             'customer' => $customer,
+            'sheetsUrl' => Integrations::sheetsUrl(),
             'customerOrders' => $customer === null ? collect() : Index::rows()->where('lunar_orders.user_id', $customer->id)->get(),
             'customers' => User::where('is_admin', false)
                 ->leftJoinSub($orderCounts, 'counts', 'counts.user_id', '=', 'users.id')

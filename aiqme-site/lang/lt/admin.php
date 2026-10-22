@@ -162,6 +162,7 @@ return [
         'empty' => 'Klientų dar nėra.',
         'details' => 'Adresai ir įmonės duomenys',
         'guests' => 'Svečių kontaktai',
+        'sheet' => 'Atidaryti Google Sheets ↗',
         'guests_empty' => 'Svečių užsakymų dar nėra.',
     ],
     'list' => [
@@ -362,12 +363,22 @@ return [
         'save' => 'Išsaugoti',
     ],
     // W-19 из прототипа: вкладка «Integracijos», заголовок «Integracijos ir duomenų eiga», «NEPRIJUNGTA», «Telegram»;
-    // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19).
+    // остальное — нейтральные надписи, перечисленные в docs/progress.md (W-19, W-18).
     'integrations' => [
         'heading' => 'Integracijos ir duomenų eiga',
         'not_connected' => 'NEPRIJUNGTA',
         'connected' => 'PRIJUNGTA',
         'last_error' => 'Paskutinė klaida',
+        'not_configured' => 'Prieigos duomenys nenustatyti serveryje.',
+        'mail' => 'El. paštas',
+        'sheets' => [
+            'not_configured' => 'Paslaugos paskyros raktas ir lentelės ID nenustatyti serveryje. Įvykiai saugomi ir bus išsiųsti prijungus.',
+            'url' => 'Google Sheets nuoroda',
+            'open' => 'Atidaryti Google Sheets ↗',
+            'save' => 'Išsaugoti nuorodą',
+            'saved' => 'Išsaugota.',
+            'invalid' => 'Įveskite https:// nuorodą.',
+        ],
         'telegram' => [
             'bound' => 'Asmeninis pokalbis susietas: :time.',
             'not_configured' => 'Boto prieigos duomenys nenustatyti serveryje.',
