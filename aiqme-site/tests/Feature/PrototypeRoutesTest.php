@@ -21,7 +21,8 @@ use Tests\TestCase;
  * демо-товары — 404 и после сидера (W-25); вход, регистрация, восстановление — 200, кабинет (корень и вкладка addresses) —
  * форма входа гостю и кабинет клиенту (вкладки overview, orders, models, invoices — W-15), корень админки — 200 администратору и 404 гостю и клиенту (W-07); вкладки админки
  * overview, services, content, audit — так же (W-08); products, categories, projects, training, translations (W-26);
- * integrations (W-19, раздел Telegram); orders, customers (W-14); settings (W-17).
+ * integrations (W-19, раздел Telegram); orders, customers (W-14); settings (W-17); calculator (W-11); /ru/ — 404 гостю и
+ * клиенту, 200 с noindex администратору. Вся таблица без пропусков — W-21.
  * Читает только отслеживаемый tests/fixtures/prototype-routes.json (без docs/customer-prototype/).
  */
 class PrototypeRoutesTest extends TestCase
@@ -29,15 +30,6 @@ class PrototypeRoutesTest extends TestCase
     use RefreshDatabase;
 
     private const FIXTURE = __DIR__.'/../fixtures/prototype-routes.json';
-
-    /** Вкладки §4.6, которые создают другие задачи: строка => [последний сегмент пути => задача]. */
-    private const LATER_TABS = [
-        // Админка: overview, services, content, audit и корень — W-08; products, categories, projects, training,
-        // translations — W-26; integrations — W-19; orders, customers — W-14; остальные вкладки — свои задачи.
-        13 => [
-            'calculator' => 'W-11',
-        ],
-    ];
 
     protected function setUp(): void
     {
@@ -78,19 +70,13 @@ class PrototypeRoutesTest extends TestCase
     #[DataProvider('prototypeRoutes')]
     public function test_prototype_address_answers_as_its_section_4_6_row(string $path, int $row): void
     {
-        $segments = explode('/', trim($path, '/'));
-        $tab = count($segments) > 2 ? end($segments) : null;
-        $later = self::LATER_TABS[$row] ?? [];
-        if ($tab !== null && ($task = $later[$tab] ?? $later['*'] ?? null)) {
-            $this->markTestSkipped('строка '.$row.' §4.6, вкладка '.$tab.' — '.$task);
-        }
-
         match ($row) {
             1 => $this->get($path)->assertStatus(301)->assertRedirect(route('lt.home')),
             2 => $this->assertPublicPage($path),
             // Slug другой локали, дубли статей и демо-товары — 404 после сидера (без сидера 404 ничего бы не доказывал).
             3, 4, 5 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),
-            7, 8, 9, 12 => $this->get($path)->assertNotFound(),
+            7, 8, 12 => $this->get($path)->assertNotFound(),
+            9 => $this->assertRussianAdminOnly($path),
             6 => $this->assertDraftProjectUntilPublished($path),
             10 => $this->assertAccountPage($path),
             11 => $this->assertOk200($path),
@@ -156,6 +142,17 @@ class PrototypeRoutesTest extends TestCase
         $admin = User::factory()->create()->forceFill(['is_admin' => true]);
         $admin->save();
         $this->actingAs($admin)->get($path)->assertOk();
+    }
+
+    /** /ru/ (§4.3): гостю и клиенту — 404, вошедшему администратору — 200 с noindex. */
+    private function assertRussianAdminOnly(string $path): void
+    {
+        $this->get($path)->assertNotFound();
+        $this->actingAs(User::factory()->create())->get($path)->assertNotFound();
+
+        $admin = User::factory()->create()->forceFill(['is_admin' => true]);
+        $admin->save();
+        $this->actingAs($admin)->get($path)->assertOk()->assertHeader('X-Robots-Tag', 'noindex, nofollow');
     }
 
     private function assertNotFoundForGuestAndAdmin(string $path): void

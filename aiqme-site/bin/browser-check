@@ -26,7 +26,7 @@
 W-07: страницы входа, регистрации и восстановления и вкладки кабинета гостю (форма входа) — из route:list как публичные;
 вход администратора и клиента — через форму входа (служебных маршрутов входа нет): кабинет клиента (ACCOUNT_PAGES) и
 админка (ADMIN_PAGES) — 200 с теми же проверками ширины, §7.1, маркеров и консоли; админка гостю и клиенту — 404;
-/ru/ — администратору 200 с noindex; сохранение профиля и выход; сброс пароля по письму из локального Mailpit
+/ru/ — администратору 200 с noindex и шириной документа на 5 ширинах (W-21); сохранение профиля и выход; сброс пароля по письму из локального Mailpit
 (docker-compose.dev.yml, API на 127.0.0.1:58025): ссылка из письма → новый пароль → прежняя сессия клиента ведёт на вход.
 
 W-05 (публичные страницы): страницы услуг — из sitemap.xml; hero, заголовки h2 и карточки услуг — getComputedStyle §7.1;
@@ -949,19 +949,23 @@ def check_status(report, new_page, paths, state, status, who):
 
 
 def check_russian(report, new_page, paths, state):
-    """/ru/ — только администратору: 200, X-Robots-Tag и meta robots noindex, ширина документа."""
+    """/ru/ — только администратору: 200, X-Robots-Tag и meta robots noindex, ширина документа на 320/390/768/1024/1440
+    (матрица LT/EN/RU × 5 ширин §9.2, W-21)."""
     for path in paths:
-        context, page, problems = new_page(1440, 1000, storage_state=state)
-        response = page.goto(BASE + path, wait_until='networkidle')
-        report.check(response.status == 200, f'{path} (администратор): HTTP {response.status}')
-        report.check('noindex' in (response.headers.get('x-robots-tag') or ''), f'{path}: нет X-Robots-Tag noindex')
-        robots = page.locator('meta[name=robots]').get_attribute('content') or ''
-        report.check('noindex' in robots, f'{path}: meta robots «{robots}»')
-        scroll, client = document_fits(page)
-        report.check(scroll <= client, f'{path}: документ шире окна ({scroll} > {client})')
-        for problem in problems:
-            report.check(False, f'{path} (администратор): {problem}')
-        context.close()
+        for width in WIDTHS:
+            height = {320: 568, 390: 844, 768: 1024, 1024: 768, 1440: 1000}[width]
+            where = f'{path} @{width} (администратор)'
+            context, page, problems = new_page(width, height, storage_state=state)
+            response = page.goto(BASE + path, wait_until='networkidle')
+            report.check(response.status == 200, f'{where}: HTTP {response.status}')
+            report.check('noindex' in (response.headers.get('x-robots-tag') or ''), f'{where}: нет X-Robots-Tag noindex')
+            robots = page.locator('meta[name=robots]').get_attribute('content') or ''
+            report.check('noindex' in robots, f'{where}: meta robots «{robots}»')
+            scroll, client = document_fits(page)
+            report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+            for problem in problems:
+                report.check(False, f'{where}: {problem}')
+            context.close()
 
 
 def check_profile_and_logout(report, new_page, state):

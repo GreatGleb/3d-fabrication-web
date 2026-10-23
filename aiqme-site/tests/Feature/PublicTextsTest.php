@@ -2,12 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Orders\Models\OrderMeta;
+use App\Domain\Orders\OrderWorkflow;
+use App\Domain\Payments\Models\PaymentRequest;
 use App\Models\User;
 use Database\Seeders\PrototypeContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Route;
 use Tests\browser\ContentFactory;
+use Tests\browser\OrderFactory;
 use Tests\Support\Html;
 use Tests\TestCase;
 
@@ -86,16 +92,19 @@ class PublicTextsTest extends TestCase
     }
 
     /**
-     * Автотест по словарю (§7.2): на EN-страницах нет ни одного элемента, чей целый видимый текст — LT-строка ключа
-     * ui_text (lang/lt), отличающаяся от EN; одинаковые («AIQME», «FDM») не проверяются.
+     * Словарь §7.2: целая LT-строка ключа ui_text (lang/lt), отличающаяся от EN => ключ; одинаковые («AIQME», «FDM») не входят.
+     *
+     * @return array<string, string>
      */
-    public function test_english_pages_have_no_lithuanian_ui_text_strings(): void
+    private function lithuanianDictionary(): array
     {
         $lithuanian = [];
         foreach (glob(lang_path('lt/*.php')) as $file) {
             $group = basename($file, '.php');
+            // Плоские массивы групп, а не Lang::get по ключу: ключ с точкой ('0.12' слоёв печати) так не находится.
+            $englishGroup = Arr::dot(Lang::get($group, [], 'en'));
             foreach (Arr::dot(Lang::get($group, [], 'lt')) as $key => $value) {
-                $english = Lang::get($group.'.'.$key, [], 'en');
+                $english = $englishGroup[$key] ?? null;
                 if (is_string($value) && $value !== $english && trim($value) !== '') {
                     $lithuanian[trim(preg_replace('/\s+/u', ' ', $value))] = $group.'.'.$key;
                 }
@@ -103,15 +112,79 @@ class PublicTextsTest extends TestCase
         }
         $this->assertArrayHasKey('Rasti sprendimą ↗', $lithuanian, 'словарь собран из lang/lt');
 
+        return $lithuanian;
+    }
+
+    /** На странице нет элемента, чей целый видимый текст (или атрибут для читателя) — LT-строка словаря. */
+    private function assertNoLithuanianStrings(string $path, string $html, array $lithuanian): void
+    {
+        $xpath = Html::xpath($html);
+        foreach ($xpath->query('//body//*') as $element) {
+            $text = Html::text($element);
+            $this->assertArrayNotHasKey($text, $lithuanian, $path.': LT-строка '.($lithuanian[$text] ?? '').' на EN-странице');
+        }
+        foreach ($xpath->query('//@aria-label | //@alt | //@title | //@placeholder') as $attribute) {
+            $this->assertArrayNotHasKey(trim($attribute->nodeValue), $lithuanian, $path.': LT-строка в атрибуте');
+        }
+    }
+
+    /**
+     * Автотест по словарю (§7.2): на EN-страницах нет ни одного элемента, чей целый видимый текст — LT-строка ключа
+     * ui_text (lang/lt), отличающаяся от EN; одинаковые («AIQME», «FDM») не проверяются.
+     */
+    public function test_english_pages_have_no_lithuanian_ui_text_strings(): void
+    {
+        $lithuanian = $this->lithuanianDictionary();
         foreach (self::PAGES['en'] as $path) {
-            $xpath = Html::xpath($this->get($path)->getContent());
-            foreach ($xpath->query('//body//*') as $element) {
-                $text = Html::text($element);
-                $this->assertArrayNotHasKey($text, $lithuanian, $path.': LT-строка '.($lithuanian[$text] ?? '').' на EN-странице');
+            $this->assertNoLithuanianStrings($path, $this->get($path)->getContent(), $lithuanian);
+        }
+    }
+
+    /**
+     * Словарь по всем EN-страницам (W-21): каждый GET-адрес /en без параметров из таблицы маршрутов (публичные, вход,
+     * кабинет клиента, админка администратору), сущности из sitemap, карточка заказа клиента и админки, гостевая страница
+     * и страница оплаты на заказах фабрик tests/browser/ (W-14, W-15). Вкладка Translations админки показывает LT-значения
+     * ui_text как данные редактора — на ней проверяется только оболочка вне формы редактора.
+     */
+    public function test_every_english_page_has_no_lithuanian_ui_text_strings(): void
+    {
+        $this->artisan('aiqme:bootstrap')->assertSuccessful();
+        $admin = User::where('is_admin', true)->sole();
+        $client = User::factory()->create();
+        $guest = OrderFactory::confirmedWithRequestAndTracking($admin);
+        $guestUrl = '/en/order/'.OrderMeta::where('order_id', $guest->id)->value('number').'/'.app(OrderWorkflow::class)->reissueGuestLink($admin, $guest);
+        $own = OrderFactory::clientOrderWithMessage($client, $admin);
+        $checkout = '/en/checkout/'.PaymentRequest::where('order_id', $guest->id)->value('public_id');
+
+        $static = collect(Route::getRoutes()->getRoutes())
+            ->filter(fn ($route): bool => in_array('GET', $route->methods(), true) && preg_match('#^en(/|$)#', $route->uri()) && ! str_contains($route->uri(), '{'))
+            ->map(fn ($route): string => '/'.$route->uri())
+            ->reject(fn (string $path): bool => $path === '/en/quote/submitted');
+        preg_match_all('#<loc>'.preg_quote(config('app.url'), '#').'(/en/[^<]+)</loc>#', $this->get('/sitemap.xml')->getContent(), $sitemap);
+        $public = $static->reject(fn (string $path): bool => str_starts_with($path, '/en/admin') || (str_starts_with($path, '/en/account') && ! preg_match('#/(login|register|reset)$#', $path)));
+        $pages = [
+            'guest' => [...$public, ...$sitemap[1], ...self::PAGES['en'], $guestUrl],
+            'client' => [...$static->filter(fn (string $path): bool => str_starts_with($path, '/en/account') && ! preg_match('#/(login|register|reset)$#', $path)),
+                '/en/account/orders/'.OrderMeta::where('order_id', $own->id)->value('number')],
+            'admin' => [...$static->filter(fn (string $path): bool => str_starts_with($path, '/en/admin')), '/en/admin/orders?order='.$guest->id, $checkout],
+        ];
+        $this->assertGreaterThan(60, count(array_unique(Arr::flatten($pages))), 'страниц мало: список не собран');
+
+        $lithuanian = $this->lithuanianDictionary();
+        foreach ($pages as $who => $paths) {
+            foreach (array_unique($paths) as $path) {
+                $request = match ($who) {
+                    'client' => $this->actingAs($client),
+                    'admin' => $this->actingAs($admin),
+                    default => $this,
+                };
+                $html = $request->get($path)->assertOk()->getContent();
+                if ($path === '/en/admin/translations') {
+                    $html = preg_replace('#<main\b.*</main>#s', '<main></main>', $html);
+                }
+                $this->assertNoLithuanianStrings($path.' ('.$who.')', $html, $lithuanian);
             }
-            foreach ($xpath->query('//@aria-label | //@alt | //@title | //@placeholder') as $attribute) {
-                $this->assertArrayNotHasKey(trim($attribute->nodeValue), $lithuanian, $path.': LT-строка в атрибуте');
-            }
+            Auth::logout();
         }
     }
 }
