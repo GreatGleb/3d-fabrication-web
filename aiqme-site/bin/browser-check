@@ -8,7 +8,8 @@
         (порты только у web на 127.0.0.1, .env только для чтения, лимиты, журналы), образы app и web, healthy web, доверенный
         прокси = шлюз сети, администратор через aiqme:make-admin --password-stdin в exec, заявка гостя (2 STL, один —
         500 000 треугольников) → цена 150 EUR → запрос аванса 40 EUR → производство → трек → страница оплаты и возврат
-        с client_secret; заявка из 10 STL по 500 000 треугольников (время — в отчёте); /storage/… из тома и PHP-файл
+        с client_secret; заявка из 10 STL по 500 000 треугольников (время — в отчёте); контактная заявка /en/contact
+        с двумя вложениями (W-29: данные для проверки копии; письма нет — MAIL_MAILER=log); /storage/… из тома и PHP-файл
         из тома; журнал web без токенов, но с GET /lt. Без migrate:fresh, своей БД и запуска сервера; отчёт — prod-summary.md.
 
 Подготовка: своя БД aiqme_browser dev-PostgreSQL — migrate:fresh, сидеры контента, данные tests/browser/,
@@ -2119,6 +2120,32 @@ def guest_scenario(report, new_page, guest, number, secret):
     return checkout_url
 
 
+def prod_contact(report, new_page):
+    """Контактная заявка с двумя вложениями в prod-compose (W-29: данные копии bin/backup): сообщение об успехе; письмо
+    не проверяется (в build/prod-local/.env MAIL_MAILER=log, Mailpit не подключён)."""
+    where = '/en/contact prod-compose'
+    context, page, problems = new_page(1440, 1000)
+    page.goto(BASE + '/en/contact', wait_until='networkidle')
+    with tempfile.TemporaryDirectory() as directory:
+        pdf = Path(directory) / 'drawing.pdf'
+        pdf.write_bytes(b'%PDF-1.4\n%browser-check prod\n' + secrets.token_bytes(64))
+        stl = Path(directory) / 'part.stl'
+        stl.write_text(f'solid part-{secrets.token_hex(8)}\nendsolid part\n')
+        form = page.locator('#contact-form')
+        form.locator('input[name=name]').fill('Ona TEST')
+        form.locator('input[name=email]').fill('ona@example.test')
+        form.locator('select[name=service]').select_option('3d-printing')
+        form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
+        form.locator('input[type=file]').set_input_files([str(pdf), str(stl)])
+        with page.expect_navigation(wait_until='networkidle'):
+            form.locator('button[type=submit]').click()
+    result = page.locator('#contact-result').inner_text().strip()
+    report.check(result == 'AIQME has received your enquiry. Files attached: 2.', f'{where}: результат «{result}»')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def check_storage_volume(report):
     """Файл в томе storage/app/public отдаёт nginx по /storage/… (200, nosniff); PHP-файл оттуда не исполняется."""
     target = 'storage/app/public'
@@ -2218,6 +2245,8 @@ def prod_main(argv):
         number10, _, seconds10 = submit_quote(report, new_page, large, 'заявка из 10 STL', ship=False)
         if number10:
             timings['10 STL по 500 000 треугольников'] = seconds10
+        log('== контактная заявка с двумя вложениями (W-29)')
+        prod_contact(report, new_page)
         # Ссылка сброса пароля (маршрут W-07): токен в пути не должен попасть в журнал доступа.
         context, page, _ = new_page(1440, 1000)
         page.goto(f'{BASE}/en/account/reset/{reset_token}?email=ona%40example.test', wait_until='networkidle')

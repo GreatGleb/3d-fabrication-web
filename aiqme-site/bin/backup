@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Резервная копия AIQME (W-29, §8.5, D-13, D-31): дамп БД и файлы тома storage одного запуска с манифестом sha256.
+
+Запуск (из любого каталога; команды docker compose — из aiqme-site/ с тем же .env, что монтируется в PHP-сервисы):
+    сервер:   sudo bin/backup                                   (.env — ./.env, root:33 0640; cron root, docs/operations.md)
+    локально: bin/backup --env-file build/prod-local/.env       (проект aiqme-prod, копии — в игнорируемом build/backups/)
+    bin/backup --env-file <.env> --rotate-only                  только ротация каталога копий (тест PHPUnit, без Docker)
+
+Порядок: 1) docker compose -f docker-compose.prod.yml exec -T db pg_dump (pg_dump 17 из контейнера db, не из образа app)
+→ db.dump; 2) файлы storage/app через контейнер app (tar в exec, не с диска хоста) → storage.tar; 3) files.sha256 — хеш
+каждого файла архива, SHA256SUMS — хеши db.dump, storage.tar и files.sha256; 4) каталог копии <YYYYmmdd-HHMMSS>
+переименовывается из временного только после успеха; 5) метка времени — в томе storage (storage/app/last-backup.txt,
+её показывает Overview); 6) ротация: остаются копии последних AIQME_BACKUP_DAILY дней (последняя за день) и последних
+AIQME_BACKUP_WEEKLY ISO-недель (последняя за неделю), остальные удаляются. Каталог копий — AIQME_BACKUP_DIR из .env
+(относительный путь — от aiqme-site/); права каталога 0700, файлов 0600. Без дополнительного шифрования (D-31).
+"""
+import datetime
+import hashlib
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tarfile
+from pathlib import Path
+
+APP = Path(__file__).resolve().parent.parent
+COPY_NAME = re.compile(r'^\d{8}-\d{6}$')
+LAST_BACKUP = 'storage/app/last-backup.txt'
+
+
+def fail(message):
+    sys.exit(f'bin/backup: ОШИБКА: {message}')
+
+
+def env_values(file):
+    """Значения .env; нечитаемый .env (сервер: root:33 0640, запуск не от root) — явная ошибка."""
+    try:
+        text = file.read_text(encoding='utf-8')
+    except OSError as error:
+        fail(f'.env не читается: {file} ({error.strerror}); на сервере запускайте от root (sudo, crontab root)')
+    values = {}
+    for line in text.splitlines():
+        if '=' in line and not line.lstrip().startswith('#'):
+            key, value = line.split('=', 1)
+            values[key.strip()] = value.strip().strip('"')
+    return values
+
+
+def options(argv):
+    env_file, rotate_only = APP / '.env', False
+    rest = list(argv)
+    while rest:
+        name = rest.pop(0)
+        if name == '--env-file' and rest:
+            env_file = Path(rest.pop(0))
+            env_file = env_file if env_file.is_absolute() else Path.cwd() / env_file
+        elif name == '--rotate-only':
+            rotate_only = True
+        else:
+            fail(f'неизвестный параметр {name}; использование: bin/backup [--env-file <.env>] [--rotate-only]')
+    return env_file.resolve(), rotate_only
+
+
+def settings(values):
+    directory = values.get('AIQME_BACKUP_DIR', '')
+    if not directory:
+        fail('в .env нет AIQME_BACKUP_DIR (каталог копий; на сервере — вне каталога приложения)')
+    directory = Path(directory)
+    try:
+        daily, weekly = int(values.get('AIQME_BACKUP_DAILY', '')), int(values.get('AIQME_BACKUP_WEEKLY', ''))
+    except ValueError:
+        fail('в .env нужны целые AIQME_BACKUP_DAILY и AIQME_BACKUP_WEEKLY (D-13: 14 и 8)')
+    if daily < 1 or weekly < 0:
+        fail('AIQME_BACKUP_DAILY должно быть ≥ 1, AIQME_BACKUP_WEEKLY ≥ 0')
+    return (directory if directory.is_absolute() else APP / directory), daily, weekly
+
+
+def rotate(directory, daily, weekly):
+    """Оставляет последнюю копию каждого из `daily` последних дней и каждой из `weekly` последних ISO-недель (дата —
+    из имени каталога); остальные каталоги копий удаляет. Возвращает имена удалённых."""
+    copies = sorted((p.name for p in directory.iterdir() if p.is_dir() and COPY_NAME.match(p.name)), reverse=True)
+    stamps = {name: datetime.datetime.strptime(name, '%Y%m%d-%H%M%S') for name in copies}
+    keep, days, weeks = set(), [], []
+    for name in copies:  # от новых к старым: первая встреченная копия дня (недели) — последняя за день (неделю)
+        day, week = stamps[name].date(), stamps[name].isocalendar()[:2]
+        if day not in days:
+            days.append(day)
+            if len(days) <= daily:
+                keep.add(name)
+        if week not in weeks:
+            weeks.append(week)
+            if len(weeks) <= weekly:
+                keep.add(name)
+    removed = [name for name in copies if name not in keep]
+    for name in removed:
+        shutil.rmtree(directory / name)
+    return removed
+
+
+def sha256(file):
+    digest = hashlib.sha256()
+    with open(file, 'rb') as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def compose(env_file, *args, **kwargs):
+    command = ['docker', 'compose', '--env-file', str(env_file), '-f', 'docker-compose.prod.yml', *args]
+    return subprocess.run(command, cwd=APP, check=True, **kwargs)
+
+
+def backup(env_file, directory):
+    directory.mkdir(parents=True, exist_ok=True)
+    os.chmod(directory, 0o700)
+    name = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    if (directory / name).exists():
+        fail(f'копия {name} уже есть')
+    work = directory / f'.incomplete-{name}'
+    work.mkdir(mode=0o700)
+    try:
+        print(f'== дамп БД (pg_dump контейнера db) → {work / "db.dump"}')
+        with open(work / 'db.dump', 'wb') as out:
+            compose(env_file, 'exec', '-T', 'db', 'sh', '-c', 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom',
+                    stdout=out)
+        print('== файлы storage/app (tar в контейнере app)')
+        with open(work / 'storage.tar', 'wb') as out:
+            compose(env_file, 'exec', '-T', 'app', 'tar', '-C', '/var/www/html/storage', '-cf', '-', 'app', stdout=out)
+        lines = []
+        with tarfile.open(work / 'storage.tar') as archive:
+            for member in archive:
+                if member.isfile():
+                    digest = hashlib.sha256()
+                    with archive.extractfile(member) as handle:
+                        for chunk in iter(lambda: handle.read(1 << 20), b''):
+                            digest.update(chunk)
+                    lines.append(f'{digest.hexdigest()}  {member.name}')
+        (work / 'files.sha256').write_text('\n'.join(sorted(lines, key=lambda line: line[66:])) + '\n', encoding='utf-8')
+        sums = [f'{sha256(work / part)}  {part}' for part in ('db.dump', 'storage.tar', 'files.sha256')]
+        (work / 'SHA256SUMS').write_text('\n'.join(sums) + '\n', encoding='utf-8')
+        for file in work.iterdir():
+            os.chmod(file, 0o600)
+        work.rename(directory / name)
+    except BaseException:
+        shutil.rmtree(work, ignore_errors=True)
+        raise
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    compose(env_file, 'exec', '-T', '-u', 'www-data', 'app', 'sh', '-c', f'printf %s {stamp} > {LAST_BACKUP}')
+    print(f'== копия {directory / name}: файлов storage {len(lines)}; метка {stamp}')
+
+
+def main():
+    sys.stdout.reconfigure(line_buffering=True)  # вывод по порядку с выводом docker compose
+    env_file, rotate_only = options(sys.argv[1:])
+    directory, daily, weekly = settings(env_values(env_file))
+    if rotate_only:
+        if not directory.is_dir():
+            fail(f'нет каталога копий {directory}')
+    else:
+        try:
+            backup(env_file, directory)
+        except subprocess.CalledProcessError as error:
+            fail(f'команда завершилась с кодом {error.returncode}: {" ".join(error.cmd)}')
+    removed = rotate(directory, daily, weekly)
+    print(f'== ротация ({daily} дневных, {weekly} недельных): удалено {len(removed)}' + (': ' + ', '.join(removed) if removed else ''))
+
+
+if __name__ == '__main__':
+    main()

@@ -1,7 +1,7 @@
 {{-- Метрики и последние заказы Overview (W-14) в разметке прототипа (.grid.three .metric, .topline, orderList): метрики
      «Demo orders» и «Demo registrations» и notice «…simulated in the browser» не переносятся (D-21). «Платежи на сверку»
      (W-28): запросы и события с needs_review, кнопка «разобрано»; блока в прототипе нет — разметка .notice и x-table.
-     «Незаполненные реквизиты» (W-17) — .notice со ссылкой на вкладку Settings. --}}
+     «Незаполненные реквизиты» (W-17) — .notice со ссылкой на вкладку Settings. Давность последней копии (W-29) — .notice. --}}
 @php($locale = app()->getLocale())
 @php($money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale))
 <div>
@@ -37,6 +37,9 @@
                 </tbody>
             </x-table>
         </section>
+    @endif
+    @if ($backup !== null)
+        <div class="notice gap" id="overview-backup">{{ $backup['at'] === null ? __('admin.overview.backup_none') : __('admin.overview.backup', ['age' => $backup['at']->locale($locale)->diffForHumans()]) }}</div>
     @endif
     <div class="grid three gap" id="overview-metrics">
         @foreach ($metrics as $key => $value)

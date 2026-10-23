@@ -14,6 +14,7 @@ use App\Domain\Payments\Models\PaymentEvent;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Livewire\Admin\Orders\Index;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -28,11 +29,15 @@ use Lunar\Models\Order;
  * (§2.7, §8.4); «платежи на сверку» (W-28, §3.3 «Аномалии»): запросы с needs_review и события payment_events с
  * result = needs_review без reviewed_at, у каждого действие «разобрано» с записью в журнал; при APP_ENV=demo блока нет
  * (§8.7). Предупреждение «незаполненные реквизиты» (W-17): реквизиты продавца, VAT или нумерация не заданы — счета не
- * выпускаются; при APP_ENV=demo его нет. Только администратору, иначе 404.
+ * выпускаются; при APP_ENV=demo его нет. Давность последней копии (W-29, §8.4) — по метке, которую bin/backup пишет в том
+ * storage (BACKUP_STAMP); при APP_ENV=demo строки нет. Только администратору, иначе 404.
  */
 class Overview extends Component
 {
     public const RECENT_DAYS = 7;
+
+    /** Метка времени (UTC, ISO 8601) последней успешной копии; пишет bin/backup. */
+    public const BACKUP_STAMP = 'app/last-backup.txt';
 
     #[Locked]
     public string $uiLocale;
@@ -101,7 +106,16 @@ class Overview extends Component
             'reviewEvents' => $reviewEvents,
             'numbers' => OrderMeta::whereIn('order_id', $orderIds)->pluck('number', 'order_id'),
             'sellerMissing' => ! $demo && ! $seller->complete(),
+            'backup' => $demo ? null : ['at' => $this->lastBackup()],
         ]);
+    }
+
+    private function lastBackup(): ?CarbonImmutable
+    {
+        $file = storage_path(self::BACKUP_STAMP);
+        $stamp = is_file($file) ? trim((string) file_get_contents($file)) : '';
+
+        return $stamp === '' ? null : rescue(fn (): CarbonImmutable => CarbonImmutable::parse($stamp), report: false);
     }
 
     private function admin(): User

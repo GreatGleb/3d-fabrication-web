@@ -31,6 +31,9 @@ return [
         'orders' => 'Užsakymai',
         'all_orders' => 'Visi užsakymai ↗',
         'failed' => 'Nepavykusių foninių užduočių: :count. Patikrinkite laiškų ir lentelės pristatymo būseną ir eilės žurnalą.',
+        // W-29: давность копии bin/backup — в прототипе нет, нейтральные надписи (docs/progress.md, W-29).
+        'backup' => 'Paskutinė atsarginė kopija: :age.',
+        'backup_none' => 'Atsarginė kopija dar nedaryta.',
         'seller_missing' => 'Neužpildyti sąskaitų duomenys: pardavėjo rekvizitai, PVM statusas arba sąskaitų numeracija. Kol jie neišsaugoti, sąskaitos neišrašomos.',
         // W-28: «платежи на сверку» — в прототипе нет, нейтральные надписи (docs/progress.md, W-28).
         'review' => [

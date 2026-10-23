@@ -42,6 +42,9 @@ return [
         'orders' => 'Orders',
         'all_orders' => 'All orders ↗',
         'failed' => 'Failed background tasks: :count. Check the mail and table delivery status and the queue log.',
+        // W-29: давность копии bin/backup — в прототипе нет, нейтральные надписи (docs/progress.md, W-29).
+        'backup' => 'Last backup: :age.',
+        'backup_none' => 'No backup has been made yet.',
         'seller_missing' => 'Invoice details are not filled in: seller details, VAT status or invoice numbering. Invoices are not issued until they are saved.',
         // W-28: «платежи на сверку» — в прототипе нет, нейтральные надписи (docs/progress.md, W-28).
         'review' => [

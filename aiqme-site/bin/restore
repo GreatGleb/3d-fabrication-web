@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""Восстановление копии bin/backup (W-29, §8.5) в prod-compose.
+
+Запуск: bin/restore [--env-file <.env>] <каталог копии>   (сервер — sudo, .env ./.env; локально — build/prod-local/.env)
+
+Шаги: SHA256SUMS копии сходится → php artisan down → остановка worker и scheduler → БД из db.dump (pg_restore в контейнере
+db, --clean --if-exists: на пустой БД и поверх существующей) → файлы storage.tar в том storage через контейнер app →
+сверка: каждый файл files.sha256 в томе с тем же хешем; у каждой ссылки из восстановленной БД (stl_files.path и sha256,
+вложения contact_requests.attachments, invoices.pdf_path) есть файл копии с тем же хешем (у PDF счёта хеша в БД нет —
+только наличие в копии и в томе) → сессии сброшены (таблица sessions). Сайт остаётся в режиме обслуживания, worker и
+scheduler остановлены: сверка платежей Stripe и номера счёта — вручную по docs/operations.md, затем artisan up и запуск.
+"""
+import importlib.machinery
+import importlib.util
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+# Общие функции — из bin/backup (файл без расширения .py).
+_loader = importlib.machinery.SourceFileLoader('aiqme_backup', str(Path(__file__).resolve().parent / 'backup'))
+backup = importlib.util.module_from_spec(importlib.util.spec_from_loader('aiqme_backup', _loader))
+_loader.exec_module(backup)
+
+
+def fail(message):
+    sys.exit(f'bin/restore: ОШИБКА: {message}')
+
+
+def manifest(file):
+    rows = {}
+    for line in file.read_text(encoding='utf-8').splitlines():
+        if line.strip():
+            digest, name = line.split('  ', 1)
+            rows[name] = digest
+    return rows
+
+
+def compose(env_file, *args, **kwargs):
+    return backup.compose(env_file, *args, **kwargs)
+
+
+def psql(env_file, query):
+    """Строки запроса к восстановленной БД (psql контейнера db, без выравнивания, разделитель — табуляция)."""
+    result = compose(env_file, 'exec', '-T', 'db', 'sh', '-c',
+                     'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -X -A -t -F "\t" -v ON_ERROR_STOP=1', input=query,
+                     capture_output=True, text=True)
+    return [line.split('\t') for line in result.stdout.splitlines() if line]
+
+
+def references(env_file):
+    """Ссылки на файлы из БД: (путь в storage/app/private, ожидаемый sha256 или None, откуда)."""
+    refs = [(f'app/private/{path}', digest, f'stl_files {path}') for path, digest in psql(env_file, 'select path, sha256 from stl_files')]
+    for request_id, attachments in psql(env_file, 'select id, attachments from contact_requests'):
+        for attachment in json.loads(attachments):
+            refs.append((f'app/private/{attachment["path"]}', attachment.get('sha256'), f'contact_requests {request_id}'))
+    refs += [(f'app/private/{path}', None, f'invoices {path}') for (path,) in psql(env_file, 'select pdf_path from invoices')]
+    return refs
+
+
+def verify(env_file, files):
+    """Хеши файлов в томе = files.sha256; ссылки БД → файлы копии с тем же хешем. Возвращает список расхождений."""
+    problems = []
+    names = list(files)
+    result = compose(env_file, 'exec', '-T', 'app', 'sh', '-c', 'cd /var/www/html/storage && xargs -0 -r sha256sum --',
+                     input='\0'.join(names), capture_output=True, text=True) if names else None
+    actual = {}
+    for line in (result.stdout.splitlines() if result else []):
+        digest, name = line.split('  ', 1)
+        actual[name] = digest
+    for name, digest in files.items():
+        if actual.get(name) != digest:
+            problems.append(f'файл тома {name}: {actual.get(name)} ≠ копия {digest}')
+    refs = references(env_file)
+    for path, digest, source in refs:
+        if path not in files:
+            problems.append(f'{source}: файла {path} нет в копии')
+        elif digest is not None and files[path] != digest:
+            problems.append(f'{source}: sha256 в БД {digest} ≠ файл копии {files[path]}')
+    kinds = {kind: sum(1 for _, _, source in refs if source.startswith(kind)) for kind in ('stl_files', 'contact_requests', 'invoices')}
+    print(f'== сверка: файлов тома {len(actual)}/{len(files)}; ссылок БД: STL {kinds["stl_files"]}, вложений '
+          f'{kinds["contact_requests"]}, PDF счетов {kinds["invoices"]}')
+    return problems
+
+
+def main():
+    sys.stdout.reconfigure(line_buffering=True)  # вывод по порядку с выводом docker compose
+    argv = sys.argv[1:]
+    env_file = backup.APP / '.env'
+    if argv[:1] == ['--env-file'] and len(argv) >= 2:
+        env_file = Path(argv[1]) if Path(argv[1]).is_absolute() else Path.cwd() / argv[1]
+        argv = argv[2:]
+    if len(argv) != 1:
+        fail('использование: bin/restore [--env-file <.env>] <каталог копии>')
+    env_file = env_file.resolve()
+    backup.env_values(env_file)  # нечитаемый .env — явная ошибка до любых действий
+    copy = Path(argv[0]).resolve()
+    sums = copy / 'SHA256SUMS'
+    if not sums.is_file():
+        fail(f'нет {sums}')
+    for name, digest in manifest(sums).items():
+        if not (copy / name).is_file() or backup.sha256(copy / name) != digest:
+            fail(f'копия повреждена: {name} не совпадает с SHA256SUMS')
+    files = manifest(copy / 'files.sha256')
+    try:
+        print('== php artisan down; остановка worker и scheduler')
+        compose(env_file, 'exec', '-T', '-u', 'www-data', 'app', 'php', 'artisan', 'down')
+        compose(env_file, 'stop', 'worker', 'scheduler')
+        print('== БД из db.dump (pg_restore в контейнере db)')
+        with open(copy / 'db.dump', 'rb') as dump:
+            compose(env_file, 'exec', '-T', 'db', 'sh', '-c', 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists '
+                    '--no-owner --single-transaction --exit-on-error', stdin=dump)
+        print('== файлы storage.tar → том storage (tar в контейнере app)')
+        with open(copy / 'storage.tar', 'rb') as archive:
+            compose(env_file, 'exec', '-T', 'app', 'tar', '-C', '/var/www/html/storage', '-xpf', '-', stdin=archive)
+        problems = verify(env_file, files)
+        if problems:
+            fail('комплект не сходится:\n - ' + '\n - '.join(problems))
+        psql(env_file, 'delete from sessions')
+        print('== сессии сброшены')
+    except subprocess.CalledProcessError as error:
+        fail(f'команда завершилась с кодом {error.returncode}: {" ".join(map(str, error.cmd))}')
+    print(f'bin/restore: OK — {copy.name} восстановлена, хеши совпадают. Сайт в режиме обслуживания, worker и scheduler '
+          'остановлены: сверить платежи Stripe и номер следующего счёта (docs/operations.md), затем artisan up и запуск.')
+
+
+if __name__ == '__main__':
+    main()

@@ -2974,3 +2974,90 @@ php:8.4-fpm-trixie, node:22-trixie-slim, composer:2.8.12, nginx:1.30-trixie (ngi
 ## W-29: заблокирована ночным прогоном (2026-10-23 13:14)
 
 Причина (оркестратор): ночь остановлена: W-29.work0: нет modelUsage — расход не учесть. Работа — в git stash «night-blocked W-29».
+
+## W-29: Эксплуатационный пакет II: копии, расписание, измерения, runbook — выполнено (2026-10-23, Claude Code, ночной прогон)
+
+Прежняя попытка (stash «night-blocked W-29») в дереве и в refs отсутствовала — работа выполнена заново.
+
+### Сделано
+
+- `bin/backup` (Python 3, stdlib): `exec -T db pg_dump --format=custom` (pg_dump 17 контейнера db) → `tar` storage/app
+  в `exec -T app` → `files.sha256` и `SHA256SUMS` → каталог `<ГГГГММДД-ччммсс>` из `.incomplete-…` после успеха →
+  метка `storage/app/last-backup.txt` в томе → ротация 14 дневных + 8 недельных (последняя копия дня / ISO-недели; числа
+  `AIQME_BACKUP_DAILY/WEEKLY`, каталог `AIQME_BACKUP_DIR` из .env). Права 0700/0600, без шифрования (D-31). Нечитаемый
+  .env — «.env не читается», код 1. `--rotate-only` — только ротация (для теста).
+- `bin/restore`: SHA256SUMS → `artisan down` → stop worker/scheduler → `pg_restore --clean --if-exists --single-transaction`
+  в db → `storage.tar` в том через app → сверка файлов тома и ссылок БД (stl_files.path+sha256, вложения
+  contact_requests.attachments+sha256, invoices.pdf_path — наличие) → сброс sessions. Останавливается в режиме
+  обслуживания: сверка Stripe и номера счёта — вручную (runbook), затем `up`.
+- Расписание (`routes/console.php`): `aiqme:orphans` 03:30 (файлы stl/, contact-requests/, invoices/ без записи в БД —
+  в журнал и вывод, без удаления), `aiqme:prune-sessions` 03:40, `auth:clear-resets` 03:45 (встроенная команда Laravel);
+  ночная копия — cron хоста (строка в runbook), не scheduler.
+- Overview: строка `#overview-backup` (.notice) — давность по метке (`diffForHumans` на языке интерфейса) или «копии ещё
+  нет»; при APP_ENV=demo нет. Надписей в прототипе нет — нейтральные: EN «Last backup: :age.» / «No backup has been made
+  yet.», LT «Paskutinė atsarginė kopija: :age.» / «Atsarginė kopija dar nedaryta.».
+- `bin/browser-check --base-url`: добавлен сценарий контактной заявки /en/contact с двумя вложениями (сообщение об успехе;
+  письмо не проверяется — в prod-local MAIL_MAILER=log).
+- `.env.example` и игнорируемый `build/prod-local/.env`: `AIQME_BACKUP_DIR` (/var/backups/aiqme и build/backups),
+  `AIQME_BACKUP_DAILY=14`, `AIQME_BACKUP_WEEKLY=8`.
+- `docs/operations.md`: runbook (развёртывание §8.3, расписание и строка cron, копия, восстановление §8.5 с ручными шагами,
+  права .env, смена ключей, HSTS, защита хоста — владелец, D-01) и требования к серверу с методом измерения.
+
+### Решения по простейшему варианту
+
+- Скрипты — Python 3 хоста (на Ubuntu LTS есть), а не bash: разбор tar для хешей и ротация по датам проще и надёжнее.
+- Копия — полная каждый раз, без сжатия и без общих файлов между копиями (не требовалось). Следствие: место под копии
+  ≈ 22 × объём данных (при гипотезе 1,5 ГиБ STL/30 дней через год ≈ 18 ГиБ данных → ≈ 400 ГиБ копий). **Вопрос
+  пользователю:** допустимо ли это или нужны сжатие/инкрементальные копии (например rsync --link-dest) — до аренды диска.
+- Лимиты контейнеров по умолчанию (W-20) оставлены как рекомендуемые: измеренные пики ниже в 2,5–18 раз.
+- `bin/restore` не удаляет файлы тома, которых нет в копии (их покажет `aiqme:orphans`).
+
+### Требования к серверу (подробно — docs/operations.md)
+
+AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL (гипотеза ≈ 1,5 ГиБ/30 дней) + 22-кратный объём данных под
+копии. Измерено: `docker stats` в цикле (145 замеров) во время `bin/browser-check --base-url`: app 52 → 222 МиБ, CPU пик
+103 % (лимит 1.0); worker 49 → 56 МиБ; scheduler 49 МиБ; web 4 → 14 МиБ; db 21 → 32 МиБ (БД 14 МБ). PDF счёта
+в контейнере app: пик процесса 60,5 МиБ, 0,3 с. Анализ STL 500 000 треугольников в одном процессе — пик 269,9 МиБ, 1,17 с
+(тест StlAnalyzer в bin/check, хост). Образы ≈ 1,3 ГБ. Одновременная нагрузка не измерялась.
+
+### Проверки
+
+- `tests/Feature/OperationsTest.php` (6 тестов): ротация через Process на временном каталоге с копиями 01.01–31.03.2026
+  и лишними копиями дня — остаются ровно 14 дней + 5 недельных (недели 12–14 уже среди дней), чужие каталоги не тронуты,
+  числа из .env (2/0); ошибки без AIQME_BACKUP_DIR/WEEKLY и с нечитаемым .env; расписание (выражения cron, нет backup);
+  `aiqme:orphans` перечисляет 3 сироты и ничего не удаляет; сессии и токены сброса — удаляются только просроченные;
+  Overview — «нет копии», «3 hours ago», LT «prieš 3 valandas», в demo строки нет.
+- Пересборка prod-compose (`bin/build-context` 569 файлов → build → up → migrate → bootstrap → optimize → restart);
+  `schedule:list` в контейнере — 5 заданий.
+- `bin/browser-check --base-url http://127.0.0.1:8792 --compose-file docker-compose.prod.yml` → **OK (83 проверки)**,
+  включая контактную заявку с 2 вложениями; 2 STL — 3,5 с, 10 STL — 15,8 с.
+- **Проверка восстановления:** `bin/backup --env-file build/prod-local/.env` → 3 с, копия 20261023-143348 (дамп 380 КБ,
+  storage.tar 550 МБ, 26 файлов), каталог 0700, файлы 0600 → хеши тома и счётчики БД сохранены → `down -v` (удалены только
+  aiqme-prod_storage и aiqme-prod_db-data; aiqme-dev_postgres-data на месте) → `up` (0 таблиц, 0 файлов) →
+  `bin/restore` → «файлов тома 26/26; ссылок БД: STL 24, вложений 2, PDF счетов 0», OK → `diff` хешей всех файлов
+  storage/app до и после — **идентичны**; счётчики (stl_files 24, заказов 4, заявок 1, пользователей 1, контента 36,
+  max номер 4) — идентичны → optimize, up, start worker scheduler; /lt — 200, TRUSTED_PROXIES = шлюз 172.23.0.1.
+- Отрицательные: дописанный байт в db.dump — отказ «копия повреждена» до любых действий; подменённый хеш STL и удалённые
+  вложения в files.sha256 — отказ со списком (файл тома ≠ копия, sha256 в БД ≠ файл копии, «файла … нет в копии»);
+  pg_restore поверх непустой БД прошёл.
+- `bin/check` → **OK** (exit 0): Pint, Node 39, PHPUnit 655 (653 passed, 2 skipped), prod-compose ports, Vite.
+- `bin/browser-check --signed-in /en` → **OK (4354 проверки)**: админка с Overview (маркеры D-21, ширина, консоль, CSP).
+  (Первый запуск с путём /en/admin дал 5 ожидаемых 404 — путь обходится гостем.)
+
+### Не проверено
+
+- PDF счетов в копии: «не проверено: нет данных» — в prod-compose нет оплат, счетов 0 (ветка сверки invoices.pdf_path
+  выполнялась на пустом наборе).
+- Работа на сервере: `sudo bin/backup` с `./.env` root:33 0640, crontab root, каталог вне приложения — сервера нет.
+- Одновременная нагрузка и рост памяти PostgreSQL на реальных данных.
+- Ручной просмотр строки копии в Overview — ждёт проверки пользователем.
+- Контейнеры aiqme-prod оставлены запущенными (127.0.0.1:8792); копия — в build/backups/ (игнорируется Git).
+
+### Доработка после приёмки (2026-10-23)
+
+Замечание: «bin/check зелёный, bin/browser-check красный» (W-29.check0.log). Причина — не код: прогон оборвался на
+`Page.goto /en/services: net::ERR_NETWORK_IO_SUSPENDED`. По `journalctl` ноутбук ушёл в сон в 15:21:06 и проснулся
+в 16:47:08, а журнал проверки закончился в 16:47:09. Все страницы до этой включительно (в том числе /en/quote) прошли.
+Код не менялся. Повторы под `systemd-inhibit --what=sleep:idle:handle-lid-switch`:
+`bin/browser-check` → **OK (15200 проверок)**, exit 0; `bin/check` → **OK** (PHPUnit 655: 653 passed, 2 skipped).
+Совет оркестратору: запускать проверки под systemd-inhibit, чтобы сон не обрывал их.
