@@ -2969,3 +2969,8 @@ php:8.4-fpm-trixie, node:22-trixie-slim, composer:2.8.12, nginx:1.30-trixie (ngi
   сделано в `test_duplicate_event_…`. Код приложения не менялся.
 - `bin/php vendor/bin/phpunit --filter StripeWebhookTest` — 26/26 passed.
 - `bin/check` → **OK** (exit 0): Pint, Node, PHPUnit 649 (647 passed, 2 skipped), prod-compose ports, Vite.
+
+
+## W-29: заблокирована ночным прогоном (2026-10-23 13:14)
+
+Причина (оркестратор): ночь остановлена: W-29.work0: нет modelUsage — расход не учесть. Работа — в git stash «night-blocked W-29».
