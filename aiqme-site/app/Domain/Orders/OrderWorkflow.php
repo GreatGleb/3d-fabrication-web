@@ -112,7 +112,7 @@ final class OrderWorkflow
             [$order, $state] = $this->lock($order);
             $this->requireNotCancelled($state);
             $this->require($state->confirmed_at !== null, 'not_confirmed');
-            $available = $this->balance($order)['due'] - (int) $this->openRequests($order)->sum('amount');
+            $available = $this->availableForRequest($order);
             $this->require($amount >= PaymentRequest::MINIMUM, 'request_too_small');
             $this->require($amount <= $available, 'request_too_large');
             $rest = $available - $amount;
@@ -410,6 +410,12 @@ final class OrderWorkflow
             'tax_total' => 0,
             'total' => $cents,
         ]);
+    }
+
+    /** Доступно для нового платёжного запроса: долг минус суммы открытых запросов (центы, может быть < MINIMUM). */
+    public function availableForRequest(Order $order): int
+    {
+        return $this->balance($order)['due'] - (int) $this->openRequests($order)->sum('amount');
     }
 
     /** @return Builder<PaymentRequest> */

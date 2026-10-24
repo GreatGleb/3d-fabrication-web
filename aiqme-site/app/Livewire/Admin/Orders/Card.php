@@ -207,6 +207,7 @@ class Card extends Component
             'priced' => $lines->reject(fn (OrderLine $line): bool => self::isDelivery($line))->values(),
             'deliveryLine' => $lines->first(fn (OrderLine $line): bool => self::isDelivery($line)),
             'balance' => $flow->balance($order),
+            'available' => $flow->availableForRequest($order),
             'requests' => PaymentRequest::where('order_id', $order->id)->orderBy('id')->get(),
             'messages' => OrderMessage::where('order_id', $order->id)->orderBy('id')->get(),
             'revisions' => PriceRevision::where('order_id', $order->id)->orderBy('revision')->get(),

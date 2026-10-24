@@ -277,6 +277,26 @@ class AdminOrdersTest extends TestCase
         $this->assertSame(PaymentRequest::PENDING, $other->fresh()->state);
     }
 
+    public function test_request_form_hint_shows_available_amount_and_explains_when_below_minimum(): void
+    {
+        $order = $this->order();
+        // Долг 150 EUR, открытых запросов нет — доступно всё.
+        $card = $this->confirmedCard($order)
+            ->assertSeeHtml('data-request-hint')->assertSee('Available now: €150.00')
+            ->assertSee('at least €0.50')->assertSee('no email with the link is sent')->assertSee('cancelled until it is paid');
+        // Открытый запрос 120 EUR уменьшает доступное до 30 EUR.
+        $card->set('amount', '120')->call('requestPayment')->assertHasNoErrors()->assertSee('Available now: €30.00');
+        $this->assertSame(3000, app(OrderWorkflow::class)->availableForRequest($order->fresh()));
+        // Оплачено 29,60 EUR сверх запроса — доступно 0,40 EUR < минимума: вместо формы пояснение.
+        LunarCapture::create($order, 2960);
+        $card->call('back')
+            ->assertDontSeeHtml('id="order-request-form"')->assertDontSeeHtml('data-request-hint')
+            ->assertSeeHtml('data-request-unavailable')->assertSee('only €0.40 is available now')->assertSee('less than the minimum €0.50');
+
+        app()->setLocale('lt');
+        $this->card($order)->assertSee('mažiau nei mažiausia suma');
+    }
+
     public function test_start_production_with_debt_asks_for_confirmation_and_without_debt_does_not(): void
     {
         $order = $this->order();

@@ -169,10 +169,28 @@
             <div class="summary-row gap" data-invoice="{{ $invoice->label() }}"><a class="text-link" href="{{ route('invoices.download', $invoice->id) }}">{{ __('invoices.download', ['number' => $invoice->label()]) }}</a><b>{{ $money($invoice->total) }}</b></div>
         @endif
         @if ($state->confirmed_at && $stage !== \App\Domain\Orders\ProductionStage::Cancelled)
-            <form class="gap" id="order-request-form" wire:submit="requestPayment">
-                <x-field name="amount" type="number" step="0.01" min="0.5" :label="__('admin.orders.amount')" :value="$amount" wire:model="amount" />
-                <x-button type="submit" small>{{ __('admin.orders.request') }}</x-button>
-            </form>
+            {{-- Правила запроса — из OrderWorkflow::requestPayment: минимум PaymentRequest::MINIMUM, максимум «доступно сейчас»
+                 (долг минус открытые запросы), остаток 0 или не меньше минимума; в демо-сборке подсказки нет (§8.7). --}}
+            @php($minimum = $money(\App\Domain\Payments\Models\PaymentRequest::MINIMUM))
+            @if (! app()->environment('demo') && $available < \App\Domain\Payments\Models\PaymentRequest::MINIMUM)
+                <p class="gap" data-request-unavailable><small>{{ __('admin.orders.request_unavailable', ['amount' => $money(max(0, $available)), 'minimum' => $minimum]) }}</small></p>
+            @else
+                <form class="gap" id="order-request-form" wire:submit="requestPayment">
+                    @if (! app()->environment('demo'))
+                        <div data-request-hint>
+                            <p><small><b>{{ __('admin.orders.request_available', ['amount' => $money($available)]) }}</b></small></p>
+                            <ul>
+                                <li><small>{{ __('admin.orders.request_part', ['minimum' => $minimum]) }}</small></li>
+                                <li><small>{{ __('admin.orders.request_rest', ['minimum' => $minimum]) }}</small></li>
+                                <li><small>{{ __('admin.orders.request_link') }}</small></li>
+                                <li><small>{{ __('admin.orders.request_cancel') }}</small></li>
+                            </ul>
+                        </div>
+                    @endif
+                    <x-field name="amount" type="number" step="0.01" min="0.5" :label="__('admin.orders.amount')" :value="$amount" wire:model="amount" />
+                    <x-button type="submit" small>{{ __('admin.orders.request') }}</x-button>
+                </form>
+            @endif
         @endif
     </div>
 
