@@ -297,6 +297,19 @@ class AdminOrdersTest extends TestCase
         $this->card($order)->assertSee('mažiau nei mažiausia suma');
     }
 
+    public function test_request_block_says_paid_in_full_when_nothing_is_due(): void
+    {
+        $order = $this->order();
+        // Оплачено всё (150 EUR) — долг 0: вместо пояснения о минимуме «оплачен полностью».
+        LunarCapture::create($order, 15000);
+        $this->confirmedCard($order)
+            ->assertDontSeeHtml('id="order-request-form"')->assertDontSeeHtml('data-request-unavailable')
+            ->assertSeeHtml('data-paid-in-full')->assertSee('The order is paid in full.');
+
+        app()->setLocale('lt');
+        $this->card($order)->assertSee('Užsakymas visiškai apmokėtas.');
+    }
+
     public function test_start_production_with_debt_asks_for_confirmation_and_without_debt_does_not(): void
     {
         $order = $this->order();

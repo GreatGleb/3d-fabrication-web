@@ -105,6 +105,7 @@ return [
         'request_link' => 'Klientas moka per užklausos mokėjimo puslapio nuorodą (ji matoma šioje kortelėje ir kliento paskyroje); laiškas su nuoroda nesiunčiamas.',
         'request_cancel' => 'Atvirą užklausą galima atšaukti, kol ji neapmokėta.',
         'request_unavailable' => 'Naujos mokėjimo užklausos sukurti negalima: dabar galima tik :amount (liko mokėti, atėmus atviras užklausas), mažiau nei mažiausia suma :minimum.',
+        'paid_in_full' => 'Užsakymas visiškai apmokėtas.',
         'cancel_request' => 'Atšaukti užklausą',
         'checkout_link' => 'Mokėjimo puslapis',
         'check_stripe' => 'Tikrinti būseną Stripe',

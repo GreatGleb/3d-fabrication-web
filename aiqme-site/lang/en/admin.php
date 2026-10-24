@@ -121,6 +121,7 @@ return [
         'request_link' => 'The customer pays via the request’s payment page link (shown in this card and in the customer account); no email with the link is sent.',
         'request_cancel' => 'An open request can be cancelled until it is paid.',
         'request_unavailable' => 'A new payment request cannot be created: only :amount is available now (outstanding minus open requests), less than the minimum :minimum.',
+        'paid_in_full' => 'The order is paid in full.',
         'cancel_request' => 'Cancel request',
         'checkout_link' => 'Payment page',
         'check_stripe' => 'Check status in Stripe',

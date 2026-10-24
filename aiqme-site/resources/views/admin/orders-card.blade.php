@@ -170,9 +170,11 @@
         @endif
         @if ($state->confirmed_at && $stage !== \App\Domain\Orders\ProductionStage::Cancelled)
             {{-- Правила запроса — из OrderWorkflow::requestPayment: минимум PaymentRequest::MINIMUM, максимум «доступно сейчас»
-                 (долг минус открытые запросы), остаток 0 или не меньше минимума; в демо-сборке подсказки нет (§8.7). --}}
+                 (долг минус открытые запросы), остаток 0 или не меньше минимума; при долге 0 — «оплачен полностью»; в демо-сборке подсказки нет (§8.7). --}}
             @php($minimum = $money(\App\Domain\Payments\Models\PaymentRequest::MINIMUM))
-            @if (! app()->environment('demo') && $available < \App\Domain\Payments\Models\PaymentRequest::MINIMUM)
+            @if (! app()->environment('demo') && $balance['due'] <= 0)
+                <p class="gap" data-paid-in-full><small>{{ __('admin.orders.paid_in_full') }}</small></p>
+            @elseif (! app()->environment('demo') && $available < \App\Domain\Payments\Models\PaymentRequest::MINIMUM)
                 <p class="gap" data-request-unavailable><small>{{ __('admin.orders.request_unavailable', ['amount' => $money(max(0, $available)), 'minimum' => $minimum]) }}</small></p>
             @else
                 <form class="gap" id="order-request-form" wire:submit="requestPayment">

@@ -38,5 +38,13 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="AIQME_LUNAR_PANEL" value="false" force="true"/>
+        <!-- Ключи интеграций из .env в тестах обнуляются; тесты, которым они нужны, задают их через config(). -->
+        <env name="GOOGLE_SHEETS_KEY_BASE64" value="" force="true"/>
+        <env name="GOOGLE_SHEETS_SPREADSHEET_ID" value="" force="true"/>
+        <env name="STRIPE_KEY" value="" force="true"/>
+        <env name="STRIPE_SECRET" value="" force="true"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="" force="true"/>
+        <env name="TELEGRAM_BOT_TOKEN" value="" force="true"/>
+        <env name="TELEGRAM_WEBHOOK_SECRET" value="" force="true"/>
     </php>
 </phpunit>
