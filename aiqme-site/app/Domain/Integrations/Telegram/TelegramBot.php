@@ -264,12 +264,22 @@ final class TelegramBot
 
             return;
         }
+        if ($revision === 0 && $item->type->hasSlug()) {
+            // Первая версия перевода требует сразу заголовок и адрес: как в createItem — заголовок, затем адрес.
+            $this->ask(['action' => 'field', 'item' => $item->id, 'locale' => $locale, 'revision' => 0, 'path' => 'title'],
+                __('telegram.ask_title', ['locale' => strtoupper($locale)]));
+
+            return;
+        }
         $this->ask(['action' => 'field', 'item' => $item->id, 'locale' => $locale, 'revision' => $revision, 'path' => $path],
             __('telegram.ask_field', ['field' => $this->label($path), 'locale' => strtoupper($locale)])
             ."\n\n".($fields[$path] === '' ? '—' : $fields[$path]));
     }
 
-    /** Новый текст поля → новая версия-черновик (ContentService::saveDraft с ожидаемой ревизией кнопки). */
+    /**
+     * Новый текст поля → новая версия-черновик (ContentService::saveDraft с ожидаемой ревизией кнопки). Первая версия
+     * перевода у типов со slug: заголовок запоминается в контексте, черновик сохраняется после адреса.
+     */
     private function saveField(User $admin, array $state, string $text): void
     {
         $item = ContentItem::find($state['item']);
@@ -278,9 +288,17 @@ final class TelegramBot
 
             return;
         }
+        if ($state['revision'] === 0 && $item->type->hasSlug() && ! isset($state['title'])) {
+            $this->ask(['path' => 'slug', 'title' => $text] + $state, __('telegram.ask_slug', ['locale' => strtoupper($state['locale'])]));
+
+            return;
+        }
         $translation = $item->translations()->where('locale', $state['locale'])->first();
         $form = ContentTypes::toForm($item, $translation?->latestRevision()?->only(['title', 'slug', 'fields', 'seo_title', 'seo_description']));
         Arr::set($form, $state['path'], $text);
+        if (isset($state['title'])) {
+            $form['title'] = $state['title'];
+        }
         try {
             $this->content->saveDraft($admin, $item, $state['locale'], ContentTypes::fromForm($item, $form), $state['revision'], Channel::Telegram);
         } catch (ValidationException $exception) {

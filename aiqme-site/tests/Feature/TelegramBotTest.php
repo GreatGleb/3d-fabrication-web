@@ -463,6 +463,29 @@ class TelegramBotTest extends TestCase
         $this->assertSame('Create a draft first.', $this->last()['text']);
     }
 
+    public function test_first_en_version_of_an_item_with_slug_asks_title_then_url(): void
+    {
+        $this->bind();
+        $this->deliver($this->press('n:project'));
+        $this->deliver($this->message('Naujas projektas'));
+        $this->deliver($this->message('naujas-projektas'));
+        $project = $this->item(ContentType::Project, 'naujas-projektas');
+
+        $this->deliver($this->press($this->fieldButton($project, 'en', 'slug')));
+        $this->assertSame('Send the title (EN).', $this->last()['text']);
+        $this->deliver($this->message('New project'));
+        $this->assertSame('Send the URL (EN): lowercase Latin letters, digits and hyphens.', $this->last()['text']);
+        $this->assertNull($project->fresh()->translation('en'));
+        $this->deliver($this->message('Bad Slug!'));
+        $this->assertStringStartsWith('Invalid value', $this->last()['text']);
+        $this->deliver($this->message('new-project'));
+        $en = $project->fresh()->translation('en');
+        $this->assertSame([1, 'New project', 'new-project'], [$en->revision, $en->latestRevision()->title, $en->latestRevision()->slug]);
+
+        $this->deliver($this->press('p:'.$project->id.':en:1'));
+        $this->get('/en/projects/new-project')->assertOk()->assertSee('New project');
+    }
+
     private function png(): string
     {
         $image = imagecreatetruecolor(40, 20);
