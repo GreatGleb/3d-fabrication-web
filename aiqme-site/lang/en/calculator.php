@@ -128,6 +128,7 @@ return [
         'too_large' => ':name: File exceeds the :mb MB limit',
         'too_complex' => ':name: Too complex for preview; specialist review',
         'invalid' => ':name: Could not read geometry',
+        'busy' => ':name: The server is busy checking other models. Please submit the request again in a minute.',
         'too_many' => ':name: up to :max files per quote.',
         'scale_range' => 'Scale must be between 1 and 1000%.',
         'before' => 'Before',

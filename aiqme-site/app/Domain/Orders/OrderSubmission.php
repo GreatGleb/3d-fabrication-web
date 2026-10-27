@@ -9,6 +9,7 @@ use App\Domain\Pricing\CalculatorSettings;
 use App\Domain\Pricing\EstimateService;
 use App\Domain\Pricing\StlAnalyzer;
 use App\Domain\Pricing\StlException;
+use App\Domain\Pricing\StlModel;
 use App\Models\OrderCharge;
 use App\Models\StlFile;
 use App\Models\StlPart;
@@ -54,7 +55,7 @@ final class OrderSubmission
         foreach ($data['parts'] as $index => $part) {
             $name = Str::limit(basename($part['file']->getClientOriginalName()), 200, '');
             try {
-                $model = $this->analyzer->analyzeFile($part['file']->getRealPath());
+                $model = $this->analyzeOneAtATime($part['file']->getRealPath(), "parts.{$index}.file", $name);
             } catch (StlException $exception) {
                 throw ValidationException::withMessages(["parts.{$index}.file" => __('calculator.js.'.($exception->reason === 'size' ? 'too_large' : 'invalid'), [
                     'name' => $name,
@@ -112,6 +113,30 @@ final class OrderSubmission
      * @param  list<string>  $paths
      * @param  array{lines: list<array{mass_grams: float, cents: int}>, order_fee_cents: int, file_fees_cents: int, total_cents: int, settings: array<string, mixed>}  $estimate
      */
+
+    /**
+     * Разбор STL — строго по одному в контейнере (flock; блокировку снимает и падение процесса): файл в 50 МиБ занимает
+     * до 450 МБ, а несколько разборов сразу превысили бы память контейнера app. Остальные заявки ждут очереди до
+     * aiqme.calculator.analysis_wait_seconds, затем получают просьбу отправить заявку ещё раз.
+     */
+    private function analyzeOneAtATime(string $path, string $field, string $name): StlModel
+    {
+        $lock = fopen(storage_path('framework/stl-analysis.lock'), 'c');
+        try {
+            $deadline = microtime(true) + config('aiqme.calculator.analysis_wait_seconds');
+            while (! flock($lock, LOCK_EX | LOCK_NB)) {
+                if (microtime(true) >= $deadline) {
+                    throw ValidationException::withMessages([$field => __('calculator.js.busy', ['name' => $name])]);
+                }
+                usleep(200_000);
+            }
+
+            return $this->analyzer->analyzeFile($path);
+        } finally {
+            fclose($lock);
+        }
+    }
+
     private function createOrder(array $data, array $parts, array $paths, array $estimate, string $digest, ?User $user): SubmittedOrder
     {
         $cart = Cart::create([

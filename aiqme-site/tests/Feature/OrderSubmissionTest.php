@@ -380,6 +380,25 @@ class OrderSubmissionTest extends TestCase
         $this->nothingWritten();
     }
 
+    public function test_stl_is_analyzed_one_at_a_time_and_busy_queue_asks_to_resubmit(): void
+    {
+        Mail::fake();
+        config(['aiqme.calculator.analysis_wait_seconds' => 0.3]);
+        // Блокировку держит «другой разбор»: flock на отдельном дескрипторе конфликтует и внутри одного процесса.
+        $other = fopen(storage_path('framework/stl-analysis.lock'), 'c');
+        $this->assertTrue(flock($other, LOCK_EX));
+        try {
+            $response = $this->submit($this->payload())->assertUnprocessable();
+            $this->assertSame('bracket.stl: The server is busy checking other models. Please submit the request again in a minute.', $response->json('errors')['parts.0.file'][0]);
+            $this->nothingWritten();
+        } finally {
+            fclose($other);
+        }
+
+        // Блокировка свободна — та же заявка проходит.
+        $this->submit($this->payload())->assertCreated();
+    }
+
     public function test_collection_needs_no_address_and_lt_page_stores_lt_locale(): void
     {
         $confirmed = $this->submitAndConfirm($this->payload(['delivery' => 'pickup', 'country' => '', 'city' => '', 'address' => '', 'postcode' => '']), 'lt');

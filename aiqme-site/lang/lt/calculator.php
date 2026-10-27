@@ -128,6 +128,7 @@ return [
         'too_large' => ':name: Failas viršija :mb MB ribą',
         'too_complex' => ':name: Per sudėtingas peržiūrai; specialisto patikra',
         'invalid' => ':name: Geometrijos nuskaityti nepavyko',
+        'busy' => ':name: Serveris šiuo metu tikrina kitus modelius. Pateikite užklausą dar kartą po minutės.',
         'too_many' => ':name: daugiausia :max failų vienoje užklausoje.',
         'scale_range' => 'Mastelis turi būti nuo 1 iki 1000 %.',
         'before' => 'Buvo',
