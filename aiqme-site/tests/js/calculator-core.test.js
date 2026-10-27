@@ -253,12 +253,13 @@ describe('границы файла (генерируются во времен�
     return bytes;
   }
 
-  test(`binary ${MAX_TRIANGLES} треугольников — принят, ${MAX_TRIANGLES + 1} — отказ`, () => {
+  test(`binary ${MAX_TRIANGLES} треугольников (ровно MAX_BYTES) — принят, ${MAX_TRIANGLES + 1} — отказ по размеру`, () => {
+    assert.equal(84 + MAX_TRIANGLES * 50 <= MAX_BYTES && 84 + (MAX_TRIANGLES + 1) * 50 > MAX_BYTES, true);
     const model = parseStl(roundTrip('max.stl', bipyramid(MAX_TRIANGLES)));
     assert.equal(model.triangles, MAX_TRIANGLES);
     assert.equal(model.closed, true);
     assert.ok(model.volume > 0);
-    rejects(roundTrip('over.stl', bipyramid(MAX_TRIANGLES + 1)), 'triangle_count');
+    rejects(roundTrip('over.stl', bipyramid(MAX_TRIANGLES + 1)), 'size');
   });
 
   test(`файл ровно ${MAX_BYTES} байт (ASCII с пробелами) — принят, на 1 байт больше — отказ`, () => {
@@ -268,7 +269,7 @@ describe('границы файла (генерируются во времен�
       return Buffer.from(cube.slice(0, at) + ' '.repeat(size - cube.length) + cube.slice(at), 'latin1');
     };
     const exact = roundTrip('exact.stl', padded(MAX_BYTES));
-    assert.equal(exact.byteLength, 26214400);
+    assert.equal(exact.byteLength, 52428800);
     close(parseStl(exact).volume, 1000);
     rejects(roundTrip('plus-one.stl', padded(MAX_BYTES + 1)), 'size');
   });

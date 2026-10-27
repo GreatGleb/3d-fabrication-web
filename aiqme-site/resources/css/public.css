@@ -22,3 +22,8 @@
    растягивается таблицей шага 4 (min-width 550 px) — таблица прокручивается в .data-table, как задумано прототипом. */
 #quote [hidden]{display:none}
 .quote-layout>div{min-width:0}
+/* Зона загрузки — label скрытого поля: фокус клавиатуры виден на зоне, наведение — как у .btn.secondary. */
+.upload:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.upload:hover .btn.secondary{background:#edf3fa}
+/* Пометка под ценой: цена может вырасти (поддержки), окончательную подтверждает администратор — заметнее серого .legal-note. */
+.summary-note{font-size:13px;margin:6px 0 22px}

@@ -9,7 +9,7 @@ import { Quote } from '../../resources/js/calculator/quote.js';
 const cube = readFileSync(new URL('../fixtures/stl/cube-10mm-binary.stl', import.meta.url));
 const settings = {
   materials: { PLA: 1.24 }, rate_per_gram: '0.10', order_fee_cents: 500, file_fee_cents: 0,
-  default_infill: 20, max_dimension_mm: 250, max_file_bytes: 25 * 1024 * 1024, max_files: 10,
+  default_infill: 20, max_dimension_mm: 250, max_file_bytes: 50 * 1024 * 1024, max_files: 10,
 };
 
 const response = (status, name) => new Response(status === 200 ? cube : 'Not Found', {

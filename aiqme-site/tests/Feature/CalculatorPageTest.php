@@ -30,11 +30,11 @@ class CalculatorPageTest extends TestCase
         // Чистая БД после migrate: начальные настройки W-11 (D-09, D-24) и лимиты config (§6.4).
         $this->assertSame([
             'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 26214400, 'max_files' => 10,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 52428800, 'max_files' => 10,
         ], json_decode($root->getAttribute('data-settings'), true));
         $texts = json_decode($root->getAttribute('data-texts'), true);
         $this->assertSame('Reading files...', $texts['reading']);
-        $this->assertSame(25, $texts['mb']);
+        $this->assertSame(50, $texts['mb']);
         $this->assertSame('en', $root->getAttribute('data-locale'));
     }
 
@@ -71,7 +71,7 @@ class CalculatorPageTest extends TestCase
 
     public function test_size_limit_label_comes_from_config(): void
     {
-        $this->assertSame('Up to 25 MB per file. STEP files require specialist review.',
+        $this->assertSame('Up to 50 MB per file. STEP files require specialist review.',
             Html::text($this->page('/en/quote')->query('//*[@id="drop-zone"]/p')->item(0)));
 
         config(['aiqme.calculator.max_file_bytes' => 10 * 1024 * 1024]);
@@ -101,8 +101,9 @@ class CalculatorPageTest extends TestCase
         $en = $this->page('/en/quote');
         $this->assertSame(['Part', 'Quantity', 'Estimate'], Html::texts($en, '//*[@data-step-panel="3"]//th'));
         $this->assertSame(['Estimated total'], Html::texts($en, '//aside//div[contains(@class, "total")]/span[1]'));
-        $this->assertSame('Preliminary estimate. Delivery and the final price are confirmed by the administrator.',
-            Html::text($en->query('//aside/p[@class="legal-note"]')->item(0)));
+        $this->assertSame('Preliminary estimate. If the model needs support material for printing, the price may increase. '
+            .'The administrator confirms the final price and delivery after reviewing your order.',
+            Html::text($en->query('//aside/div[contains(@class, "summary-note")]')->item(0)));
         $this->assertSame(1, $en->query('//form[@id="checkout-form"]//input[@name="vat_code"]')->length);
         $this->assertSame(['Delivery throughout the EU', 'Collection'], Html::texts($en, '//select[@name="delivery"]/option'));
         // Отправка заявки включена (W-12): кнопка доступна, надписи «недоступно» нет.

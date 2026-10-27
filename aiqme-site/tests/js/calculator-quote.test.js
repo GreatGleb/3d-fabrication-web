@@ -14,7 +14,7 @@ const file = (name, content = bytes(name)) => new File([content], name);
 // Начальные настройки калькулятора (D-09, D-24) и лимиты config('aiqme.calculator') (§6.4).
 const settings = {
   materials: { PLA: 1.24, PETG: 1.27, ABS: 1.04 }, rate_per_gram: '0.10', order_fee_cents: 500, file_fee_cents: 0,
-  default_infill: 20, max_dimension_mm: 250, max_file_bytes: 25 * 1024 * 1024, max_files: 10,
+  default_infill: 20, max_dimension_mm: 250, max_file_bytes: 50 * 1024 * 1024, max_files: 10,
 };
 const texts = { quantity: 'Quantity', message_intro: 'Please help review these files:', message_more: 'Models not listed: :count.' };
 
@@ -94,11 +94,8 @@ describe('добавление моделей', () => {
     assert.equal(parsed, 0, 'до разбора не дошло');
     assert.equal((await quote.addFile(file('truncated-binary.stl'))).error, 'invalid');
     const tooMany = new ArrayBuffer(84);
-    new DataView(tooMany).setUint32(80, 500001, true);
+    new DataView(tooMany).setUint32(80, 1000001, true);
     assert.equal((await quote.addBuffer('huge.stl', tooMany)).error, 'invalid', 'размер не сходится со счётчиком — не binary');
-    const complex = new ArrayBuffer(84 + 500001 * 50);
-    new DataView(complex).setUint32(80, 500001, true);
-    assert.equal((await quote.addBuffer('complex.stl', complex)).error, 'too_complex', 'binary больше 500 000 треугольников');
     assert.deepEqual(quote.models, []);
     assert.equal(quote.active, -1);
   });

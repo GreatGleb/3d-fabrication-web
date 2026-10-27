@@ -4,7 +4,7 @@
 # только от адресов TRUSTED_PROXIES (шлюз сети проекта aiqme, §6.6).
 aiqme.com {
     request_body {
-        max_size 260MB
+        max_size 510MB
     }
     reverse_proxy 127.0.0.1:8080
 }

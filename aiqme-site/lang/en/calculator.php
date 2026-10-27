@@ -89,7 +89,7 @@ return [
         'eyebrow' => 'PRELIMINARY ESTIMATE',
         'title' => 'Order summary',
         'total' => 'Estimated total',
-        'note' => 'Preliminary estimate. Delivery and the final price are confirmed by the administrator.',
+        'note' => 'Preliminary estimate. If the model needs support material for printing, the price may increase. The administrator confirms the final price and delivery after reviewing your order.',
     ],
     // Order submission (W-12): neutral texts (no prototype equivalent), listed in aiqme-site/docs/progress.md.
     'submit' => [

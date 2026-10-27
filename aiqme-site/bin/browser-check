@@ -1477,7 +1477,7 @@ def calculator_files(directory):
         'bracket.step': b'ISO-10303-21;\n',
         'shell.obj': b'v 0 0 0\n',
         'photo.png': b'\x89PNG\r\n\x1a\n',
-        'too-big.stl': b'\0' * (25 * 1024 * 1024 + 1),
+        'too-big.stl': b'\0' * (50 * 1024 * 1024 + 1),
         'large.stl': b'\0' * 80 + (count * 12).to_bytes(4, 'little') + triangles,
         'large-grid.stl': b'\0' * 80 + (count * 12).to_bytes(4, 'little') + grid,
     }
@@ -1957,7 +1957,7 @@ def check_prod_image(report, services):
               'echo json_encode(array_intersect_key(gd_info(), array_flip(["JPEG Support", "WebP Support", "FreeType Support"])));']).stdout
     report.check(json.loads(gd) == {'JPEG Support': True, 'WebP Support': True, 'FreeType Support': True}, f'образ: gd_info {gd}')
     info = run(['docker', 'run', '--rm', image, 'php', '-i']).stdout
-    for key, value in (('upload_max_filesize', '25M'), ('post_max_size', '260M'), ('max_file_uploads', '20'), ('memory_limit', '512M')):
+    for key, value in (('upload_max_filesize', '50M'), ('post_max_size', '510M'), ('max_file_uploads', '20'), ('memory_limit', '512M')):
         report.check(re.search(rf'^{key} => {value} => {value}$', info, re.M) is not None, f'образ: php -i {key} не {value}')
     fpm = run(['docker', 'run', '--rm', image, 'php-fpm', '-i']).stdout
     report.check(re.search(r'^max_execution_time => 120 => 120$', fpm, re.M) is not None, 'образ: PHP-FPM max_execution_time не 120')

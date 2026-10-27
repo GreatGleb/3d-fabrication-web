@@ -14,9 +14,10 @@ final class StlAnalyzer
     /** Версия анализатора в результате анализа файла заявки (stl_files.analysis, §2.5). */
     public const VERSION = 1;
 
-    public const MAX_BYTES = 25 * 1024 * 1024;
+    public const MAX_BYTES = 50 * 1024 * 1024;
 
-    public const MAX_TRIANGLES = 500000;
+    /** Столько треугольников помещается в binary MAX_BYTES (84 + 50 × n): предел файла задаёт размер. */
+    public const MAX_TRIANGLES = 1048574;
 
     public const MM_PER_UNIT = ['mm' => 1, 'cm' => 10, 'in' => 25.4];
 
@@ -62,6 +63,7 @@ final class StlAnalyzer
         } else {
             $positions = $this->parseAscii($bytes);
         }
+        unset($bytes); // файл до 50 МиБ больше не нужен: пик памяти — массив координат и проверка рёбер
 
         $min = [INF, INF, INF];
         $max = [-INF, -INF, -INF];
@@ -200,7 +202,7 @@ final class StlAnalyzer
 
         $values = [];
         $token = $next();
-        // Лимит треугольников не нужен: грань ASCII не короче 86 байт, в MAX_BYTES помещается меньше 305 000.
+        // Лимит треугольников не нужен: грань ASCII не короче 86 байт, в MAX_BYTES помещается меньше 610 000.
         while ($token === 'facet') {
             $expect('normal');
             $number();
@@ -240,21 +242,22 @@ final class StlAnalyzer
      */
     private function isClosed(array $positions): bool
     {
+        // Номера вершин и счёт рёбер — за один проход, без массива номеров (файл в 50 МиБ — до 3,1 млн вершин).
+        // Множитель ключа ребра — число вершин с повторами, не меньше числа различных.
+        $base = intdiv(count($positions), 3);
         $vertexIds = [];
-        $ids = [];
-        for ($i = 0, $n = count($positions); $i < $n; $i += 3) {
-            $key = pack('g3', $positions[$i], $positions[$i + 1], $positions[$i + 2]);
-            $ids[] = $vertexIds[$key] ??= count($vertexIds);
-        }
-        $base = count($vertexIds);
-        unset($vertexIds);
         $edges = [];
-        for ($t = 0, $n = count($ids); $t < $n; $t += 3) {
-            foreach ([[$ids[$t], $ids[$t + 1]], [$ids[$t + 1], $ids[$t + 2]], [$ids[$t + 2], $ids[$t]]] as [$p, $q]) {
+        for ($i = 0, $n = count($positions); $i < $n; $i += 9) {
+            $triangle = [];
+            for ($v = $i; $v < $i + 9; $v += 3) {
+                $triangle[] = $vertexIds[pack('g3', $positions[$v], $positions[$v + 1], $positions[$v + 2])] ??= count($vertexIds);
+            }
+            foreach ([[$triangle[0], $triangle[1]], [$triangle[1], $triangle[2]], [$triangle[2], $triangle[0]]] as [$p, $q]) {
                 $key = min($p, $q) * $base + max($p, $q);
                 $edges[$key] = ($edges[$key] ?? 0) + 1;
             }
         }
+        unset($vertexIds);
         foreach ($edges as $count) {
             if ($count !== 2) {
                 return false;

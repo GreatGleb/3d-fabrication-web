@@ -8,8 +8,8 @@ use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 /**
- * Границы файла StlAnalyzer (W-11 done[1], §6.4, §9.2): binary 500 000 треугольников принимается в подпроцессе
- * php -d memory_limit=512M (значение §6.4 и W-20), 500 001 — отказ; файл ровно 26 214 400 байт (ASCII с пробелами) —
+ * Границы файла StlAnalyzer (W-11 done[1], §6.4, §9.2): binary 1 048 574 треугольника (ровно 50 МиБ) принимается в подпроцессе
+ * php -d memory_limit=768M (значение §6.4 и W-20), 1 048 575 — отказ по размеру; файл ровно 52 428 800 байт (ASCII с пробелами) —
  * принят, на 1 байт больше — отказ. Файлы генерируются во временный каталог.
  */
 class StlAnalyzerLimitsTest extends TestCase
@@ -56,38 +56,38 @@ class StlAnalyzerLimitsTest extends TestCase
         return $path;
     }
 
-    public function test_500000_binary_triangles_are_analyzed_with_512m_memory_limit(): void
+    public function test_max_binary_triangles_are_analyzed_with_768m_memory_limit(): void
     {
         $path = $this->tetrahedra('max.stl', StlAnalyzer::MAX_TRIANGLES);
         $script = 'require "vendor/autoload.php"; $start = microtime(true);'
             .' $model = (new App\Domain\Pricing\StlAnalyzer)->analyzeFile($argv[1]);'
             .' echo json_encode(["triangles" => $model->triangles, "volume" => $model->volume, "closed" => $model->closed,'
             .' "peak" => memory_get_peak_usage(true), "limit" => ini_get("memory_limit"), "seconds" => microtime(true) - $start]);';
-        $process = new Process([PHP_BINARY, '-d', 'memory_limit=512M', '-r', $script, '--', $path], base_path(), null, null, 120);
+        $process = new Process([PHP_BINARY, '-d', 'memory_limit=768M', '-r', $script, '--', $path], base_path(), null, null, 120);
         $process->run();
         $this->assertTrue($process->isSuccessful(), $process->getErrorOutput().$process->getOutput());
         $result = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
 
-        fwrite(STDERR, sprintf("\nStlAnalyzer 500 000 треугольников: пиковая память %.1f МиБ, %.2f с\n", $result['peak'] / 1048576, $result['seconds']));
-        $this->assertSame('512M', $result['limit']);
-        $this->assertSame(500000, $result['triangles']);
+        fwrite(STDERR, sprintf("\nStlAnalyzer 1 048 574 треугольника: пиковая память %.1f МиБ, %.2f с\n", $result['peak'] / 1048576, $result['seconds']));
+        $this->assertSame('768M', $result['limit']);
+        $this->assertSame(StlAnalyzer::MAX_TRIANGLES, $result['triangles']);
         $this->assertTrue($result['closed']);
-        // 125 000 тетраэдров с рёбрами 2: объём 125 000 × 8 / 6.
-        $this->assertEqualsWithDelta(125000 * 8 / 6, $result['volume'], 1e-6 * $result['volume']);
+        // 262 143 тетраэдра с рёбрами 2: объём 262 143 × 8 / 6; два лишних одинаковых треугольника замыкают друг друга, объёма не дают.
+        $this->assertEqualsWithDelta(262143 * 8 / 6, $result['volume'], 1e-6 * $result['volume']);
     }
 
-    public function test_500001_binary_triangles_are_rejected(): void
+    public function test_binary_over_max_triangles_is_rejected_by_size(): void
     {
         $path = $this->tetrahedra('over.stl', StlAnalyzer::MAX_TRIANGLES + 1);
         try {
             (new StlAnalyzer)->analyzeFile($path);
-            $this->fail('принят файл на 500 001 треугольник');
+            $this->fail('принят файл на 1 048 575 треугольников');
         } catch (StlException $exception) {
-            $this->assertSame('triangle_count', $exception->reason);
+            $this->assertSame('size', $exception->reason);
         }
     }
 
-    public function test_file_of_exactly_26214400_bytes_is_accepted_and_one_byte_more_is_rejected(): void
+    public function test_file_of_exactly_52428800_bytes_is_accepted_and_one_byte_more_is_rejected(): void
     {
         $cube = (string) file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'));
         $at = strpos($cube, 'endsolid');
@@ -97,11 +97,11 @@ class StlAnalyzerLimitsTest extends TestCase
             return $path;
         };
 
-        $exact = $padded(26214400);
-        $this->assertSame(26214400, filesize($exact));
+        $exact = $padded(52428800);
+        $this->assertSame(52428800, filesize($exact));
         $this->assertEqualsWithDelta(1000, (new StlAnalyzer)->analyzeFile($exact)->volume, 1e-9);
         try {
-            (new StlAnalyzer)->analyzeFile($padded(26214401));
+            (new StlAnalyzer)->analyzeFile($padded(52428801));
             $this->fail('принят файл на 1 байт больше лимита');
         } catch (StlException $exception) {
             $this->assertSame('size', $exception->reason);

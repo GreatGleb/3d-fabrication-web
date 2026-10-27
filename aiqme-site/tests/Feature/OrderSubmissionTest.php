@@ -337,16 +337,16 @@ class OrderSubmissionTest extends TestCase
         // upload_max_filesize: PHP отдаёт файл без содержимого с ошибкой загрузки.
         $tooBig = new UploadedFile(base_path('tests/fixtures/stl/cube-10mm-binary.stl'), 'huge.stl', null, UPLOAD_ERR_INI_SIZE, true);
         $this->submit($this->payload(['parts' => [['file' => $tooBig, 'unit' => 'mm', 'scale' => '100', 'quantity' => '1']]]))
-            ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.file' => ['File exceeds the 25 MB limit']]);
+            ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.file' => ['File exceeds the 50 MB limit']]);
         $this->submit($this->payload(['parts' => [['file' => $tooBig, 'unit' => 'mm', 'scale' => '100', 'quantity' => '1']]]), 'lt')
-            ->assertJsonPath('errors', ['parts.0.file' => ['Failas viršija 25 MB ribą']]);
+            ->assertJsonPath('errors', ['parts.0.file' => ['Failas viršija 50 MB ribą']]);
 
         // post_max_size: тело отброшено целиком — 413 с понятным сообщением на языке адреса.
-        $tooLarge = (string) (261 * 1024 * 1024);
+        $tooLarge = (string) (511 * 1024 * 1024);
         $this->call('POST', '/en/quote', [], [], [], ['CONTENT_LENGTH' => $tooLarge, 'HTTP_ACCEPT' => 'application/json'])
-            ->assertStatus(413)->assertExactJson(['message' => 'The files are too large to send: up to 25 MB per file.']);
+            ->assertStatus(413)->assertExactJson(['message' => 'The files are too large to send: up to 50 MB per file.']);
         $this->call('POST', '/lt/kalkuliatorius', [], [], [], ['CONTENT_LENGTH' => $tooLarge, 'HTTP_ACCEPT' => 'application/json'])
-            ->assertStatus(413)->assertExactJson(['message' => 'Failai per dideli išsiųsti: iki 25 MB vienam failui.']);
+            ->assertStatus(413)->assertExactJson(['message' => 'Failai per dideli išsiųsti: iki 50 MB vienam failui.']);
 
         $this->nothingWritten();
     }

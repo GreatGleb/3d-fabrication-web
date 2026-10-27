@@ -23,12 +23,14 @@
                 <section class="panel" data-step-panel="0">
                     <h2>{{ __('calculator.files.title') }}</h2>
                     <p>{{ __('calculator.files.intro') }}</p>
-                    <div class="upload" id="drop-zone">
+                    {{-- Вся зона — label поля выбора: системная кнопка «Browse… No files selected» скрыта, вместо неё .btn сайта. --}}
+                    <label class="upload" id="drop-zone">
                         <x-line-icon name="upload" />
                         <strong>{{ __('calculator.files.drop') }}</strong>
-                        <input type="file" id="model-upload" multiple accept=".stl,.step,.stp,.obj" aria-label="{{ __('calculator.files.select') }}">
+                        <input type="file" id="model-upload" class="sr-only" multiple accept=".stl,.step,.stp,.obj" aria-label="{{ __('calculator.files.select') }}">
+                        <span class="btn secondary small" aria-hidden="true">{{ __('calculator.files.select') }}</span>
                         <p>{{ __('calculator.files.limit', ['mb' => $maxMb]) }}</p>
-                    </div>
+                    </label>
                     <div id="upload-progress" role="status"></div>
                     <div data-files></div>
                     <div data-model hidden>
@@ -140,7 +142,7 @@
                 <h3>{{ __('calculator.summary.title') }}</h3>
                 <div data-summary-rows></div>
                 <div class="summary-row total"><span>{{ __('calculator.summary.total') }}</span><span data-total></span></div>
-                <p class="legal-note">{{ __('calculator.summary.note') }}</p>
+                <div class="notice summary-note">{{ __('calculator.summary.note') }}</div>
                 <div class="help-box">
                     <h3>{{ __('calculator.help.title') }}</h3>
                     <p>{{ __('calculator.help.text') }}</p>

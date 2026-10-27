@@ -2,8 +2,8 @@
 // Без DOM и без пакета three; по образцу legacy-landing/site/assets/calculator.js.
 // PHP-ядро W-11 повторяет те же шаги и тот же порядок операций (паритет на корпусе tests/fixtures/stl/).
 
-export const MAX_BYTES = 25 * 1024 * 1024;
-export const MAX_TRIANGLES = 500000;
+export const MAX_BYTES = 50 * 1024 * 1024;
+export const MAX_TRIANGLES = 1048574; // столько помещается в binary MAX_BYTES (84 + 50 × n): предел файла задаёт размер
 export const MM_PER_UNIT = { mm: 1, cm: 10, in: 25.4 };
 export const WARNING_OPEN_MESH = 'open_mesh';
 export const WARNING_EXCEEDS_BUILD_SIZE = 'exceeds_build_size';
@@ -53,7 +53,7 @@ function parseAscii(buffer) {
     if (token === undefined || !NUMBER.test(token)) throw new StlError('number');
     return Number(token);
   };
-  // Лимит треугольников здесь не нужен: грань ASCII не короче 86 байт, в MAX_BYTES помещается меньше 305 000.
+  // Лимит треугольников здесь не нужен: грань ASCII не короче 86 байт, в MAX_BYTES помещается меньше 610 000.
   while (tokens[i] === 'facet') {
     i++;
     expect('normal');

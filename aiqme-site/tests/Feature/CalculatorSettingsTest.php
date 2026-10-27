@@ -48,7 +48,7 @@ class CalculatorSettingsTest extends TestCase
     {
         $expected = [
             'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 26214400, 'max_files' => 10,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
         $this->assertSame($expected, $this->pageSettings('/en/quote'));
         $this->assertSame($expected, $this->pageSettings('/lt/kalkuliatorius'));
@@ -75,7 +75,7 @@ class CalculatorSettingsTest extends TestCase
             foreach ($texts as $text) {
                 $this->assertStringContainsString($text, $html, $path);
             }
-            foreach (['FDM · ba', 'SLA', 'Metal', 'discount', 'nuolaida', 'Illustrative', 'demonstracinės', 'Demo', 'max_file', '26214400'] as $phrase) {
+            foreach (['FDM · ba', 'SLA', 'Metal', 'discount', 'nuolaida', 'Illustrative', 'demonstracinės', 'Demo', 'max_file', '52428800'] as $phrase) {
                 $this->assertStringNotContainsString($phrase, $html, $path);
             }
         }
@@ -112,7 +112,7 @@ class CalculatorSettingsTest extends TestCase
         config(['aiqme.calculator.rate_per_gram' => '9.99', 'aiqme.calculator.default_infill' => 77, 'aiqme.calculator.max_dimension_mm' => 5]);
         $expected = [
             'materials' => ['PLA' => 1.3, 'PETG' => 1.27, 'TPU' => 1.21], 'rate_per_gram' => '0.125', 'order_fee_cents' => 750,
-            'file_fee_cents' => 105, 'default_infill' => 30, 'max_dimension_mm' => 300, 'max_file_bytes' => 26214400, 'max_files' => 10,
+            'file_fee_cents' => 105, 'default_infill' => 30, 'max_dimension_mm' => 300, 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
         $this->assertSame($expected, array_intersect_key($this->pageSettings('/en/quote'), $expected));
         $lt = $this->pageSettings('/lt/kalkuliatorius');

@@ -66,7 +66,7 @@ return [
     | оборудования — настройки админки (таблица settings, W-11).
     */
     'calculator' => [
-        'max_file_bytes' => 25 * 1024 * 1024,
+        'max_file_bytes' => 50 * 1024 * 1024,
         'max_files' => 10,
     ],
 

@@ -89,7 +89,7 @@ return [
         'eyebrow' => 'PRELIMINARI SĄMATA',
         'title' => 'Užsakymo suvestinė',
         'total' => 'Preliminari suma',
-        'note' => 'Preliminari sąmata. Pristatymą ir galutinę kainą patvirtina administratorius.',
+        'note' => 'Preliminari sąmata. Jei spausdinant modeliui reikia atraminės medžiagos, kaina gali padidėti. Galutinę kainą ir pristatymą administratorius patvirtina peržiūrėjęs užsakymą.',
     ],
     // Užsakymo pateikimas (W-12): neutralūs tekstai (prototipe jų nėra), išvardyti aiqme-site/docs/progress.md.
     'submit' => [

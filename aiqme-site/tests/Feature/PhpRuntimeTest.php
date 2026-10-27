@@ -12,8 +12,8 @@ use Tests\TestCase;
 class PhpRuntimeTest extends TestCase
 {
     private const LIMITS = [
-        'upload_max_filesize' => '25M',
-        'post_max_size' => '260M',
+        'upload_max_filesize' => '50M',
+        'post_max_size' => '510M',
         'max_file_uploads' => '20',
         'memory_limit' => '512M',
         'max_execution_time' => '120',
@@ -45,7 +45,7 @@ class PhpRuntimeTest extends TestCase
         // Дочерний /usr/bin/php, запущенный из bin/php, получает тот же PHP_INI_SCAN_DIR и LD_LIBRARY_PATH.
         $child = $this->run_(['-r', 'passthru(escapeshellarg(PHP_BINARY)." -r ".escapeshellarg("echo ini_get(\"post_max_size\"), \" \", ini_get(\"upload_max_filesize\"), \" \", extension_loaded(\"pdo_pgsql\") ? \"pgsql\" : \"-\";"));']);
 
-        $this->assertSame('260M 25M pgsql', trim($child));
+        $this->assertSame('510M 50M pgsql', trim($child));
     }
 
     public function test_web_server_sapi_applies_all_limits(): void

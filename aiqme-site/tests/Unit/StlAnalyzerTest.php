@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * StlAnalyzer (W-11, §3.1, §9.2 «Ядро STL»): те же случаи, что tests/js/calculator-core.test.js для ядра JS, на корпусе
- * tests/fixtures/stl/. Паритет чисел с JS — tests/Feature/StlParityTest.php, границы 500 000 треугольников и 25 МиБ —
+ * tests/fixtures/stl/. Паритет чисел с JS — tests/Feature/StlParityTest.php, границы 1 000 000 треугольников и 50 МиБ —
  * tests/Feature/StlAnalyzerLimitsTest.php.
  */
 class StlAnalyzerTest extends TestCase
@@ -200,13 +200,13 @@ class StlAnalyzerTest extends TestCase
             $this->assertRejected('size', fn () => $this->analyzer->analyzeFile($path));
             $this->assertLessThan(1024 * 1024, memory_get_peak_usage() - $before);
 
-            // Счётчик binary 500 001 при длине 84 + 50·N: отказ по заголовку, тело не читается.
+            // Счётчик binary MAX_TRIANGLES + 1 при длине 84 + 50·N больше MAX_BYTES: тоже отказ по размеру, тело не читается.
             $handle = fopen($path, 'w');
             fwrite($handle, str_repeat("\0", 80).pack('V', StlAnalyzer::MAX_TRIANGLES + 1));
             ftruncate($handle, 84 + (StlAnalyzer::MAX_TRIANGLES + 1) * 50);
             fclose($handle);
             memory_reset_peak_usage();
-            $this->assertRejected('triangle_count', fn () => $this->analyzer->analyzeFile($path));
+            $this->assertRejected('size', fn () => $this->analyzer->analyzeFile($path));
             $this->assertLessThan(1024 * 1024, memory_get_peak_usage() - $before);
         } finally {
             @unlink($path);
