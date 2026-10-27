@@ -71,11 +71,11 @@ class CalculatorPageTest extends TestCase
 
     public function test_size_limit_label_comes_from_config(): void
     {
-        $this->assertSame('Up to 50 MB per file. STEP files require specialist review.',
+        $this->assertSame('Up to 50 MB per file. STL files are priced instantly; STEP and OBJ files are priced by a specialist.',
             Html::text($this->page('/en/quote')->query('//*[@id="drop-zone"]/p')->item(0)));
 
         config(['aiqme.calculator.max_file_bytes' => 10 * 1024 * 1024]);
-        $this->assertSame('Iki 10 MB vienam failui. STEP failui reikalinga specialisto patikra.',
+        $this->assertSame('Iki 10 MB vienam failui. STL failų kaina apskaičiuojama iš karto, STEP ir OBJ failus įvertina specialistas.',
             Html::text($this->page('/lt/kalkuliatorius')->query('//*[@id="drop-zone"]/p')->item(0)));
     }
 

@@ -15,7 +15,7 @@ return [
         'intro' => 'STL, STEP and OBJ. You can select several files.',
         'drop' => 'Drop files here or select files',
         'select' => 'Select 3D models',
-        'limit' => 'Up to :mb MB per file. STEP files require specialist review.',
+        'limit' => 'Up to :mb MB per file. STL files are priced instantly; STEP and OBJ files are priced by a specialist.',
         'units' => 'File measurement units',
         'inches' => 'inches',
         'scale' => 'Scale, %',

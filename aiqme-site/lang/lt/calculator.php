@@ -15,7 +15,7 @@ return [
         'intro' => 'STL, STEP ir OBJ. Galite pasirinkti kelis failus.',
         'drop' => 'Nutempkite failus čia arba pasirinkite',
         'select' => 'Pasirinkti 3D modelius',
-        'limit' => 'Iki :mb MB vienam failui. STEP failui reikalinga specialisto patikra.',
+        'limit' => 'Iki :mb MB vienam failui. STL failų kaina apskaičiuojama iš karto, STEP ir OBJ failus įvertina specialistas.',
         'units' => 'Failo matavimo vienetai',
         'inches' => 'coliai',
         'scale' => 'Mastelis, %',
