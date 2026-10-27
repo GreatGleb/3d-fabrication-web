@@ -25,7 +25,8 @@
 |---|---|
 | Защита хоста (D-01) | SSH только по ключу (`passwordauthentication no`, `kbdinteractiveauthentication no`, `permitrootlogin without-password`); UFW: deny incoming, разрешены 22, 80, 443; `unattended-upgrades` активен (`Unattended-Upgrade "1"`) |
 | Программы | Docker 29.9.2, Compose v5.6.1, Caddy 2.11.7, Python 3.12.3 |
-| DNS aiqme.com «до» | NS Hostinger (`dns-parking.com`); `@` и `www` → `2.57.91.91` (Hostinger); CAA нет; почтовые записи — см. D-15 |
+| DNS aiqme.com «до» | NS Hostinger (`dns-parking.com`); `A @` → `2.57.91.91` (парковка Hostinger, TTL 50), `CNAME www` → `aiqme.com` (TTL 300); AAAA и CAA нет; почтовые записи — см. D-15. Экспорт зоны 27.10 хранится у пользователя (вне репозитория) |
+| Переключение 27.10 | изменена только `A @` → `187.126.17.111`; Caddy: `aiqme.com` — заглушка 503 с `Retry-After` до рабочей установки, `www` → 301 на `aiqme.com`; сертификаты Let's Encrypt для обоих имён; MX и SPF снаружи не изменились. Откат — вернуть `2.57.91.91` |
 
 ## Staging (этап 3)
 
@@ -40,13 +41,15 @@
 | `migrate --force`, `aiqme:bootstrap` | все миграции DONE; базовые данные Lunar готовы |
 | `TRUSTED_PROXIES` | шлюз `aiqme-prod_default` — `172.18.0.1`, `config:show` подтверждает |
 | Сидер, администратор | `PrototypeContentSeeder` выполнен; временный администратор |
+| Почта (D-15) | ящик `noreply@aiqme.com` в Hostinger Email; `MAIL_MAILER=smtp`, `smtp.hostinger.com:465`, `smtps`, From = `noreply@aiqme.com`; сброс пароля на внешний gmail — письмо доставлено 27.10. Уведомления о формах и заявках — на `info@aiqme.com` (адрес в `config/aiqme.php`, не в `.env`), Reply-To — клиент; на staging тестовые заявки тоже уходят на info@ |
+| Google Таблица | тестовая таблица и сервисный аккаунт W-22; `aiqme:sheets-rebuild` перестроил листы по БД staging (строки W-22 из локальной БД исчезли — ожидаемо); контактная форма → новые строки в листах таблицы с сервера |
+| Telegram | тестовый бот W-22; `TELEGRAM_WEBHOOK_SECRET` — `openssl rand -hex 32` на сервере; `aiqme:telegram-webhook`; бот отвечает через webhook (опроса на сервере нет); черновик проекта → Published LT → `/lt/projektai/hilisao` 200, EN 404 |
 | Снаружи | `/up` 200, `/` → 301 `/lt`, `/lt/` и `/en/` 200, CSP и `X-Robots-Tag: noindex` есть, `/.env` 403, `/lunar` 404 |
 
 ## Ждёт проверки
 
 - Stripe test-webhook (`2025-02-24.acacia`, три события): оплата, отказ, **возврат** и **отмена до webhook** (из W-22) — ждёт приглашения в Stripe.
-- Почта SMTP — ждёт выбора ящика и доступа к Hostinger; проверка — сброс пароля на внешний адрес, SPF/DKIM/DMARC PASS.
-- Google Таблица и Telegram webhook — на тестовых аккаунтах пользователя, затем на аккаунтах заказчика.
+- Google Таблица и Telegram — на аккаунтах заказчика (рабочая установка).
 - Откат кода (§8.3), рабочая установка на aiqme.com, HSTS, live-ключи, `/up` извне, контрольный сценарий.
 - Бэкап, внешняя копия и восстановление — до приёма реальных заказов.
 
