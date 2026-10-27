@@ -109,12 +109,6 @@ final class OrderSubmission
     }
 
     /**
-     * @param  list<array<string, mixed>>  $parts
-     * @param  list<string>  $paths
-     * @param  array{lines: list<array{mass_grams: float, cents: int}>, order_fee_cents: int, file_fees_cents: int, total_cents: int, settings: array<string, mixed>}  $estimate
-     */
-
-    /**
      * Разбор STL — строго по одному в контейнере (flock; блокировку снимает и падение процесса): файл в 50 МиБ занимает
      * до 450 МБ, а несколько разборов сразу превысили бы память контейнера app. Остальные заявки ждут очереди до
      * aiqme.calculator.analysis_wait_seconds, затем получают просьбу отправить заявку ещё раз.
@@ -137,6 +131,11 @@ final class OrderSubmission
         }
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $parts
+     * @param  list<string>  $paths
+     * @param  array{lines: list<array{mass_grams: float, cents: int}>, order_fee_cents: int, file_fees_cents: int, total_cents: int, settings: array<string, mixed>}  $estimate
+     */
     private function createOrder(array $data, array $parts, array $paths, array $estimate, string $digest, ?User $user): SubmittedOrder
     {
         $cart = Cart::create([
