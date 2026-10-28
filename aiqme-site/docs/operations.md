@@ -48,6 +48,9 @@ $C restart worker scheduler
   проверка: `$A config:show aiqme.trusted_proxies`.
 - `.env` смонтирован одним файлом: редакторы и `sed -i` заменяют файл, и работающий контейнер видит старый. После правки
   `.env` — `$C restart app worker scheduler`, затем `$A optimize` (так проверено локально).
+- Google Таблица: сайт не создаёт листы — в таблице заранее нужны листы `Orders`, `Requests`, `Contacts`, `Payments`,
+  `Events` (`SheetsProjector::SHEETS`), доступ Editor у сервисного аккаунта; затем `$A aiqme:sheets-rebuild` пишет
+  заголовки и строки. Без листа — `failed_jobs` «Unable to parse range: Orders!A:Q».
 - Общий прокси (Caddy на хосте) направляет домен на `127.0.0.1:<AIQME_WEB_PORT>` — `docker/proxy/Caddyfile.example`.
   HSTS — пункт runbook W-23 после подключения домена.
 
