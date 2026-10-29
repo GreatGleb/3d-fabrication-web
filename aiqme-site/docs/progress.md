@@ -3148,3 +3148,51 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Возврат из Stripe Dashboard (`charge.refunded`) и отмена запроса до прихода webhook («уже оплачено») — отложены
   пользователем; проверить на рабочей среде (W-23).
 - Почта через реальный SMTP — нет доступа (D-15); проверить на рабочей среде (W-23).
+
+## Правки 28.10, E-01 (П4): убрать подпись над названием услуги — выполнено (2026-10-29/30, Claude Code, ночной прогон)
+
+### Сделано
+
+- `resources/views/public/partials/service-features.blade.php`: удалена строка `div.eyebrow` («● NN / label») внутри
+  `.service-feature-copy`, комментарий шаблона обновлён. `span.service-feature-number` в углу медиа и заголовок раздела не
+  менялись. CSS прототипа не менялся.
+- `app/Domain/Content/ContentTypes.php`: поле `label` осталось в `SERVICE_FIELDS` (сидер и подписи админки не менялись),
+  добавлен комментарий «не выводится на сайте с 28.10; оставлено для совместимости черновиков».
+- `tests/Feature/PublicPagesTest.php`: прежний ассерт `['01 / AIQME', …]` удалён; новый тест
+  `test_service_cards_start_with_the_title_and_keep_the_number_in_the_media_corner` на `/en`, `/lt`, `/lt/paslaugos`:
+  0 узлов `//div[@class="service-feature-copy"]/div[@class="eyebrow"]`, номера `01`…`06` в `span.service-feature-number`,
+  первый элемент каждого `.service-feature-copy` — `h3`; на `/lt` и `/lt/paslaugos` строки
+  `VIENETINIAI GAMINIAI, PROTOTIPAI IR SERIJINĖ GAMYBA` в HTML нет.
+- `bin/browser-check`: в `TEXT_EXCLUDED_BLOCKS` добавлено правило `('div', {'eyebrow'}, None, ('div', {'service-feature-copy'}))`
+  с комментарием.
+- `tests/fixtures/marker-allowlist.json`: удалены 4 записи заглавной подписи (`/lt`, `/lt/paslaugos`, `/en`, `/en/services`);
+  записи пункта списка «Vienetiniai gaminiai, prototipai ir serijinė gamyba.» / «One-off parts, prototypes and series
+  production.» оставлены (42 → 38 записей).
+
+### Проверка, что тесты ловят ошибку
+
+- Новые ассерты до правки шаблона падали (проверено по одному, временно убирая предыдущий): eyebrow — «actual size 6
+  matches expected size 0» на `/en`; первый элемент — `div` вместо `h3` ×6 на `/en`; строка
+  `VIENETINIAI GAMINIAI, …` — найдена в HTML `/lt`. После правки шаблона — зелёные.
+- `bin/browser-check /en` с временно убранным новым правилом `TEXT_EXCLUDED_BLOCKS` → FAIL (6): «нет фразы эталона
+  «01 / AIQME»» … «06 / AIQME». С правилом — OK. Файл восстановлен.
+
+### Команды
+
+- `bin/php artisan test --compact tests/Feature/PublicPagesTest.php tests/Feature/AdminContentEditorTest.php
+  tests/Feature/AdminEditorsTest.php` → passed, 34 теста (Admin* — без правок).
+- `bin/php vendor/bin/pint --dirty --format agent` → passed.
+- `bin/browser-check /lt /en /lt/paslaugos /en/services` → OK (1295 проверок): check_text и маркеры D-21 зелёные.
+- `bin/check` → **OK** (exit 0): PHPUnit 661 passed, Vite OK.
+- Полный `bin/browser-check` → **OK во всех 5 частях**, 15 670 проверок (целиком ~20 мин, а сессия ждёт команду не дольше
+  10 мин, поэтому части, как в W-21): `--signed-in /en/contact` — 4 369; три части по спискам адресов
+  `build/verification/w21/part1–3.txt` — 3 430, 3 982, 3 348; калькуляторы (`part4.txt`) — 541. Журналы —
+  `build/verification/e01/` (не отслеживается).
+
+### Не проверено
+
+- Части полного прогона взяты по спискам адресов W-21. Если после W-21 появились новые GET-адреса, они в этих частях не
+  проверены; одним вызовом без путей полный `bin/browser-check` в этой сессии не запускался (его запускает оркестратор).
+- Вид карточек без подписи на экране — ждёт проверки пользователем.
+- Демо `demo/` не пересобиралось (в нём подпись ещё есть до пересборки по указанию пользователя).
+- В админке остаётся поле «Bloko parašas», которое больше ни на что не влияет (риск из README плана; скрыть — отдельной правкой).

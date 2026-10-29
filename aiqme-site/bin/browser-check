@@ -621,8 +621,9 @@ D21_REPLACEMENTS = [
     (' Manufacturer technical documents and translations are not added until provided.', ''),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
-# черновики, D-21: исключается всегда).
-TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/apie-mus|en/about)$'), ('div', {'grid', 'two'}, None, ('div', {'gap'}))]
+# черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет).
+TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/apie-mus|en/about)$'), ('div', {'grid', 'two'}, None, ('div', {'gap'})),
+                        ('div', {'eyebrow'}, None, ('div', {'service-feature-copy'}))]
 NO_TEXT = {'script', 'style', 'template', 'noscript', 'svg'}
 
 

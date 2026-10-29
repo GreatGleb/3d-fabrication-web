@@ -79,8 +79,6 @@ class PublicPagesTest extends TestCase
         );
         $this->assertSame(['Your challenge', 'Agreed solution', 'Reviewed production', 'The result for you'],
             Html::texts($xpath, '//section[@class="section dark"]//div[@class="process"]/div/h3'));
-        $this->assertSame(['01 / AIQME', '02 / AIQME', '03 / ONE-OFF PARTS, PROTOTYPES & SERIES PRODUCTION', '04 / AIQME', '05 / AIQME', '06 / AIQME'],
-            Html::texts($xpath, '//div[@class="service-feature-copy"]/div[@class="eyebrow"]'));
         $this->assertSame(array_map(fn (array $slugs) => route('en.services.show', ['slug' => $slugs[1]]), array_values(self::SERVICES)),
             array_map(fn ($a) => $a->getAttribute('href'), iterator_to_array($xpath->query('//div[@class="service-feature-actions"]/a[contains(@class, "btn")]'))));
         $this->assertSame(route('en.products', ['category' => 'scanners']), $xpath->query('//a[@class="category-row"]')->item(0)->getAttribute('href'));
@@ -91,6 +89,22 @@ class PublicPagesTest extends TestCase
         $html = $this->get('/en')->getContent();
         foreach (['gear.js', 'scene', 'impeller', '<canvas'] as $absent) {
             $this->assertStringNotContainsString($absent, $html);
+        }
+    }
+
+    public function test_service_cards_start_with_the_title_and_keep_the_number_in_the_media_corner(): void
+    {
+        // Правка 28.10 (П4): подписи «● NN / label» над названием нет; поле label в данных остаётся.
+        foreach (['/en', '/lt', '/lt/paslaugos'] as $path) {
+            $html = $this->get($path)->assertOk()->getContent();
+            $xpath = Html::xpath($html);
+            $this->assertCount(0, $xpath->query('//div[@class="service-feature-copy"]/div[@class="eyebrow"]'), $path);
+            $this->assertSame(['01', '02', '03', '04', '05', '06'], Html::texts($xpath, '//span[@class="service-feature-number"]'), $path);
+            $first = array_map(fn ($node) => $node->nodeName, iterator_to_array($xpath->query('//div[@class="service-feature-copy"]/*[1]')));
+            $this->assertSame(array_fill(0, 6, 'h3'), $first, $path);
+            if (str_starts_with($path, '/lt')) {
+                $this->assertStringNotContainsString('VIENETINIAI GAMINIAI, PROTOTIPAI IR SERIJINĖ GAMYBA', $html, $path);
+            }
         }
     }
 

@@ -24,7 +24,7 @@ final class ContentTypes
     /** Поля перевода услуги (§4.1); тот же набор хранит ContentType::fields(). */
     public const SERVICE_FIELDS = [
         'short' => 'line',
-        'label' => 'line',
+        'label' => 'line', // не выводится на сайте с 28.10; оставлено для совместимости черновиков
         'benefits' => 'lines',
         'description' => 'text',
         'problems' => 'lines',

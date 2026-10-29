@@ -1,5 +1,5 @@
-{{-- Блоки услуг главной и списка услуг (serviceFeatureRows прототипа): номер, подпись, название, описание, три пункта и
-     действия. Иллюстрация — медиа услуги, иначе фрагмент прототипа по умолчанию (D-43, alt — название услуги), иначе своя заглушка; подписи «Illustrative image» нет (D-21). --}}
+{{-- Блоки услуг главной и списка услуг (serviceFeatureRows прототипа): номер в углу медиа, название, описание, три пункта
+     и действия; подпись «● NN / label» над названием убрана по правке 28.10 (П4). Иллюстрация — медиа услуги, иначе фрагмент прототипа по умолчанию (D-43, alt — название услуги), иначе своя заглушка; подписи «Illustrative image» нет (D-21). --}}
 @php($locale = app()->getLocale())
 <div class="service-features">
     @foreach ($services as $service)
@@ -11,7 +11,6 @@
                     'mediaAlt' => $service->title, 'mediaSizes' => '(max-width: 760px) 100vw, 50vw'])
             </div>
             <div class="service-feature-copy">
-                <div class="eyebrow"><span class="dot"></span> {{ sprintf('%02d', $loop->iteration) }} / {{ $service->field('label') }}</div>
                 <h3 id="service-heading-{{ $key }}">{{ $service->title }}</h3>
                 <p>{{ $service->field('description') }}</p>
                 <ul class="service-feature-benefits">
