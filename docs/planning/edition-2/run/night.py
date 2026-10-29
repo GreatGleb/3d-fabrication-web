@@ -27,7 +27,7 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
-TASKS = ROOT / "docs/planning/edition-2/tasks.json"
+TASKS = ROOT / "docs/planning/edition-2/tasks.json"  # другая очередь — --tasks (AIQME_TASKS в night-run.sh)
 ALLOWED = ("aiqme-site/", "docs/requirements.md")
 PROGRESS = "aiqme-site/docs/progress.md"
 FORBIDDEN = ("aiqme-site/experiments/",)
@@ -69,16 +69,16 @@ WORK_PROMPT = """Ты — ночной агент проекта AIQME. Чело
 
 Цель проекта — новый сайт AIQME, повторяющий прототип заказчика. Делай максимально просто: только то, что
 требует задача, просил заказчик и показывает прототип; ничего сверх (функций, настроек, зависимостей, абстракций
-«на будущее»). Тексты и вид — из эталона прототипа (rules[8]), не придумывай. Неопределённое — простейший вариант
+«на будущее»). Тексты и вид — из эталона прототипа (см. rules), не придумывай. Неопределённое — простейший вариант
 с записью в progress.md.
 
-Выполни задачу {id} «{title}» из docs/planning/edition-2/tasks.json.
+Выполни задачу {id} «{title}» из {tasks}.
 Сначала прочитай AGENTS.md, все rules в tasks.json, саму задачу {id} целиком и то, на что она ссылается
-(разделы edition-2, decisions.md). Ход работы и итог веди в aiqme-site/docs/progress.md (rules[13]).
-{extra}
+({refs}). Ход работы и итог веди в aiqme-site/docs/progress.md.
+{note}{extra}
 Ограничения этой ночи:
 - Не делай git commit, push, stash, reset, checkout и не меняй ветку: коммит после проверки сделает оркестратор.
-- Меняй только aiqme-site/ (кроме experiments/) и, если это задача W-21, строку «Новый сайт» в docs/requirements.md.
+- Меняй только aiqme-site/ (кроме experiments/) и docs/requirements.md — только если этого прямо требует задача.
 - Если план противоречив или задачу нельзя выполнить без догадки — не гадай: запиши вопрос и причину
   в progress.md и заверши задачу со статусом blocked.
 - Перед завершением прогони aiqme-site/bin/check (если он уже есть) и проверки из checks задачи — в переднем
@@ -102,14 +102,15 @@ FIX_EXTRA = """
 
 REVIEW_PROMPT = """Ты — приёмщик ночного прогона AIQME. Ты только читаешь: файлы не меняешь, команды не запускаешь.
 
-Автор выполнил задачу {id} «{title}» из docs/planning/edition-2/tasks.json. Реши, принять ли работу.
+Автор выполнил задачу {id} «{title}» из {tasks}. Реши, принять ли работу.
+{note}
 Прочитай: rules в tasks.json, задачу {id} целиком (особенно done и checks) и то, на что она ссылается;
 изменения задачи — {diff} (git diff); вывод проверок (bin/check и, если есть, bin/browser-check) — {check};
 заметки автора — aiqme-site/docs/progress.md. Читай изменённые файлы в дереве, если diff недостаточно.
 
 Цель проекта: новый сайт AIQME, повторяющий прототип заказчика. Принцип плана — максимально просто, только то,
 что просил заказчик и показывает прототип (docs/requirements.md, 01-scope.md). Эталон прототипа — только
-сохранённые материалы rules[8]: docs/customer-prototype/evidence/audit-20261016/verified-route-screens/<страница>/
+сохранённые материалы (см. rules): docs/customer-prototype/evidence/audit-20261016/verified-route-screens/<страница>/
 (dom.html и скриншоты — их можно открыть и посмотреть), states-followup/, тексты t('LT','EN') в
 source-backup-20261016/AIQME-site/dist/app.js (только читать).
 
@@ -127,6 +128,14 @@ source-backup-20261016/AIQME-site/dist/app.js (только читать).
 {{"verdict": "accept" или "reject", "findings": [{{"criterion": "done[N] или rules[N]", "problem": "что не так", "where": "файл:строка"}}], "summary": "1–2 предложения"}}
 При accept findings — пустой список или только мелочи, которые не мешают принять.
 """
+
+
+def queue_text():
+    """Путь очереди, её план и необязательная заметка агентам (поле agent_note в tasks.json) для промптов."""
+    data = json.loads(TASKS.read_text())
+    note = data.get("agent_note", "")
+    return {"tasks": TASKS.relative_to(ROOT).as_posix(), "refs": data.get("plan_refs", "разделы edition-2, decisions.md"),
+            "note": note + "\n" if note else ""}
 
 
 def git(*args, check=True):
@@ -147,7 +156,7 @@ def newest_claude():
 
 def done_tasks():
     log = git("log", "--format=%s", check=False)
-    return set(re.findall(r"^night: (W-\d+)", log, re.M))
+    return set(re.findall(r"^night: ([A-Z]-\d+)", log, re.M))
 
 
 def changed_paths():
@@ -270,7 +279,7 @@ class Night:
             extra += RESUME_EXTRA.format(id=task["id"], why=resumed)
         if findings:
             extra += FIX_EXTRA.format(id=task["id"], findings=json.dumps(findings, ensure_ascii=False, indent=1))
-        prompt = WORK_PROMPT.format(id=task["id"], title=task["title"], extra=extra)
+        prompt = WORK_PROMPT.format(id=task["id"], title=task["title"], extra=extra, **queue_text())
         argv = [newest_claude(), "--print", "--output-format", "json", "--add-dir", str(ROOT),
                 "--permission-mode", "bypassPermissions", "--disallowedTools", *DENY]
         text, tokens, err = self.session(task, f"{task['id']}.work{rnd}", argv, prompt)
@@ -287,7 +296,7 @@ class Night:
         diff = self.out / f"{task['id']}.review{rnd}.diff"
         diff.write_text(git("diff", "--cached", "HEAD"))
         before = tree_fingerprint()
-        prompt = REVIEW_PROMPT.format(id=task["id"], title=task["title"], diff=diff, check=check_log)
+        prompt = REVIEW_PROMPT.format(id=task["id"], title=task["title"], diff=diff, check=check_log, **queue_text())
         argv = [newest_claude(), "--print", "--output-format", "json", "--add-dir", str(ROOT),
                 "--add-dir", str(self.out), "--restricted", "--disallowedTools", *REVIEW_DENY]
         text, tokens, err = self.session(task, f"{task['id']}.review{rnd}", argv, prompt)
@@ -313,7 +322,7 @@ class Night:
             if not script.exists():
                 continue
             part = self.out / f"{task['id']}.{name}{rnd}.log"
-            code = run_limited([str(script)], 30 * 60, log=part, cwd=site)
+            code = run_limited([str(script)], 60 * 60, log=part, cwd=site)
             parts.append((name, code, part))
             if code != 0:
                 break
@@ -461,7 +470,7 @@ class Night:
             if flagged:
                 flagged = list(dict.fromkeys(l.lstrip("-* ") for l in flagged))
                 lines += ["", "## Вам посмотреть (из progress.md этой ночи)", ""] + [f"- {l}" for l in flagged[:40]]
-        for out in sorted(self.out.glob("W-*.work*.stdout.json")):
+        for out in sorted(self.out.glob("[A-Z]-*.work*.stdout.json")):
             try:
                 text = json.loads(out.read_text()).get("result", "")
             except (json.JSONDecodeError, OSError):
@@ -476,6 +485,7 @@ class Night:
 
 
 def main():
+    global TASKS
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, help="каталог ночи (журнал, логи сессий, сводка)")
     ap.add_argument("--hours", type=float, default=7)
@@ -487,9 +497,11 @@ def main():
     ap.add_argument("--fix-rounds", type=int, default=1, help="доработок автора по замечаниям приёмщика и красным проверкам")
     ap.add_argument("--stop-after-slice", default="", help="остановиться после этих этапов для просмотра (через запятую; пусто — не останавливаться)")
     ap.add_argument("--only", nargs="*", default=[], help="только эти задачи (пробный запуск, например W-01)")
+    ap.add_argument("--tasks", type=Path, default=TASKS, help="очередь задач (по умолчанию edition-2/tasks.json)")
     ap.add_argument("--dry-run", action="store_true", help="показать, что будет выполнено, без запуска")
     args = ap.parse_args()
 
+    TASKS = args.tasks if args.tasks.is_absolute() else ROOT / args.tasks
     tasks = json.loads(TASKS.read_text())["tasks"]
     if args.dry_run:
         done = done_tasks()

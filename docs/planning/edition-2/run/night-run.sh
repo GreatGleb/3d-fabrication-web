@@ -13,6 +13,7 @@
 #   AIQME_NIGHT_SHARE (0.15 — доля недельного лимита на ночь), AIQME_WEEKLY_TOKENS (120000000),
 #   AIQME_REVIEW (all | off | W-16,W-28 — где работает приёмщик), AIQME_FIX_ROUNDS (1 — доработок по замечаниям и красным проверкам),
 #   AIQME_STOP_AFTER_SLICE (пусто — не останавливаться; S1,… — остановиться после этих этапов для просмотра).
+#   AIQME_TASKS (docs/planning/edition-2/tasks.json — очередь задач; правки 28.10 — docs/planning/edits-20261029/tasks.json).
 #
 # Отказывается работать в занятом дереве: ночь, начатая поверх чужих правок, заберёт их в свой коммит.
 # На время ночи push отключён (remote.origin.pushurl), после — восстанавливается.
@@ -56,7 +57,7 @@ git config --local remote.origin.pushurl "$NO_PUSH"
 
 echo "Ночь: ветка $branch, журнал $out"
 status=0
-AIQME_D39=g python3 "$ROOT/docs/planning/edition-2/run/night.py" --out "$out" \
+AIQME_D39=g python3 "$ROOT/docs/planning/edition-2/run/night.py" --out "$out" --tasks "${AIQME_TASKS:-docs/planning/edition-2/tasks.json}" \
   --hours "${AIQME_HOURS:-7}" --task-minutes "${AIQME_TASK_MINUTES:-120}" \
   --model "${AIQME_MODEL:-}" --night-share "${AIQME_NIGHT_SHARE:-0.15}" \
   --weekly-tokens "${AIQME_WEEKLY_TOKENS:-120000000}" --review "${AIQME_REVIEW:-all}" \

@@ -1,0 +1,612 @@
+{
+  "schema": "aiqme-implementation-tasks/1",
+  "edition": "docs/planning/edits-20261029/README.md",
+  "created": "2026-10-29",
+  "status": "planned_not_started",
+  "plan_refs": "план docs/planning/edits-20261029/README.md — раздел правки задачи; где он ссылается — docs/planning/edition-2/decisions.md и разделы edition-2",
+  "agent_note": "Эта очередь — правки заказчика 28.10 к уже работающему сайту. Перечисленные в README плана отступления от прототипа (шапка-шторка, поля контента, подпись услуг, встроенная карта, шаг 02 калькулятора, габарит 1000 мм, капча ALTCHA) — требование, а не расхождение; тексты LT/EN для них — из README плана, а не из эталона прототипа.",
+  "rules": [
+    "Задачи выполняются по порядку массива; следующая — после выполнения критериев done предыдущей или явной отметки о блокировке в aiqme-site/docs/progress.md. Задачи, транзитивно зависящие (depends) от заблокированной, пропускаются с отметкой «пропущено: зависит от заблокированной E-xx»; независимые продолжаются.",
+    "Без человека (в том числе ночью) выполняются только задачи с track = L; на задаче с track = P (E-11, выпуск на aiqme.com) прогон останавливается.",
+    "Каждая задача — одна рабочая сессия автора (не больше 3 ч: AIQME_TASK_MINUTES=180, см. «Подготовка прогона» README). Час без заметного прогресса — остановиться, описать препятствие в progress.md и предложить более простой способ.",
+    "Запуск — ночной оркестратор docs/planning/edition-2/run/night.py с этой очередью (подготовка — раздел «Подготовка прогона» README плана): автор не делает git commit, push, stash, reset, checkout и не меняет ветку — коммит после проверки делает оркестратор.",
+    "Меняются только aiqme-site/ (кроме aiqme-site/experiments/ — эталонный эксперимент, не изменять) и, только в задаче E-10, раздел «Правки заказчика 28.10» в docs/requirements.md. Не изменять legacy-landing/ (instance/ не читать), baseline/, docs/customer/, docs/planning/ (в том числе edition-2/decisions.md и этот план), корневой AGENTS.md. Chrome пользователя, CDP и docs/customer-prototype/tools/ не используются; браузерные проверки — bundled Chromium Playwright через aiqme-site/bin/browser-check.",
+    "Рабочий сервер aiqme.com, его .env и БД не трогаются, миграции на чужой БД не запускаются; внешние сервисы не вызываются. Сеть — только загрузки пакетов для версий плана (D-20: Packagist, api.github.com/codeload.github.com только чтение, npm). Google, Stripe, Telegram, SMTP — запрещены; карта Google Maps в проверках подменяется локальной заглушкой (E-04), тесты исходящих HTTP-запросов не делают (Http::preventStrayRequests).",
+    "Источник требований — README плана docs/planning/edits-20261029/README.md (раздел правки задачи: как должно стать, файлы, тексты, проверки, риски, мелкие решения по умолчанию). Тексты LT/EN — дословно из таблиц README; не придумывать. Перечисленные в README осознанные отступления от прототипа (шапка, поля контента, подпись услуг, карта, шаг 2 калькулятора, габарит, капча) — требование, а не расхождение; в остальном вид и тексты сайта не меняются. Приватные материалы заказчика (снимки, переписка) не цитировать в отслеживаемых файлах.",
+    "CSS прототипа aiqme-site/resources/css/prototype/style.css не изменяется (§7.2): исправления оболочки — resources/css/shell.css, правки публичных страниц — resources/css/public.css.",
+    "Репозиторий публичный: секретов (в том числе настоящего ALTCHA_HMAC_KEY), .env, клиентских файлов и медиа третьих лиц в отслеживаемых файлах нет; тестовые секреты — явно фиктивные строки. Единственный новый бинарный файл — aiqme-site/public/defaults/logo-white.png (производный от logo.jpg, D-43). Перед завершением: git status --porcelain aiqme-site — новые файлы только в ожидаемых каталогах.",
+    "Новые зависимости — только altcha-org/altcha 2.3.0 (Composer) и altcha 3.4.1 (npm, devDependency, точная версия) в задаче E-06: разрешены пользователем 29.10, это снимает правило Boost «Do not change the application's dependencies without approval» для них. Других пакетов и обновлений версий нет; проверка версий в bin/check остаётся зелёной. Все команды PHP — через aiqme-site/bin/php (bin/php artisan …, bin/php /usr/local/bin/composer …, bin/php vendor/bin/pint --dirty --format agent). Boost search-docs не используется (D-20) — документация читается из vendor/.",
+    "Каждая задача меняющая шаблоны прогоняет поиск маркеров bin/browser-check по своим страницам; законные совпадения — только в tests/fixtures/marker-allowlist.json.",
+    "Тесты проверяют поведение, а не только проходят: где done требует «падает до правки» или «прогон с откатом», автор один раз проверяет это и пишет результат в progress.md. Существующие тесты не ослабляются; менять ожидания — только там, где это прямо следует из правки.",
+    "Каждая задача завершается записью в aiqme-site/docs/progress.md («Правки 28.10, E-xx (Пn): …»): что сделано, команды и вывод проверок, что не проверено. Ручной визуальный просмотр, который ночью некому выполнить, — «ждёт проверки пользователем», а не «готово». Старые записи progress.md не переписываются.",
+    "Демо-сборка aiqme-site/demo/ не пересобирается (только по указанию пользователя); код DemoExport и bin/demo-check правятся, если этого требует задача.",
+    "Принцип: максимально просто — только то, что просил заказчик и описано в README плана, в объёме задачи. Ничего сверх: ни функций, настроек, зависимостей, ни абстракций «на будущее». Неопределённое решается простейшим вариантом с записью в progress.md; противоречие плана и кода, которое нельзя решить без догадки, — status blocked с вопросом в progress.md. Приёмщик считает лишнее замечанием.",
+    "Во время разработки — bin/browser-check с путями задачи (и --signed-in там, где нужны проверки после входа) и точечные artisan test; полный bin/check и полный bin/browser-check — один раз в конце (затем их же запускает оркестратор, предел — 60 мин на каждый). Ветки проверок, которые ночью не выполняются (bin/demo-check на старой сборке demo/ без новых iframe и шага 2; prod_contact и весь режим --base-url/--compose-file), отмечаются как «проверено чтением кода; выполнение — ждёт пересборки демо или prod-compose (пользователь)», а в progress.md — в разделе «не проверено». Зелёный bin/demo-check на старой сборке не доказывает новые ветки."
+  ],
+  "tasks": [
+    {
+      "id": "E-01",
+      "title": "П4: убрать подпись над названием услуги",
+      "track": "L",
+      "slice": "S1",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П4)",
+        "aiqme-site/resources/views/public/partials/service-features.blade.php",
+        "aiqme-site/app/Domain/Content/ContentTypes.php",
+        "aiqme-site/tests/Feature/PublicPagesTest.php",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/bin/browser-check (TEXT_EXCLUDED_BLOCKS)"
+      ],
+      "result": "На главной и на /lt/paslaugos, /en/services в карточках услуг нет строки «● NN / подпись» над названием; номер «01»…«06» в углу картинки и заголовок раздела «03 / PASLAUGOS» остаются; поле label в схеме и данных сохранено.",
+      "touches": [
+        "aiqme-site/resources/views/public/partials/service-features.blade.php",
+        "aiqme-site/app/Domain/Content/ContentTypes.php (только комментарий)",
+        "aiqme-site/tests/Feature/PublicPagesTest.php",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "В service-features.blade.php нет div.eyebrow внутри .service-feature-copy; комментарий шаблона обновлён (номер — в углу медиа, подпись убрана по правке 28.10); span.service-feature-number и заголовок раздела не изменены",
+        "Поле label остаётся в ContentTypes::SERVICE_FIELDS, в сидере и подписях админки; у него комментарий «не выводится на сайте с 28.10; оставлено для совместимости черновиков»; AdminContentEditorTest/AdminEditorsTest зелёные без правок",
+        "PublicPagesTest: на /en, /lt и /lt/paslaugos — 0 узлов //div[@class=\"service-feature-copy\"]/div[@class=\"eyebrow\"]; тексты //span[@class=\"service-feature-number\"] === ['01'…'06']; первый элемент каждого .service-feature-copy — h3; строки «VIENETINIAI GAMINIAI, PROTOTIPAI IR SERIJINĖ GAMYBA» в HTML /lt и /lt/paslaugos нет; прежний ассерт ['01 / AIQME'…] удалён. В progress.md записано, что новые ассерты падали до правки шаблона",
+        "bin/browser-check: в TEXT_EXCLUDED_BLOCKS правило ('div', {'eyebrow'}, None, ('div', {'service-feature-copy'})) с комментарием; check_text на /lt, /en, /lt/paslaugos, /en/services зелёный",
+        "marker-allowlist.json: удалены 4 записи заглавной подписи (/lt и /lt/paslaugos — «VIENETINIAI GAMINIAI, PROTOTIPAI IR SERIJINĖ GAMYBA»; /en и /en/services — «ONE-OFF PARTS, PROTOTYPES & SERIES PRODUCTION»); записи пункта списка «Vienetiniai gaminiai, prototipai ir serijinė gamyba.» / «One-off parts, prototypes and series production.» сохранены; поиск маркеров на этих страницах зелёный",
+        "CSS прототипа не изменён; запись в progress.md"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/PublicPagesTest.php"
+      ],
+      "constraints": [
+        "Не удалять поле label из схемы и данных (ломает сохранение черновиков, ContentService::clean)",
+        "Демо не пересобирать"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "E-02",
+      "title": "П7: габарит FDM 1000 × 1000 × 1000 мм",
+      "track": "L",
+      "slice": "S1",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П7)",
+        "aiqme-site/database/migrations/2026_10_21_100001_insert_calculator_settings.php",
+        "aiqme-site/app/Domain/Pricing/CalculatorSettings.php",
+        "aiqme-site/tests/Feature/CalculatorSettingsTest.php",
+        "aiqme-site/tests/Feature/CalculatorPageTest.php",
+        "aiqme-site/tests/Feature/OrderSubmissionTest.php",
+        "aiqme-site/bin/browser-check (check_calculator_settings)"
+      ],
+      "result": "Начальное значение max_dimension_mm — 1000 без пометки «не подтверждено» (миграция данных меняет только исходное 250); шаг 3 показывает «FDM: 1000 × 1000 × 1000 mm.» в LT и EN; порог предупреждения — 1000 мм в браузере и на сервере.",
+      "touches": [
+        "aiqme-site/database/migrations/2026_10_29_000000_set_calculator_max_dimension_1000.php (новый)",
+        "aiqme-site/tests/Feature/CalculatorSettingsTest.php",
+        "aiqme-site/tests/Feature/CalculatorPageTest.php",
+        "aiqme-site/tests/Feature/OrderSubmissionTest.php",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "Миграция 2026_10_29_000000_set_calculator_max_dimension_1000.php работает через DB::table (без модели Setting): up() без записи settings 'calculator' — ничего не делает; при max_dimension_mm !== 250 — ничего не делает; при 250 — ставит 1000, убирает 'max_dimension_mm' из unconfirmed (остальные пометки и тарифы без изменений), обновляет updated_at; down() при 1000 возвращает 250 и пометку. Комментарий: габарит подтверждён заказчиком 28.10 (D-24), значение администратора сохраняется. Старая миграция 2026_10_21_100001 не изменена",
+        "Код калькулятора, JS, шаблоны и lang не изменены (формат «FDM: :mm × :mm × :mm mm.» уже верный)",
+        "CalculatorSettingsTest: после migrate значение 1000, unconfirmed === ['materials','rate_per_gram','order_fee_cents','file_fee_cents']; админка показывает 'Build size, mm' и 'Įrangos kraštinė, mm' без «· Not confirmed» / «· Nepatvirtinta»; новый test_migration_sets_confirmed_1000_mm_only_over_the_initial_250: (а) запись в виде старой миграции (250 + пометка) → up() даёт 1000 без пометки, повторный up() ничего не меняет; (б) 320 через Settings::save → up() оставляет 320; (в) записи нет → up() без ошибки и без вставки",
+        "CalculatorPageTest: data-settings max_dimension_mm=1000; на /lt/kalkuliatorius и /en/quote в тексте шага 3 есть 'FDM: 1000 × 1000 × 1000 mm.'",
+        "OrderSubmissionTest, новый тест (Feature-теста exceeds_build_size раньше не было — предупреждение проверяли только tests/js): фикстура cube-10mm-binary.stl (scale ограничен 1..1000 %, в мм 1200 не получить); unit 'in', scale 473 (≈1201 мм) → в StlPart.measurement['warnings'] есть 'exceeds_build_size'; unit 'in', scale 315 (≈800 мм) → нет; при прежних 250 мм вторая деталь получила бы предупреждение — тест показывает, что порог стал 1000",
+        "bin/browser-check check_calculator_settings: пометки 'Build size, mm · Not confirmed' нет ни до, ни после сохранения; для 300 и 1000 значение видно в data-settings /en/quote и в тексте 'FDM: 300 × 300 × 300 mm.' / 'FDM: 1000 × 1000 × 1000 mm.'; в конце значение 1000; docstring обновлён",
+        "JS-тесты (node --test) без изменений зелёные; запись в progress.md с пометкой, что на рабочей БД значение сменит migrate --force при выпуске (E-11), если там 250"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/CalculatorSettingsTest.php tests/Feature/CalculatorPageTest.php tests/Feature/OrderSubmissionTest.php"
+      ],
+      "constraints": [
+        "docs/planning/edition-2/decisions.md (D-24) не изменять — подтверждение фиксирует план",
+        "Старые заказы не пересчитывать: их предупреждения берутся из снимка"
+      ],
+      "unknowns": [
+        "D-24"
+      ]
+    },
+    {
+      "id": "E-03",
+      "title": "П1: боковые поля контента страниц",
+      "track": "L",
+      "slice": "S1",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П1)",
+        "aiqme-site/resources/css/shell.css",
+        "aiqme-site/resources/css/prototype/style.css (стр. 26, 124, 301, 342, 383 — только чтение)",
+        "aiqme-site/bin/browser-check (expected_styles, document_fits, check_private_pages, self_test)"
+      ],
+      "result": "Контент .wrap.page-content имеет поля .wrap (20/28/48 px) и выровнен с колонкой шапки на всех страницах; bin/browser-check проверяет это на всех ширинах и 1280 px.",
+      "touches": [
+        "aiqme-site/resources/css/shell.css",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "В shell.css блок с комментарием (правка 28.10, причина — сокращённая запись padding у .page-content прототипа): .wrap.page-content{padding-left:48px;padding-right:48px}; @media(max-width:1150px) — 28px; @media(max-width:600px) — 20px; @media print — 0. Вертикальные отступы и prototype/style.css не изменены",
+        "bin/browser-check: GUTTER_PROBE и check_gutters(report, page, where, width) — paddingLeft/Right = expected_styles(width)['wrap_padding'] (±1 px); x начала контента ≥ поля; x конца ≤ ширины окна − поле; x начала = x колонки шапки (.head-main left + paddingLeft), для .article — не меньше; при отсутствии .page-content проверка пропускается",
+        "check_gutters вызывается на каждой ширине WIDTHS в основном цикле страниц и в check_private_pages (кабинет, админка, /ru); дополнительно /lt/apie-mus, /lt/kalkuliatorius и /lt/duk на 1280×900",
+        "self_test: синтетический .page-content без .wrap обнаруживается (иначе «самопроверка: нулевые поля контента не обнаружены»)",
+        "Прогон с откатом выполнен один раз и записан в progress.md: без блока в shell.css check_gutters падает на /lt/apie-mus при 390 (0 ≠ 20) и 1440 (x 60 ≠ 108); блок возвращён",
+        "Полный bin/browser-check зелёный: check_gutters и document_fits на всех страницах 320–1440; docstring дополнен строкой о проверке полей",
+        "progress.md: запись с причиной, файлом, новой проверкой; «ждёт проверки пользователем» — кадры phone 390 /lt/apie-mus, /lt/kalkuliatorius, /lt/kontaktai, /lt/krepselis, кабинет и админка; отмечено ожидаемое отличие x контента от кадров прототипа §7.1 на >1150 px"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/browser-check /lt/apie-mus (быстрый прогон при разработке)"
+      ],
+      "constraints": [
+        "Не менять CSS прототипа и классы шаблонов",
+        "Не добавлять 1280 во все WIDTHS"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "E-04",
+      "title": "П5: встроенная карта Google Maps на «Kontaktai»",
+      "track": "L",
+      "slice": "S2",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П5)",
+        "aiqme-site/resources/views/public/contact.blade.php",
+        "aiqme-site/app/Http/Middleware/SecurityHeaders.php",
+        "aiqme-site/lang/lt/public.php",
+        "aiqme-site/lang/en/public.php",
+        "aiqme-site/lang/lt/shell.php",
+        "aiqme-site/lang/en/shell.php",
+        "aiqme-site/resources/views/components/cookie-notice.blade.php",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/bin/demo-check",
+        "aiqme-site/docs/verification/production-launch.md"
+      ],
+      "result": "На /lt/kontaktai и /en/contact сразу видна спутниковая карта Google Maps (iframe без ключа API, язык страницы) со ссылкой «Atidaryti žemėlapį ↗» под ней; CSP frame-src разрешает только https://www.google.com дополнительно к Stripe; cookie-плашка упоминает cookie Google Maps; проверки подменяют карту локальной заглушкой и к Google не обращаются.",
+      "touches": [
+        "aiqme-site/resources/views/public/contact.blade.php",
+        "aiqme-site/resources/css/public.css",
+        "aiqme-site/app/Http/Middleware/SecurityHeaders.php",
+        "aiqme-site/lang/",
+        "aiqme-site/resources/views/components/cookie-notice.blade.php (комментарий)",
+        "aiqme-site/tests/Feature/PublicPagesTest.php",
+        "aiqme-site/tests/Feature/SecurityHeadersTest.php",
+        "aiqme-site/tests/Feature/PaymentRequestsTest.php",
+        "aiqme-site/tests/Feature/ShellTest.php",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/bin/demo-check",
+        "aiqme-site/docs/verification/production-launch.md",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "lang public.contact.map_embed_url (LT …&hl=lt&output=embed, EN …&hl=en&output=embed — точные URL из таблицы П5 README) и map_title ('AIQME vieta žemėlapyje' / 'AIQME location map'); над map_embed_url комментарий о хосте, разрешённом CSP; map и map_url не изменены",
+        "contact.blade.php: в div.contact-map iframe src=map_embed_url, title=map_title, без loading и referrerpolicy, перед прежней ссылкой; комментарий стр. 1 обновлён; resources/css/public.css: .contact-map{height:auto;overflow:hidden} с комментарием; prototype/style.css не изменён",
+        "SecurityHeaders: frame-src = 'https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://www.google.com'; комментарий класса дописан; остальные директивы без изменений",
+        "shell.cookie.text LT/EN — дословно из таблицы П5 README; поведение плашки (одна кнопка, ссылка на cookies) не изменено; сид-черновик cookies и prototype-content.json не изменены",
+        "PublicPagesTest (тест переименован): на /en/contact и /lt/kontaktai ровно один iframe — //div[@class=\"contact-map\"]/iframe; src точно равен lang-URL (начинается с https://www.google.com/maps?, содержит output=embed и hl=en/hl=lt); title по языку; атрибута loading нет; ссылка 'Open map ↗' / 'Atidaryti žemėlapį ↗' с href=map_url идёт после iframe; прежние проверки реквизитов и формы сохранены",
+        "SecurityHeadersTest: на всех типах ответов (включая /lt/kontaktai) frame-src точно равен четырём источникам; PaymentRequestsTest:730 — ожидание дополнено, script-src/connect-src без Google; ShellTest — новые тексты плашки дословно",
+        "bin/browser-check: MAP_EMBED (regex ^https://www\\.google\\.com/maps\\?[^#]*output=embed), MAP_STUB и map_stub(); основной guard первым условием отдаёт заглушку и считает report.map_stubbed; в prod-режиме foreign() исключает MAP_EMBED, а context.route(MAP_EMBED, map_stub) регистрируется после route(foreign, abort) (в том числе при intercept=False); прочие чужие хосты по-прежнему прерываются, в prod-режиме — ошибка",
+        "bin/browser-check check_contact_map на /lt/kontaktai и /en/contact при 390 и 1440: один видимый iframe; src по MAP_EMBED с hl по языку; title не пуст; нет loading; ширина = clientWidth рамки (±1); высота 320 при 1440 и 260 при 390 (±1); низ iframe ≤ верх ссылки ≤ низ ссылки ≤ низ рамки; верх .legal-note ≥ низ рамки; среди page.frames есть загруженный кадр карты (заглушка); кадр рамки карты (locator('.contact-map').screenshot) — shots/contact-map-<lt|en>-<ширина>.png",
+        "Сводка browser-check: «Прерванные запросы к чужим хостам: нет» и строка «Карта Google Maps (контакты): подменена заглушкой N раз» с N > 0; нарушений CSP нет; docstring дополнен",
+        "Самопроверка выполнена один раз и записана в progress.md: без https://www.google.com в frame-src bin/browser-check /en/contact падает с ошибкой CSP; затем возвращено",
+        "bin/demo-check: запрос MAP_EMBED отдаётся заглушкой и не попадает в problems; прочие запросы вне сборки — ошибка, как прежде; demo/ не пересобирался. Старая сборка demo/ iframe не содержит, поэтому ветка заглушки — «проверено чтением кода; выполнение — ждёт пересборки демо (пользователь)», в progress.md — «не проверено»",
+        "production-launch.md «Ждёт проверки»: проверить карту на aiqme.com после выпуска; в пункте о политиках (D-27) — предложенный раздел cookie о Google Maps (LT/EN из README) для публикации заказчиком; progress.md: запись, старая запись W-05 не переписана"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/PublicPagesTest.php tests/Feature/SecurityHeadersTest.php tests/Feature/PaymentRequestsTest.php tests/Feature/ShellTest.php"
+      ],
+      "constraints": [
+        "К Google не обращаться ни из тестов, ни из проверок (D-20)",
+        "Не вводить ключ Maps API, sandbox, согласие перед загрузкой, отдельную CSP страницы",
+        "decisions.md не менять"
+      ],
+      "unknowns": [
+        "D-11",
+        "D-20",
+        "D-27"
+      ]
+    },
+    {
+      "id": "E-05",
+      "title": "П6: шаг 02 калькулятора по макету заказчика",
+      "track": "L",
+      "slice": "S2",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П6)",
+        "aiqme-site/resources/views/public/calculator.blade.php",
+        "aiqme-site/resources/js/calculator/index.js",
+        "aiqme-site/app/Http/Controllers/Public/OrderRequestController.php",
+        "aiqme-site/app/Domain/Orders/OrderSubmission.php",
+        "aiqme-site/app/Domain/Orders/Models/OrderMeta.php",
+        "aiqme-site/resources/views/admin/orders-card.blade.php",
+        "aiqme-site/lang/lt/calculator.php",
+        "aiqme-site/lang/en/calculator.php",
+        "aiqme-site/tests/Feature/CalculatorPageTest.php",
+        "aiqme-site/tests/Feature/OrderSubmissionTest.php",
+        "aiqme-site/tests/Feature/AdminOrdersTest.php",
+        "aiqme-site/bin/browser-check (check_calculator)"
+      ],
+      "result": "Шаг 02: Medžiaga | Spalva; Detalės paskirtis | Papildomos paslaugos; FDM parametrai: Paviršiaus kokybė | Užpildas (15–100 % и «Reikia konsultacijos»); Gamybos terminas с новым пояснением; Detalių kiekiai; Papildoma informacija (textarea). Цена — только материал и заполнение (консультация — по default_infill с пометкой); текст клиента хранится в order_meta.notes и виден в карточке заказа; старые заказы отображаются с прежними подписями.",
+      "touches": [
+        "aiqme-site/database/migrations/2026_10_29_100000_add_notes_to_order_meta.php (новый)",
+        "aiqme-site/app/Domain/Orders/Models/OrderMeta.php",
+        "aiqme-site/app/Domain/Orders/OrderSubmission.php",
+        "aiqme-site/app/Http/Controllers/Public/OrderRequestController.php",
+        "aiqme-site/app/Models/StlPart.php (docblock)",
+        "aiqme-site/resources/views/public/calculator.blade.php",
+        "aiqme-site/resources/js/calculator/index.js",
+        "aiqme-site/resources/views/admin/orders-card.blade.php",
+        "aiqme-site/lang/",
+        "aiqme-site/database/seeders/DemoSeeder.php",
+        "aiqme-site/tests/browser/OrderFactory.php",
+        "aiqme-site/tests/Feature/ (CalculatorPage, OrderSubmission, AdminOrders и фикстуры preferences: Sheets, Invoices, CustomerAccount, StlDownload, StripeWebhook, PaymentRequests, OrderWorkflow; POST /en/quote в Scenarios/ClientCancelAfterAdvanceScenarioTest и Scenarios/GuestOrderLifecycleScenarioTest)",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "Миграция 2026_10_29_100000_add_notes_to_order_meta.php: nullable text notes (без ->after()), down() — dropColumn; OrderMeta: notes в #[Fillable] и docblock",
+        "lang calculator.settings LT/EN: удалены quality, qualities, finish, finishes, layer, layers, fdm_note, preferences_note; добавлены purpose(s), service(s), surface(s), infill_consult, term_note, notes; изменены term и terms — все тексты дословно из таблицы П6 README; infill, infill_option, recommended не изменены. lang admin.orders.legacy LT/EN — прежние подписи quality/qualities/layer/layers/finish/finishes дословно с комментарием",
+        "calculator.blade.php: порядок имён полей панели шага 2 — material, color, purpose, service, surface, infill, term, notes; варианты заполнения 15/20/40/60/80/100 ∪ default_infill (помечен « · rekomenduojama», выбран) + consult; surface по умолчанию standard; purpose и service — первые варианты (visual, none), без «*»; нет fdm_note и preferences_note; legal-note под term = term_note; textarea notes (maxlength 2000) в .gap после [data-quantities]; комментарий файла обновлён",
+        "index.js: parameters() — ['color','purpose','service','surface','term'] (notes не входит); submitOrder() — ['material','infill','color','purpose','service','surface','term','notes']; quote.infill для 'consult' = settings.default_infill, иначе Number(value), с комментарием «остальные поля шага 2 — пожелания, сумму не меняют»; EstimateService и core/index.js не изменены",
+        "OrderRequestController: infill — Rule::in(0..100 строками + 'consult'); purpose/service/surface — $choice по lang; term — как было; notes — nullable|string|max:2000; сообщения infill.min/max удалены; consult → infill = default_infill и infill_consult = true; preferences = color, purpose, service, surface, term; notes передаётся отдельно",
+        "OrderSubmission: StlPart.parameters содержит infill_consult (?? false); OrderMeta::create сохраняет notes (?? null); digest включает infill_consult и notes; phpdoc обновлён; StlPart docblock обновлён",
+        "orders-card.blade.php: подписи новых ключей из calculator.settings, старых (quality, layer, finish) — из admin.orders.legacy; заполнение с консультацией — «Užpildas 20% · Reikia konsultacijos» / «Infill 20% · Consultation needed»; при непустом notes — заголовок notes и <p id=\"order-notes\"> с nl2br(e()), без notes блока нет",
+        "Фикстуры preferences заменены на color/purpose/service/surface/term (DemoSeeder, OrderFactory, указанные Feature-тесты); в настоящих POST /en/quote сценариев Scenarios/ClientCancelAfterAdvanceScenarioTest (стр. ~72) и Scenarios/GuestOrderLifecycleScenarioTest (стр. ~138) поля quality/layer/finish заменены на purpose=visual, service=none, surface=standard (иначе 422 вместо assertCreated); полнота — grep -rln \"'quality'\\|'layer'\\|'finish'\" tests database app resources/js находит только legacy-подписи, тест старого заказа и проверки отказа; AdminOrdersTest — practical/inserts/high/priority и notes с переводом строки и <b>",
+        "CalculatorPageTest: точные списки опций EN (infill ['15%','20% · recommended','40%','60%','80%','100%','Consultation needed'], выбран 20; purpose ['Visual purposes','Practical use','Consultation needed']; service ['Not needed','Sanding and painting','Threaded insert installation','Part assembly','Consultation needed']; surface ['High','Standard','Simplified','Consultation needed'], выбран standard; term ['Standard','Urgent']); порядок имён полей; нет select quality/layer/finish; term_note дословно; textarea notes maxlength 2000 с подписью; LT при default_infill=30 — '30 % · rekomenduojama' выбран, подписи LT без «*»",
+        "OrderSubmissionTest: точный массив parameters (с infill_consult=false и новыми пожеланиями); notes null без поля и при пустой строке; consult → infill 20, infill_consult true, итог равен итогу при 20 и отличается от итога при 100; пожелания и notes итог не меняют, notes сохраняется дословно с переводом строки; тот же токен с другим notes или с consult → 422 submission_token без записей; отклоняются infill 'abc' и '101', purpose 'fine', service 'smooth', surface '0.2', term 'express', notes 2001 символ, отсутствие purpose — без записей",
+        "AdminOrdersTest: лист Bambu с 'Part purpose: Practical use', 'Additional services: Threaded insert installation', 'Surface quality: High', 'Production lead time: Urgent' и без 'Quality level'; notes экранированы ('&lt;b&gt;'), с '<br />'; старый заказ (quality=fine, layer=0.12, finish=smooth) открывается и показывает прежние подписи EN и LT; консультация — пометка в строке заполнения",
+        "bin/browser-check check_calculator (390 и 1440): старых select нет; data-cents итога при infill 20 равен итогу при consult; смена purpose/service/surface/term и ввод notes data-cents не меняют; затем infill 100 и прежний сценарий (5,12, подтверждение 512); POST заявки 201 с новыми полями; fits(2); кадры shots/calculator-step2-<ширина>.png (панель шага 2 с выбранными вариантами и notes) и shots/calculator-step3-<ширина>.png (шаг 3 с загруженным STL и строкой «FDM: 1000 × 1000 × 1000 mm.»); tests/browser/OrderFactory даёт гостевому заказу фабрики notes из двух строк, check_admin_order проверяет #order-notes (две строки, без разметки) — его кадр admin-order-card-<ширина>.png показывает notes; docstring обновлён",
+        "progress.md: ключи, хранение notes, консультация, отображение старых заказов, ожидаемое отличие шага 2 от прототипа; «ждёт проверки пользователем» — кадр shots/calculator-step2-*.png рядом с макетом 23.37.38"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/CalculatorPageTest.php tests/Feature/OrderSubmissionTest.php tests/Feature/AdminOrdersTest.php",
+        "bin/demo-check, если демо-сборка присутствует (старая сборка: калькулятор infill 100 → 5,12; новый шаг 2 в ней не проверяется — «ждёт пересборки демо»)"
+      ],
+      "constraints": [
+        "Цена — только материал и заполнение; EstimateService не менять",
+        "notes не выводить в письмо, Telegram, Google Sheets, счёт и кабинет",
+        "Lunar orders.notes не использовать"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "E-06",
+      "title": "П3: ALTCHA — зависимости, сервис и выдача задач",
+      "track": "L",
+      "slice": "S3",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П3, E-06)",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/routes/webhooks.php",
+        "aiqme-site/bootstrap/app.php",
+        "aiqme-site/app/Providers/AppServiceProvider.php",
+        "aiqme-site/app/Http/Middleware/SecurityHeaders.php",
+        "aiqme-site/tests/TestCase.php",
+        "aiqme-site/phpunit.xml",
+        "aiqme-site/.env.example",
+        "aiqme-site/bin/setup",
+        "vendor/altcha-org/altcha после установки (README, src)"
+      ],
+      "result": "Установлены altcha-org/altcha 2.3.0 и altcha 3.4.1 (npm, dev); сервис App\\Domain\\Forms\\Altcha выдаёт подписанные задачи PBKDF2 и проверяет решения с защитой от повтора; GET /altcha вне группы web с лимитом по IP; тестовый ключ и помощник решения в TestCase. Формы ещё не подключены.",
+      "touches": [
+        "aiqme-site/composer.json",
+        "aiqme-site/composer.lock",
+        "aiqme-site/package.json",
+        "aiqme-site/package-lock.json",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/app/Domain/Forms/Altcha.php (новый)",
+        "aiqme-site/app/Http/Controllers/Public/AltchaController.php (новый)",
+        "aiqme-site/routes/webhooks.php",
+        "aiqme-site/app/Providers/AppServiceProvider.php",
+        "aiqme-site/lang/",
+        "aiqme-site/.env.example",
+        "aiqme-site/bin/setup",
+        "aiqme-site/phpunit.xml",
+        "aiqme-site/tests/TestCase.php",
+        "aiqme-site/tests/Feature/AltchaTest.php (новый)",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "bin/php /usr/local/bin/composer require altcha-org/altcha:2.3.0 — git diff composer.lock добавляет только altcha-org/altcha; npm install --save-dev --save-exact --ignore-scripts altcha@3.4.1 — в devDependencies \"altcha\": \"3.4.1\"; проверка версий bin/check зелёная; в progress.md — обоснование (решение пользователя 29.10) и команды",
+        "config/aiqme.php forms.altcha: hmac_key env('ALTCHA_HMAC_KEY'), cost 5000, counter [5000, 10000], expires 1800, per_minute (int) env('AIQME_ALTCHA_PER_MINUTE', 30) — по образцу AIQME_ORDERS_PER_HOUR, с комментарием",
+        "app/Domain/Forms/Altcha.php: configured(); challenge() — PBKDF2/SHA-256, cost и counter из конфигурации, expiresAt = time()+expires; verify(): false без ключа, для не-строки, пустой строки и длиннее 4096, при исключениях разбора, если пакет не подтвердил решение и при пустом expiresAt; последний шаг — Cache::add('altcha:'.подпись, true, ttl до срока), повтор → false; verifyOrFail() бросает ValidationException по ключу 'altcha' с текстом public.forms.altcha; константа FIELD = 'altcha'. Разбор payload и проверка решения — средствами пакета 2.3.0 по его README и src в vendor/altcha-org/altcha (ожидаемые имена: Payload::fromBase64, verifySolution, класс Pbkdf2 — пакет локально не изучен; при других именах берётся фактический API, он записывается в progress.md, это не отступление)",
+        "AltchaController: 503 без ключа; иначе JSON задачи и Cache-Control no-store, private. Маршрут GET altcha (name altcha, throttle:altcha) в routes/webhooks.php вне группы web, комментарий файла обновлён; RateLimiter 'altcha' по IP из per_minute",
+        "lang public.forms.altcha LT/EN — дословно из таблицы П3 README",
+        ".env.example: блок ALTCHA_HMAC_KEY= с комментарием (64 hex, openssl rand -hex 32, свой в каждой среде, пусто — формы не принимаются); bin/setup дописывает ключ в локальный .env идемпотентно; phpunit.xml задаёт пустой ALTCHA_HMAC_KEY с force; TestCase::setUp — фиктивный ключ 'phpunit-only-not-a-secret', cost 1, counter [1, 20] и helper altcha(), решающий задачу средствами пакета (ожидаемо solveChallenge; фактический метод — в progress.md) без HTTP",
+        "AltchaTest: GET /altcha → 200, algorithm 'PBKDF2/SHA-256', cost из конфигурации, keyLength 32, expiresAt в time()+1800 ±5, signature 64 hex, Cache-Control содержит no-store, нет Set-Cookie, есть Content-Security-Policy, два ответа различаются; config forms.altcha.per_minute=2 → третий запрос 429; без ключа → 503",
+        "AltchaTest (сервис): helper-решение принимается один раз, повтор того же payload — false; мусор ('abc', base64 '{}', base64 {\"challenge\":null,\"solution\":null,\"test\":true}, массив, 5000 символов) — false; подделка solution.counter+1, изменённый parameters.cost, задача другого ключа — false; просрочка (expires=-10) — false; без ключа — false; рабочие значения (require config_path('aiqme.php'))['forms']['altcha'] — cost 5000, counter [5000, 10000], expires 1800",
+        "Существующие тесты и bin/browser-check зелёные (формы ещё без капчи); запись в progress.md"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/AltchaTest.php",
+        "git diff --stat composer.lock package-lock.json"
+      ],
+      "constraints": [
+        "Только указанные версии пакетов; composer update не запускать",
+        "Ключ fast-path keySignature не использовать",
+        "SecurityHeaders не менять (worker-src не нужен)",
+        "Настоящий ключ в репозиторий не класть"
+      ],
+      "unknowns": [
+        "D-20"
+      ]
+    },
+    {
+      "id": "E-07",
+      "title": "П3: ALTCHA на контактной форме, регистрации на обучение и в кабинете",
+      "track": "L",
+      "slice": "S3",
+      "depends": [
+        "E-06"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П3, E-07)",
+        "aiqme-site/app/Http/Controllers/Public/FormController.php",
+        "aiqme-site/app/Http/Controllers/Auth/RegisterController.php",
+        "aiqme-site/resources/views/public/contact.blade.php",
+        "aiqme-site/resources/views/public/partials/training-topics.blade.php",
+        "aiqme-site/resources/views/account/auth.blade.php",
+        "aiqme-site/resources/js/app.js",
+        "aiqme-site/app/Console/Commands/DemoExport.php",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/operations.md"
+      ],
+      "result": "На трёх формах (контакты, окна обучения, регистрация кабинета) над кнопкой — виджет ALTCHA (сборка altcha/external, свой воркер, без нарушений CSP); сервер принимает форму только с верным одноразовым решением; калькулятор, вход и сброс пароля — без капчи; демо-выгрузка виджет удаляет.",
+      "touches": [
+        "aiqme-site/app/Http/Controllers/Public/FormController.php",
+        "aiqme-site/app/Http/Controllers/Auth/RegisterController.php",
+        "aiqme-site/resources/views/public/partials/altcha.blade.php (новый)",
+        "aiqme-site/resources/views/public/contact.blade.php",
+        "aiqme-site/resources/views/public/partials/training-topics.blade.php",
+        "aiqme-site/resources/views/account/auth.blade.php",
+        "aiqme-site/resources/js/altcha.js (новый)",
+        "aiqme-site/resources/js/app.js",
+        "aiqme-site/resources/css/shell.css",
+        "aiqme-site/app/Console/Commands/DemoExport.php",
+        "aiqme-site/tests/Feature/ (AltchaTest, FormsTest, SheetsTest, AuthTest, Scenarios/*, DemoExportTest)",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/operations.md",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "FormController::contact() и training() вызывают Altcha::verifyOrFail после rejectHoneypot и до валидации полей; RegisterController::store — после normalizeEmail; docblock-и дополнены; throttle регистрации не добавлен",
+        "partial altcha.blade.php: <altcha-widget challenge=\"/altcha\" (route('altcha', absolute: false)) auto=\"onfocus\" language=\"lt|en по локали (на /ru — en)\" configuration='{\"hideFooter\":true}'> без атрибута name и @error('altcha') с role=\"alert\"; подключён в contact.blade.php и training-topics.blade.php после honeypot, в auth.blade.php только в режиме register перед кнопкой; calculator.blade.php не изменён",
+        "resources/js/altcha.js импортирует 'altcha/external', 'altcha/i18n/lt', 'altcha/altcha.css' и 'altcha/workers/pbkdf2?worker', регистрирует воркер для 'PBKDF2/SHA-256'; app.js загружает его import() только при наличии altcha-widget; shell.css — правило altcha-widget (рамка как у .field input, фирменный синий)",
+        "После сборки public/build/manifest.json содержит отдельный чанк altcha и отдельный файл воркера pbkdf2; grep по public/build/assets не находит 'data:text/javascript'",
+        "Существующие POST к трём формам дополнены 'altcha' => $this->altcha() (FormsTest, включая тест throttle; SheetsTest; AuthTest; Scenarios/ContactRequestScenarioTest; Scenarios/ClientCancelAfterAdvanceScenarioTest); тест honeypot и тесты 419 не изменены; OrderSubmissionTest без изменений зелёный",
+        "AltchaTest (провайдер: /en/contact, /lt/kontaktai, /en/training, /lt/paskyra/register, /en/account/register): без поля altcha, с мусором, подделкой и просрочкой — redirect с ошибкой 'altcha' и точным текстом по локали адреса, ContactRequest/TrainingRegistration/User не прибавились, IntegrationEvent нет, Mail::assertNothingSent; с верным решением — запись создана (контакт — письмо, регистрация — вход); повтор того же payload (для регистрации — с другим e-mail) — отказ без новой записи",
+        "AltchaTest: после отказа old('name') на странице контактов; окно обучения той же темы снова открывается (data-modal-autoopen) с сообщением; honeypot с верным payload — отказ 'form'; без ключа (hmac_key '') POST с решением прежнего ключа — отказ без записи",
+        "AltchaTest (разметка): ровно один altcha-widget[@challenge='/altcha'][@auto='onfocus'] с language по локали перед button[@type='submit'] в //form[@id='contact-form'], в форме каждого окна обучения (/en/training и /en/services/3d-modelling-training) и в //form[@id='auth-form'][@data-mode='register']; на входе, сбросе пароля и в //form[@id='checkout-form'] — ни одного",
+        "DemoExport::demoForm удаляет altcha-widget из форм; DemoExportTest: в выгрузке контактов, обучения и регистрации нет altcha-widget, у форм есть data-demo-form; docblock дополнен",
+        "bin/browser-check: browser_env() задаёт ALTCHA_HMAC_KEY = secrets.token_hex(32) и AIQME_ALTCHA_PER_MINUTE='1000' (все запросы прогона — с 127.0.0.1); helper wait_altcha (input[name=altcha] со значением за ≤30 с и текст 'Verified'/'Patvirtinta'); вызов перед отправкой в check_contact_form, check_training_modal и prod_contact; новая check_register — /lt/paskyra/register @390: «Patvirtinta», отправка открывает /lt/paskyra с #account-overview; после «Verified»/«Patvirtinta» — кадр формы с виджетом shots/altcha-<страница>-<ширина>.png (контакты, окно обучения, регистрация); нарушений CSP, ошибок консоли, ответов ≥400 (в том числе 429 от /altcha) и внешних запросов нет; docstring дополнен. prod_contact выполняется только в режиме --base-url/--compose-file, который оркестратор не запускает: «проверено чтением кода; выполнение — ждёт prod-compose (пользователь)», в progress.md — «не проверено»",
+        "operations.md: ALTCHA_HMAC_KEY — шаг «до build/up при первом выпуске с капчей», отличие prod-compose (ключ в build/prod-local/.env), смена ключа (restart app worker scheduler → optimize; гаснут только выданные задачи); запись в progress.md с пометкой «на aiqme.com — только после ключа и выпуска (E-11)»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/AltchaTest.php tests/Feature/FormsTest.php tests/Feature/AuthTest.php tests/Feature/DemoExportTest.php"
+      ],
+      "constraints": [
+        "Импорт строго 'altcha/external' (основная сборка нарушает CSP)",
+        "Капчу на калькулятор, вход и сброс пароля не ставить",
+        "demo/ не пересобирать"
+      ],
+      "unknowns": [
+        "D-20"
+      ]
+    },
+    {
+      "id": "E-08",
+      "title": "П2: белый логотип и слот logo_white",
+      "track": "L",
+      "slice": "S4",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П2, E-08)",
+        "aiqme-site/public/defaults/logo.jpg",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/app/Domain/Content/Models/ContentItem.php",
+        "aiqme-site/app/Domain/Content/ContentTypes.php",
+        "aiqme-site/app/Domain/Content/MediaFile.php",
+        "aiqme-site/resources/views/admin/content-editor.blade.php",
+        "aiqme-site/tests/Feature/DefaultMediaTest.php"
+      ],
+      "result": "aiqme-site/public/defaults/logo-white.png (1280×320 RGBA: белые буквы, синий хвост «Q», прозрачный фон) и слот медиа logo_white у page_text home (PNG/WebP) с умолчанием, подписью и превью на тёмной подложке в админке; шапка ещё не меняется.",
+      "touches": [
+        "aiqme-site/public/defaults/logo-white.png (новый)",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/app/Domain/Content/Models/ContentItem.php",
+        "aiqme-site/app/Domain/Content/ContentTypes.php",
+        "aiqme-site/lang/",
+        "aiqme-site/resources/views/admin/content-editor.blade.php",
+        "aiqme-site/resources/css/public.css",
+        "aiqme-site/tests/Feature/ (DefaultMediaTest, ContentMediaTest/AdminMediaTest)",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "logo-white.png изготовлен разовым скриптом PIL (python3 -I - <logo.jpg> <logo-white.png>, алгоритм из README П2; скрипт не закоммичен, команда записана в progress.md); автор посмотрел файл на тёмной подложке (Read) и описал результат",
+        "Feature: файл существует; getimagesize — 1280×320, IMAGETYPE_PNG, размеры как у logo.jpg; байт 25 (цветовой тип IHDR) == 6 (RGBA); GD imagecolorat: угол (5,5) полностью прозрачен (alpha 127), пиксель буквы (1100,90) белый и непрозрачный (r,g,b ≥ 245, alpha ≤ 5), пиксель хвоста «Q» (590,230) синий (b > 200, r < 60)",
+        "config/aiqme.php media_defaults.page_text.home: 'logo_white' => 'defaults/logo-white.png' с комментарием «только пока нет своего logo»; ContentItem: 'logo_white' => ['png','webp']; ContentTypes home: 'logo_white' => true после 'logo' (array_key_first — по-прежнему video)",
+        "lang admin.media.collections.logo_white — 'Baltas logotipas (tamsiai antraštei; PNG arba WebP)' / 'White logo (for the dark header; PNG or WebP)'",
+        "content-editor.blade.php: умолчание logo_white не показывается, если загружен свой logo; превью logo_white (своё и умолчание) с классом admin-media-preview--dark; CSS .admin-media-preview--dark{background:var(--dark);padding:4px}",
+        "Тесты: JPEG и SVG в слот logo_white отклоняются (content.media_invalid), PNG принимается; список файлов умолчаний DefaultMediaTest дополнен logo-white.png; редактор home показывает asset('defaults/logo-white.png') и подпись EN, а после загрузки своего logo — не показывает это умолчание; превью имеет класс admin-media-preview--dark",
+        "bin/check и bin/browser-check зелёные; шапка и публичные страницы не изменились; запись в progress.md (права — как у logo.jpg, D-43)"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/DefaultMediaTest.php"
+      ],
+      "constraints": [
+        "Скрипт изготовления не коммитить",
+        "Имя logo-light не использовать (D-25)",
+        "SVG в слот не добавлять"
+      ],
+      "unknowns": [
+        "D-43"
+      ]
+    },
+    {
+      "id": "E-09",
+      "title": "П2: шапка-шторка — тёмная вверху, белая после прокрутки",
+      "track": "L",
+      "slice": "S4",
+      "depends": [
+        "E-08"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md (П2, E-09)",
+        "aiqme-site/resources/views/components/header.blade.php",
+        "aiqme-site/resources/views/components/header-cta.blade.php",
+        "aiqme-site/resources/views/components/layout.blade.php",
+        "aiqme-site/resources/views/public/home.blade.php",
+        "aiqme-site/resources/js/menu.js",
+        "aiqme-site/resources/js/app.js",
+        "aiqme-site/resources/css/prototype/style.css (стр. 27–45, 55–57, 313–353, 449, 636, 682–683 — только чтение)",
+        "aiqme-site/tests/Feature/ShellTest.php",
+        "aiqme-site/tests/Feature/DefaultMediaTest.php",
+        "aiqme-site/bin/browser-check (STYLE_PROBE, check_styles, DEFAULT_MEDIA, check_menu)"
+      ],
+      "result": "На всех страницах вверху шапка тёмная (на главной с hero — полупрозрачная поверх видео) с белым логотипом и пунктами; после прокрутки больше высоты шапки + 50 px она за 0,3 с становится белой шапкой прототипа §7.1; без JS — тёмная сплошная; при reduced-motion — без анимации; браузерная проверка сверяет оба состояния.",
+      "touches": [
+        "aiqme-site/resources/views/components/header.blade.php",
+        "aiqme-site/resources/views/components/layout.blade.php",
+        "aiqme-site/resources/views/public/home.blade.php",
+        "aiqme-site/resources/js/header.js (новый)",
+        "aiqme-site/resources/js/app.js",
+        "aiqme-site/resources/css/shell.css",
+        "aiqme-site/tests/Feature/ShellTest.php",
+        "aiqme-site/tests/Feature/DefaultMediaTest.php",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "layout.blade.php: prop headerOverlay (false); $logoWhite = свой logo_white, иначе умолчание при отсутствии своего logo, иначе null (без БД — умолчания); в <head> после @vite — <noscript><style nonce=\"{{ Vite::cspNonce() }}\">.header--overlay{background:var(--dark)}</style></noscript>; home.blade.php передаёт :header-overlay=\"(bool) $home\" (не для заглушки page-top); комментарии обновлены",
+        "header.blade.php: <header> с классами header, header--dark (рендерит сервер), header--overlay при overlay, header--logo-plate при отсутствии белого логотипа; в <a class=\"logo\"> (класс ровно logo) первая img — обычный логотип alt=\"AIQME\", вторая — img.logo-white alt=\"\"",
+        "resources/js/header.js (импорт в app.js после ./menu): порог offsetHeight + 50; scroll (passive) с rAF-троттлингом переключает header--dark по scrollY <= порог; resize пересчитывает порог; pageshow — sync; после load (или сразу при readyState complete) — sync и класс header--ready; комментарий-ссылка на правку 28.10 и 3dbonum",
+        "shell.css блок «Шапка-шторка (правка 28.10)»: --header-height 123/116/108; белый логотип поверх обычного (opacity); тёмное состояние — фон #0a1119 (на главной rgba(10,17,25,.6)), белый текст, линия rgba(255,255,255,.12), второй ряд прозрачный, подпись #d5dde6, CTA/hover/active #9cc4ff, неактивный язык #b7c3ce, без подложки логотипа (кроме header--logo-plate); переходы background-color/border-color/color/opacity .3s ease только под .header--ready; hero главной под шапкой без сдвига содержимого (отрицательный margin-bottom шапки, min-height и padding-top hero + --header-height для >900/≤900/≤600); выпадающее меню ≤900 — тёмные пункты всегда; prefers-reduced-motion — transition:none; prototype/style.css не изменён (контраст: CTA #9cc4ff над худшим фоном главной — rgba(10,17,25,.6) поверх rgb(161,161,161) ≈ rgb(70,75,79) — 4.95; белый 8.85, #d5dde6 6.45, #b7c3ce 4.93; прежний #8ab8ff давал 4.37 и не годится)",
+        "ShellTest: header--dark на /lt, /en, /lt/apie-mus, /en/quote, /en/admin (actingAs админ) и в кабинете; header--overlay только на /lt и /en с записью home и не на главной без неё; //header//a[@class=\"logo\"]/img — 2 узла (defaults/logo.jpg alt AIQME, затем img.logo-white defaults/logo-white.png alt ''); noscript/style с nonce = nonce из заголовка CSP ответа и текстом .header--overlay",
+        "DefaultMediaTest: слот logo_white в test_upload_to_each_slot_overrides_its_default_and_removal_restores_it (XPath img.logo-white/@src); свой logo без своего logo_white — нет img.logo-white, есть header--logo-plate, нет строки defaults/logo-white.png; со своим logo_white — свой /storage/… и без header--logo-plate",
+        "bin/browser-check check_styles на прокрутке 0: headerDark true, headerBorder 'rgba(255, 255, 255, 0.12)', ctaColor in (None, 'rgb(156, 196, 255)'); прочие значения §7.1 (высоты 82/75/68 и 39/38, поля, токены, шрифты) не изменены; DEFAULT_MEDIA .logo img проходит (оба img из /defaults/)",
+        "bin/browser-check check_header на /lt, /en, /lt/apie-mus, /en/quote при 390 и 1440 и на /en/admin при 1440: на прокрутке 0 — header--dark, фон rgb(10, 17, 25) (главная rgba(10, 17, 25, 0.6)), .nav a (1440) и .icon-btn rgb(255, 255, 255), img.logo-white opacity 1 и обычный 0, контраст WCAG видимых текстов шапки ≥ 4.5 (полупрозрачный фон — над rgb(161,161,161)); на главной hero.top == 0 (±1), offsetHeight шапки == --header-height (±1) на 320/390/768/1024/1440, верх h1 hero = --header-height + 85 (≤600: + 56) ±2",
+        "check_header, прокрутка: scrollTo(0, offsetHeight + 250) → через 400 мс нет header--dark, фон rgb(255, 255, 255), border-bottom rgb(220, 226, 232), .header-cta rgb(248, 250, 252), .cta-link rgb(8, 103, 255), opacity обычного логотипа 1 и белого 0, высоты .head-main и .head-sub как на прокрутке 0; scrollTo(0,0) → снова тёмная; ширина документа = окну в обоих состояниях; кадры shots/header-top-<страница>-<ширина>.png (прокрутка 0) и shots/header-scrolled-<страница>-<ширина>.png (после scrollTo) для /lt и /lt/apie-mus при 390 и 1440 и /en/admin при 1440 (page.screenshot без full_page)",
+        "check_header, особые случаи: /lt/apie-mus @1440 после scrollTo(0, 800) и reload — при scrollY>0 сразу после load нет header--dark и header.getAnimations().length == 0 (иначе — то же через якорь ниже порога); reduced-motion — transitionDuration '0s'; без JS (java_script_enabled=False) на /en и /lt/apie-mus — header--dark, фон rgb(10, 17, 25) и после scrollTo(0, 1000), ссылки белые, документ не шире окна; меню 390 — после открытия .nav фон rgb(255, 255, 255), ссылки rgb(17, 23, 30); check_menu, check_focus_style, check_cookie без изменений",
+        "Полный bin/browser-check зелёный (в том числе check_calculator: sticky-сводка не перекрыта); docstring дополнен строкой о шапке; progress.md: отступление от §7.1 (белое состояние сверяется после прокрутки); «ждёт проверки пользователем» — кадры shots/header-top-*.png и shots/header-scrolled-*.png (главная, /lt/apie-mus, /en/admin), Safari/Firefox"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "bin/php artisan test --compact tests/Feature/ShellTest.php tests/Feature/DefaultMediaTest.php",
+        "bin/demo-check, если демо-сборка присутствует (старая сборка: .logo img из /defaults/; новая шапка в ней не проверяется — «ждёт пересборки демо»)"
+      ],
+      "constraints": [
+        "Высоты рядов шапки не менять",
+        "Подвал не менять",
+        "Синхронный inline-скрипт не добавлять",
+        "Запасной вариант hero — отрицательный margin-top у hero, если sticky с отрицательным margin-bottom ведёт себя иначе (записать в progress.md)"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "E-10",
+      "title": "Сквозная проверка правок 28.10 и статус в docs/requirements.md",
+      "track": "L",
+      "slice": "S5",
+      "depends": [
+        "E-01",
+        "E-02",
+        "E-03",
+        "E-04",
+        "E-05",
+        "E-06",
+        "E-07",
+        "E-08",
+        "E-09"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md",
+        "aiqme-site/docs/progress.md (разделы E-01…E-09)",
+        "docs/requirements.md"
+      ],
+      "result": "Все правки П1–П7 проверены вместе на одном дереве: bin/check, полный bin/browser-check, поиск маркеров, кадры 390/1440 изменённых страниц описаны; в docs/requirements.md — раздел «Правки заказчика 28.10» со статусом по факту проверки (на aiqme.com — после выпуска E-11).",
+      "touches": [
+        "docs/requirements.md (только новый раздел «Правки заказчика 28.10»)",
+        "aiqme-site/docs/progress.md",
+        "исправления в aiqme-site/ только при найденных регрессиях правок E-01…E-09"
+      ],
+      "done": [
+        "aiqme-site/bin/check зелёный (Pint, PHPUnit, JS-тесты, сборка, версии зависимостей с altcha); полный aiqme-site/bin/browser-check зелёный; вывод (итоги, число проверок, «Прерванные запросы к чужим хостам: нет», «Карта Google Maps (контакты): подменена заглушкой N раз») записан в progress.md",
+        "Каждый пункт «как должно стать» П1–П7 из README сверен с кодом и выводом проверок; для каждой правки в progress.md — строка «П<n>: проверено …/не проверено …»; найденные регрессии исправлены в этой задаче с записью (если исправление больше мелкого — status blocked с описанием)",
+        "Перечислены в progress.md по путям и просмотрены (Read) кадры, которые реально снимает bin/browser-check: верх страниц из основного цикла (shots/<путь, / → __>-<desktop|tablet|phone>.png, например lt__apie-mus-phone.png: /lt, /lt/apie-mus, /lt/paslaugos, /lt/kontaktai, /en/contact, /lt/kalkuliatorius, /lt/paskyra/register) и кадры задач — header-top-*/header-scrolled-* (E-09), contact-map-* (E-04), calculator-step2-*/calculator-step3-* (E-05), altcha-* (E-07), admin-order-card-* с notes (E-05); заметные дефекты описаны; кадра, которого нет, автор не придумывает и не досоздаёт — отмечает «нет кадра» в progress.md; визуальная сверка с макетами 20.17.09 и 23.37.38 — «ждёт проверки пользователем»",
+        "Поиск маркеров bin/browser-check по всем страницам зелёный; git diff --name-status main...HEAD -- aiqme-site docs (плюс незакоммиченное E-10 по git status --porcelain) — новые и изменённые файлы только из touches задач E-01…E-10, без .env и ключей; единственный новый бинарный файл — aiqme-site/public/defaults/logo-white.png; в отслеживаемых файлах нет цитат переписки и настоящего ALTCHA_HMAC_KEY",
+        "docs/requirements.md: новый раздел «Правки заказчика 28.10» (по строке на П1–П7, по смыслу README плана: поля контента, шапка-шторка и белый логотип, капча ALTCHA на трёх формах, без подписи у услуг, встроенная карта и cookie-текст, новый шаг 02, габарит 1000 мм) со статусом «сделано в коде и проверено локально; на aiqme.com — после выпуска (ключ ALTCHA, deploy)»; ничего не описано как уже работающее на aiqme.com; остальные разделы requirements.md не изменены",
+        "progress.md: итог очереди и список шагов пользователя для E-11 (ключ ALTCHA до deploy, migrate, ручные проверки, тексты заказчику) со ссылкой на README плана"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "кадры из done[2] существуют в build/verification/browser-check/shots/ после полного прогона"
+      ],
+      "constraints": [
+        "Новых функций не добавлять",
+        "docs/planning/ и decisions.md не изменять",
+        "Демо не пересобирать"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "E-11",
+      "title": "Выпуск правок 28.10 на aiqme.com",
+      "track": "P",
+      "slice": "S6",
+      "depends": [
+        "E-10"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261029/README.md («Что делает человек» → «После прогона»)",
+        "aiqme-site/docs/operations.md",
+        "aiqme-site/docs/verification/production-launch.md"
+      ],
+      "result": "Правки П1–П7 работают на https://aiqme.com: ключ ALTCHA в .env сервера, код выпущен deploy <rev>, миграции выполнены (order_meta.notes, max_dimension_mm 1000), ручные проверки пройдены, заказчику переданы тексты cookie и пояснения.",
+      "touches": [
+        "рабочий сервер aiqme.com (.env, контейнеры, БД)",
+        "aiqme-site/docs/verification/production-launch.md (запись выпуска)",
+        "админка aiqme.com (проверка настроек)"
+      ],
+      "done": [
+        "Только по явному разрешению пользователя; перед выпуском — копия БД (bin/backup по operations.md)",
+        "ALTCHA_HMAC_KEY (openssl rand -hex 32) дописан в .env приложения на сервере до deploy, права root:33 0640 сохранены; значение нигде не записано",
+        "deploy <rev>: build → up → migrate --force → bootstrap → optimize → restart; curl -s https://aiqme.com/altcha отдаёт JSON с signature (не 503)",
+        "Ручные проверки на ПК и телефоне по списку README («После прогона», п. 4): поля /lt/apie-mus, шапка-шторка и белый логотип, нет подписей у услуг, карта на /lt/kontaktai и /en/contact без ошибок CSP, контактная форма с «Patvirtinta» → заявка в админке, шаг 2 и заявка с «Papildoma informacija» → текст в карточке, шаг 3 «FDM: 1000 × 1000 × 1000 mm.», Calculator в админке 1000 без «Nepatvirtinta», старые заказы открываются, нет своего ui_text shell.cookie.text",
+        "Запись выпуска в production-launch.md; заказчику переданы раздел cookie о Google Maps (D-27), EN-переводы шага 2 на согласование, пояснения о капче (формы aiqme.com, нужен JavaScript) и о замене белого логотипа"
+      ],
+      "checks": [
+        "curl https://aiqme.com/altcha",
+        "ручной контрольный просмотр по списку README; bin/browser-check против рабочего сервера не запускается (W-20)"
+      ],
+      "constraints": [
+        "Не выполнять без явного разрешения пользователя",
+        "Push и публикация — только по указанию пользователя",
+        "Секреты не выводить в терминал и журналы"
+      ],
+      "unknowns": [
+        "D-27"
+      ]
+    }
+  ]
+}
