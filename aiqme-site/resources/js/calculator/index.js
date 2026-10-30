@@ -61,7 +61,7 @@ function start(root) {
     return [
       `FDM / ${quote.material}`,
       `${texts.infill}: ${selectedText('infill').split(' · ')[0]}`,
-      ...['color', 'quality', 'layer', 'finish', 'term'].map((name) => `${root.querySelector(`[name=${name}]`).closest('label').firstChild.textContent.trim()}: ${selectedText(name)}`),
+      ...['color', 'purpose', 'service', 'surface', 'term'].map((name) => `${root.querySelector(`[name=${name}]`).closest('label').firstChild.textContent.trim()}: ${selectedText(name)}`),
     ].join(', ');
   }
 
@@ -94,7 +94,7 @@ function start(root) {
 
   async function submitOrder() {
     const data = new FormData(form);
-    ['material', 'infill', 'color', 'quality', 'layer', 'finish', 'term'].forEach((name) => data.set(name, root.querySelector(`[name=${name}]`).value));
+    ['material', 'infill', 'color', 'purpose', 'service', 'surface', 'term', 'notes'].forEach((name) => data.set(name, root.querySelector(`[name=${name}]`).value));
     quote.ready.forEach((entry, i) => {
       data.append(`parts[${i}][file]`, new Blob([entry.buffer]), entry.name);
       data.append(`parts[${i}][unit]`, entry.unit);
@@ -265,7 +265,8 @@ function start(root) {
     } else if (field.name === 'material') {
       quote.material = field.value;
     } else if (field.name === 'infill') {
-      quote.infill = Number(field.value);
+      // «Reikia konsultacijos» считается по заполнению по умолчанию; остальные поля шага 2 — пожелания, сумму не меняют.
+      quote.infill = field.value === 'consult' ? settings.default_infill : Number(field.value);
     } else if (field.name === 'delivery') {
       $('[data-address]').hidden = field.value !== 'ship';
     }

@@ -2,11 +2,13 @@
      Без выбора технологии (FDM, D-37), без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров
      и флажка сценария риска (D-21). Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 отправляет заявку fetch-запросом
      multipart (W-12): токен отправки — UUID формы, профиль вошедшего клиента ($buyer) подставлен в поля.
+     Шаг 2 — по макету заказчика (правка 28.10, E-05): цену меняют только материал и заполнение («Reikia konsultacijos»
+     считается по заполнению по умолчанию), остальные поля и notes — пожелания к заявке.
      data-settings — тарифы, заполнение по умолчанию и габарит из настроек админки (W-11) и лимиты файлов из
      config('aiqme.calculator'); тексты для JS — data-texts. --}}
 @php
     $locale = app()->getLocale();
-    $infills = collect([20, 40, 60, 100, $settings['default_infill']])->unique()->sort()->values();
+    $infills = collect([15, 20, 40, 60, 80, 100, $settings['default_infill']])->unique()->sort()->values();
     $maxMb = intdiv($settings['max_file_bytes'], 1024 * 1024);
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.calculator')" :languages="$languages" :noindex="$locale === 'ru'">
@@ -55,25 +57,28 @@
                         <x-field name="material" type="select" :label="__('calculator.settings.material')"
                                  :options="array_combine(array_keys($settings['materials']), array_keys($settings['materials']))" />
                         <x-field name="color" type="select" :label="__('calculator.settings.color')" :options="__('calculator.settings.colors')" />
-                        <x-field name="quality" type="select" :label="__('calculator.settings.quality')" :options="__('calculator.settings.qualities')" />
-                        <x-field name="finish" type="select" :label="__('calculator.settings.finish')" :options="__('calculator.settings.finishes')" />
+                        <x-field name="purpose" type="select" :label="__('calculator.settings.purpose')" :options="__('calculator.settings.purposes')" />
+                        <x-field name="service" type="select" :label="__('calculator.settings.service')" :options="__('calculator.settings.services')" />
                     </div>
                     <div class="inset">
                         <h3>{{ __('calculator.settings.fdm') }}</h3>
                         <div class="grid two form-grid">
-                            <x-field name="layer" type="select" :label="__('calculator.settings.layer')" :options="__('calculator.settings.layers')" value="0.2" />
+                            <x-field name="surface" type="select" :label="__('calculator.settings.surface')" :options="__('calculator.settings.surfaces')" value="standard" />
                             <x-field name="infill" type="select" :label="__('calculator.settings.infill')" :value="$settings['default_infill']"
                                      :options="$infills->mapWithKeys(fn ($value) => [$value => __('calculator.settings.infill_option', ['value' => $value])
-                                         .($value === $settings['default_infill'] ? __('calculator.settings.recommended') : '')])->all()" />
+                                         .($value === $settings['default_infill'] ? __('calculator.settings.recommended') : '')])->all()
+                                         + ['consult' => __('calculator.settings.infill_consult')]" />
                         </div>
-                        <p>{{ __('calculator.settings.fdm_note') }}</p>
                     </div>
                     <div class="gap">
                         <x-field name="term" type="select" :label="__('calculator.settings.term')" :options="__('calculator.settings.terms')" />
-                        <p class="legal-note">{{ __('calculator.settings.preferences_note') }}</p>
+                        <p class="legal-note">{{ __('calculator.settings.term_note') }}</p>
                     </div>
                     <h3 class="gap">{{ __('calculator.settings.quantities') }}</h3>
                     <div data-quantities></div>
+                    <div class="gap">
+                        <x-field name="notes" type="textarea" :label="__('calculator.settings.notes')" maxlength="2000" />
+                    </div>
                 </section>
 
                 <section class="panel" data-step-panel="2" hidden>

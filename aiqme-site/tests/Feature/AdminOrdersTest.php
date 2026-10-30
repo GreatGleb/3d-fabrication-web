@@ -58,8 +58,11 @@ class AdminOrdersTest extends TestCase
         $this->admin->forceFill(['is_admin' => true])->save();
     }
 
-    /** @return array{0: Order, 1: ?string} заказ и открытый гостевой токен (у заказа клиента — null) */
-    private function submitted(bool $guest = false, string $delivery = 'ship'): array
+    /**
+     * @param  array<string, string>  $preferences
+     * @return array{0: Order, 1: ?string} заказ и открытый гостевой токен (у заказа клиента — null)
+     */
+    private function submitted(bool $guest = false, string $delivery = 'ship', array $preferences = [], ?string $notes = "Need it by Friday.\n<b>Matte</b> please", bool $consult = false): array
     {
         $cube = file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'));
         $part = fn (string $name, int $quantity): array => [
@@ -75,8 +78,10 @@ class AdminOrdersTest extends TestCase
             'delivery' => $delivery,
             'address' => $delivery === 'ship' ? ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gatvė 1', 'postcode' => '01100'] : null,
             'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'blue', 'quality' => 'fine', 'layer' => '0.12', 'finish' => 'smooth', 'term' => 'priority'],
+            'infill' => $consult ? 20 : 100,
+            'infill_consult' => $consult,
+            'preferences' => $preferences ?: ['color' => 'blue', 'purpose' => 'practical', 'service' => 'inserts', 'surface' => 'high', 'term' => 'priority'],
+            'notes' => $notes,
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], $guest ? null : $this->client);
 
@@ -414,8 +419,8 @@ class AdminOrdersTest extends TestCase
         $job = substr($job, 0, strpos($job, '</div>', strpos($job, 'Automatic print launch')) ?: null);
 
         foreach (['Staff job handoff', OrderMeta::where('order_id', $order->id)->value('number').' · Bambu Studio', 'bracket.stl', 'cover.stl',
-            'PLA', 'Infill 100%', 'Colour: Blue', 'Quality level: Finer surface', 'Layer height: 0.12 mm', 'Post-processing: Surface smoothing',
-            'Requested schedule: Priority', 'Units: mm', 'Scale, % 100', 'Automatic print launch is not connected.'] as $text) {
+            'PLA', 'Infill 100%', 'Colour: Blue', 'Part purpose: Practical use', 'Additional services: Threaded insert installation',
+            'Surface quality: High', 'Production lead time: Urgent', 'Units: mm', 'Scale, % 100', 'Automatic print launch is not connected.'] as $text) {
             $this->assertStringContainsString(e($text), $job, $text);
         }
         foreach ($files as $file) {
@@ -423,10 +428,39 @@ class AdminOrdersTest extends TestCase
             $this->assertStringNotContainsString($file->path, $html);
         }
         $this->assertStringNotContainsString('storage', $job);
+        $this->assertStringNotContainsString('Quality level', $job);
+        $this->assertStringNotContainsString('Consultation needed', $job);
         $this->assertDoesNotMatchRegularExpression('#'.StlFile::DIRECTORY.'/[0-9a-f-]{36}#', $html);
         // Передачи на принтер нет: в листе только ссылки на файлы, без кнопок и форм отправки.
         $this->assertStringNotContainsString('<form', $job);
         $this->assertStringNotContainsString('wire:click', $job);
+    }
+
+    public function test_card_shows_client_notes_escaped_with_line_breaks_and_no_block_without_notes(): void
+    {
+        $this->card($this->order())->assertSee('Additional information')
+            ->assertSeeHtml('<p id="order-notes">Need it by Friday.<br />'."\n".'&lt;b&gt;Matte&lt;/b&gt; please</p>')
+            ->assertDontSeeHtml('<b>Matte</b>');
+
+        $this->card($this->submitted(notes: null)[0])->assertDontSeeHtml('id="order-notes"')->assertDontSee('Additional information');
+    }
+
+    public function test_infill_consultation_is_marked_in_the_infill_line(): void
+    {
+        $order = $this->submitted(consult: true)[0];
+        $this->card($order)->assertSee('Infill 20% · Consultation needed');
+        app()->setLocale('lt');
+        $this->card($order)->assertSee('Užpildas 20% · Reikia konsultacijos');
+    }
+
+    public function test_order_from_before_28_10_shows_previous_labels_in_en_and_lt(): void
+    {
+        $order = $this->submitted(preferences: ['color' => 'blue', 'quality' => 'fine', 'layer' => '0.12', 'finish' => 'smooth', 'term' => 'priority'], notes: null)[0];
+        $this->card($order)->assertOk()->assertSee(['Quality level: Finer surface', 'Layer height: 0.12 mm', 'Post-processing: Surface smoothing', 'Production lead time: Urgent'])
+            ->assertDontSee('admin.orders.legacy');
+        app()->setLocale('lt');
+        $this->card($order)->assertOk()->assertSee(['Kokybės lygis: Smulkesnis paviršius', 'Sluoksnio aukštis: 0.12 mm', 'Papildomas apdirbimas: Paviršiaus glotninimas'])
+            ->assertDontSee('admin.orders.legacy');
     }
 
     public function test_guest_link_reissue_shows_the_new_link_once_and_the_old_link_stops_working(): void

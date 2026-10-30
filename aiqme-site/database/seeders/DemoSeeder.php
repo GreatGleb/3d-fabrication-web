@@ -55,7 +55,7 @@ class DemoSeeder extends Seeder
             'address' => null,
             'material' => 'PLA',
             'infill' => 100,
-            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [[
                 'file' => UploadedFile::fake()->createWithContent('cube-10mm.stl', (string) file_get_contents(base_path('tests/fixtures/stl/cube-10mm-binary.stl'))),
                 'unit' => 'mm',

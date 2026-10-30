@@ -13,8 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Заявка на изготовление из шага 5 калькулятора (§3.1, W-12): один multipart-запрос fetch (файлы, параметры по файлу,
- * пожелания, контакты, способ получения, токен отправки). Частота по IP — middleware throttle:orders, honeypot — как у
- * форм W-09 (ошибка формы, ложного успеха с номером нет). Клиентская сумма не принимается. Ответ — адрес страницы
+ * пожелания, текст клиента notes, контакты, способ получения, токен отправки). Частота по IP — middleware throttle:orders,
+ * honeypot — как у форм W-09 (ошибка формы, ложного успеха с номером нет). Клиентская сумма не принимается. Ответ — адрес страницы
  * подтверждения; номер и гостевая ссылка передаются ей через flash сессии и показываются один раз.
  */
 class OrderRequestController extends Controller
@@ -44,12 +44,13 @@ class OrderRequestController extends Controller
             'address' => ['exclude_unless:delivery,ship', 'required', 'string', 'max:255'],
             'postcode' => ['exclude_unless:delivery,ship', 'required', 'string', 'max:50'],
             'material' => ['required', Rule::in(array_keys($this->settings->values()['materials']))],
-            'infill' => ['required', 'integer', 'min:0', 'max:100'],
+            'infill' => ['required', Rule::in([...array_map('strval', range(0, 100)), 'consult'])],
             'color' => $choice('calculator.settings.colors'),
-            'quality' => $choice('calculator.settings.qualities'),
-            'layer' => $choice('calculator.settings.layers'),
-            'finish' => $choice('calculator.settings.finishes'),
+            'purpose' => $choice('calculator.settings.purposes'),
+            'service' => $choice('calculator.settings.services'),
+            'surface' => $choice('calculator.settings.surfaces'),
             'term' => $choice('calculator.settings.terms'),
+            'notes' => ['nullable', 'string', 'max:2000'],
             'parts' => ['required', 'array', 'list', 'max:'.$limits['max_files']],
             'parts.*.file' => ['required', 'file', 'max:'.intdiv($limits['max_file_bytes'], 1024)],
             'parts.*.unit' => ['required', Rule::in(['mm', 'cm', 'in'])],
@@ -70,12 +71,12 @@ class OrderRequestController extends Controller
             'parts.*.file.max' => __('public.forms.file_size', ['max' => $maxMb]),
             'parts.*.quantity.min' => __('calculator.submit.quantity'),
             'parts.*.quantity.max' => __('calculator.submit.quantity'),
-            'infill.min' => __('public.forms.choice'),
-            'infill.max' => __('public.forms.choice'),
             'parts.*.scale.min' => __('calculator.js.scale_range'),
             'parts.*.scale.max' => __('calculator.js.scale_range'),
         ]);
 
+        // «Reikia konsultacijos» у заполнения: оценка — по заполнению по умолчанию, в детали — пометка консультации.
+        $consult = $data['infill'] === 'consult';
         $user = $request->user();
         $result = $this->submission->submit([
             'submission_token' => strtolower($data['submission_token']),
@@ -93,8 +94,10 @@ class OrderRequestController extends Controller
                 ? ['country' => $data['country'], 'city' => $data['city'], 'address' => $data['address'], 'postcode' => $data['postcode']]
                 : null,
             'material' => $data['material'],
-            'infill' => (int) $data['infill'],
-            'preferences' => collect($data)->only(['color', 'quality', 'layer', 'finish', 'term'])->all(),
+            'infill' => $consult ? $this->settings->values()['default_infill'] : (int) $data['infill'],
+            'infill_consult' => $consult,
+            'preferences' => collect($data)->only(['color', 'purpose', 'service', 'surface', 'term'])->all(),
+            'notes' => $data['notes'] ?? null,
             'parts' => array_map(fn (array $part): array => [
                 'file' => $part['file'],
                 'unit' => $part['unit'],

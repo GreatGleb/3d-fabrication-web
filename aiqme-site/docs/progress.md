@@ -3382,3 +3382,95 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   после deploy (пункт в `production-launch.md`). Кадры заглушки — `build/verification/browser-check/shots/contact-map-*.png`.
 - Если на рабочей БД есть своё ui_text `shell.cookie.text` или `public.contact.map_embed_url`, новые значения не покажутся —
   проверить после deploy.
+
+## Правки 28.10, E-05 (П6): шаг 02 калькулятора по макету заказчика
+
+Правка 28.10: состав шага 2 намеренно отличается от прототипа (§7.1) — по макету заказчика 23.37.38 и README плана, П6.
+
+### Что сделано
+
+- **Ключи и тексты** (`lang/{lt,en}/calculator.php`, `settings`): удалены `quality(ies)`, `finish(es)`, `layer(s)`,
+  `fdm_note`, `preferences_note`; добавлены `purpose(s)` (visual/practical/consult), `service(s)`
+  (none/painting/inserts/assembly/consult), `surface(s)` (high/standard/simplified/consult), `infill_consult`,
+  `term_note`, `notes`; изменены `term`, `terms` (ключи прежние standard/priority). Тексты — дословно из таблицы П6;
+  `infill`, `infill_option`, `recommended` не менялись. Прежние подписи — `admin.orders.legacy` LT/EN дословно,
+  с комментарием «только для показа заказов до 28.10».
+- **Шаблон** `calculator.blade.php`: Medžiaga | Spalva; Detalės paskirtis | Papildomos paslaugos (первые варианты по
+  умолчанию, без «*»); «FDM parametrai»: Paviršiaus kokybė (по умолчанию standard) | Užpildas (15/20/40/60/80/100 ∪
+  default_infill с « · rekomenduojama», выбран, + `consult`); Gamybos terminas с `term_note`; Detalių kiekiai;
+  textarea `notes` (maxlength 2000) в `.gap` после `[data-quantities]`. `fdm_note`/`preferences_note` удалены.
+- **JS** `index.js`: `parameters()` (ссылка специалиста) — color, purpose, service, surface, term, без notes;
+  `submitOrder()` отправляет material, infill, color, purpose, service, surface, term, notes; `consult` →
+  `quote.infill = settings.default_infill` (иначе `Number` дал бы NaN). EstimateService и `core/` не менялись.
+- **Сервер**: `OrderRequestController` — infill `Rule::in('0'..'100', 'consult')`, purpose/service/surface через `$choice`,
+  notes `nullable|string|max:2000`, сообщения `infill.min/max` удалены; consult → `infill = default_infill`,
+  `infill_consult = true`. `OrderSubmission` — `infill_consult` в `StlPart.parameters`, `notes` в `order_meta`, оба в
+  отпечатке отправки. Миграция `2026_10_29_100000_add_notes_to_order_meta.php` (nullable text, down — dropColumn),
+  `OrderMeta` — `notes` в `#[Fillable]` и docblock; docblock `StlPart`.
+- **Хранение notes**: только `order_meta.notes`; выводится только в карточке заказа админки (`#order-notes`,
+  `nl2br(e())`, без notes блока нет). В письмо, Telegram, Sheets, счёт, кабинет и ссылку специалиста не попадает;
+  Lunar `orders.notes` не используется.
+- **Карточка заказа**: подписи новых ключей — из `calculator.settings`, старых (quality, layer, finish) — из
+  `admin.orders.legacy`, поэтому заказы до 28.10 показываются с прежними подписями; консультация —
+  «Užpildas 20% · Reikia konsultacijos» / «Infill 20% · Consultation needed».
+- **Фикстуры** preferences → color/purpose/service/surface/term: DemoSeeder, tests/browser/OrderFactory (гостевой заказ
+  получил notes из двух строк), Sheets/Invoices/CustomerAccount/StlDownload/StripeWebhook/PaymentRequests/OrderWorkflow;
+  настоящие `POST /en/quote` в двух сценариях Scenarios/ — purpose=visual, service=none, surface=standard.
+  `grep -rln "'quality'\|'layer'\|'finish'" tests database app resources/js` → только AdminOrdersTest (тест старого
+  заказа) — legacy-подписи лежат в lang/ и orders-card.blade.php.
+- **Тесты**: CalculatorPageTest — новый тест шага 2 (точные списки EN, выбранные значения, порядок имён полей, нет старых
+  select и текстов, term_note дословно, textarea 2000 с подписью, LT при default_infill=30 и подписи без «*»).
+  Изменённое ожидание: проверка «нет SLA/SLS» теперь целыми словами (регулярное выражение `\b(SLA|SLS)\b`), потому что
+  текст заказчика «Vizualiniams tik**sla**ms» содержит «sla»; остальные фразы проверяются как прежде.
+  OrderSubmissionTest — точный массив parameters с `infill_consult=false`, notes null без поля и при пустой строке,
+  consult = 20 (итог равен итогу при 20, отличается от 100), пожелания и notes итог не меняют, notes дословно, повтор
+  токена с другим notes или consult → 422 submission_token без записей, отказы abc/101/fine/smooth/0.2/express/2001/нет
+  purpose без записей. AdminOrdersTest — лист Bambu с новыми подписями и без «Quality level», notes экранированы
+  с `<br />`, без notes блока нет, старый заказ EN/LT, пометка консультации EN/LT.
+- **bin/browser-check** `check_calculator` (390, 1440; LT и EN): старых select нет; data-cents при 20 % = при consult;
+  смена purpose/service/surface/term и ввод notes итог не меняют; затем 100 % → 512 и прежний сценарий; POST заявки 201,
+  в multipart — infill/purpose/service/surface/term/notes с выбранными значениями; шаг 3 — строка
+  «FDM: 1000 × 1000 × 1000 mm.»; кадры `shots/calculator-step2-<ширина>.png` (перед кадром закрывается плашка cookie
+  и на время кадра скрывается липкая шапка) и `shots/calculator-step3-<ширина>.png`. `check_admin_order` проверяет
+  `#order-notes` (две строки, один `<br>`, без другой разметки); кадр `admin-order-card-<ширина>.png` показывает notes.
+  Кадры LT и EN одной ширины пишутся в один файл (остаётся EN) — имена по критериям задачи.
+
+### Команды
+
+- `bin/php artisan test --compact tests/Feature/CalculatorPageTest.php tests/Feature/OrderSubmissionTest.php
+  tests/Feature/AdminOrdersTest.php` → passed (10 + 21 + 22 тестов).
+- `bin/php vendor/bin/pint --dirty --format agent` → passed.
+- `bin/browser-check --signed-in /lt/kalkuliatorius /en/quote` → OK (6050 проверок); после правки кадра шага 2
+  `bin/browser-check /lt/kalkuliatorius /en/quote` → OK (627).
+- `bin/check` → **OK**: PHPUnit 669 passed, Vite OK (6 мин 17 с).
+- Полный `bin/browser-check` → **OK (18733 проверки)**; «Прерванные запросы к чужим хостам: нет», карта подменена
+  заглушкой 37 раз. Прогон дольше 10-минутного предела команды сессии, поэтому шёл отдельным процессом с ожиданием
+  завершения в переднем плане (журнал `/tmp/e05-bc.log`).
+- Маркеры D-21 на /lt/kalkuliatorius, /en/quote и карточке заказа — в составе browser-check, совпадений нет.
+- `git status --porcelain aiqme-site` → изменённые файлы задачи и один новый файл — миграция.
+
+### Не проверено / ждёт проверки пользователем
+
+- «Падает до правки» для этой задачи отдельно не прогонялся (критерии done этого не требуют).
+- `bin/demo-check`: не запускался — порт 8792 занят контейнером `aiqme-prod-web-1` (локальный prod-compose, не мой,
+  не трогал). Старая сборка `demo/` собрана до правки: её калькулятор (infill 100 → 5,12) новый шаг 2 не содержит;
+  проверено чтением кода (`bin/demo-check` выбирает только `infill=100`, значение есть и в новом списке);
+  выполнение — ждёт пересборки демо (пользователь).
+- Ждёт проверки пользователем: сравнить `build/verification/browser-check/shots/calculator-step2-*.png` с макетом
+  заказчика 23.37.38; EN-формулировки новых вариантов — показать заказчику (открытый вопрос 2 README).
+- На рабочем сервере нужна миграция (`migrate --force` при deploy). Страница калькулятора, открытая до выпуска и
+  отправленная после него, получит 422 (нет `purpose`) — допустимо, реальные заказы ещё не открыты.
+
+### Доработка после приёмки (замечание: bin/browser-check красный)
+
+- Причина (журнал приёмщика `E-05.check0.log`): `check_viewer` падал на `reset.click()` внутри цикла действий —
+  кнопку «↺» у верхнего края холста перекрывала липкая шапка (`.head-main`), иногда плашка cookie; Playwright
+  ждал 30 с и бросал TimeoutError. Это нестабильность проверки, а не поведения калькулятора: у меня полный прогон
+  был зелёным, у приёмщика — нет (положение страницы после колеса/перетаскивания плавает).
+- Исправление в `bin/browser-check`: сброс вида — функция `reset()`, которая сначала ставит холст по центру окна
+  (тот же `box()`, что уже использовался для кнопок «+»/«−» по той же причине), затем кликает. Ожидания проверки
+  не ослаблены: сброс по-прежнему обязан вернуть исходный `toDataURL`.
+- После исправления: полный `bin/browser-check` → **OK (18733 проверки)**, EXIT 0 (журнал `/tmp/e05-bc.log`;
+  прогон дольше 10-минутного предела команды, поэтому шёл отдельным процессом с ожиданием завершения в переднем
+  плане); `bin/check` → **OK**, EXIT 0 (`/tmp/e05-check.log`).
+- Не проверено: устойчивость к повторным прогонам — прогнан один раз; прежняя нестабильность проявлялась не всегда.

@@ -61,6 +61,15 @@ return [
     // подписи трёх ответов, «Customer explanation & proposed solution», «Delivery», «Price», «Total», «Paid»; остальное —
     // нейтральные надписи, перечисленные в docs/progress.md (W-14).
     'orders' => [
+        // Parameters of orders before 28.10, display only (E-05): the previous calculator texts verbatim.
+        'legacy' => [
+            'quality' => 'Quality level',
+            'qualities' => ['standard' => 'Standard (recommended)', 'fine' => 'Finer surface'],
+            'layer' => 'Layer height',
+            'layers' => ['0.12' => '0.12 mm', '0.2' => '0.20 mm · recommended', '0.28' => '0.28 mm'],
+            'finish' => 'Post-processing',
+            'finishes' => ['none' => 'No additional finish', 'smooth' => 'Surface smoothing'],
+        ],
         'heading' => 'Orders & production review',
         'search' => 'Search by order number',
         'search_label' => 'Order search',

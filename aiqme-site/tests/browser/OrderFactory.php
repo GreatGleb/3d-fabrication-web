@@ -15,7 +15,8 @@ use Lunar\Models\Transaction;
 /**
  * Заказ для bin/browser-check (W-14): гостевая заявка W-12 (два куба 10 мм из tests/fixtures/stl/, PLA, доставка) через
  * OrderSubmission и действия администратора через OrderWorkflow — цена 60 + 55 + 5 EUR и доставка 30 EUR подтверждена,
- * открыт запрос оплаты 50 EUR, введены перевозчик и трек. Контакты — без слов-маркеров D-21. STL пишутся на диск local
+ * открыт запрос оплаты 50 EUR, введены перевозчик и трек; notes клиента — две строки (E-05). Контакты и notes — без
+ * слов-маркеров D-21. STL пишутся на диск local
  * (игнорируемый storage/).
  */
 final class OrderFactory
@@ -37,7 +38,8 @@ final class OrderFactory
             'address' => ['country' => 'LT', 'city' => 'Kaunas', 'address' => 'Laisvės al. 1', 'postcode' => '44001'],
             'material' => 'PLA',
             'infill' => 100,
-            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
+            'notes' => "Pagaminti iki penktadienio.\nDetales supakuoti atskirai.",
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], null)->order;
 
@@ -66,7 +68,7 @@ final class OrderFactory
             'address' => null,
             'material' => 'PLA',
             'infill' => 100,
-            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [[
                 'file' => UploadedFile::fake()->createWithContent('cube-10mm-binary.stl', file_get_contents(base_path('tests/fixtures/stl/cube-10mm-binary.stl'))),
                 'unit' => 'mm',

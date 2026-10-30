@@ -57,7 +57,7 @@ class StlDownloadTest extends TestCase
             'address' => null,
             'material' => 'PLA',
             'infill' => 100,
-            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [['file' => $upload, 'unit' => 'mm', 'scale' => 100, 'quantity' => 1]],
         ], $user);
         $this->assertSame($user?->id, $result->order->user_id);

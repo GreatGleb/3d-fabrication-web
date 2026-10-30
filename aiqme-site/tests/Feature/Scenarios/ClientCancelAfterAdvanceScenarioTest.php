@@ -69,7 +69,7 @@ class ClientCancelAfterAdvanceScenarioTest extends TestCase
             'submission_token' => (string) Str::uuid(),
             'name' => 'Rūta TEST', 'email' => 'ruta@example.test', 'phone' => '+370 622 22222', 'company' => '', 'company_code' => '', 'vat_code' => '',
             'delivery' => 'ship', 'country' => 'LT', 'city' => 'Kaunas', 'address' => 'Laisvės al. 1', 'postcode' => 'LT-44000',
-            'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard',
+            'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard',
             'parts' => [['file' => UploadedFile::fake()->createWithContent('bracket.stl', file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'))),
                 'unit' => 'mm', 'scale' => '100', 'quantity' => '1']],
         ], ['Accept' => 'application/json'])->assertCreated()->json('redirect');

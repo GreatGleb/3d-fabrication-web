@@ -11,8 +11,10 @@ use Lunar\Base\Purchasable;
 
 /**
  * Строка заказа «деталь из STL» (§2.5, §3.1): закрытая спецификация изготовления, не товар каталога. Параметры —
- * материал, заполнение, единицы, масштаб, количество (parameters.quantity) и пожелания; estimate — серверная оценка строки
- * в центах (EstimateService), она же цена строки Lunar при quantity = 1.
+ * материал, заполнение (infill; infill_consult — клиент просил консультацию, infill = заполнение по умолчанию), единицы,
+ * масштаб, количество (parameters.quantity) и пожелания color, purpose, service, surface, term (у заказов до 28.10 —
+ * quality, layer, finish); estimate — серверная оценка строки в центах (EstimateService), она же цена строки Lunar при
+ * quantity = 1.
  */
 #[Fillable(['stl_file_id', 'parameters', 'measurement', 'estimate'])]
 class StlPart extends Model implements Purchasable

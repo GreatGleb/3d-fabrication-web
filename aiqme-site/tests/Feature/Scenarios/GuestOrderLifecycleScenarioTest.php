@@ -135,7 +135,7 @@ class GuestOrderLifecycleScenarioTest extends TestCase
             'submission_token' => (string) Str::uuid(),
             'name' => 'Ona TEST', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'company' => 'UAB TEST', 'company_code' => 'TEST-123', 'vat_code' => '',
             'delivery' => 'ship', 'country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gedimino pr. 1', 'postcode' => 'LT-01103',
-            'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard',
+            'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard',
             'parts' => [
                 ['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '2'],
                 ['file' => $this->stl('cube-10mm-binary.stl', 'cover.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '1'],

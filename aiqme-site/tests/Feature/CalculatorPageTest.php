@@ -93,16 +93,56 @@ class CalculatorPageTest extends TestCase
         $en = $this->page('/en/quote');
         $this->assertSame(0, $en->query('//*[contains(@class, "tech-choices")]')->length);
         $this->assertSame(['PLA', 'PETG', 'ABS'], Html::texts($en, '//select[@name="material"]/option'));
-        $this->assertSame(['20% · recommended', '40%', '60%', '100%'], Html::texts($en, '//select[@name="infill"]/option'));
-        $this->assertSame('20', $en->query('//select[@name="infill"]/option[@selected]')->item(0)->getAttribute('value'));
-        $this->assertSame(['Standard', 'Priority'], Html::texts($en, '//select[@name="term"]/option'));
-        $this->assertStringContainsString('do not change the estimate', Html::text($en->query('//*[@data-step-panel="1"]')->item(0)));
+    }
+
+    /** Шаг 2 по макету заказчика (правка 28.10, E-05): состав, порядок и варианты полей, пояснение срока, notes. */
+    public function test_step_two_follows_customer_layout_of_28_10(): void
+    {
+        $en = $this->page('/en/quote');
+        $panel = $en->query('//*[@data-step-panel="1"]')->item(0);
+        $names = [];
+        foreach ($en->query('.//*[@name]', $panel) as $field) {
+            $names[] = $field->getAttribute('name');
+        }
+        $this->assertSame(['material', 'color', 'purpose', 'service', 'surface', 'infill', 'term', 'notes'], $names);
+        foreach (['quality', 'layer', 'finish'] as $old) {
+            $this->assertSame(0, $en->query('//*[@name="'.$old.'"]')->length, $old);
+        }
+        $selected = fn (DOMXPath $page, string $name): string => $page->query('//select[@name="'.$name.'"]/option[@selected]')->item(0)?->getAttribute('value') ?? '';
+
+        $this->assertSame(['15%', '20% · recommended', '40%', '60%', '80%', '100%', 'Consultation needed'], Html::texts($en, '//select[@name="infill"]/option'));
+        $this->assertSame('consult', $en->query('//select[@name="infill"]/option[last()]')->item(0)->getAttribute('value'));
+        $this->assertSame('20', $selected($en, 'infill'));
+        $this->assertSame(['Visual purposes', 'Practical use', 'Consultation needed'], Html::texts($en, '//select[@name="purpose"]/option'));
+        $this->assertSame('', $selected($en, 'purpose'));
+        $this->assertSame(['Not needed', 'Sanding and painting', 'Threaded insert installation', 'Part assembly', 'Consultation needed'], Html::texts($en, '//select[@name="service"]/option'));
+        $this->assertSame('', $selected($en, 'service'));
+        $this->assertSame(['High', 'Standard', 'Simplified', 'Consultation needed'], Html::texts($en, '//select[@name="surface"]/option'));
+        $this->assertSame('standard', $selected($en, 'surface'));
+        $this->assertSame(['Standard', 'Urgent'], Html::texts($en, '//select[@name="term"]/option'));
+        $this->assertSame('If you choose urgent production, state the required completion date in the “Additional information” field. The lead time is counted from order confirmation. We will agree the exact lead time after reviewing the model and quantity.',
+            Html::text($en->query('//label[select[@name="term"]]/following-sibling::p[@class="legal-note"]')->item(0)));
+        $text = Html::text($panel);
+        foreach (['do not change the estimate', 'A smaller layer', 'Quality level', 'Layer height', 'Requested schedule'] as $old) {
+            $this->assertStringNotContainsString($old, $text);
+        }
+        $notes = $en->query('//*[@data-quantities]/following-sibling::div[contains(@class, "gap")]//textarea[@name="notes"]')->item(0);
+        $this->assertNotNull($notes);
+        $this->assertSame('2000', $notes->getAttribute('maxlength'));
+        $this->assertSame('Additional information', trim($en->query('//label[textarea[@name="notes"]]/text()[1]')->item(0)->textContent));
 
         $settings = app(CalculatorSettings::class);
         $settings->save(['default_infill' => 30] + $settings->values());
         $lt = $this->page('/lt/kalkuliatorius');
-        $this->assertSame(['20 %', '30 % · rekomenduojama', '40 %', '60 %', '100 %'], Html::texts($lt, '//select[@name="infill"]/option'));
-        $this->assertSame('30', $lt->query('//select[@name="infill"]/option[@selected]')->item(0)->getAttribute('value'));
+        $this->assertSame(['15 %', '20 %', '30 % · rekomenduojama', '40 %', '60 %', '80 %', '100 %', 'Reikia konsultacijos'], Html::texts($lt, '//select[@name="infill"]/option'));
+        $this->assertSame('30', $selected($lt, 'infill'));
+        $labels = [];
+        foreach (['material', 'color', 'purpose', 'service', 'surface', 'infill', 'term'] as $name) {
+            $labels[] = trim($lt->query('//label[select[@name="'.$name.'"]]/text()[1]')->item(0)->textContent);
+        }
+        $labels[] = trim($lt->query('//label[textarea[@name="notes"]]/text()[1]')->item(0)->textContent);
+        $this->assertSame(['Medžiaga', 'Spalva', 'Detalės paskirtis', 'Papildomos paslaugos', 'Paviršiaus kokybė', 'Užpildas', 'Gamybos terminas', 'Papildoma informacija'], $labels);
+        $this->assertSame('FDM parametrai', Html::text($lt->query('//*[@data-step-panel="1"]//*[contains(@class, "inset")]/h3')->item(0)));
     }
 
     public function test_price_table_summary_and_checkout_have_no_vat_delivery_discount_or_unit_price(): void
@@ -130,11 +170,13 @@ class CalculatorPageTest extends TestCase
         foreach (['/en/quote', '/lt/kalkuliatorius'] as $path) {
             $main = Html::text($this->page($path)->query('//main')->item(0));
             foreach (['excl. VAT', 'be PVM', 'VAT 21', 'PVM 21', 'Delivery (demo)', 'discount', 'nuolaida', 'Vnt.',
-                'Prepaid', 'iš anksto', 'SLA', 'SLS', 'Metal', 'Try an issue scenario', 'neatitikimo scenarijų', 'Payment is blocked',
+                'Prepaid', 'iš anksto', 'Metal', 'Try an issue scenario', 'neatitikimo scenarijų', 'Payment is blocked',
                 'Resolve the review warnings', 'watertightness', 'sandarumas', 'example', 'pavyzd', 'demo', 'illustrative',
                 'prototype', 'prototip', '15 MB', 'working days', 'darbo dienos', 'sample'] as $phrase) {
                 $this->assertStringNotContainsStringIgnoringCase($phrase, $main, "$path: «{$phrase}»");
             }
+            // Технологии — целыми словами: «Vizualiniams tikslams» шага 2 (правка 28.10) содержит «sla».
+            $this->assertDoesNotMatchRegularExpression('/\\b(SLA|SLS)\\b/i', $main, $path);
         }
     }
 

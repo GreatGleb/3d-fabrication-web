@@ -103,7 +103,7 @@ class OrderWorkflowTest extends TestCase
             'address' => $delivery === 'ship' ? ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gatvė 1', 'postcode' => '01100'] : null,
             'material' => 'PLA',
             'infill' => 100,
-            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], $guest ? null : ($user ?? $this->client))->order;
     }

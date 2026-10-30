@@ -75,9 +75,9 @@ class OrderSubmissionTest extends TestCase
             'material' => 'PLA',
             'infill' => '100',
             'color' => 'black',
-            'quality' => 'standard',
-            'layer' => '0.2',
-            'finish' => 'none',
+            'purpose' => 'visual',
+            'service' => 'none',
+            'surface' => 'standard',
             'term' => 'standard',
             'parts' => [
                 ['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '3'],
@@ -140,8 +140,8 @@ class OrderSubmissionTest extends TestCase
         $this->assertSame([3, 1], $parts->map(fn ($line) => $line->purchasable->parameters['quantity'])->all());
         $this->assertSame([37, 12], $parts->map(fn ($line) => $line->purchasable->estimate)->all());
         $this->assertEqualsWithDelta(3.72, $parts[0]->purchasable->measurement['mass_grams'], 1e-9);
-        $this->assertSame(['material' => 'PLA', 'infill' => 100, 'unit' => 'mm', 'scale' => 100, 'quantity' => 3, 'color' => 'black',
-            'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'], $parts[0]->purchasable->parameters);
+        $this->assertSame(['material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 3, 'color' => 'black',
+            'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'], $parts[0]->purchasable->parameters);
         $fee = $order->lines->first(fn ($line) => $line->purchasable instanceof OrderCharge);
         $this->assertSame([OrderCharge::FEE, 500, 1, $order->id], [$fee->purchasable->kind, $fee->unit_price->value, $fee->quantity, $fee->purchasable->order_id]);
 
@@ -169,10 +169,52 @@ class OrderSubmissionTest extends TestCase
             'company_code' => '300000000', 'vat_code' => null], $meta->contact);
         $this->assertSame(['ship', ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gedimino pr. 1', 'postcode' => 'LT-01103']], [$meta->delivery, $meta->address]);
         $this->assertSame(['0.10', 500], [$meta->settings['rate_per_gram'], $meta->settings['order_fee_cents']]);
+        $this->assertNull($meta->notes);
         $guestToken = basename($confirmed['guest_url']);
         $this->assertSame(43, strlen($guestToken));
         $this->assertSame(hash('sha256', $guestToken), $meta->guest_token_hash);
         $this->assertStringNotContainsString($guestToken, json_encode(OrderMeta::sole()->getAttributes()));
+    }
+
+    /**
+     * Шаг 2 по макету заказчика (правка 28.10, E-05): «Reikia konsultacijos» у заполнения считается и хранится как
+     * заполнение по умолчанию (20) с пометкой; пожелания и notes сумму не меняют, notes сохраняется дословно.
+     */
+    public function test_infill_consultation_preferences_and_notes(): void
+    {
+        config(['aiqme.orders.per_hour' => 100]);
+        $order = function (array $override): array {
+            $this->token = (string) Str::uuid();
+            $total = $this->submitAndConfirm($this->payload($override))['total'];
+            $meta = OrderMeta::where('submission_token', $this->token)->sole();
+            $part = Order::findOrFail($meta->order_id)->lines->first(fn ($line) => $line->purchasable instanceof StlPart)->purchasable;
+
+            return [$total, $part->parameters, $meta->notes];
+        };
+
+        [$at20, $parameters20] = $order(['infill' => '20']);
+        [$atConsult, $parametersConsult, $notesConsult] = $order(['infill' => 'consult', 'notes' => '']);
+        [$at100] = $order([]);
+        $this->assertSame($at20, $atConsult);
+        $this->assertNotSame($at100, $atConsult);
+        $this->assertSame([20, false], [$parameters20['infill'], $parameters20['infill_consult']]);
+        $this->assertSame([20, true], [$parametersConsult['infill'], $parametersConsult['infill_consult']]);
+        $this->assertNull($notesConsult);
+
+        $notes = "Iki penktadienio.\n<b>Matinis</b> paviršius";
+        [$wishes, $parameters, $storedNotes] = $order(['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'term' => 'priority', 'notes' => $notes]);
+        $this->assertSame($at100, $wishes);
+        $this->assertSame(['consult', 'painting', 'high', 'priority'], [$parameters['purpose'], $parameters['service'], $parameters['surface'], $parameters['term']]);
+        $this->assertArrayNotHasKey('notes', $parameters);
+        $this->assertSame($notes, $storedNotes);
+
+        // Тот же токен с другим notes или с консультацией — отказ без записей.
+        $count = [Order::count(), StlFile::count(), IntegrationEvent::count()];
+        foreach ([['notes' => 'Kita'], ['notes' => $notes, 'infill' => 'consult']] as $override) {
+            $this->submit($this->payload(['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'term' => 'priority', ...$override]))
+                ->assertUnprocessable()->assertJsonPath('errors.submission_token.0', 'This order has already been submitted with other details. Reload the page and try again.');
+        }
+        $this->assertSame($count, [Order::count(), StlFile::count(), IntegrationEvent::count()]);
     }
 
     /**
@@ -380,6 +422,11 @@ class OrderSubmissionTest extends TestCase
             'parts.0.scale' => [['parts' => [$part(['scale' => '0'])]], 'Scale must be between 1 and 1000%.'],
             'parts.0.quantity' => [['parts' => [$part(['quantity' => '101'])]], 'Quantity: from 1 to 100.'],
             'infill' => [['infill' => '101'], 'Choose a value from the list.'],
+            'purpose' => [['purpose' => 'fine'], 'Choose a value from the list.'],
+            'service' => [['service' => 'smooth'], 'Choose a value from the list.'],
+            'surface' => [['surface' => '0.2'], 'Choose a value from the list.'],
+            'term' => [['term' => 'express'], 'Choose a value from the list.'],
+            'notes' => [['notes' => str_repeat('a', 2001)], 'Too long: up to 2000 characters.'],
             'parts.0.unit' => [['parts' => [$part(['unit' => 'ft'])]], 'Choose a value from the list.'],
             'parts' => [['parts' => array_map(fn () => $part(), range(1, 11))], 'No more than 10 files.'],
             'material' => [['material' => 'Titanium'], 'Choose a value from the list.'],
@@ -392,6 +439,9 @@ class OrderSubmissionTest extends TestCase
             $response = $this->submit($this->payload($override));
             $this->assertSame([422, $message], [$response->status(), $response->json('errors')[$field][0] ?? null], $field.': '.json_encode($response->json('errors')));
         }
+        $response = $this->submit($this->payload(['infill' => 'abc']));
+        $this->assertSame([422, 'Choose a value from the list.'], [$response->status(), $response->json('errors.infill.0')]);
+        $this->submit(array_diff_key($this->payload(), ['purpose' => 1]))->assertUnprocessable()->assertJsonPath('errors.purpose.0', 'Fill in this field.');
         // Пустая заявка (эксперимент: пустая корзина) — «Upload a model.».
         $this->submit(array_diff_key($this->payload(), ['parts' => 1]))->assertUnprocessable()->assertJsonPath('errors.parts.0', 'Upload a model.');
 

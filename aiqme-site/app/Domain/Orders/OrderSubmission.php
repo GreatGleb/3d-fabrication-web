@@ -46,7 +46,7 @@ final class OrderSubmission
     ) {}
 
     /**
-     * @param  array{submission_token: string, locale: string, contact: array<string, ?string>, delivery: string, address: ?array<string, string>, material: string, infill: int, preferences: array<string, string>, parts: list<array{file: UploadedFile, unit: string, scale: int|float, quantity: int}>}  $data
+     * @param  array{submission_token: string, locale: string, contact: array<string, ?string>, delivery: string, address: ?array<string, string>, material: string, infill: int, infill_consult?: bool, preferences: array<string, string>, notes?: ?string, parts: list<array{file: UploadedFile, unit: string, scale: int|float, quantity: int}>}  $data
      */
     public function submit(array $data, ?User $user): SubmittedOrder
     {
@@ -164,6 +164,7 @@ final class OrderSubmission
                 'parameters' => [
                     'material' => $data['material'],
                     'infill' => $data['infill'],
+                    'infill_consult' => $data['infill_consult'] ?? false,
                     'unit' => $part['unit'],
                     'scale' => $part['scale'],
                     'quantity' => $part['quantity'],
@@ -199,6 +200,7 @@ final class OrderSubmission
             'delivery' => $data['delivery'],
             'address' => $data['address'],
             'settings' => $estimate['settings'],
+            'notes' => $data['notes'] ?? null,
         ]);
         ProductionState::create(['order_id' => $order->id]);
         $this->events->record('order.submitted', $order, [
@@ -242,7 +244,8 @@ final class OrderSubmission
     }
 
     /**
-     * Отпечаток данных отправки: отправитель, локаль, контакты, получение, параметры и по каждому файлу — sha256 содержимого,
+     * Отпечаток данных отправки: отправитель, локаль, контакты, получение, параметры (с консультацией по заполнению и
+     * notes) и по каждому файлу — sha256 содержимого,
      * имя, единицы, масштаб и количество.
      *
      * @param  list<array<string, mixed>>  $parts
@@ -257,7 +260,9 @@ final class OrderSubmission
             $data['address'],
             $data['material'],
             $data['infill'],
+            $data['infill_consult'] ?? false,
             $data['preferences'],
+            $data['notes'] ?? null,
             array_map(fn (array $part): array => [$part['sha256'], $part['name'], $part['unit'], (float) $part['scale'], $part['quantity']], $parts),
         ], JSON_THROW_ON_ERROR));
     }

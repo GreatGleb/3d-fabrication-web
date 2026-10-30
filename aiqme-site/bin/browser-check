@@ -66,7 +66,8 @@ W-33: медиа прототипа по умолчанию (D-43) на данн
 
 W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 — check_calculator (CALCULATOR_PAGES): 5 шагов на кубе 10 мм
 из tests/fixtures/stl/ (PLA, 100 %, qty 1 → итог 5,12 = сумма строк сводки) при отключённом canvas, ошибки OBJ/STEP, формата,
-размера (25 МиБ + 1 байт) и разбора, масштаб с окном подтверждения, шаг 3 без флажка сценария и открытый тетраэдр
+размера (25 МиБ + 1 байт) и разбора, масштаб с окном подтверждения, шаг 2 по макету заказчика (правка 28.10, E-05:
+«Reikia konsultacijos» = 20 %, пожелания и notes итог не меняют, кадры calculator-step2/step3-<ширина>.png), шаг 3 без флажка сценария и открытый тетраэдр
 (предупреждение, переход доступен), шаг 4 и сводка без VAT/доставки/скидки, поле VAT-кода шага 5,
 ссылка специалиста заполняет контактную форму; крупный binary (~25 МБ) — индикация, страница не замирает (Web Worker),
 куб, выбранный следом, остаётся активным. Файлы проверки — во временном каталоге.
@@ -90,7 +91,7 @@ W-31: просмотр модели (Canvas 2D) на тех же страниц�
 страницу; модель 500 000 треугольников — время кадра в заметках отчёта (< 100 мс).
 
 W-14: вкладки orders и customers — в ADMIN_PAGES (Overview — с метриками и последними заказами); карточка заказа фабрики
-tests/browser/OrderFactory (гостевой заказ: цена подтверждена, открыт запрос оплаты, введён трек) — check_admin_order на 390
+tests/browser/OrderFactory (гостевой заказ: цена подтверждена, открыт запрос оплаты, введён трек, notes из двух строк — #order-notes) — check_admin_order на 390
 (LT) и 1440 (EN): переход «Valdyti» · «Manage», без расползания документа, маркеров D-21 и ошибок консоли/CSP; стадия, открытый
 запрос и трек на месте; лист задания Bambu — ссылки /stl/<id>, скачивание администратором — attachment; «Atšaukti užsakymą» ·
 «Cancel order» сначала спрашивает подтверждение, «Atgal» · «Back» ничего не меняет; на 1440 перевыпуск гостевой ссылки —
@@ -1216,7 +1217,8 @@ def check_calculator_settings(report, new_page, state):
 
 
 def check_admin_order(report, new_page, state, allowlist):
-    """Карточка заказа W-14 на фабричном заказе (tests/browser/OrderFactory) на 390 (LT) и 1440 (EN)."""
+    """Карточка заказа W-14 на фабричном заказе (tests/browser/OrderFactory) на 390 (LT) и 1440 (EN); notes клиента
+    (E-05) — #order-notes из двух строк без разметки, видны на кадре admin-order-card-<ширина>.png."""
     for width, height, prefix, texts in ((390, 844, '/lt/administravimas', {'stage': 'Patvirtinta gamybai', 'open': 'Atvira', 'back': 'Atgal'}),
                                          (1440, 1000, '/en/admin', {'stage': 'Approved for production', 'open': 'Open', 'back': 'Back'})):
         where = f'{prefix}/orders карточка @{width}'
@@ -1231,6 +1233,11 @@ def check_admin_order(report, new_page, state, allowlist):
         report.check(texts['stage'] in page.inner_text('#order-card .status-title'), f'{where}: нет стадии «{texts["stage"]}»')
         report.check(texts['open'] in page.inner_text('#order-payment'), f'{where}: нет открытого запроса оплаты')
         report.check(page.input_value('#field-trackingNumber') == 'LT000000001', f'{where}: нет трека')
+        # notes клиента (E-05): две строки, без разметки.
+        notes = page.locator('#order-notes')
+        report.check(notes.count() == 1 and notes.inner_text() == 'Pagaminti iki penktadienio.\nDetales supakuoti atskirai.'
+                     and notes.locator('br').count() == 1 and notes.locator('*:not(br)').count() == 0,
+                     f'{where}: #order-notes {notes.all_inner_texts()}')
         page.click('#order-card button[aria-controls="bambu-job"]')
         page.wait_for_selector('#bambu-job')
         links = page.locator('#bambu-job a').evaluate_all('links => links.map(link => link.getAttribute("href"))')
@@ -1592,7 +1599,9 @@ def calculator_files(directory):
 
 def check_calculator(report, new_page, path, width, allowlist, files):
     """Калькулятор W-27: 5 шагов на кубе 10 мм (PLA, 100 %, qty 1 → 5,12), ошибки формата и лимитов, масштаб с
-    подтверждением, шаг 3 без флажка сценария (открытый тетраэдр — предупреждение, переход доступен), шаги 4 и сводка без
+    подтверждением; шаг 2 по макету заказчика (правка 28.10, E-05): старых select нет, итог при «Reikia konsultacijos» =
+    итогу при 20 %, пожелания и notes итог не меняют, заявка 201 уходит с новыми полями; кадры
+    shots/calculator-step2-<ширина>.png и shots/calculator-step3-<ширина>.png (шаг 3 с габаритом 1000 мм); шаг 3 без флажка сценария (открытый тетраэдр — предупреждение, переход доступен), шаги 4 и сводка без
     VAT/доставки/скидки, поздний результат крупного файла и индикация разбора, ссылка специалиста. canvas отключён:
     расчёт не зависит от просмотра (W-31)."""
     en = path.startswith('/en')
@@ -1663,23 +1672,44 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     report.check(dims.inner_text() == '10.0 × 10.0 × 10.0 mm', f'{where}: масштаб 100 % не вернулся')
     fits(1)
 
-    # Шаг 2: без кнопок технологии; PLA, заполнение 100 %, количество 1.
+    # Шаг 2 по макету заказчика (правка 28.10, E-05): старых select нет; сумму меняют только материал и заполнение —
+    # «Reikia konsultacijos» = заполнение 20 % по умолчанию, пожелания и notes data-cents не меняют; затем PLA, 100 %, количество 1.
     click('[data-next]')
     report.check(page.locator('[data-step-panel="1"]').is_visible(), f'{where}: шаг 2 не открылся')
     report.check(page.locator('.tech-choices, [data-action=technology]').count() == 0, f'{where}: на шаге 2 есть кнопки технологии')
     for technology in ('SLA', 'SLS', 'Metal'):
-        report.check(technology not in panel().inner_text(), f'{where}: на шаге 2 есть «{technology}»')
+        report.check(not re.search(rf'\b{technology}\b', panel().inner_text()), f'{where}: на шаге 2 есть «{technology}»')
+    report.check(page.locator('select[name=quality], select[name=layer], select[name=finish]').count() == 0, f'{where}: на шаге 2 старые select')
     page.select_option('select[name=material]', 'PLA')
+    cents = lambda: int(page.locator('[data-total]').get_attribute('data-cents') or -1)
+    page.select_option('select[name=infill]', '20')
+    at20 = cents()
+    page.select_option('select[name=infill]', 'consult')
+    report.check(cents() == at20 > 0, f'{where}: итог при консультации {cents()} ≠ итогу при 20 % {at20}')
+    for name, value in (('purpose', 'practical'), ('service', 'inserts'), ('surface', 'high'), ('term', 'priority')):
+        page.select_option(f'select[name={name}]', value)
+        report.check(cents() == at20, f'{where}: {name}={value} изменил итог ({cents()} ≠ {at20})')
+    page.fill('textarea[name=notes]', 'Pagaminti iki penktadienio.\nDetales supakuoti atskirai.')
+    page.locator('textarea[name=notes]').dispatch_event('change')
+    report.check(cents() == at20, f'{where}: notes изменил итог ({cents()} ≠ {at20})')
+    # Кадр панели без плашки cookie и липкой шапки поверх (шапка возвращается сразу после кадра).
+    page.locator('[data-cookie-accept]').click()
+    page.evaluate("document.querySelector('header.header').style.visibility = 'hidden'")
+    page.locator('[data-step-panel="1"]').screenshot(path=str(OUT / 'shots' / f'calculator-step2-{width}.png'))
+    page.evaluate("document.querySelector('header.header').style.visibility = ''")
     page.select_option('select[name=infill]', '100')
+    report.check(cents() == 512, f'{where}: итог при 100 % {cents()}, а не 512')
     report.check(page.locator('[data-quantity]').input_value() == '1', f'{where}: количество не 1')
     fits(2)
 
-    # Шаг 3: флажка сценария нет, предупреждений у замкнутого куба нет.
+    # Шаг 3: флажка сценария нет, предупреждений у замкнутого куба нет; габарит FDM 1000 мм (П7).
     click('[data-next]')
     report.check(page.locator('#simulate-risk, [data-step-panel="2"] input[type=checkbox]').count() == 0, f'{where}: на шаге 3 есть флажок')
     report.check(page.locator('[data-warnings]').is_hidden(), f'{where}: у куба есть предупреждения')
+    report.check('FDM: 1000 × 1000 × 1000 mm.' in panel().inner_text(), f'{where}: на шаге 3 нет строки габарита 1000 мм')
     label = next_button.inner_text().strip()
     report.check(label == ('Continue' if en else 'Tęsti'), f'{where}: кнопка шага 3 «{label}»')
+    page.locator('[data-step-panel="2"]').screenshot(path=str(OUT / 'shots' / f'calculator-step3-{width}.png'))
     fits(3)
 
     # Шаг 4: столбцы, строка 0,12, итог 5,12 = сумма строк сводки, без VAT/доставки/скидки.
@@ -1732,7 +1762,15 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     page.fill('#checkout-form [name=name]', 'Ona Petraitė')
     page.fill('#checkout-form [name=email]', 'ona@example.test')
     page.fill('#checkout-form [name=phone]', '+370 600 00000')
-    click('#checkout-form button[type=submit]')
+    with page.expect_response(lambda response: response.request.method == 'POST', timeout=30000) as answer:
+        click('#checkout-form button[type=submit]')
+    body = answer.value.request.post_data_buffer or b''
+    sent_fields = {name: re.search(rb'name="' + name.encode() + rb'"\r\n\r\n([^\r]*(?:\r\n(?!--)[^\r]*)*)\r\n--', body) for name in
+                   ('infill', 'purpose', 'service', 'surface', 'term', 'notes')}
+    sent_fields = {name: match.group(1).decode().replace('\r\n', '\n') if match else None for name, match in sent_fields.items()}
+    report.check(answer.value.status == 201 and sent_fields == {'infill': '100', 'purpose': 'practical', 'service': 'inserts', 'surface': 'high',
+                 'term': 'priority', 'notes': 'Pagaminti iki penktadienio.\nDetales supakuoti atskirai.'},
+                 f'{where}: заявка {answer.value.status} с полями {sent_fields}')
     page.wait_for_url('**/' + ('quote/submitted' if en else 'kalkuliatorius/pateikta'), timeout=30000)
     page.wait_for_load_state('networkidle')
     number = page.locator('[data-order-number]').get_attribute('data-order-number') or ''
@@ -1824,12 +1862,14 @@ def check_viewer(report, new_page, path, width, files):
     canvas.focus()
     page.keyboard.press('ArrowRight')
     report.check(snapshot() != initial, f'{where}: ArrowRight не изменил изображение')
-    reset = page.locator('[data-reset-view]')
-    reset.click()
-    report.check(snapshot() == initial, f'{where}: после сброса изображение не совпало с исходным')
     def box():
         canvas.evaluate('(node) => node.scrollIntoView({block: "center"})')
         return canvas.bounding_box()
+
+    # Сброс — тоже с холстом по центру: после колеса/перетаскивания кнопку у верхнего края холста перекрывала липкая шапка.
+    reset = lambda: (box(), page.locator('[data-reset-view]').click())
+    reset()
+    report.check(snapshot() == initial, f'{where}: после сброса изображение не совпало с исходным')
 
     def wheel(delta):
         b = box()
@@ -1850,7 +1890,7 @@ def check_viewer(report, new_page, path, width, files):
                          (lambda: wheel(100), 'колесо'), (drag, 'перетаскивание')):
         action()
         report.check(snapshot() != initial, f'{where}: {name} не изменил изображение')
-        reset.click()
+        reset()
         report.check(snapshot() == initial, f'{where}: после «{name}» сброс не вернул исходное изображение')
     box()
     scroll = page.evaluate('window.scrollY')

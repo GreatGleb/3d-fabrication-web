@@ -115,7 +115,7 @@ class SheetsTest extends TestCase
             'address' => ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gedimino pr. 1', 'postcode' => 'LT-01103'],
             'material' => 'PLA',
             'infill' => 100,
-            'preferences' => ['color' => 'black', 'quality' => 'standard', 'layer' => '0.2', 'finish' => 'none', 'term' => 'standard'],
+            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => array_map(fn (string $file): array => [
                 'file' => UploadedFile::fake()->createWithContent($file, $cube), 'unit' => 'mm', 'scale' => 100, 'quantity' => 2,
             ], ['bracket.stl', 'cover.stl']),

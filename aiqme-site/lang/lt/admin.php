@@ -45,6 +45,15 @@ return [
         ],
     ],
     'orders' => [
+        // Parametrai užsakymų iki 28.10, tik rodymui (E-05): ankstesni kalkuliatoriaus tekstai pažodžiui.
+        'legacy' => [
+            'quality' => 'Kokybės lygis',
+            'qualities' => ['standard' => 'Standartinis (rekomenduojamas)', 'fine' => 'Smulkesnis paviršius'],
+            'layer' => 'Sluoksnio aukštis',
+            'layers' => ['0.12' => '0.12 mm', '0.2' => '0.20 mm · rekomenduojama', '0.28' => '0.28 mm'],
+            'finish' => 'Papildomas apdirbimas',
+            'finishes' => ['none' => 'Be papildomo apdirbimo', 'smooth' => 'Paviršiaus glotninimas'],
+        ],
         'heading' => 'Užsakymai ir gamybos patikra',
         'search' => 'Ieškoti pagal užsakymo numerį',
         'search_label' => 'Užsakymų paieška',

@@ -13,12 +13,17 @@
         $line->purchasable->kind === \App\Models\OrderCharge::DELIVERY => __('admin.orders.delivery'),
         default => __('calculator.js.order_fee'),
     };
-    $settings = ['color' => 'colors', 'quality' => 'qualities', 'layer' => 'layers', 'finish' => 'finishes', 'term' => 'terms'];
+    // Пожелания: ключ => [группа текстов, ключ вариантов]; подписи ключей заказов до 28.10 — admin.orders.legacy (E-05).
+    $settings = ['color' => ['calculator.settings', 'colors'], 'purpose' => ['calculator.settings', 'purposes'],
+        'service' => ['calculator.settings', 'services'], 'surface' => ['calculator.settings', 'surfaces'],
+        'quality' => ['admin.orders.legacy', 'qualities'], 'layer' => ['admin.orders.legacy', 'layers'],
+        'finish' => ['admin.orders.legacy', 'finishes'], 'term' => ['calculator.settings', 'terms']];
     $parameters = function (array $p) use ($settings): string {
-        $values = [$p['material'], __('calculator.settings.infill').' '.$p['infill'].'%'];
-        foreach ($settings as $key => $options) {
+        $values = [$p['material'], __('calculator.settings.infill').' '.$p['infill'].'%'
+            .(empty($p['infill_consult']) ? '' : ' · '.__('calculator.settings.infill_consult'))];
+        foreach ($settings as $key => [$group, $options]) {
             if (isset($p[$key])) {
-                $values[] = __('calculator.settings.'.$key).': '.(__('calculator.settings.'.$options)[$p[$key]] ?? $p[$key]);
+                $values[] = __($group.'.'.$key).': '.(__($group.'.'.$options)[$p[$key]] ?? $p[$key]);
             }
         }
 
@@ -91,6 +96,10 @@
             @endforeach
         </tbody>
     </x-table>
+    @if (filled($meta->notes))
+        <h3 class="gap">{{ __('calculator.settings.notes') }}</h3>
+        <p id="order-notes">{!! nl2br(e($meta->notes)) !!}</p>
+    @endif
 
     <h3 class="gap">{{ $customer ? __('admin.orders.customer') : __('admin.orders.guest') }}</h3>
     <p>
