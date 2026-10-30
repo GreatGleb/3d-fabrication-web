@@ -25,6 +25,7 @@ return [
         'page_text' => [
             'home' => [
                 'logo' => 'defaults/logo.jpg',
+                'logo_white' => 'defaults/logo-white.png', // только пока нет своего logo
                 'favicon' => 'defaults/favicon.svg',
                 'video' => 'defaults/hero-engineering.mp4',
                 'video_mobile' => 'defaults/hero-engineering-mobile.mp4',

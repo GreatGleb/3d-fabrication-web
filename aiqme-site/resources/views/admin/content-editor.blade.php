@@ -68,7 +68,8 @@
         @php
             $defaults = collect($media)->keys()
                 ->reject(fn (string $name): bool => $files->contains('collection_name', $name)
-                    || (in_array($name, ['video_mobile', 'video_poster'], true) && $files->contains('collection_name', 'video')))
+                    || (in_array($name, ['video_mobile', 'video_poster'], true) && $files->contains('collection_name', 'video'))
+                    || ($name === 'logo_white' && $files->contains('collection_name', 'logo')))
                 ->mapWithKeys(fn (string $name): array => [$name => $item->defaultMedia($name)])->filter();
         @endphp
         <section class="panel gap" id="content-media">
@@ -77,7 +78,7 @@
                 <p class="admin-media-file">
                     <span class="tag">{{ __('admin.media.collections.'.$file->collection_name) }}</span>
                     @if (str_starts_with((string) $file->mime_type, 'image/'))
-                        <img class="admin-media-preview" src="{{ $file->getUrl() }}" height="48" alt="" loading="lazy">
+                        <img @class(['admin-media-preview', 'admin-media-preview--dark' => $file->collection_name === 'logo_white']) src="{{ $file->getUrl() }}" height="48" alt="" loading="lazy">
                     @endif
                     <a class="text-link" href="{{ $file->getUrl() }}" target="_blank" rel="noopener">{{ $file->file_name }} ↗</a>
                     {{ collect($file->getCustomProperty('alt', []))->map(fn ($text, $locale) => strtoupper($locale).': '.$text)->join(' · ') }}
@@ -88,7 +89,7 @@
                 <p class="admin-media-file admin-media-default">
                     <span class="tag">{{ __('admin.media.collections.'.$name) }}</span>
                     @unless (str_ends_with($path, '.mp4'))
-                        <img class="admin-media-preview" src="{{ asset($path) }}" height="48" alt="" loading="lazy">
+                        <img @class(['admin-media-preview', 'admin-media-preview--dark' => $name === 'logo_white']) src="{{ asset($path) }}" height="48" alt="" loading="lazy">
                     @endunless
                     <a class="text-link" href="{{ asset($path) }}" target="_blank" rel="noopener">{{ basename($path) }} ↗</a>
                     {{ __('admin.media.default') }}

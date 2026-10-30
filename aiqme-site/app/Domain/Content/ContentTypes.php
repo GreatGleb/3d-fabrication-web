@@ -59,7 +59,7 @@ final class ContentTypes
         'product' => ['images' => false],
         'brand' => ['images' => true],
         'page_text' => [
-            'home' => ['video' => true, 'video_mobile' => true, 'video_poster' => true, 'logo' => true, 'favicon' => true],
+            'home' => ['video' => true, 'video_mobile' => true, 'video_poster' => true, 'logo' => true, 'logo_white' => true, 'favicon' => true],
             'about' => ['images' => true],
         ],
     ];

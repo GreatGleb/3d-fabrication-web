@@ -285,6 +285,7 @@ return [
             'video_mobile' => 'Mobile video',
             'video_poster' => 'Video poster',
             'logo' => 'Logo',
+            'logo_white' => 'White logo (for the dark header; PNG or WebP)',
             'favicon' => 'Favicon (PNG)',
         ],
         'file' => 'File (JPEG, PNG, WebP or MP4, up to :max MB)',

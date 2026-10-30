@@ -102,4 +102,29 @@ class ContentMediaTest extends TestCase
         }
         $this->assertSame(0, $item->media()->count());
     }
+
+    public function test_white_logo_slot_takes_png_and_rejects_jpeg_and_svg(): void
+    {
+        $admin = $this->admin();
+        $service = app(ContentService::class);
+        $home = $service->createItem($admin, ContentType::PageText, 'home');
+        $jpeg = $this->dir.'/white.jpg';
+        imagejpeg(imagecreatetruecolor(10, 10), $jpeg);
+        $svg = $this->dir.'/white.png';
+        file_put_contents($svg, '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" fill="#fff"/></svg>');
+
+        foreach ([$jpeg, $svg] as $path) {
+            try {
+                $service->addMedia($admin, $home, $path, 'logo_white');
+                $this->fail('Принят файл '.basename($path).' в logo_white');
+            } catch (ValidationException $e) {
+                $this->assertSame([__('content.media_invalid', ['max' => intdiv((int) config('aiqme.media_max_kb'), 1024)])], $e->errors()['file']);
+            }
+        }
+        $this->assertSame(0, $home->media()->count());
+
+        $media = $service->addMedia($admin, $home, $this->png(40, 10), 'logo_white');
+        $this->assertSame(['logo_white', 'image/png'], [$media->collection_name, $media->mime_type]);
+        $this->assertStringEndsWith('.png', $media->file_name);
+    }
 }

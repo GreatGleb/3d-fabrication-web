@@ -269,6 +269,7 @@ return [
             'video_mobile' => 'Mobilusis video',
             'video_poster' => 'Video kadras',
             'logo' => 'Logotipas',
+            'logo_white' => 'Baltas logotipas (tamsiai antraštei; PNG arba WebP)',
             'favicon' => 'Svetainės ikona (PNG)',
         ],
         'file' => 'Failas (JPEG, PNG, WebP arba MP4, iki :max MB)',

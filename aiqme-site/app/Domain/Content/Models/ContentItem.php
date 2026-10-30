@@ -27,6 +27,7 @@ class ContentItem extends Model implements HasMedia
         'video_mobile' => ['mp4'],
         'video_poster' => ['jpg', 'png', 'webp'],
         'logo' => ['jpg', 'png', 'webp'],
+        'logo_white' => ['png', 'webp'],
         'favicon' => ['png'],
     ];
 

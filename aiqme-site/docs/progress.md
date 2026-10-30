@@ -3625,3 +3625,75 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 ## E-08: заблокирована ночным прогоном (2026-10-30 11:15)
 
 Причина (оркестратор): ночь остановлена: E-08.work0: нет modelUsage — расход не учесть. Работа — в git stash «night-blocked E-08».
+
+## Правки 28.10, E-08 (П2): белый логотип и слот logo_white — выполнено (2026-10-30, Claude Code, ночной прогон)
+
+Повторный запуск после блокировки оркестратора (учёт расхода, не задача); работа из stash «night-blocked E-08» не
+использовалась — задача сделана заново.
+
+**Сделано.**
+- `public/defaults/logo-white.png` (новый, 41 780 байт, 1280×320 RGBA, права 664 — как у `logo.jpg`; производный от
+  `logo.jpg`, публикация — тем же решением D-43). Изготовлен разовым скриптом (не закоммичен), из `aiqme-site/`:
+  ```
+  python3 -I - public/defaults/logo.jpg public/defaults/logo-white.png <<'EOF'
+  import sys
+  from PIL import Image
+  src = Image.open(sys.argv[1]).convert('RGB')
+  out = Image.new('RGBA', src.size)
+  px = []
+  for r, g, b in src.getdata():
+      a = min(max((255 - min(r, g, b)) / 245, 0), 1)
+      if a < 0.04:
+          px.append((0, 0, 0, 0))
+          continue
+      c = [min(max(round((v - (1 - a) * 255) / a), 0), 255) for v in (r, g, b)]
+      if max(c) - min(c) < 70:
+          c = [255, 255, 255]
+      px.append((*c, round(a * 255)))
+  out.putdata(px)
+  out.save(sys.argv[2], optimize=True)
+  EOF
+  ```
+  Алгоритм — из README П2; мелкое решение: очищенный цвет `c` ограничен 0…255 (иначе не байт). Пиксели: (5,5) —
+  `(0,0,0,0)`, (1100,90) — `(255,255,255,255)`, (590,230) — `(4,100,249,255)`.
+  Просмотр (Read) наложения на `#0a1119`: буквы AIQME белые, ровные; хвост «Q» насыщенно-синий; фон прозрачный,
+  подложки нет; заметного ореола на краях при этом масштабе нет, у краёв синего хвоста — тонкая тёмно-синяя кайма
+  (сглаживание исходного JPEG). Полноразмерный просмотр человеком — ждёт проверки пользователем.
+- `config/aiqme.php`: `media_defaults.page_text.home.logo_white => 'defaults/logo-white.png'` с комментарием «только
+  пока нет своего logo»; `ContentItem::MEDIA_COLLECTIONS['logo_white'] = ['png','webp']` (SVG не добавлен);
+  `ContentTypes` home: `'logo_white' => true` после `logo` (первый ключ — по-прежнему `video`).
+- `lang/{lt,en}/admin.php`: `media.collections.logo_white` — тексты из README дословно.
+- `admin/content-editor.blade.php`: умолчание `logo_white` скрыто, если загружен свой `logo`; превью `logo_white`
+  (своего файла и умолчания) — `class="admin-media-preview admin-media-preview--dark"`, остальные превью без изменений.
+  `resources/css/public.css`: `.admin-media-preview--dark{background:var(--dark);padding:4px}`.
+- Шапка и публичные страницы не менялись (это E-09).
+
+**Тесты.**
+- `DefaultMediaTest`: новый `test_white_logo_default_is_a_transparent_png_…` (файл есть; getimagesize 1280×320 PNG и
+  равен размеру logo.jpg; байт 25 == 6; GD: (5,5) alpha 127, (1100,90) r,g,b ≥ 245 и alpha ≤ 5, (590,230) b > 200,
+  r < 60). Редактор home: видит `asset('defaults/logo-white.png')`, подпись EN и превью с `admin-media-preview--dark`
+  (у обычного logo — без него); загрузка своего `logo_white` через Livewire — превью своего файла тёмное, умолчания
+  нет, после удаления умолчание возвращается; после загрузки своего `logo` нет ни `defaults/logo-white.png`, ни
+  `defaults/logo.jpg`.
+- Ожидания, изменённые прямо из правки: число файлов умолчаний 15 → 16; сверка умолчаний с исходниками прототипа
+  пропускает `logo-white.png` (его нет в прототипе, он производный).
+- `ContentMediaTest::test_white_logo_slot_takes_png_and_rejects_jpeg_and_svg`: JPEG и SVG (с именем .png) отклоняются
+  ровно сообщением `content.media_invalid`, ничего не сохраняется; PNG принимается (`image/png`, `.png`).
+- Прогон с откатом (один раз, затем возвращено копией файла): без правила «скрыть умолчание при своём logo» в
+  редакторе падает `test_admin_editor_previews_defaults_…` (строка проверки «после своего logo»); с `jpg` в форматах
+  `logo_white` падает `test_white_logo_slot_…` («Принят файл white.jpg в logo_white»).
+
+**Проверки.**
+- `bin/php vendor/bin/pint --dirty --format agent` — passed.
+- `bin/php artisan test --compact tests/Feature/DefaultMediaTest.php` — 7 passed (204 assertions); вместе с
+  ContentMediaTest и AdminMediaTest — 15 passed.
+- `bin/check` — OK (PHPUnit 701 passed, 75 078 assertions; Vite build OK), 6 мин 43 с.
+- `bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about` — OK (6556 проверок; поиск маркеров на этих страницах
+  чист, allowlist не менялся). Полный bin/browser-check — по правилу 30.10 не запускался (E-10).
+- `git status --porcelain aiqme-site`: изменены 9 файлов в app/, config/, lang/, resources/, tests/; единственный новый
+  файл — `public/defaults/logo-white.png`.
+
+**Не проверено / ждёт проверки пользователем.**
+- Вид превью белого логотипа на тёмной подложке в редакторе медиа (глазами) и качество краёв логотипа в полном размере.
+- Telegram-бот: слот `logo_white` подхватывается через `ContentTypes::media` — проверено чтением кода, отдельного теста
+  для бота в этой задаче нет.
