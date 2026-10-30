@@ -18,7 +18,9 @@
 Запросы к любым хостам, кроме проверяемого, прерываются и перечисляются в отчёте (D-20).
 
 Проверки: самопроверка детекторов на синтетической странице; ширина документа = окну на 320/390/768/1024/1440;
-сверка getComputedStyle с §7.1 на 1440/768/390; меню ≤900 px (Escape, aria-expanded, фокус, Tab, щелчок вне);
+сверка getComputedStyle с §7.1 на 1440/768/390;
+боковые поля .page-content = поля .wrap (20/28/48 px) и x контента = x колонки шапки (.article — не левее) на всех ширинах,
+в кабинете, админке, /ru и на 1280×900 для /lt/apie-mus, /lt/kalkuliatorius, /lt/duk — check_gutters (правка 28.10, П1); меню ≤900 px (Escape, aria-expanded, фокус, Tab, щелчок вне);
 стиль фокуса; cookie-плашка; нарушения CSP и ошибки в консоли; ответы 4xx/5xx на ресурсы; маркеры D-21
 (законные совпадения — только tests/fixtures/marker-allowlist.json: список {"page": "/lt/…", "phrase": "точная фраза",
 "reason": "почему это не демо-надпись"}); кадры в размерах verified-route-screens.json
@@ -157,6 +159,7 @@ DEFAULT_MEDIA = {
 
 WIDTHS = [320, 390, 768, 1024, 1440]
 STYLE_WIDTHS = [1440, 768, 390]
+GUTTER_1280_PAGES = ['/lt/apie-mus', '/lt/kalkuliatorius', '/lt/duk']  # поля контента на 1280×900 (П1), не во всех WIDTHS
 SHOTS = {'desktop': (1440, 1000), 'tablet': (768, 1024), 'phone': (390, 844)}  # размеры verified-route-screens.json
 
 # Маркеры служебных демо-надписей, заметок автора и плановых пометок каталога (D-21), без учёта регистра.
@@ -439,6 +442,34 @@ def check_styles(report, page, path, width):
     report.check(got['footerBackground'] == 'rgb(255, 255, 255)', f'{where}: подвал не светлый {got["footerBackground"]}')
     for height, radius in got['buttons']:
         report.check(height >= 48 and radius == '3px', f'{where}: кнопка {height}px, радиус {radius}')
+
+
+GUTTER_PROBE = """() => {
+    const content = document.querySelector('main .page-content');
+    const head = document.querySelector('.head-main');
+    if (!content) return null;
+    const s = getComputedStyle(content), box = content.getBoundingClientRect();
+    const left = parseFloat(s.paddingLeft), right = parseFloat(s.paddingRight);
+    return {left, right, start: box.left + left, end: box.right - right, width: document.documentElement.clientWidth,
+            head: head ? head.getBoundingClientRect().left + parseFloat(getComputedStyle(head).paddingLeft) : null,
+            article: content.classList.contains('article')};
+}"""
+
+
+def check_gutters(report, page, where, width):
+    """Боковые поля .page-content (правка 28.10, П1) = поля .wrap; контент начинается у колонки шапки."""
+    got = page.evaluate(GUTTER_PROBE)
+    if got is None:
+        return
+    gutter = expected_styles(width)['wrap_padding']
+    near = lambda a, b: a is not None and abs(a - b) <= 1  # noqa: E731 — допуск ±1 px
+    report.check(near(got['left'], gutter) and near(got['right'], gutter), f'{where}: поля контента {got["left"]}/{got["right"]} ≠ {gutter}')
+    report.check(got['start'] >= gutter - 1, f'{where}: x контента {got["start"]} < {gutter}')
+    report.check(got['end'] <= got['width'] - gutter + 1, f'{where}: конец контента {got["end"]} > {got["width"]} − {gutter}')
+    if got['article']:  # FAQ и политики центрированы, как в прототипе
+        report.check(got['head'] is not None and got['start'] >= got['head'] - 1, f'{where}: x контента {got["start"]} < x колонки шапки {got["head"]}')
+    else:
+        report.check(near(got['start'], got['head']), f'{where}: x контента {got["start"]} ≠ x колонки шапки {got["head"]}')
 
 
 def check_focus_style(report, page, path):
@@ -864,7 +895,8 @@ def self_test(report, browser, csp, assets):
     page.on('console', lambda message: console.append(message.text))
     body = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">{assets}</head><body>
-<main id="main"><h1>Demonstration website</h1><p style="width:1200px">wide</p>
+<header class="header"><div class="wrap head-main"></div></header>
+<main id="main"><h1>Demonstration website</h1><p style="width:1200px">wide</p><div class="page-content">no side padding</div>
 <script>window.inlineRan = true;</script>
 <button id="opener" data-modal-open="dialog">Open</button><a href="#x" id="outside">Outside</a>
 <div class="search-overlay" id="dialog" data-modal hidden><section class="search-panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
@@ -881,6 +913,9 @@ def self_test(report, browser, csp, assets):
     report.check(any('demonstr' in hit for hit in marker_hits(page, SELF_TEST_PATH, [])), 'самопроверка: маркер «Demonstration» не найден')
     report.check(marker_hits(page, SELF_TEST_PATH, [{'page': SELF_TEST_PATH, 'phrase': 'Demonstration website'}]) == [],
                  'самопроверка: точная фраза из allowlist не разрешила совпадение')
+    gutters = Report()
+    check_gutters(gutters, page, SELF_TEST_PATH, 390)
+    report.check(any(': поля контента 0/0 ' in failure for failure in gutters.failures), 'самопроверка: нулевые поля контента не обнаружены')
 
     page.locator('#opener').click()
     dialog = page.locator('#dialog')
@@ -933,6 +968,7 @@ def check_private_pages(report, new_page, paths, state, selector, allowlist, who
             report.check(page.locator('#auth-form').count() == 0, f'{where}: форма входа вместо страницы')
             scroll, client = document_fits(page)
             report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+            check_gutters(report, page, where, width)
             if width in STYLE_WIDTHS:
                 check_styles(report, page, path, width)
             if width in (390, 1440):
@@ -968,6 +1004,7 @@ def check_russian(report, new_page, paths, state):
             report.check('noindex' in robots, f'{where}: meta robots «{robots}»')
             scroll, client = document_fits(page)
             report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+            check_gutters(report, page, where, width)
             for problem in problems:
                 report.check(False, f'{where}: {problem}')
             context.close()
@@ -2367,6 +2404,7 @@ def main():
                     report.check(response.status == expect_status, f'{where}: HTTP {response.status}')
                     scroll, client = document_fits(page)
                     report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
+                    check_gutters(report, page, where, width)
                     if width in STYLE_WIDTHS:
                         check_styles(report, page, path, width)
                     if width in (390, 1440):
@@ -2390,6 +2428,13 @@ def main():
                         report.check(False, f'{where}: {problem}')
                     context.close()
 
+                if path in GUTTER_1280_PAGES:
+                    context, page, problems = new_page(1280, 900)
+                    page.goto(BASE + path, wait_until='networkidle')
+                    scroll, client = document_fits(page)
+                    report.check(scroll <= client, f'{path} @1280: документ шире окна ({scroll} > {client})')
+                    check_gutters(report, page, f'{path} @1280', 1280)
+                    context.close()
                 if path in ('/lt', '/en'):
                     check_motion(report, browser, new_page, path)
                 if path in ('/en', '/lt/paieska?q=3D'):
