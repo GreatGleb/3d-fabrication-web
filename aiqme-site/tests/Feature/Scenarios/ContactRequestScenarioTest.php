@@ -42,6 +42,7 @@ class ContactRequestScenarioTest extends TestCase
         $this->post('/en/contact', [
             'name' => 'Jonas TEST', 'company' => 'UAB TEST', 'email' => 'jonas@example.test', 'phone' => '+370 611 11111',
             'service' => '3d-printing', 'description' => 'Need ten brackets printed in PETG.', 'deadline' => '2027-03-01',
+            'altcha' => $this->altcha(),
             'attachments' => [UploadedFile::fake()->createWithContent('drawing.pdf', $pdf), UploadedFile::fake()->createWithContent('part.stl', $stl)],
         ])->assertRedirect('/en/contact')->assertSessionHasNoErrors();
         $result = Html::xpath($this->get('/en/contact')->getContent())->query('//*[@id="contact-result"]/div')->item(0);

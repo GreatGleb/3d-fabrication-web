@@ -1,7 +1,7 @@
 {{-- Блок «Mokymų temos ir datos» · «Training topics and dates» — общий для страницы обучения и услуги обучения (§1.2).
      Опубликованные темы и даты (training) или заглушка; ярлыка расписания нет (D-21). Детальной страницы нет: запись —
      в списке; кнопка открывает модальную регистрацию (W-09, поля training-form прототипа; без JS — ссылка в контакты
-     с предвыбранной услугой обучения). После ошибки проверки окно этой темы открывается снова, после отправки —
+     с предвыбранной услугой обучения; над кнопкой — капча ALTCHA, правка 28.10 П3). После ошибки проверки окно этой темы открывается снова, после отправки —
      окно подтверждения (data-modal-autoopen). Панель — вводный текст обучения (page_text training, один источник). --}}
 @php($locale = app()->getLocale())
 <div class="gap">
@@ -33,6 +33,7 @@
                     <x-field :id="$modal.'-format'" name="format" type="select" :label="__('public.training.format')" :options="__('public.training.formats')" value="online" />
                     <x-field :id="$modal.'-participants'" name="participants" type="number" :label="__('public.training.participants')" value="1" min="1" max="20" required />
                     @include('public.partials.honeypot')
+                    @include('public.partials.altcha')
                     @error('form')
                         <div class="notice error gap" role="alert">{{ $message }}</div>
                     @enderror

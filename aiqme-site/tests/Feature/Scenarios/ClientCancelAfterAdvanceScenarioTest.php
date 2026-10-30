@@ -58,7 +58,7 @@ class ClientCancelAfterAdvanceScenarioTest extends TestCase
 
         // 1. Регистрация формой: клиент сразу вошёл.
         $this->get('/en/account/register')->assertOk();
-        $this->post('/en/account/register', ['name' => 'Rūta TEST', 'email' => 'ruta@example.test', 'password' => 'long-enough-1'])
+        $this->post('/en/account/register', ['name' => 'Rūta TEST', 'email' => 'ruta@example.test', 'password' => 'long-enough-1', 'altcha' => $this->altcha()])
             ->assertRedirect(route('en.account'));
         $client = User::where('email', 'ruta@example.test')->sole();
         $this->assertFalse($client->is_admin);

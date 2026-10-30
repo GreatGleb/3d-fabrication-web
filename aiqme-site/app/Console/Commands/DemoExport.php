@@ -28,7 +28,8 @@ use RuntimeException;
  * (tests/fixtures/prototype-routes.json), кабинет — от имени демо-клиента, админка — от имени демо-администратора
  * (Auth::login здесь — единственное исключение из запрета обходов входа, HTTP-маршрута нет). Постобработка: базовый путь
  * Pages, баннер «DEMO» и noindex, без Livewire и wire:*, без CSRF и серверных action — формы, кнопки действий и ссылки на
- * неэкспортированные адреса получают data-demo-form (сообщение показывает demo.js). Счетов в демо нет.
+ * неэкспортированные адреса получают data-demo-form (сообщение показывает demo.js), виджет капчи ALTCHA удаляется.
+ * Счетов в демо нет.
  */
 #[Signature('aiqme:demo-export')]
 #[Description('Собрать статическую демо-версию сайта для GitHub Pages в aiqme-site/demo/')]
@@ -247,10 +248,14 @@ class DemoExport extends Command
 
     /**
      * Серверные формы и поиск — data-demo-form без action (§8.7); GET-фильтры списков остаются: ?category=… отдаёт тот
-     * же статический список. Вход ведёт в демо-кабинет.
+     * же статический список. Вход ведёт в демо-кабинет. Капча ALTCHA (правка 28.10 П3) из форм удаляется: в демо нет
+     * сервера, выдающего задачи.
      */
     private function demoForm(Element $form, string $locale): void
     {
+        foreach ($form->querySelectorAll('altcha-widget') as $widget) {
+            $widget->remove();
+        }
         $method = strtolower($form->getAttribute('method') ?? 'get');
         $search = $form->hasAttribute('data-live-search');
         if ($method === 'get' && ! $search && $form->getAttribute('action')) {

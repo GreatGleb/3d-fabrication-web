@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Forms\Altcha;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 /**
  * Регистрация (W-07, §1.3): имя, e-mail, пароль; создаёт только клиента — is_admin не входит в $fillable (§6.1).
- * Подтверждения почты нет, как в прототипе.
+ * Подтверждения почты нет, как в прототипе. Капча ALTCHA (правка 28.10 П3) — до проверки полей; частота не ограничивается.
  */
 class RegisterController extends Controller
 {
@@ -23,9 +24,10 @@ class RegisterController extends Controller
         return $this->form('register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, Altcha $altcha): RedirectResponse
     {
         $this->normalizeEmail($request);
+        $altcha->verifyOrFail($request);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],

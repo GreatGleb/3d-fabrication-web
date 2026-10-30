@@ -1,7 +1,8 @@
 @use('App\Support\Seo\StaticPages')
 {{-- Вход, регистрация, восстановление и новый пароль по ссылке из письма (W-07) — форма auth-form прототипа.
      Гость на вкладке кабинета видит форму входа (§4.6). Без демо-баннера, «Demo password», подсказки о пробном
-     пароле и кнопки «Open an account example» (D-21). Пароль — minlength 8 (§6.3), autocomplete current/new-password. --}}
+     пароле и кнопки «Open an account example» (D-21). Пароль — minlength 8 (§6.3), autocomplete current/new-password.
+     Регистрация — с капчей ALTCHA над кнопкой (правка 28.10 П3); вход и восстановление — без неё. --}}
 @php
     $locale = app()->getLocale();
     $route = request()->route()->getName();
@@ -33,6 +34,9 @@
                 @if ($mode !== 'reset')
                     <x-field name="password" type="password" :label="$mode === 'new_password' ? __('account.new_password.field') : __('account.fields.password')"
                         required minlength="8" :autocomplete="$mode === 'login' ? 'current-password' : 'new-password'" />
+                @endif
+                @if ($mode === 'register')
+                    @include('public.partials.altcha')
                 @endif
                 <x-button type="submit">{{ __('account.'.$mode.'.submit') }}</x-button>
                 <div id="auth-result" role="status">

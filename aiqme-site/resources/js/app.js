@@ -9,6 +9,11 @@ import './gallery';
 import './calculator/index.js';
 import './checkout';
 
+// Капча ALTCHA (П3) — отдельный чанк, только на страницах с виджетом (контакты, окна обучения, регистрация).
+if (document.querySelector('altcha-widget')) {
+    import('./altcha.js');
+}
+
 // Cookie-плашка (D-11): информационная; после «Tik būtini» · «Essential only» больше не показывается.
 const cookie = document.querySelector('.cookie');
 const COOKIE_KEY = 'aiqme-cookie-notice';

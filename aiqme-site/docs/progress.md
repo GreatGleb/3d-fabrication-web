@@ -3537,3 +3537,86 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Совместимость ответа `/altcha` с виджетом npm `altcha` 3.4.1 в браузере — проверяется в E-07 (виджет на формах).
 - `bin/setup` целиком не запускался; локальный `.env` не менялся (ключ появится при следующем `bin/setup`).
 - Рабочий сервер: перед выпуском нужен `ALTCHA_HMAC_KEY` в `.env` (README плана, «После прогона») — пользователь.
+
+## Правки 28.10, E-07 (П3): ALTCHA на контактной форме, регистрации на обучение и в кабинете — выполнено (2026-10-30, Claude Code, ночной прогон)
+
+### Сделано
+
+- **Сервер.** `FormController::contact()` и `training()` вызывают `Altcha::verifyOrFail` после `rejectHoneypot` и до
+  проверки полей; `RegisterController::store` — после `normalizeEmail` (сервис внедряется в метод). Docblock-и дополнены;
+  throttle регистрации не добавлен. Отказ — ошибка `altcha` с текстом `public.forms.altcha`, редирект назад, поля в `old()`.
+- **Шаблоны.** Новый partial `public/partials/altcha.blade.php`: `<altcha-widget challenge="/altcha" (route('altcha',
+  absolute: false)) auto="onfocus" language="lt|en" configuration='{"hideFooter":true}'>` без `name`, под ним
+  `@error('altcha')` — `div.notice.error.gap` с `role="alert"`. Язык: `lt` на LT, иначе `en` (на /ru — EN). Подключён после
+  honeypot в `contact.blade.php` и `training-topics.blade.php` (каждое окно темы), в `account/auth.blade.php` — только
+  в режиме register, перед кнопкой. `calculator.blade.php` не менялся. Комментарии шаблонов обновлены.
+- **JS/CSS.** `resources/js/altcha.js`: `altcha/external`, `altcha/i18n/lt`, `altcha/altcha.css`,
+  `altcha/workers/pbkdf2?worker`; воркер регистрируется `globalThis.$altcha.algorithms.set('PBKDF2/SHA-256', …)` (API по
+  README пакета 3.4.1, раздел «Using altcha/external»). `app.js` делает `import('./altcha.js')` только при наличии
+  `altcha-widget`. `shell.css`: `altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%}` и рамка как у
+  `.field input` (1px `#ccd5e0`, радиус 4px), `--altcha-color-primary: var(--blue)`. Виджет пакета рисуется в light DOM
+  (без shadow root), стили приходят отдельным CSS-чанком.
+- **Сборка.** `public/build/manifest.json`: `resources/js/altcha.js` — отдельный динамический чанк `assets/altcha-*.js`
+  со своим `assets/altcha-*.css` и отдельным файлом воркера `assets/pbkdf2-*.js`; `grep -l "data:text/javascript"
+  public/build/assets/*` — совпадений нет (exit 1).
+- **DemoExport::demoForm** удаляет `altcha-widget` из форм (docblock-и класса и метода дополнены).
+- **Существующие тесты:** `'altcha' => $this->altcha()` — FormsTest (помощник `contact()` и все POST обучения, кроме теста
+  honeypot и запроса, который должен получить 429), SheetsTest (контакт и два POST обучения), AuthTest (регистрация и
+  три отказа проверки полей), `Scenarios/ContactRequestScenarioTest`, `Scenarios/ClientCancelAfterAdvanceScenarioTest`.
+  Тест honeypot, тесты 419 (TelegramBotTest, StripeWebhookTest) и OrderSubmissionTest не менялись.
+- **AltchaTest** (+ `RefreshDatabase`): провайдер по `/en/contact`, `/lt/kontaktai`, `/en/training`, `/lt/paskyra/register`,
+  `/en/account/register` — без поля, `abc`, base64 `{}`, тестовый режим виджета, массив, 5000 символов, подделка counter и
+  cost, чужой ключ, просрочка: редирект с ошибкой `altcha` и точным текстом по локали адреса, ни ContactRequest,
+  ни TrainingRegistration, ни клиента, ни IntegrationEvent, `Mail::assertNothingSent`, гость; верное решение — запись
+  (контакт и обучение — одно письмо, регистрация — вход); повтор того же payload (с другим e-mail) — отказ без новой записи.
+  Ещё: после отказа `old('name')` и сообщение на странице контактов; окно обучения снова `data-modal-autoopen` с
+  сообщением; honeypot с верным payload — отказ `form` без ошибки `altcha`; без ключа (`hmac_key ''`) решение прежнего
+  ключа не принимается (контакт и регистрация). Разметка: ровно один виджет с `challenge="/altcha"`, `auto="onfocus"`,
+  `language` по локали, `configuration`, без `name`, перед `button[type=submit]` в `#contact-form` (/en, /lt, /ru —
+  `en`), в форме окна обучения (/en/training, /en/services/3d-modelling-training, /lt/mokymai) и в
+  `#auth-form[data-mode=register]`; на входе, сбросе пароля и в калькуляторе (`#checkout-form` есть) — ни одного.
+- **DemoExportTest**: постобработка `postprocess` (через Reflection) страниц `/en/contact`, `/lt/mokymai`,
+  `/lt/paskyra/register`, отрисованных в тесте (БД — в транзакции с откатом, класс без RefreshDatabase): до выгрузки
+  виджет есть, после — нет, у форм есть `data-demo-form` и нет `action`.
+- **bin/browser-check**: `browser_env()` — `ALTCHA_HMAC_KEY = secrets.token_hex(32)`, `AIQME_ALTCHA_PER_MINUTE='1000'`;
+  `wait_altcha` (фокус в форме, ждёт `input[name=altcha]` со значением и «Verified»/«Patvirtinta» ≤ 30 с) — в
+  `check_contact_form`, `check_training_modal` и `prod_contact`; новая `check_register` (/lt/paskyra/register @390:
+  «Patvirtinta», отправка → `/lt/paskyra` с `#account-overview`); кадры `shots/altcha-<contact|training|register>-<ширина>.png`
+  (на время кадра скрыта липкая шапка и снята плашка cookie); CSP, консоль, ответы ≥ 400 и внешние запросы — общая
+  проверка `new_page`. Docstring дополнен.
+- **operations.md**: `ALTCHA_HMAC_KEY` — шаг «до build/up при первом выпуске с капчей» и `curl /altcha`, ключ в
+  `build/prod-local/.env` для prod-compose, смена ключа (restart app worker scheduler → optimize; гаснут только выданные
+  задачи). **На aiqme.com — только после ключа и выпуска (E-11).**
+- Решения по умолчанию: ошибка капчи выводится тем же блоком `notice error`, что ошибка `form`; в окнах обучения она, как
+  и ошибка `form`, есть в разметке каждого окна, но открывается только окно отправленной темы.
+
+### Команды
+
+- Проверка, что тесты ловят откат (один раз, файлы возвращены): без `verifyOrFail` в контроллерах падают
+  `test_form_is_accepted_only_with_a_valid_unused_solution` (все 5 адресов), `test_forms_are_not_accepted_without_key`,
+  `test_rejected_contact_form_keeps_fields_and_shows_the_message`, `test_rejected_training_registration_reopens_its_modal…`;
+  без удаления виджета в `DemoExport::demoForm` падает новый тест DemoExportTest («actual size 1 matches expected size 0»).
+- `bin/php artisan test --compact tests/Feature/AltchaTest.php` → passed (29 тестов, 627 проверок).
+- `bin/php artisan test --compact tests/Feature/FormsTest.php tests/Feature/AuthTest.php tests/Feature/DemoExportTest.php
+  tests/Feature/SheetsTest.php tests/Feature/Scenarios/ContactRequestScenarioTest.php
+  tests/Feature/Scenarios/ClientCancelAfterAdvanceScenarioTest.php tests/Feature/OrderSubmissionTest.php` → passed (71).
+- `bin/php vendor/bin/pint --dirty --format agent` → passed.
+- `bin/browser-check /en/contact /lt/kontaktai /en/training /en/services/3d-modelling-training /lt/paskyra/register` →
+  OK (833 проверки); кадры `altcha-contact-1440`, `altcha-training-1440`, `altcha-training-390`, `altcha-register-390`.
+- `bin/check` → **OK**, EXIT 0: PHPUnit 699 passed, Vite OK (6 мин 28 с, `/tmp/e07-check.log`).
+- Полный `bin/browser-check` → **OK (18740 проверок)**, EXIT 0 (`/tmp/e07-bc.log`; отдельный процесс с ожиданием
+  завершения в переднем плане — прогон дольше 10-минутного предела команды). Кадры: `altcha-contact-1440`,
+  `altcha-training-1440`, `altcha-training-390`, `altcha-register-390`.
+- `git status --porcelain aiqme-site` → изменённые файлы задачи и два новых: `resources/js/altcha.js`,
+  `resources/views/public/partials/altcha.blade.php`.
+
+### Не проверено / ждёт проверки пользователем
+
+- `prod_contact` (режим `--base-url/--compose-file`) — проверено чтением кода; выполнение — ждёт prod-compose
+  (пользователь; в `build/prod-local/.env` нужен `ALTCHA_HMAC_KEY`, см. operations.md).
+- `bin/demo-check` не запускался: старая сборка `demo/` собрана до правки и виджета не содержит; удаление виджета
+  проверено DemoExportTest на постобработке, выполнение на новой сборке — ждёт пересборки демо (пользователь).
+- Ждёт проверки пользователем: вид виджета на кадрах `build/verification/browser-check/shots/altcha-*.png` (зелёный
+  флажок «Patvirtinta»/«Verified» — цвет успеха пакета; рамка и ширина — как у полей формы).
+- Браузеры кроме Chromium (Safari, Firefox) и время решения на старом телефоне не проверялись.
+- На aiqme.com — только после ключа `ALTCHA_HMAC_KEY` в `.env` сервера и выпуска (E-11); без ключа три формы не принимаются.

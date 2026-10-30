@@ -170,7 +170,7 @@ class AuthTest extends TestCase
         $session = null;
         $this->browse('GET', route('lt.account.register'), session: $session);
         $this->browse('POST', route('lt.account.register.store'), [
-            'name' => 'Ona Onaitė', 'email' => 'Ona@AIQME.test', 'password' => 'long-enough-1', 'is_admin' => '1',
+            'name' => 'Ona Onaitė', 'email' => 'Ona@AIQME.test', 'password' => 'long-enough-1', 'is_admin' => '1', 'altcha' => $this->altcha(),
         ], $session)->assertRedirect(route('lt.account'));
 
         $user = User::where('email', 'ona@aiqme.test')->sole();
@@ -184,11 +184,11 @@ class AuthTest extends TestCase
     public function test_registration_rejects_a_short_password_a_taken_email_and_missing_fields(): void
     {
         $this->client();
-        $this->post(route('en.account.register.store'), ['name' => 'A', 'email' => 'a@aiqme.test', 'password' => '1234567'])
+        $this->post(route('en.account.register.store'), ['name' => 'A', 'email' => 'a@aiqme.test', 'password' => '1234567', 'altcha' => $this->altcha()])
             ->assertSessionHasErrors(['password' => 'The password must be at least 8 characters.']);
-        $this->post(route('en.account.register.store'), ['name' => 'A', 'email' => 'JONAS@aiqme.test', 'password' => '12345678'])
+        $this->post(route('en.account.register.store'), ['name' => 'A', 'email' => 'JONAS@aiqme.test', 'password' => '12345678', 'altcha' => $this->altcha()])
             ->assertSessionHasErrors(['email' => 'An account with this email already exists.']);
-        $this->post(route('lt.account.register.store'), ['email' => 'not-an-email', 'password' => ''])
+        $this->post(route('lt.account.register.store'), ['email' => 'not-an-email', 'password' => '', 'altcha' => $this->altcha()])
             ->assertSessionHasErrors(['name' => 'Užpildykite šį lauką.', 'email' => 'Įveskite teisingą el. pašto adresą.', 'password' => 'Užpildykite šį lauką.']);
 
         $this->assertSame(1, User::count());

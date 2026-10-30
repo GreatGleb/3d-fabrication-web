@@ -1,6 +1,6 @@
 {{-- Контакты (§1.2): реквизиты из page_text, встроенная карта Google Maps и ссылка на неё (правка 28.10 П5: iframe без ключа,
      сразу при открытии; хост www.google.com разрешён в CSP frame-src — узкое исключение из D-20),
-     форма проектного обращения (W-09: отправка, предзаполнение $prefill по §1.2, honeypot, результат в #contact-result
+     форма проектного обращения (W-09: отправка, предзаполнение $prefill по §1.2, honeypot, капча ALTCHA П3, результат в #contact-result
      как в прототипе). Демо-надписи формы и флажок «I understand this is a demonstration enquiry…» не переносятся (D-21). --}}
 @php
     $locale = app()->getLocale();
@@ -53,6 +53,7 @@
                     <x-field name="attachments[]" type="file" :label="__('public.contact.files')" multiple accept=".stl,.step,.stp,.obj,.pdf,.jpg,.jpeg,.png" />
                     <x-field name="deadline" type="date" :label="__('public.contact.deadline')" />
                     @include('public.partials.honeypot')
+                    @include('public.partials.altcha')
                     <x-button type="submit" arrow>{{ $contact->field('form_submit') }}</x-button>
                     <div id="contact-result" role="status">
                         @if (session()->has('contact_sent'))

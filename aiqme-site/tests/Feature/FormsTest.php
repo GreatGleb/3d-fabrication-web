@@ -71,6 +71,7 @@ class FormsTest extends TestCase
             'service' => '3d-printing',
             'description' => 'Need ten brackets printed in PETG.',
             'deadline' => '2027-03-01',
+            'altcha' => $this->altcha(),
             ...$override,
         ];
     }
@@ -241,7 +242,7 @@ class FormsTest extends TestCase
         config(['aiqme.forms.per_hour' => 2]);
         $training = $this->training();
         $this->post('/en/contact', $this->contact())->assertRedirect();
-        $this->post('/lt/mokymai', ['training' => $training->id, 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'aiqme', 'participants' => 2])->assertRedirect();
+        $this->post('/lt/mokymai', ['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'aiqme', 'participants' => 2])->assertRedirect();
         $this->post('/en/contact', $this->contact())->assertStatus(429)->assertSee('Too many requests. Please try again later.');
         $this->post('/en/training', ['training' => $training->id])->assertStatus(429);
         $this->assertSame(1, ContactRequest::count());
@@ -298,7 +299,7 @@ class FormsTest extends TestCase
         }
         $this->assertSame(['Online', 'At AIQME'], Html::texts(Html::xpath($this->get('/en/training')->getContent()), '//select[@name="format"]/option'));
 
-        $this->from('/en/services/3d-modelling-training')->post('/en/training', ['training' => $training->id, 'name' => 'Jonas', 'email' => 'jonas@example.test',
+        $this->from('/en/services/3d-modelling-training')->post('/en/training', ['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test',
             'format' => 'aiqme', 'participants' => 3])->assertRedirect('/en/services/3d-modelling-training')->assertSessionHasNoErrors();
 
         $registration = TrainingRegistration::sole();
@@ -323,13 +324,13 @@ class FormsTest extends TestCase
         Mail::fake();
         $training = $this->training();
         foreach ([['participants' => 21], ['participants' => 0], ['format' => 'onsite'], ['email' => 'x'], ['training' => 999999]] as $override) {
-            $this->from('/en/training')->post('/en/training', [...['training' => $training->id, 'name' => 'Jonas', 'email' => 'jonas@example.test',
+            $this->from('/en/training')->post('/en/training', [...['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test',
                 'format' => 'online', 'participants' => 1], ...$override])->assertRedirect('/en/training')->assertSessionHasErrors();
         }
         $this->assertNothingStored();
         Mail::assertNothingSent();
 
-        $this->from('/en/training')->post('/en/training', ['training' => $training->id, 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'online', 'participants' => 21]);
+        $this->from('/en/training')->post('/en/training', ['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'online', 'participants' => 21]);
         $xpath = Html::xpath($this->get('/en/training')->getContent());
         $this->assertCount(1, $xpath->query('//div[@id="training-modal-'.$training->id.'"][@data-modal-autoopen]'));
         $this->assertSame('Participants: from 1 to 20.', Html::text($xpath->query('//*[@id="training-modal-'.$training->id.'-participants-error"]')->item(0)));
@@ -340,7 +341,7 @@ class FormsTest extends TestCase
         $this->failingMail();
         $training = $this->training();
         $this->post('/en/contact', $this->contact())->assertRedirect('/en/contact')->assertSessionHasNoErrors();
-        $this->post('/en/training', ['training' => $training->id, 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'online', 'participants' => 1])
+        $this->post('/en/training', ['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'online', 'participants' => 1])
             ->assertSessionHasNoErrors();
 
         $request = ContactRequest::sole();

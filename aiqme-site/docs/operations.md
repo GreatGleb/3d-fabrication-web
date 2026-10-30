@@ -60,7 +60,9 @@ $C restart worker scheduler
 `APP_URL=http://127.0.0.1:8792`, `APP_KEY` — случайный, `SESSION_SECURE_COOKIE=false`, `MAIL_MAILER=log`,
 `DB_PASSWORD=prod-local-only-not-a-secret`, `AIQME_ORDERS_PER_HOUR=100`, `AIQME_ENV_FILE=build/prod-local/.env`,
 `AIQME_BUILD_CONTEXT=build/context`, `AIQME_WEB_PORT=8792`, `TRUSTED_PROXIES=<шлюз aiqme-prod_default>`; ключи Stripe,
-Google и Telegram пустые (события этих каналов остаются неотправленными — так и должно быть).
+Google и Telegram пустые (события этих каналов остаются неотправленными — так и должно быть). Капча ALTCHA (правка
+28.10, П3): в `build/prod-local/.env` — свой `ALTCHA_HMAC_KEY` (`openssl rand -hex 32`), иначе `/altcha` отвечает 503 и
+контактная форма в сценарии не отправится.
 
 Проверка: `bin/browser-check --base-url http://127.0.0.1:8792 --compose-file docker-compose.prod.yml` — compose config,
 образы, healthy `web`, доверенный прокси, сценарий 2 §9.3 без оплаты, заявка из 10 STL, том `storage`, журнал `web`.
@@ -83,6 +85,10 @@ A="$C exec -T -u www-data app php artisan"
    (`legacy-landing/`, `docs/`, `experiments/` и тестовые фикстуры не попадают; `tests/fixtures` образ исключает сам).
 2. Первый раз: `.env` по `.env.example` (`AIQME_BACKUP_DIR` — вне каталога приложения),
    `chown root:33 .env && chmod 0640 .env` (при 0600 PHP-FPM его не прочитает).
+   **Первый выпуск с капчей ALTCHA (правка 28.10, П3) — до build/up:** `openssl rand -hex 32` → строка
+   `ALTCHA_HMAC_KEY=<значение>` в `.env` (64 hex, свой в каждой среде, в Git не кладётся; права `.env` сохранить). Без
+   ключа `/altcha` отвечает 503 и контактная форма, регистрация на обучение и регистрация кабинета не принимаются.
+   После выпуска: `curl -s https://aiqme.com/altcha` — JSON с `signature`, не 503.
 3. `$C build` (тот же `docker/Dockerfile` W-20) → `$C up -d --wait`.
 4. `$A migrate --force` → `$A aiqme:bootstrap --no-interaction`.
 5. Только первый раз, пустая БД: `$A db:seed --class='Database\Seeders\PrototypeContentSeeder' --force --no-interaction`
@@ -149,6 +155,9 @@ A="$C exec -T -u www-data app php artisan"
   `$C restart app worker scheduler` → `$A optimize` (файл смонтирован одним файлом — без перезапуска контейнер видит
   старый). `APP_KEY` не меняется без необходимости: он шифрует сессии и данные `encrypted`. Telegram — после смены
   токена `$A aiqme:telegram-webhook` (§5.4); Stripe — новый секрет webhook из кабинета Stripe.
+- `ALTCHA_HMAC_KEY` (капча П3): тот же порядок — правка `.env` → `$C restart app worker scheduler` → `$A optimize`.
+  Гаснут только уже выданные задачи: посетитель с открытой формой получит сообщение капчи и решит её заново; учётные
+  записи и заявки не затрагиваются. Если ключ добавлен уже после выпуска — так же restart и optimize.
 - HSTS включается в общем прокси хоста после того, как домен стабильно работает по HTTPS (W-23; начать с короткого
   `max-age`).
 - Защита хоста (SSH только по ключу, UFW, автоматические обновления безопасности) — ответственность владельца сервера (D-01).

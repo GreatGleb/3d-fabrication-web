@@ -27,3 +27,5 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 @media(max-width:1150px){.wrap.page-content{padding-left:28px;padding-right:28px}}
 @media(max-width:600px){.wrap.page-content{padding-left:20px;padding-right:20px}}
 @media print{.wrap.page-content{padding-left:0;padding-right:0}}
+/* Виджет капчи ALTCHA (правка 28.10, П3): во всю ширину формы, рамка как у .field input прототипа, фирменный синий. */
+altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-border-width:1px;--altcha-border-color:#ccd5e0;--altcha-border-radius:4px;--altcha-color-primary:var(--blue)}

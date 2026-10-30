@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Domain\Content\ContentType;
 use App\Domain\Content\Models\ContentTranslation;
 use App\Domain\Content\PublishedContent;
+use App\Domain\Forms\Altcha;
 use App\Domain\Forms\FormSubmissions;
 use App\Domain\Forms\Models\TrainingRegistration;
 use App\Http\Controllers\Controller;
@@ -19,17 +20,20 @@ use Illuminate\Validation\ValidationException;
  * Отправка контактной формы и регистрации на обучение (W-09): проверка ввода (поля форм прототипа, §6.4 для вложений),
  * honeypot (скрытое поле website_hp: заполнено — ошибка формы без записи, ложного успеха нет) и частота по IP —
  * middleware throttle:forms. Запись, событие и письмо — FormSubmissions. Успех — сообщение на странице формы.
+ * Капча ALTCHA (правка 28.10 П3): после honeypot и до проверки полей — верное одноразовое решение, иначе ошибка 'altcha'
+ * без записи (поля формы сохраняются в old()).
  */
 class FormController extends Controller
 {
     public const HONEYPOT = 'website_hp';
 
-    public function __construct(private readonly PublishedContent $content, private readonly FormSubmissions $forms) {}
+    public function __construct(private readonly PublishedContent $content, private readonly FormSubmissions $forms, private readonly Altcha $altcha) {}
 
     public function contact(Request $request): RedirectResponse
     {
         $locale = app()->getLocale();
         $this->rejectHoneypot($request);
+        $this->altcha->verifyOrFail($request);
         // Значение выбора — slug услуги текущей локали (как в ссылках предзаполнения §1.2) или equipment.
         $services = $this->content->list(ContentType::Service, $locale)->keyBy('slug');
         $limits = config('aiqme.forms');
@@ -66,6 +70,7 @@ class FormController extends Controller
     {
         $locale = app()->getLocale();
         $this->rejectHoneypot($request);
+        $this->altcha->verifyOrFail($request);
         $data = $request->validate([
             'training' => ['required', 'integer'],
             'name' => ['required', 'string', 'max:255'],

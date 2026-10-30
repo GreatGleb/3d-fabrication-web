@@ -139,6 +139,7 @@ class SheetsTest extends TestCase
         $this->post('/en/contact', [
             'name' => $name, 'company' => 'UAB Detalė', 'email' => $email, 'phone' => '+370 611 11111',
             'service' => '3d-printing', 'description' => 'Need ten brackets printed in PETG.', 'deadline' => '2027-03-01',
+            'altcha' => $this->altcha(),
         ])->assertSessionHasNoErrors();
 
         return ContactRequest::latest('id')->firstOrFail();
@@ -305,7 +306,7 @@ class SheetsTest extends TestCase
         ]))->assertOk();
         $this->flow()->cancel($this->admin, $order, 'Customer request');
         $contact = $this->contactRequest();
-        $registration = $this->post('/en/training', ['training' => $this->training()->id, 'name' => 'Rūta TEST', 'email' => 'ruta@example.test', 'format' => 'online', 'participants' => 2]);
+        $registration = $this->post('/en/training', ['training' => $this->training()->id, 'altcha' => $this->altcha(), 'name' => 'Rūta TEST', 'email' => 'ruta@example.test', 'format' => 'online', 'participants' => 2]);
         $registration->assertSessionHasNoErrors();
 
         foreach (['payment.refunded', 'order.cancelled', 'contact_request.created', 'training_registration.created'] as $type) {
@@ -392,7 +393,7 @@ class SheetsTest extends TestCase
 
         User::factory()->create(['email' => 'lina@example.test', 'name' => 'Lina Registered']);
         $this->travel(2)->hours();
-        $this->post('/en/training', ['training' => $this->training()->id, 'name' => 'Lina T.', 'email' => 'lina@example.test', 'format' => 'aiqme', 'participants' => 1])
+        $this->post('/en/training', ['training' => $this->training()->id, 'altcha' => $this->altcha(), 'name' => 'Lina T.', 'email' => 'lina@example.test', 'format' => 'aiqme', 'participants' => 1])
             ->assertSessionHasNoErrors();
 
         $this->assertCount(1, $this->sheets->rows('Contacts'));

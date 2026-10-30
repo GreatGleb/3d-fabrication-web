@@ -59,6 +59,11 @@ check_compare (предел 4, панель «N/4», переход на сра�
 W-09: формы на данных фабрик — контактная форма /en/contact с двумя вложениями (сообщение об успехе, письмо AIQME в
 Mailpit без вложений, письма клиенту нет) и модалка регистрации на обучение на /en/training и странице услуги обучения
 (FORM_PAGES: открытие, Escape и возврат фокуса, отправка, окно подтверждения, письмо в Mailpit).
+Капча ALTCHA (правка 28.10, П3): ключ ALTCHA_HMAC_KEY — случайный на прогон, AIQME_ALTCHA_PER_MINUTE=1000 (все запросы
+с 127.0.0.1); контактная форма, окно обучения и prod_contact отправляются после «Verified»/«Patvirtinta» (wait_altcha: поле
+altcha с решением за ≤ 30 с); check_register — /lt/paskyra/register @390: «Patvirtinta», отправка открывает /lt/paskyra
+с #account-overview; кадры формы с виджетом shots/altcha-<contact|training|register>-<ширина>.png. Нарушения CSP, ошибки
+консоли, ответы ≥ 400 (в том числе 429 от /altcha) и внешние запросы ловит общая проверка страницы.
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -114,7 +119,7 @@ from pathlib import Path
 from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeout, sync_playwright
 
 APP = Path(__file__).resolve().parents[1]
 REPO = APP.parent
@@ -198,6 +203,9 @@ def browser_env():
                 'APP_DEBUG': 'false',
                 # Заявки W-12 одного прогона (несколько страниц, ширин и ошибочных отправок) — с одного IP; лимит поднят.
                 'AIQME_ORDERS_PER_HOUR': '100',
+                # Капча ALTCHA (П3): свой ключ на прогон; задачи всех страниц и ширин — с 127.0.0.1, лимит выдачи поднят
+                # (ответ 429 от /altcha считался бы ошибкой страницы).
+                'ALTCHA_HMAC_KEY': secrets.token_hex(32), 'AIQME_ALTCHA_PER_MINUTE': '1000',
                 # Stripe на уровне L не вызывается (W-16): без ключей страница оплаты — «оплата временно недоступна».
                 'STRIPE_KEY': '', 'STRIPE_SECRET': '',
                 # Таблица из .env (W-22) при QUEUE_CONNECTION=sync писала бы строки тестовых заявок в настоящую таблицу
@@ -1542,6 +1550,30 @@ def check_contact_map(report, new_page, path, width, shots_dir):
     context.close()
 
 
+def wait_altcha(report, page, form, where):
+    """Капча ALTCHA (П3): фокус в форме запускает решение (auto=onfocus); ждём скрытое поле altcha с решением и надпись
+    «Verified»/«Patvirtinta» (≤ 30 с). Возвращает виджет."""
+    widget = form.locator('altcha-widget')
+    report.check(widget.count() == 1, f'{where}: виджетов капчи {widget.count()}')
+    form.locator('input:visible').first.focus()
+    try:
+        page.wait_for_function('''(form) => {
+            const input = form.querySelector('input[name=altcha]');
+            const text = form.querySelector('altcha-widget')?.innerText || '';
+            return input && input.value && /Verified|Patvirtinta/.test(text);
+        }''', arg=form.element_handle(), timeout=30000)
+    except PlaywrightTimeout:
+        report.check(False, f'{where}: капча не решена за 30 с («{widget.inner_text().strip() if widget.count() else ""}»)')
+    return widget
+
+
+def altcha_shot(page, form, name, width):
+    """Кадр формы с решённой капчей: shots/altcha-<страница>-<ширина>.png (плашка cookie и липкая шапка не закрывают)."""
+    page.evaluate("document.querySelector('.cookie')?.remove(); document.querySelectorAll('.header').forEach((h) => h.style.visibility = 'hidden')")
+    form.screenshot(path=str(OUT / 'shots' / f'altcha-{name}-{width}.png'))
+    page.evaluate("document.querySelectorAll('.header').forEach((h) => h.style.visibility = '')")
+
+
 def check_contact_form(report, new_page, path, width):
     """Контактная форма (W-09): заполнение, два вложения, отправка, сообщение в #contact-result, письмо AIQME в Mailpit."""
     where = f'{path} @{width} форма'
@@ -1560,6 +1592,8 @@ def check_contact_form(report, new_page, path, width):
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
         form.locator('input[type=file]').set_input_files([str(pdf), str(stl)])
+        wait_altcha(report, page, form, where)
+        altcha_shot(page, form, 'contact', width)
         with page.expect_navigation(wait_until='networkidle'):
             form.locator('button[type=submit]').click()
     result = page.locator('#contact-result').inner_text().strip()
@@ -1947,6 +1981,9 @@ def check_training_modal(report, new_page, path, width):
     modal.locator('input[name=email]').fill(email)
     modal.locator('select[name=format]').select_option('aiqme')
     modal.locator('input[name=participants]').fill('3')
+    form = modal.locator('form')
+    wait_altcha(report, page, form, where)
+    altcha_shot(page, modal.locator('[role=dialog]'), 'training', width)
     with page.expect_navigation(wait_until='networkidle'):
         modal.locator('button[type=submit]').click()
     confirmation = page.locator('#training-confirmation')
@@ -1960,6 +1997,28 @@ def check_training_modal(report, new_page, path, width):
     report.check(not confirmation.is_visible(), f'{where}: Escape не закрыл подтверждение')
     report.check(page.evaluate(f"document.activeElement.matches('[data-modal-open=\"{modal_id}\"]')"), f'{where}: фокус не на кнопке темы')
     check_form_mail(report, where, token, 'Mokymų registracija', email, [f'Jonas {token}', 'CAD basics', 'AIQME patalpose', '<td>3</td>'])
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
+def check_register(report, new_page, path, width):
+    """Регистрация кабинета с капчей ALTCHA (П3): «Patvirtinta», кадр формы, отправка открывает кабинет с #account-overview."""
+    where = f'{path} @{width} регистрация кабинета'
+    token = 'br' + secrets.token_hex(6)
+    context, page, problems = new_page(width, 844)
+    page.goto(BASE + path, wait_until='networkidle')
+    form = page.locator('#auth-form[data-mode=register]')
+    form.locator('input[name=name]').fill(f'Rūta {token}')
+    form.locator('input[name=email]').fill(f'{token}@example.test')
+    form.locator('input[name=password]').fill(secrets.token_urlsafe(12))
+    widget = wait_altcha(report, page, form, where)
+    report.check('Patvirtinta' in widget.inner_text(), f'{where}: надпись виджета «{widget.inner_text().strip()}»')
+    altcha_shot(page, form, 'register', width)
+    with page.expect_navigation(wait_until='networkidle'):
+        form.locator('button[type=submit]').click()
+    report.check(urlparse(page.url).path == '/lt/paskyra', f'{where}: после отправки открылся {page.url}')
+    report.check(page.locator('#account-overview').count() == 1, f'{where}: нет #account-overview')
     for problem in problems:
         report.check(False, f'{where}: {problem}')
     context.close()
@@ -2286,6 +2345,7 @@ def prod_contact(report, new_page):
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
         form.locator('input[type=file]').set_input_files([str(pdf), str(stl)])
+        wait_altcha(report, page, form, where)
         with page.expect_navigation(wait_until='networkidle'):
             form.locator('button[type=submit]').click()
     result = page.locator('#contact-result').inner_text().strip()
@@ -2561,6 +2621,8 @@ def main():
                     check_contact_form(report, new_page, path, FORM_PAGES[path])
                 elif path in FORM_PAGES:
                     check_training_modal(report, new_page, path, FORM_PAGES[path])
+                if path == '/lt/paskyra/register':
+                    check_register(report, new_page, path, 390)
 
                 row = {'path': path, 'shots': {}}
                 for device, (width, height) in SHOTS.items():
