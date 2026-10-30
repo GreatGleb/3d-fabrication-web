@@ -3806,3 +3806,118 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 ## E-10: заблокирована ночным прогоном (2026-10-30 16:57)
 
 Причина (оркестратор): ночь остановлена: API Error: Can't reach the API server — check your internet or DNS (EAI_AGAIN). Работа — в git stash «night-blocked E-10».
+
+## Правки 28.10, E-10 (П1–П7): сквозная проверка правок и статус в docs/requirements.md — выполнено (2026-10-30, Claude Code, ночной прогон)
+
+Повторный запуск после блокировки оркестратора (сеть API); работа из stash «night-blocked E-10» не использовалась —
+задача сделана заново. Код сайта не менялся: регрессий правок E-01…E-09 не найдено.
+
+### Проверки на одном дереве (HEAD `794c1b1`, без изменений кода)
+- `bin/check` → **OK**, 391 с: Pint passed; Node-тесты калькулятора 39/39; PHPUnit **703 passed, 75 299 assertions**;
+  Vite build OK; шаг «Зависимости» — OK (lunarphp/core 1.5.0, livewire v3.8.10, stripe-php v16.6.0, laravel v13.37.0,
+  filament v4.15.2, boost v2.10.3). Этот шаг altcha не перечисляет; версии altcha сверены отдельно чтением:
+  `composer.json`/`composer.lock` — `altcha-org/altcha` 2.3.0, `package.json`/`package-lock.json` — `altcha` 3.4.1
+  (devDependency, точная версия). Журнал — `build/verification/e10/check.log` (не отслеживается).
+- Полный `bin/browser-check` (без аргументов) → **`bin/browser-check: OK (19532 проверок)`**, ошибок 0, 1341 с: 99
+  страниц на 5 ширинах, вход администратора и клиента, кабинет, все вкладки админки LT/EN, `/ru/` (19 адресов), сброс
+  пароля по письму из Mailpit. Сводка `build/verification/browser-check/summary.md` (20:20):
+  - «Прерванные запросы к чужим хостам: нет»;
+  - «Карта Google Maps (контакты): подменена заглушкой 37 раз»;
+  - `text-discrepancies.md` — «Расхождений нет».
+  Команда сессии ограничена 10 мин, поэтому прогон шёл отдельным процессом, а сессия ждала его завершения в переднем
+  плане (как в E-04); журнал — `build/verification/e10/browser-check.log`.
+- Поиск маркеров D-21 (`marker_hits`) — в составе полного прогона на всех страницах, кабинете и админке: совпадений
+  нет. `tests/fixtures/marker-allowlist.json` относительно main: только удалены 4 записи заглавной подписи 3D-печати
+  (E-01).
+
+### Сверка «как должно стать» с кодом и проверками
+- П1: проверено — блок `.wrap.page-content` 48/28/20 и print 0 в `shell.css`; `check_gutters` на всех ширинах и
+  страницах (в т. ч. кабинет, админка, /ru) зелёный; на кадре `lt__apie-mus-phone.png` текст с полем 20 px.
+- П2: проверено — `header header--dark` с сервера, `header--overlay` только на главной с hero, две `img` логотипа,
+  `noscript`-стиль с nonce (ShellTest, DefaultMediaTest); `check_header`/`check_header_cases`/`check_hero_under_header`
+  зелёные (тёмная вверху, белая §7.1 после прокрутки, перезагрузка без анимации, reduced-motion, без JS); слот
+  `logo_white` и файл `logo-white.png` (DefaultMediaTest, ContentMediaTest). Не проверено: сам переход глазами,
+  Safari/Firefox.
+- П3: проверено — `verifyOrFail` в `FormController::contact/training` и `RegisterController::store`; partial виджета в
+  трёх формах; калькулятор без капчи (AltchaTest, OrderSubmissionTest); в браузере три формы отправлены после
+  «Verified»/«Patvirtinta» без нарушений CSP и внешних запросов. Тексты `public.forms.altcha` LT/EN дословно из README.
+  Не проверено: `prod_contact` (только режим `--base-url/--compose-file`) — проверено чтением кода, ждёт prod-compose
+  (пользователь).
+- П4: проверено — в `service-features.blade.php` нет `eyebrow`, номер `service-feature-number` остаётся (PublicPagesTest);
+  `check_text` на /lt, /en, /lt/paslaugos, /en/services зелёный; на кадре `lt__paslaugos-desktop.png` карточка
+  начинается с h3.
+- П5: проверено — iframe с `map_embed_url`/`map_title` перед ссылкой, `frame-src … https://www.google.com`
+  (SecurityHeadersTest, PublicPagesTest); тексты карты и cookie LT/EN дословно из README; `check_contact_map` зелёный,
+  заглушка 37 раз. Не проверено: настоящая карта Google (ночью запрещено, D-20) — после deploy; ветка заглушки в
+  `bin/demo-check` — проверено чтением кода, ждёт пересборки демо (пользователь).
+- П6: проверено — поля и варианты шага 02, `notes` (миграция, `order_meta.notes`, карточка админки `#order-notes`),
+  `consult` → `default_infill` (CalculatorPageTest, OrderSubmissionTest, AdminOrdersTest, `check_calculator`,
+  `check_admin_order`); старых ключей `quality/finish/layer/fdm_note/preferences_note` в lang нет, прежние подписи —
+  в `admin.orders.legacy`. Тексты LT/EN дословно из README. Не проверено: `bin/demo-check` на новой сборке (ждёт
+  пересборки демо).
+- П7: проверено — миграция `2026_10_29_000000` (250 → 1000, иначе без изменений; down 1000 → 250), текст шага 3
+  «FDM: 1000 × 1000 × 1000 mm.» (кадр `calculator-step3-1440.png`), предупреждение сервера (OrderSubmissionTest) и
+  `check_calculator_settings`.
+
+### Кадры (просмотрены Read, `build/verification/browser-check/shots/`, все 411 файлов из этого прогона)
+Имя кадра главной — `lt-<desktop|tablet|phone>.png` (ведущий «/» убирается), файла `__-*.png` нет и быть не должно.
+- Верх страниц: `lt-desktop.png`, `lt__apie-mus-phone.png`, `lt__paslaugos-desktop.png`, `lt__kontaktai-phone.png`,
+  `en__contact-desktop.png`, `lt__kalkuliatorius-desktop.png`, `lt__paskyra__register-phone.png` — тёмная шапка с
+  белым логотипом, поля контента выровнены по колонке шапки, на главной полупрозрачная шапка над видео hero; на
+  /en/contact карта-заглушка под реквизитами. Остальные ширины этих страниц (tablet/desktop/phone) существуют, не
+  открывались.
+- E-09: `header-top-lt-390.png`, `header-top-lt__apie-mus-1440.png`, `header-top-en__admin-1440.png`,
+  `header-scrolled-lt-390.png`, `header-scrolled-lt__apie-mus-1440.png` — вверху тёмная, после прокрутки белая §7.1.
+  Существуют, не открывались: `header-top-lt-1440`, `header-top-lt__apie-mus-390`, `header-scrolled-lt-1440`,
+  `header-scrolled-lt__apie-mus-390`, `header-scrolled-en__admin-1440`.
+- E-04: `contact-map-lt-1440.png`, `contact-map-en-390.png` — рамка карты (заглушка) и ссылка «Atidaryti žemėlapį ↗» /
+  «Open map ↗» внутри рамки. Существуют, не открывались: `contact-map-lt-390`, `contact-map-en-1440`.
+- E-05: `calculator-step2-390.png`, `calculator-step2-1440.png` (новый состав, «Reikia konsultacijos» в заполнении,
+  `term_note`, notes в две строки), `calculator-step3-1440.png` («FDM: 1000 × 1000 × 1000 mm.»); `admin-order-card-1440.png`
+  — блок «Additional information» с двумя строками notes. Существуют, не открывались: `calculator-step3-390`,
+  `admin-order-card-390`.
+- E-07: `altcha-contact-1440.png`, `altcha-training-390.png`, `altcha-register-390.png` — виджет «Verified»/«Patvirtinta»
+  над кнопкой отправки, без подвала ALTCHA. Существует, не открывался: `altcha-training-1440`.
+- Замечание (не дефект страницы, не регрессия правок): `admin-order-card-1440.png` снимается `full_page=True` (код
+  кадра — с W-заданий, до правок), и липкая шапка вместе со ссылкой «Skip to content» нарисована посередине длинного
+  кадра — особенность полностраничного снимка Playwright с `position:sticky`. Cookie-плашка в углу — на всех кадрах,
+  как и раньше.
+- Визуальная сверка с макетами 20.17.09 (услуги) и 23.37.38 (шаг 02) — **ждёт проверки пользователем**.
+
+### Файлы ветки
+- `git diff --name-status main...HEAD -- aiqme-site docs`: изменённые и новые файлы `aiqme-site/` — из touches E-01…E-09;
+  вне touches только объяснённые в своих разделах: `bootstrap/app.php` (комментарий, E-06), `resources/js/search.js`,
+  `tests/Feature/LocaleRoutesTest.php`, `tests/Feature/PrototypeRoutesTest.php` (E-09). Изменения `docs/planning/`
+  (`night.py`, `tasks.json`) — коммит пользователя `a8f35e3`, не ночных задач. Новые файлы: `Altcha.php`,
+  `AltchaController.php`, две миграции, `altcha.js`, `header.js`, `partials/altcha.blade.php`, `AltchaTest.php` и
+  единственный бинарный — `public/defaults/logo-white.png`.
+- `.env` не отслеживается (в Git только `.env.example`, в нём `ALTCHA_HMAC_KEY=` пустой); 64-значных hex-строк в
+  добавленных строках нет (ключ в `bin/browser-check` — `secrets.token_hex(32)` на прогон, тестовый —
+  `phpunit-only-not-a-secret`). Сравнение добавленных строк с перепиской 28.10 (окна по 28 символов) — совпадений нет.
+- E-10 (незакоммичено): `docs/requirements.md` — только новый раздел «Правки заказчика 28.10» перед «Предложенная
+  архитектура»; `aiqme-site/docs/progress.md` — этот раздел.
+
+### Не проверено
+- Ручной визуальный просмотр кадров человеком и сверка с макетами 20.17.09 и 23.37.38 — ждёт проверки пользователем.
+- `bin/demo-check` не запускался: старая сборка `demo/` не содержит iframe, шага 02 и новой шапки, зелёный результат
+  новых веток не доказал бы (ветки — проверено чтением кода, ждёт пересборки демо).
+- `prod_contact` и режим `--base-url/--compose-file` — ждёт prod-compose (пользователь).
+- Настоящая карта Google, Safari/Firefox для шапки, переход 0,3 с глазами.
+
+### Итог очереди E-01…E-10
+Все семь правок П1–П7 сделаны и проверены локально вместе; на aiqme.com их ещё нет. Следующий шаг — E-11 (track P,
+только пользователь), порядок — README плана, «Что делает человек → После прогона»
+(`docs/planning/edits-20261029/README.md`):
+1. Посмотреть кадры, помеченные «ждёт проверки пользователем» (список выше), решить push и слияние в `main`.
+2. Копия БД (`bin/backup`, `operations.md`).
+3. **До deploy** — `openssl rand -hex 32` на сервере и `ALTCHA_HMAC_KEY=<значение>` в `.env` приложения (права
+   `root:33 0640`). Без ключа три формы перестанут приниматься.
+4. `deploy <rev>`: build → up → `migrate --force` (`order_meta.notes`; `max_dimension_mm` 250 → 1000) → bootstrap →
+   optimize → restart; затем `curl -s https://aiqme.com/altcha` — JSON с `signature`, не 503.
+5. Ручные проверки на aiqme.com (ПК и телефон): поля `/lt/apie-mus`; шапка и белый логотип; нет подписей у услуг;
+   карта на `/lt/kontaktai` и `/en/contact` без ошибок CSP; контактная форма с «Patvirtinta» → заявка в админке; шаг 02
+   и пробная заявка с «Papildoma informacija»; шаг 03 1000 мм и вкладка Calculator без «Nepatvirtinta»; старые тестовые
+   заказы открываются; в «Vertimai» нет своего `shell.cookie.text`.
+6. Тексты заказчику: раздел cookie о Google Maps (D-27), EN-переводы вариантов шага 2, капча защищает только формы
+   aiqme.com, без JavaScript формы не отправить, белый логотип можно заменить в админке.
+7. По желанию: строка D-24 в `decisions.md`, пересборка демо.
