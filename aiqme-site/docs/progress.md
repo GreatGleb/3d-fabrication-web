@@ -3474,3 +3474,66 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   прогон дольше 10-минутного предела команды, поэтому шёл отдельным процессом с ожиданием завершения в переднем
   плане); `bin/check` → **OK**, EXIT 0 (`/tmp/e05-check.log`).
 - Не проверено: устойчивость к повторным прогонам — прогнан один раз; прежняя нестабильность проявлялась не всегда.
+
+## Правки 28.10, E-06 (П3): ALTCHA — зависимости, сервис и выдача задач — выполнено (2026-10-30, Claude Code, ночной прогон)
+
+### Сделано
+
+- **Зависимости** (разрешены пользователем 29.10, README плана П3 и rules очереди):
+  `bin/php /usr/local/bin/composer require altcha-org/altcha:2.3.0 --no-interaction` и
+  `npm install --save-dev --save-exact --ignore-scripts altcha@3.4.1`. `composer.json` — `"altcha-org/altcha": "2.3.0"`;
+  в `composer.lock` добавлен только пакет `altcha-org/altcha` (и content-hash). `package.json` devDependencies —
+  `"altcha": "3.4.1"`; `package-lock.json` — `altcha` 3.4.1 и его зависимость `hash-wasm` 4.12.0. npm при установке
+  переписал имя проекта в lock (`"app"` → `"aiqme-site"`) — возвращено `"app"`, чтобы diff содержал только пакеты.
+  `composer audit` показывает одно прежнее предупреждение `symfony/mime` (не связано с этой задачей, не обновлял).
+- **Фактический API PHP-пакета 2.3.0** (по README и `src` в `vendor/altcha-org/altcha`): `AltchaOrg\Altcha\Altcha`
+  (`hmacSignatureSecret`; `hmacKeySignatureSecret` не передаётся — быстрая проверка `keySignature` не используется),
+  `createChallenge(CreateChallengeOptions(algorithm, cost, counter, expiresAt))` → `Challenge` (`parameters`,
+  `signature`, `toArray()`), `verifySolution(VerifySolutionOptions(payload: строка base64, algorithm))` →
+  `VerifySolutionResult->verified`; разбор строки — `Payload::fromBase64` внутри `VerifySolutionOptions` (бросает
+  `InvalidArgumentException`); алгоритм — `AltchaOrg\Altcha\Algorithm\Pbkdf2` (по умолчанию PBKDF2/SHA-256);
+  решение — `solveChallenge(SolveChallengeOptions(algorithm, challenge))` → `Solution`, payload —
+  `new Payload($challenge, $solution)->toBase64()`. Ожидаемые имена плана совпали.
+- `config/aiqme.php` `forms.altcha`: `hmac_key` env `ALTCHA_HMAC_KEY`, cost 5000, counter [5000, 10000], expires 1800,
+  `per_minute` `(int) env('AIQME_ALTCHA_PER_MINUTE', 30)`, с комментарием.
+- `app/Domain/Forms/Altcha.php` (final): `FIELD = 'altcha'`, `configured()`, `challenge()`, `verify()` (false без
+  ключа, не-строка, пустая, > 4096, исключения разбора/проверки, `!verified`, пустой `expiresAt`; последний шаг —
+  `Cache::add('altcha:'.signature, true, ttl до срока)`), `verifyOrFail(Request)` → `ValidationException` по
+  `altcha` с текстом `public.forms.altcha`. Срок проверяет пакет (`expiresAt < microtime(true)` → не verified).
+- `AltchaController` (invokable): 503 без ключа, иначе JSON `Challenge::toArray()` с `Cache-Control: no-store, private`.
+  Маршрут `GET altcha` (`throttle:altcha`, имя `altcha`) в `routes/webhooks.php` вне группы web; комментарии
+  `routes/webhooks.php` и строки `then:` в `bootstrap/app.php` (иначе он говорил бы только о webhook) обновлены.
+  `RateLimiter::for('altcha')` — `perMinute(per_minute)` по IP в `AppServiceProvider`.
+- `lang/{lt,en}/public.php` `forms.altcha` — дословно из таблицы П3 README (перенесено скриптом из строки таблицы).
+- `.env.example`: блок `ALTCHA_HMAC_KEY=` с комментарием. `bin/setup`: если в `.env` нет непустого
+  `ALTCHA_HMAC_KEY`, пустая строка удаляется и дописывается `ALTCHA_HMAC_KEY=$(openssl rand -hex 32)`; идемпотентность
+  проверена на временном файле (пустой ключ → заменён один раз, повтор не меняет; без строки — дописан). Сам
+  `bin/setup` целиком не запускался (он поднимает compose, ставит пакеты и мигрирует).
+- `phpunit.xml`: `ALTCHA_HMAC_KEY` пусто с force. `TestCase::setUp` — ключ `phpunit-only-not-a-secret`, cost 1,
+  counter [1, 20]; helper `altcha()` — задача сервиса, решение `solveChallenge` пакета, без HTTP.
+- `tests/Feature/AltchaTest.php` (19 тестов): выдача (200, алгоритм, cost из конфигурации, keyLength 32, expiresAt
+  ±5 от time()+1800, нет keySignature, подпись 64 hex, no-store/private, нет Set-Cookie, есть CSP, два ответа
+  различаются); 429 на третьем запросе при per_minute=2; 503 без ключа; решение принимается один раз (и решение
+  задачи, полученной через `/altcha`); мусор (abc, пусто, base64 `{}`, тестовый режим виджета, массив, null,
+  5000 символов); подделка counter+1, cost, задача другого ключа; просрочка (expires=-10); без ключа;
+  `verifyOrFail` — ошибка по ключу `altcha` с текстом LT; рабочие значения из `config_path('aiqme.php')`.
+- Формы ещё не подключены (E-07); SecurityHeaders не менялся.
+
+### Команды
+
+- `bin/php artisan test --compact tests/Feature/AltchaTest.php` → passed (19 тестов, 41 проверка).
+- Проверка, что тесты ловят поломку (одноразовый откат, затем файлы возвращены): без `Cache::add` (`return true`) —
+  падают 2 теста (повтор принят); без `throttle:altcha` — падает тест 429.
+- `bin/php vendor/bin/pint --dirty --format agent` → passed.
+- `bin/check` → **OK**, EXIT 0: проверка версий зелёная, PHPUnit 688 passed, Vite OK (`/tmp/e06-check.log`).
+- Полный `bin/browser-check` → **OK (18733 проверки)**, EXIT 0 (`/tmp/e06-bc.log`; отдельный процесс с ожиданием
+  завершения в переднем плане — прогон дольше 10-минутного предела команды).
+- `git diff --stat composer.lock package-lock.json` → `composer.lock | 49 +++-`, `package-lock.json | 18 +`.
+- `git status --porcelain aiqme-site` → изменённые файлы задачи и три новых: `app/Domain/Forms/Altcha.php`,
+  `app/Http/Controllers/Public/AltchaController.php`, `tests/Feature/AltchaTest.php`.
+
+### Не проверено
+
+- Совместимость ответа `/altcha` с виджетом npm `altcha` 3.4.1 в браузере — проверяется в E-07 (виджет на формах).
+- `bin/setup` целиком не запускался; локальный `.env` не менялся (ключ появится при следующем `bin/setup`).
+- Рабочий сервер: перед выпуском нужен `ALTCHA_HMAC_KEY` в `.env` (README плана, «После прогона») — пользователь.

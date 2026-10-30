@@ -11,6 +11,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.3",
+        "altcha-org/altcha": "2.3.0",
         "google/auth": "^1.55",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",

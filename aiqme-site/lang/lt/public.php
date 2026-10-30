@@ -215,5 +215,6 @@ return [
         'participants' => 'Dalyvių skaičius — nuo :min iki :max.',
         'rejected' => 'Užklausa nepriimta. Bandykite dar kartą.',
         'throttle' => 'Per daug užklausų. Bandykite vėliau.',
+        'altcha' => 'Patvirtinkite, kad nesate robotas: pažymėkite langelį „Aš nesu robotas“ ir palaukite, kol bus parašyta „Patvirtinta“. Langelis veikia tik įjungus JavaScript.',
     ],
 ];

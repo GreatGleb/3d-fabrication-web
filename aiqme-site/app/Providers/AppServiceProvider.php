@@ -79,6 +79,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Формы обращений и регистрации на обучение (W-09): общий лимит отправок с одного IP в час; превышение — 429.
         RateLimiter::for('forms', fn (Request $request): Limit => Limit::perHour(config('aiqme.forms.per_hour'))->by($request->ip()));
+        // Задачи ALTCHA (правка 28.10 П3): выдача в минуту с одного IP; превышение — 429.
+        RateLimiter::for('altcha', fn (Request $request): Limit => Limit::perMinute(config('aiqme.forms.altcha.per_minute'))->by($request->ip()));
 
         // Заявки на изготовление (W-12, §3.1): своя частота по IP; корзина Lunar → заказ без адресов Lunar, через
         // валидатор заявки; номер заказа — порядковый из счётчика counters.

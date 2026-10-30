@@ -18,6 +18,11 @@ if [[ ! -f .env ]]; then
         -e 's/^MAIL_HOST=.*/MAIL_HOST=127.0.0.1/' -e 's/^MAIL_PORT=.*/MAIL_PORT=51025/' \
         .env.example > .env
 fi
+# Ключ капчи ALTCHA (правка 28.10 П3): свой в каждой среде; дописывается, только если в .env его ещё нет или он пуст.
+if ! grep -q '^ALTCHA_HMAC_KEY=.' .env; then
+    sed -i '/^ALTCHA_HMAC_KEY=$/d' .env
+    echo "ALTCHA_HMAC_KEY=$(openssl rand -hex 32)" >> .env
+fi
 bin/php /usr/local/bin/composer install --no-interaction
 grep -q '^APP_KEY=base64:' .env || bin/php artisan key:generate --no-interaction
 npm ci --no-audit --no-fund

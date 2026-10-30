@@ -58,6 +58,16 @@ return [
         'attachments_max_files' => 5,
         'attachments_max_kb' => 15360,
         'attachments_extensions' => ['stl', 'step', 'stp', 'obj', 'pdf', 'jpg', 'jpeg', 'png'],
+        // Капча ALTCHA (правка 28.10 П3): ключ подписи задач (64 hex) только в .env, пусто — задачи не выдаются и формы
+        // не принимаются. Задача PBKDF2/SHA-256: cost итераций, секретный counter из диапазона, срок в секундах.
+        // Выдача задач (GET /altcha) — в минуту с одного IP; через env, как AIQME_ORDERS_PER_HOUR.
+        'altcha' => [
+            'hmac_key' => env('ALTCHA_HMAC_KEY'),
+            'cost' => 5000,
+            'counter' => [5000, 10000],
+            'expires' => 1800,
+            'per_minute' => (int) env('AIQME_ALTCHA_PER_MINUTE', 30),
+        ],
     ],
 
     /*
