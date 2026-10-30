@@ -111,8 +111,8 @@ class ShellTest extends TestCase
 
     public function test_cookie_notice_is_informational_essential_only(): void
     {
-        foreach (['lt' => ['Analitika ir reklamos sekimas nenaudojami.', 'Tik būtini', 'Nustatymai'],
-            'en' => ['No analytics or advertising tracking is used.', 'Essential only', 'Settings']] as $locale => [$text, $accept, $settings]) {
+        foreach (['lt' => ['Analitika ir reklamos sekimas nenaudojami. Puslapyje „Kontaktai“ rodomas „Google Maps“ žemėlapis – jį įkeliant „Google“ gali naudoti savo slapukus.', 'Tik būtini', 'Nustatymai'],
+            'en' => ['No analytics or advertising tracking is used. The Contact page shows a Google Maps map; Google may use its own cookies when it loads.', 'Essential only', 'Settings']] as $locale => [$text, $accept, $settings]) {
             $xpath = $this->xpath($this->get(route($locale.'.home'))->getContent());
 
             $cookie = $xpath->query('//div[@class="cookie"]')->item(0);

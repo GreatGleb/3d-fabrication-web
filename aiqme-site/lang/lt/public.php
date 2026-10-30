@@ -132,6 +132,9 @@ return [
     'contact' => [
         'map' => 'Atidaryti žemėlapį ↗',
         'map_url' => 'https://www.google.com/maps?q=54.641192%2C25.268099',
+        // Хост встроенной карты должен остаться https://www.google.com: только его разрешает CSP frame-src (SecurityHeaders).
+        'map_embed_url' => 'https://www.google.com/maps?q=AIQME%2C%20UAB%203D%20in%C5%BEinerija%20ir%20technologijos%2C%20Metalo%20g.%204%2C%20Vilnius&t=k&z=18&hl=lt&output=embed',
+        'map_title' => 'AIQME vieta žemėlapyje',
         'name' => 'Vardas *',
         'company' => 'Įmonė (neprivaloma)',
         'email' => 'El. paštas *',

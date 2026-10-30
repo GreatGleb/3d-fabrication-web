@@ -27,3 +27,6 @@
 .upload:hover .btn.secondary{background:#edf3fa}
 /* Пометка под ценой: цена может вырасти (поддержки), окончательную подтверждает администратор — заметнее серого .legal-note. */
 .summary-note{font-size:13px;margin:6px 0 22px}
+/* Контакты, правка 28.10 П5: в рамке карты iframe (320/260 px — style.css прототипа) и ссылка под ним; высота 210 px
+   рамки-заглушки прототипа (style.css:260) обрезала бы карту, поэтому высота — по содержимому. */
+.contact-map{height:auto;overflow:hidden}

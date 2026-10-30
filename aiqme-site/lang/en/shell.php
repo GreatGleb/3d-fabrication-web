@@ -38,7 +38,7 @@ return [
         'cookies' => 'Cookies',
     ],
     'cookie' => [
-        'text' => 'No analytics or advertising tracking is used.',
+        'text' => 'No analytics or advertising tracking is used. The Contact page shows a Google Maps map; Google may use its own cookies when it loads.',
         'accept' => 'Essential only',
         'settings' => 'Settings',
     ],

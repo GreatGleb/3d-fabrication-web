@@ -43,6 +43,7 @@ class SecurityHeadersTest extends TestCase
         $responses = [
             '/lt' => $this->get('/lt'),
             '/en/services' => $this->get('/en/services'),
+            '/lt/kontaktai' => $this->get('/lt/kontaktai')->assertOk(),
             '404' => $this->get('/lt/nera-tokio')->assertNotFound(),
             '/ru (404 гостю)' => $this->get('/ru')->assertNotFound(),
             'redirect /' => $this->get('/')->assertStatus(301),
@@ -62,6 +63,9 @@ class SecurityHeadersTest extends TestCase
             $this->assertSame(["'self'"], $csp['base-uri'] ?? null, $name);
             $this->assertSame(["'self'"], $csp['form-action'] ?? null, $name);
             $this->assertSame(["'self'", 'data:'], $csp['img-src'] ?? null, $name);
+            // Stripe (W-16) и карта Google Maps на «Kontaktai» (правка 28.10 П5) — других фреймов нет.
+            $this->assertSame(['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com', 'https://www.google.com'],
+                $csp['frame-src'] ?? null, $name);
         }
     }
 

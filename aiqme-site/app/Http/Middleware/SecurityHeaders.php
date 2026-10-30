@@ -13,7 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
  * 'unsafe-eval' — признанный компромисс §6.6 (Alpine в Livewire 3.8.10); style-src-attr 'unsafe-inline' — атрибуты
  * style="…" прототипа и Livewire. Домены Stripe Payment Element (W-16) — официальный список Stripe.js §6.6: скрипты
  * js.stripe.com, фреймы (и 3D Secure hooks.stripe.com), запросы к api.stripe.com. Dev-сервер Vite (`npm run dev`) политикой не разрешён:
- * страницы проверяются на собранных ресурсах (`npm run build`).
+ * страницы проверяются на собранных ресурсах (`npm run build`). Встроенная карта Google Maps на «Kontaktai» (правка 28.10 П5,
+ * узкое исключение из D-20) — дополнительно только https://www.google.com в frame-src; скрипты и запросы к Google не разрешены.
  */
 class SecurityHeaders
 {
@@ -40,7 +41,7 @@ class SecurityHeaders
             "style-src-elem 'self' 'nonce-{$nonce}'",
             "style-src-attr 'unsafe-inline'",
             "img-src 'self' data:",
-            'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com',
+            'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://www.google.com',
             "connect-src 'self' https://api.stripe.com",
             "frame-ancestors 'none'",
             "object-src 'none'",

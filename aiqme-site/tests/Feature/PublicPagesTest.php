@@ -233,8 +233,28 @@ class PublicPagesTest extends TestCase
         }
     }
 
-    public function test_contact_page_has_details_map_link_and_enquiry_form_without_demo_lines(): void
+    public function test_contact_page_has_details_embedded_map_with_link_and_enquiry_form_without_demo_lines(): void
     {
+        // Правка 28.10 П5: спутниковая карта Google Maps (без ключа, язык страницы) сразу при открытии, ссылка — под ней.
+        foreach (['/en/contact' => ['en', 'AIQME location map', 'Open map ↗'], '/lt/kontaktai' => ['lt', 'AIQME vieta žemėlapyje', 'Atidaryti žemėlapį ↗']] as $path => [$locale, $title, $link]) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $this->assertCount(1, $xpath->query('//iframe'), $path);
+            $iframe = $xpath->query('//div[@class="contact-map"]/iframe')->item(0);
+            $this->assertNotNull($iframe, $path);
+            $src = $iframe->getAttribute('src');
+            $this->assertSame(trans('public.contact.map_embed_url', [], $locale), $src, $path);
+            $this->assertStringStartsWith('https://www.google.com/maps?', $src, $path);
+            $this->assertStringContainsString('output=embed', $src, $path);
+            $this->assertStringContainsString('&hl='.$locale.'&', $src, $path);
+            $this->assertSame($title, $iframe->getAttribute('title'), $path);
+            $this->assertFalse($iframe->hasAttribute('loading'), $path);
+            $this->assertFalse($iframe->hasAttribute('referrerpolicy'), $path);
+            $anchor = $xpath->query('//div[@class="contact-map"]/iframe/following-sibling::a')->item(0);
+            $this->assertNotNull($anchor, "$path: ссылка после карты");
+            $this->assertSame($link, Html::text($anchor), $path);
+            $this->assertSame('https://www.google.com/maps?q=54.641192%2C25.268099', $anchor->getAttribute('href'), $path);
+        }
+
         $html = $this->get('/en/contact')->assertOk()->getContent();
         $xpath = Html::xpath($html);
 
@@ -243,7 +263,6 @@ class PublicPagesTest extends TestCase
         $this->assertCount(5, $xpath->query('//ul[contains(@class, "contact-details")]/li'));
         $this->assertCount(2, $xpath->query('//ul[contains(@class, "contact-details")]//a'), 'код компании и PVM — текст, не tel:');
         $this->assertSame('Open map ↗', Html::text($xpath->query('//div[@class="contact-map"]/a')->item(0)));
-        $this->assertCount(0, $xpath->query('//iframe'));
         $this->assertSame(['name', 'company', 'email', 'phone', 'service', 'description', 'attachments[]', 'deadline', 'website_hp'],
             array_map(fn ($field) => $field->getAttribute('name'), iterator_to_array($xpath->query('//form[@id="contact-form"]//*[@name and @name != "_token"]'))));
         $this->assertSame(['Choose a service', '3D scanning', '3D modelling & reverse engineering', '3D printing', 'CNC machining', 'Engraving', '3D modelling training', 'Equipment quotation'],

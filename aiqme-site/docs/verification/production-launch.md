@@ -82,6 +82,18 @@
 - **До приёма реальных заказов (стоп-лист §9.5):** бэкап, внешняя копия, проверенное восстановление; политики (D-27);
   затем снять `X-Robots-Tag: noindex` в Caddy: на сервере `/root/aiqme-open-indexing` (напоминание при входе по SSH;
   копия Caddyfile — `/etc/caddy/Caddyfile.noindex`).
+  В политику cookies (D-27) заказчику предложен раздел о встроенной карте (правка 28.10, П5; сид-черновик не меняется,
+  публикует заказчик в админке «Informacija ir SEO → Puslapių tekstai → cookies»):
+  - LT: «Trečiųjų šalių turinys: „Google Maps“» — «Puslapyje „Kontaktai“ įterptas „Google Maps“ žemėlapis. Atidarius šį
+    puslapį, žemėlapis įkeliamas iš „Google“ serverių: „Google“ gauna jūsų IP adresą ir gali naudoti savo slapukus pagal
+    [„Google“ privatumo politiką](https://policies.google.com/privacy). AIQME šių slapukų nevaldo.»;
+  - EN: «Third-party content: Google Maps» — «The Contact page contains an embedded Google Maps map. When you open this
+    page, the map is loaded from Google servers: Google receives your IP address and may use its own cookies under the
+    [Google Privacy Policy](https://policies.google.com/privacy). AIQME does not control these cookies.»
+- **Карта на «Kontaktai» (правка 28.10, П5), после deploy:** на `/lt/kontaktai` и `/en/contact` сразу видна спутниковая
+  карта Google Maps с меткой фирмы, язык карты — язык страницы, ссылка «Atidaryti žemėlapį ↗» под ней; в консоли нет
+  ошибок CSP; cookie-плашка с новым текстом о Google Maps (если в БД есть своё ui_text `shell.cookie.text` или
+  `public.contact.map_embed_url`, они перекрывают новые значения). Ночью карта проверялась только с локальной заглушкой (D-20).
 
 ## Замечания
 

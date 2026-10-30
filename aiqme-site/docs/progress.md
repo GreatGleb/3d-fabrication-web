@@ -3305,3 +3305,80 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   (`build/verification/browser-check/shots/`) — ждёт проверки пользователем.
 - Печать (`@media print` — поля 0) проверена только чтением CSS.
 - Полный `bin/browser-check` одним вызовом — запускает оркестратор.
+
+## Правки 28.10, E-04 (П5): встроенная карта Google Maps на «Kontaktai»
+
+Правка 28.10 (осознанное отступление от W-05/D-20 и D-11 по README плана `docs/planning/edits-20261029`, раздел П5).
+Запись W-05 выше не переписана.
+
+### Что сделано
+
+- `lang/{lt,en}/public.php`, `contact`: `map_embed_url` (точные URL таблицы П5, `hl=lt` / `hl=en`, `t=k`, `z=18`,
+  `output=embed`) и `map_title` («AIQME vieta žemėlapyje» / «AIQME location map»); над `map_embed_url` — комментарий,
+  что хост должен остаться `https://www.google.com` (его разрешает CSP). `map` и `map_url` не менялись.
+- `contact.blade.php`: в `div.contact-map` перед прежней ссылкой `<iframe src=map_embed_url title=map_title>` без
+  `loading`, `referrerpolicy`, `sandbox`, `allowfullscreen`; комментарий в начале обновлён.
+- `resources/css/public.css`: `.contact-map{height:auto;overflow:hidden}` с комментарием (рамка 210 px прототипа
+  обрезала бы карту; высоты 320/260 px iframe — правила `style.css` прототипа). `prototype/style.css` не менялся.
+- `SecurityHeaders`: `frame-src` = `https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com
+  https://www.google.com`; комментарий класса дописан; прочие директивы не менялись.
+- `lang/{lt,en}/shell.php` `cookie.text` — дословно из таблицы П5; комментарий в `cookie-notice.blade.php`; поведение
+  плашки, сид-черновик cookies и `prototype-content.json` не менялись.
+- Тесты: `PublicPagesTest::test_contact_page_has_details_embedded_map_with_link_and_enquiry_form_without_demo_lines`
+  (прежнее `assertCount(0, //iframe)` заменено: на `/en/contact` и `/lt/kontaktai` ровно один iframe в
+  `div.contact-map`, `src` = lang-URL, начинается с `https://www.google.com/maps?`, содержит `output=embed` и `&hl=<язык>&`,
+  `title` по языку, нет `loading`/`referrerpolicy`, ссылка с текстом по языку и `href=map_url` идёт после iframe; прежние
+  проверки реквизитов и формы сохранены); `SecurityHeadersTest` — точный `frame-src` из четырёх источников на всех типах
+  ответов, `/lt/kontaktai` добавлен в список; `PaymentRequestsTest:730` — ожидание дополнено, проверено, что в
+  `script-src` нет Google (`connect-src` и так проверяется точно); `ShellTest` — новые тексты плашки дословно.
+- `bin/browser-check`: `MAP_EMBED`, `MAP_STUB`, `map_stub(report, route)`, `CONTACT_PAGES`; guard основного режима
+  первым условием отдаёт заглушку и считает `report.map_stubbed`; в prod-режиме `foreign()` исключает `MAP_EMBED`,
+  `context.route(MAP_EMBED, …)` регистрируется после `route(foreign, abort)` и при `intercept=False`;
+  `check_contact_map` (390 и 1440 на обеих страницах): один видимый iframe, `src` по `MAP_EMBED` с `hl`, `title`,
+  без `loading`, ширина = `clientWidth` рамки ±1, высота 320/260 ±1, низ карты ≤ верх ссылки ≤ низ ссылки ≤ низ рамки,
+  верх `.legal-note` ≥ низ рамки, среди `page.frames` ровно один кадр карты с содержимым заглушки, подмена была;
+  перед снимком закрывается cookie-плашка (иначе она перекрывает рамку на кадре), снимок —
+  `shots/contact-map-<lt|en>-<ширина>.png`. В сводках (`summary.md`, `prod-summary.md`) строка
+  «Карта Google Maps (контакты): подменена заглушкой N раз»; docstring дополнен.
+- `bin/browser-check`, `check_viewer`: перед щелчком по кнопкам «+»/«−» холст прокручивается в центр (`box()`). Полный
+  прогон упал на том же щелчке `[data-zoom-in]` на калькуляторе, что описан в записи E-03 (липкая шапка; калькулятор
+  E-04 не трогает); применено исправление, предложенное там. Ожидания проверки не менялись.
+- `bin/demo-check`: `MAP_EMBED` отдаётся заглушкой до ветки «запрос вне сборки» и в `problems` не попадает; прочие
+  запросы вне сборки — ошибка, как прежде; docstring дополнен. `demo/` не пересобирался.
+- `docs/verification/production-launch.md`, «Ждёт проверки»: предложенный раздел cookie о Google Maps (LT/EN из README)
+  для публикации заказчиком (D-27) и пункт «после deploy проверить карту на /lt/kontaktai и /en/contact».
+
+### Самопроверка (один раз)
+
+`https://www.google.com` временно убран из `frame-src` → `bin/browser-check /en/contact` → FAIL (16 ошибок), в том
+числе `console error: Framing 'https://www.google.com/' violates the following Content Security Policy directive:
+"frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com"`, `карта: кадр карты не загружен
+(заглушка) [… 'chrome-error://chromewebdata/']`, `запрос карты не подменён заглушкой`. Источник возвращён →
+`bin/browser-check /lt/kontaktai /en/contact` → OK (372 проверки), подменена заглушкой 28 раз.
+
+### Команды
+
+- `bin/php artisan test --compact tests/Feature/PublicPagesTest.php tests/Feature/SecurityHeadersTest.php
+  tests/Feature/PaymentRequestsTest.php tests/Feature/ShellTest.php` → passed, 49 тестов, 910 проверок.
+- `bin/php vendor/bin/pint --dirty --format agent` → исправлен пробел в `PublicPagesTest`.
+- `bin/check` → **OK**: PHPUnit 664 passed, Vite OK (6 мин 16 с).
+- `bin/browser-check /lt/kalkuliatorius` (после правки `check_viewer`) → OK (302).
+- Полный `bin/browser-check` → **OK (18691 проверок)**, 1268 с (99 страниц, вход, кабинет, админка, /ru). Сводка:
+  «Прерванные запросы к чужим хостам: нет», «Карта Google Maps (контакты): подменена заглушкой 37 раз», нарушений CSP
+  нет. Команда сессии ограничена 10 мин, поэтому прогон шёл отдельным процессом с ожиданием его завершения в переднем
+  плане (журнал `/tmp/e04-bc.log`).
+- Поиск маркеров D-21 на `/lt/kontaktai` и `/en/contact` — в составе browser-check, совпадений нет.
+- `git status --porcelain aiqme-site` → только изменённые файлы задачи, новых файлов нет.
+
+### Не проверено / ждёт проверки пользователем
+
+- `bin/demo-check`: не запускался — порт 8792 занят контейнером `aiqme-prod-web-1` (локальный prod-compose, не мой,
+  не трогал). Ветка заглушки карты — проверено чтением кода; выполнение — ждёт пересборки демо (пользователь): в старой
+  сборке `demo/` iframe нет, зелёный `demo-check` на ней эту ветку не доказал бы.
+- Prod-режим `bin/browser-check --base-url/--compose-file` (исключение `MAP_EMBED` из `foreign()`, маршрут заглушки
+  после `route(foreign, abort)`, строка в `prod-summary.md`) — проверено чтением кода; выполнение — ждёт prod-compose
+  (пользователь).
+- Настоящий вид карты Google (спутник, метка фирмы, язык) — ночью не проверялся (D-20): ждёт проверки пользователем
+  после deploy (пункт в `production-launch.md`). Кадры заглушки — `build/verification/browser-check/shots/contact-map-*.png`.
+- Если на рабочей БД есть своё ui_text `shell.cookie.text` или `public.contact.map_embed_url`, новые значения не покажутся —
+  проверить после deploy.

@@ -8,7 +8,8 @@
 CSRF-токенов и action у форм POST; внутренние ссылки без data-demo-form ведут на файлы сборки; нет секретов (.env,
 ключи), e-mail вне aiqme.test и публичного адреса контента, путей материалов заказчика (docs/customer…, evidence,
 source-backup), STL и файлов больше 1 МБ, кроме ролика hero D-43.
-Браузер: все страницы отвечают 200 без JS-ошибок и запросов вне статических файлов того же origin и базового пути;
+Браузер: все страницы отвечают 200 без JS-ошибок и запросов вне статических файлов того же origin и базового пути
+(кроме карты Google Maps на контактах — MAP_EMBED отдаётся локальной заглушкой, правка 28.10 П5);
 места медиа D-43 (логотип, favicon, hero с постером, «О нас», иллюстрации услуг) берут файлы defaults/ и не пусты;
 калькулятор на кубе 10 мм (габарит 10.0 × 10.0 × 10.0 mm, PLA, 100 %, qty 1 → итог 5,12) и «отправить заявку» — демо-сообщение
 без запроса POST; контактная форма, поиск, вход, действия кабинета и админки — демо-сообщение (вход — переход в демо-кабинет).
@@ -41,6 +42,9 @@ DEFAULT_MEDIA = {
     '/en/services/engraving': ['main .media-frame > img'],
     '/en/about': ['main .split-image > img'],
 }
+# Встроенная карта Google Maps на контактах (правка 28.10, П5): документ iframe — локальная заглушка, к Google не обращаемся.
+MAP_EMBED = re.compile(r'^https://www\.google\.com/maps\?[^#]*output=embed')
+MAP_STUB = '<!DOCTYPE html><meta charset="utf-8"><title>AIQME map stub</title><body data-map-stub>Google Maps — local stub</body>'
 TEXT_SUFFIXES = {'.html', '.js', '.css', '.json', '.svg'}
 
 failures, passed = [], 0
@@ -155,7 +159,9 @@ def main():
 
             def route(request_route, request):
                 requests.append((request.method, request.url))
-                if request.url.startswith(ORIGIN + BASE + '/') or request.url.startswith(('data:', 'blob:')):
+                if MAP_EMBED.match(request.url):
+                    request_route.fulfill(status=200, content_type='text/html; charset=utf-8', body=MAP_STUB)
+                elif request.url.startswith(ORIGIN + BASE + '/') or request.url.startswith(('data:', 'blob:')):
                     request_route.continue_()
                 else:
                     problems.append(f'запрос вне сборки {request.method} {request.url}')
