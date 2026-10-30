@@ -3801,3 +3801,8 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Сам переход 0,3 с глазами (проверены классы, transitionDuration и конечные цвета через 400 мс), Safari и Firefox
   (sticky с отрицательным margin-bottom) — не проверялись.
 - `bin/demo-check` (см. выше); полный `bin/browser-check` — в E-10.
+
+
+## E-10: заблокирована ночным прогоном (2026-10-30 16:57)
+
+Причина (оркестратор): ночь остановлена: API Error: Can't reach the API server — check your internet or DNS (EAI_AGAIN). Работа — в git stash «night-blocked E-10».
