@@ -21,7 +21,7 @@
     "Каждая задача завершается записью в aiqme-site/docs/progress.md («Правки 28.10, E-xx (Пn): …»): что сделано, команды и вывод проверок, что не проверено. Ручной визуальный просмотр, который ночью некому выполнить, — «ждёт проверки пользователем», а не «готово». Старые записи progress.md не переписываются.",
     "Демо-сборка aiqme-site/demo/ не пересобирается (только по указанию пользователя); код DemoExport и bin/demo-check правятся, если этого требует задача.",
     "Принцип: максимально просто — только то, что просил заказчик и описано в README плана, в объёме задачи. Ничего сверх: ни функций, настроек, зависимостей, ни абстракций «на будущее». Неопределённое решается простейшим вариантом с записью в progress.md; противоречие плана и кода, которое нельзя решить без догадки, — status blocked с вопросом в progress.md. Приёмщик считает лишнее замечанием.",
-    "Во время разработки — bin/browser-check с путями задачи (и --signed-in там, где нужны проверки после входа) и точечные artisan test; полный bin/check и полный bin/browser-check — один раз в конце (затем их же запускает оркестратор, предел — 60 мин на каждый). Ветки проверок, которые ночью не выполняются (bin/demo-check на старой сборке demo/ без новых iframe и шага 2; prod_contact и весь режим --base-url/--compose-file), отмечаются как «проверено чтением кода; выполнение — ждёт пересборки демо или prod-compose (пользователь)», а в progress.md — в разделе «не проверено». Зелёный bin/demo-check на старой сборке не доказывает новые ветки."
+    "Во время разработки — bin/browser-check с путями задачи (и --signed-in там, где нужны проверки после входа) и точечные artisan test; полный bin/check и полный bin/browser-check — один раз в конце (затем их же запускает оркестратор, предел — 60 мин на каждый). Ветки проверок, которые ночью не выполняются (bin/demo-check на старой сборке demo/ без новых iframe и шага 2; prod_contact и весь режим --base-url/--compose-file), отмечаются как «проверено чтением кода; выполнение — ждёт пересборки демо или prod-compose (пользователь)», а в progress.md — в разделе «не проверено». Зелёный bin/demo-check на старой сборке не доказывает новые ветки. Изменено 30.10 по указанию пользователя: у задач с полем browser_check (E-08, E-09) полный bin/browser-check не запускается ни автором, ни оркестратором — оба запускают bin/browser-check с аргументами browser_check; полный прогон — только в E-10."
   ],
   "tasks": [
     {
@@ -445,11 +445,11 @@
         "lang admin.media.collections.logo_white — 'Baltas logotipas (tamsiai antraštei; PNG arba WebP)' / 'White logo (for the dark header; PNG or WebP)'",
         "content-editor.blade.php: умолчание logo_white не показывается, если загружен свой logo; превью logo_white (своё и умолчание) с классом admin-media-preview--dark; CSS .admin-media-preview--dark{background:var(--dark);padding:4px}",
         "Тесты: JPEG и SVG в слот logo_white отклоняются (content.media_invalid), PNG принимается; список файлов умолчаний DefaultMediaTest дополнен logo-white.png; редактор home показывает asset('defaults/logo-white.png') и подпись EN, а после загрузки своего logo — не показывает это умолчание; превью имеет класс admin-media-preview--dark",
-        "bin/check и bin/browser-check зелёные; шапка и публичные страницы не изменились; запись в progress.md (права — как у logo.jpg, D-43)"
+        "bin/check и bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about зелёные; шапка и публичные страницы не изменились; запись в progress.md (права — как у logo.jpg, D-43)"
       ],
       "checks": [
         "aiqme-site/bin/check зелёный",
-        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "aiqme-site/bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about зелёный (точечный прогон; полный — в E-10)",
         "bin/php artisan test --compact tests/Feature/DefaultMediaTest.php"
       ],
       "constraints": [
@@ -459,6 +459,13 @@
       ],
       "unknowns": [
         "D-43"
+      ],
+      "browser_check": [
+        "--signed-in",
+        "/lt",
+        "/en",
+        "/lt/apie-mus",
+        "/en/about"
       ]
     },
     {
@@ -506,11 +513,11 @@
         "bin/browser-check check_header на /lt, /en, /lt/apie-mus, /en/quote при 390 и 1440 и на /en/admin при 1440: на прокрутке 0 — header--dark, фон rgb(10, 17, 25) (главная rgba(10, 17, 25, 0.6)), .nav a (1440) и .icon-btn rgb(255, 255, 255), img.logo-white opacity 1 и обычный 0, контраст WCAG видимых текстов шапки ≥ 4.5 (полупрозрачный фон — над rgb(161,161,161)); на главной hero.top == 0 (±1), offsetHeight шапки == --header-height (±1) на 320/390/768/1024/1440, верх h1 hero = --header-height + 85 (≤600: + 56) ±2",
         "check_header, прокрутка: scrollTo(0, offsetHeight + 250) → через 400 мс нет header--dark, фон rgb(255, 255, 255), border-bottom rgb(220, 226, 232), .header-cta rgb(248, 250, 252), .cta-link rgb(8, 103, 255), opacity обычного логотипа 1 и белого 0, высоты .head-main и .head-sub как на прокрутке 0; scrollTo(0,0) → снова тёмная; ширина документа = окну в обоих состояниях; кадры shots/header-top-<страница>-<ширина>.png (прокрутка 0) и shots/header-scrolled-<страница>-<ширина>.png (после scrollTo) для /lt и /lt/apie-mus при 390 и 1440 и /en/admin при 1440 (page.screenshot без full_page)",
         "check_header, особые случаи: /lt/apie-mus @1440 после scrollTo(0, 800) и reload — при scrollY>0 сразу после load нет header--dark и header.getAnimations().length == 0 (иначе — то же через якорь ниже порога); reduced-motion — transitionDuration '0s'; без JS (java_script_enabled=False) на /en и /lt/apie-mus — header--dark, фон rgb(10, 17, 25) и после scrollTo(0, 1000), ссылки белые, документ не шире окна; меню 390 — после открытия .nav фон rgb(255, 255, 255), ссылки rgb(17, 23, 30); check_menu, check_focus_style, check_cookie без изменений",
-        "Полный bin/browser-check зелёный (в том числе check_calculator: sticky-сводка не перекрыта); docstring дополнен строкой о шапке; progress.md: отступление от §7.1 (белое состояние сверяется после прокрутки); «ждёт проверки пользователем» — кадры shots/header-top-*.png и shots/header-scrolled-*.png (главная, /lt/apie-mus, /en/admin), Safari/Firefox"
+        "bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/paslaugos /en/services /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote зелёный (полный прогон — в E-10) (в том числе check_calculator: sticky-сводка не перекрыта); docstring дополнен строкой о шапке; progress.md: отступление от §7.1 (белое состояние сверяется после прокрутки); «ждёт проверки пользователем» — кадры shots/header-top-*.png и shots/header-scrolled-*.png (главная, /lt/apie-mus, /en/admin), Safari/Firefox"
       ],
       "checks": [
         "aiqme-site/bin/check зелёный",
-        "aiqme-site/bin/browser-check зелёный (полный прогон)",
+        "aiqme-site/bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/paslaugos /en/services /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote зелёный (точечный прогон; полный — в E-10)",
         "bin/php artisan test --compact tests/Feature/ShellTest.php tests/Feature/DefaultMediaTest.php",
         "bin/demo-check, если демо-сборка присутствует (старая сборка: .logo img из /defaults/; новая шапка в ней не проверяется — «ждёт пересборки демо»)"
       ],
@@ -520,7 +527,20 @@
         "Синхронный inline-скрипт не добавлять",
         "Запасной вариант hero — отрицательный margin-top у hero, если sticky с отрицательным margin-bottom ведёт себя иначе (записать в progress.md)"
       ],
-      "unknowns": []
+      "unknowns": [],
+      "browser_check": [
+        "--signed-in",
+        "/lt",
+        "/en",
+        "/lt/apie-mus",
+        "/en/about",
+        "/lt/paslaugos",
+        "/en/services",
+        "/lt/kontaktai",
+        "/en/contact",
+        "/lt/kalkuliatorius",
+        "/en/quote"
+      ]
     },
     {
       "id": "E-10",

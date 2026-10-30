@@ -322,7 +322,9 @@ class Night:
             if not script.exists():
                 continue
             part = self.out / f"{task['id']}.{name}{rnd}.log"
-            code = run_limited([str(script)], 60 * 60, log=part, cwd=site)
+            # browser_check задачи — пути (и --signed-in) точечной проверки; без поля — полный прогон.
+            extra = task.get("browser_check", []) if name == "browser-check" else []
+            code = run_limited([str(script), *extra], 60 * 60, log=part, cwd=site)
             parts.append((name, code, part))
             if code != 0:
                 break
