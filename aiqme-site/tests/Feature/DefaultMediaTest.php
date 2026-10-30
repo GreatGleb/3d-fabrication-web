@@ -212,6 +212,7 @@ class DefaultMediaTest extends TestCase
         $home = $this->item(ContentType::PageText, 'home');
         $slots = [
             ['/en', $home, 'logo', 'defaults/logo.jpg', '//header//a[@class="logo"]/img/@src'],
+            ['/en', $home, 'logo_white', 'defaults/logo-white.png', '//header//a[@class="logo"]/img[@class="logo-white"]/@src'],
             ['/en', $home, 'favicon', 'defaults/favicon.svg', '//head/link[@rel="icon"]/@href'],
             ['/en/about', $this->item(ContentType::PageText, 'about'), 'images', 'defaults/engineering.jpg', '//div[@class="split-image"]/img/@src'],
             ['/en/services/engraving', $this->item(ContentType::Service, 'engraving'), 'images', 'defaults/services/engraving.png', '//div[@class="media-frame"]/img/@src'],
@@ -227,6 +228,25 @@ class DefaultMediaTest extends TestCase
             $this->assertSame(asset($default), Html::xpath($this->get($path)->getContent())->query($query)->item(0)->nodeValue, "$path $collection");
         }
         $this->assertStringContainsString('type="image/png"', $this->withMedia($home, 'favicon', fn () => $this->get('/en')->getContent()));
+
+        // Шапка-шторка (правка 28.10, П2): свой logo без своего logo_white — белого умолчания AIQME нет, в тёмной шапке
+        // обычный логотип на белой подложке; свой logo_white — свой файл, подложки нет.
+        $header = fn (): array => [($xpath = Html::xpath($html = $this->get('/en')->getContent()))->query('//header')->item(0)->getAttribute('class'),
+            $xpath->query('//header//img[@class="logo-white"]/@src')->item(0)?->nodeValue, $html];
+        $logo = $content->addMedia($this->admin, $home, $this->png('logo'), 'logo');
+        [$class, $white, $html] = $header();
+        $this->assertSame('header header--dark header--overlay header--logo-plate', $class);
+        $this->assertNull($white);
+        $this->assertStringNotContainsString('defaults/logo-white.png', $html);
+        $white = $content->addMedia($this->admin, $home->fresh(), $this->png('logo_white'), 'logo_white');
+        [$class, $src] = $header();
+        $this->assertSame('header header--dark header--overlay', $class);
+        $this->assertSame($white->getUrl(), $src);
+        $this->assertStringStartsWith('/storage/', parse_url($src, PHP_URL_PATH));
+        $content->removeMedia($this->admin, $home->fresh(), $white->id);
+        $content->removeMedia($this->admin, $home->fresh(), $logo->id);
+        [$class, $src] = $header();
+        $this->assertSame(['header header--dark header--overlay', asset('defaults/logo-white.png')], [$class, $src]);
 
         // Hero: свой постер или мобильный ролик без своего video перекрывают только свой слот набора умолчаний.
         foreach (['video_poster' => 'png', 'video_mobile' => 'mp4'] as $collection => $kind) {

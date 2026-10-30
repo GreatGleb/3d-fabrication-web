@@ -1,4 +1,5 @@
 import './menu';
+import './header';
 import './modal';
 import './hero-video';
 import './tickers';

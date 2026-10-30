@@ -100,7 +100,8 @@ class PrototypeRoutesTest extends TestCase
         // canonical — адрес route() без завершающего «/» и без query; адрес со «/» отдаёт то же содержимое.
         $this->assertSame(config('app.url').rtrim($plainPath, '/'), PageHead::canonical($withSlash->getContent()));
         // Токен отправки заявки калькулятора (W-12) — новый UUID на каждый показ формы.
-        $token = fn (string $html): string => preg_replace('/name="submission_token" value="[0-9a-f-]{36}"/', 'name="submission_token"', $html);
+        // Nonce CSP noscript-стиля шапки (правка 28.10, П2) — новый на каждый ответ.
+        $token = fn (string $html): string => preg_replace(['/name="submission_token" value="[0-9a-f-]{36}"/', '/<style nonce="[^"]+">/'], ['name="submission_token"', '<style>'], $html);
         $this->assertSame($token($withoutSlash->getContent()), $token($withSlash->getContent()));
     }
 

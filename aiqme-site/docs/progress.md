@@ -3697,3 +3697,107 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид превью белого логотипа на тёмной подложке в редакторе медиа (глазами) и качество краёв логотипа в полном размере.
 - Telegram-бот: слот `logo_white` подхватывается через `ContentTypes::media` — проверено чтением кода, отдельного теста
   для бота в этой задаче нет.
+
+## Правки 28.10, E-09 (П2): шапка-шторка — тёмная вверху, белая после прокрутки — выполнено (2026-10-30, Claude Code, ночной прогон)
+
+Отступление от §7.1 (правка 28.10): вверху любой страницы шапка тёмная, белое состояние прототипа §7.1 сверяется после
+прокрутки (`check_header`), а не на прокрутке 0.
+
+### Сделано
+- `components/layout.blade.php`: prop `headerOverlay` (false); `$logoWhite` — свой `logo_white`, иначе
+  `defaults/logo-white.png`, если нет своего `logo`, иначе `null` (без БД — умолчания); в `<head>` после `@vite` —
+  `<noscript><style nonce="{{ Vite::cspNonce() }}">.header--overlay{background:var(--dark)}</style></noscript>`;
+  комментарий обновлён. `public/home.blade.php`: `:header-overlay="(bool) $home"` (у заглушки без записи home — нет).
+- `components/header.blade.php`: `<header @class(['header','header--dark','header--overlay'=>$overlay,'header--logo-plate'=>! $logoWhite])>`;
+  в `a.logo` первая `img` — обычный логотип `alt="AIQME"`, вторая — `img.logo-white alt=""` (только если `$logoWhite`).
+- `resources/js/header.js` (импорт в `app.js` после `./menu`): порог `offsetHeight + 50`; `scroll` (passive) с
+  rAF-троттлингом переключает `header--dark` по `scrollY <= порог`; `resize` пересчитывает порог; `pageshow` — sync;
+  после `load` (или сразу при `readyState === 'complete'`) — sync, принудительный пересчёт стиля (`offsetHeight`) и
+  класс `header--ready`. Мелкое решение: без пересчёта между sync и `header--ready` браузер анимировал смену состояния
+  у страницы, открытой прокрученной (проверено откатом, см. ниже).
+- `resources/css/shell.css`, блок «Шапка-шторка (правка 28.10)»: `--header-height` 123/116/108; белый логотип
+  `position:absolute` поверх обычного (opacity 0/1); тёмное состояние — фон `#0a1119`, на главной `rgba(10,17,25,.6)`,
+  белый текст, линия и граница второго ряда `rgba(255,255,255,.12)`, второй ряд прозрачный, подпись `#d5dde6`,
+  CTA/hover/active `#9cc4ff`, неактивный язык `#b7c3ce`, подложка логотипа прозрачная (кроме `header--logo-plate`);
+  hero главной под шапкой (`.header--overlay{margin-bottom:calc(-1*var(--header-height))}`, min-height и padding-top
+  первого `.hero` + `--header-height` для >900/≤900/≤600); выпадающее меню ≤900 — тёмные пункты всегда;
+  `prefers-reduced-motion` — `transition:none`. `prototype/style.css` не изменён.
+  - Мелкие решения: фон полупрозрачной шапки задан селектором `:where(.header--dark).header--overlay` (вес одного
+    класса) — так noscript-стиль из `<head>` (позже в каскаде) перекрывает его без JS. Переходы `.3s ease` стоят только у
+    элементов со своим значением (шапка: фон/линия/цвет; второй ряд и подложка логотипа: фон/линия; CTA и неактивный язык:
+    цвет; img логотипа: opacity). У пунктов и значков, наследующих цвет шапки, собственного перехода нет: с ним цвет
+    наследника отставал (через 400 мс после возврата наверх пункты были `rgb(190,192,194)`, а не белые — поймал
+    `check_header`). Подпись второго ряда `#d5dde6` задана на `.head-sub>span`.
+  - Основной вариант hero (sticky с отрицательным `margin-bottom`) в Chromium работает; запасной (отрицательный
+    `margin-top` у hero) не понадобился.
+- `resources/js/search.js` (не в touches, вынужденная правка): живой поиск разбирал ответ через `DOMParser`, который
+  разбирает без скриптов — новый `<noscript><style nonce>` чужого ответа становился элементом `style`, и Chromium писал в
+  консоль нарушение CSP (`/en @390/@1440 поиск` в `bin/browser-check`). Теперь ответ разбирается через `<template>`
+  (содержимое инертно, noscript — текст); живые результаты по-прежнему проверяет `check_search_modal` (зелёный).
+- Тесты, ожидания которых прямо следуют из правки: `ShellTest::test_shell_labels_…` — единственный допустимый `<noscript`
+  (стиль шапки) вырезается перед поиском надписей прототипа; `PrototypeRoutesTest` (сравнение страниц со «/» и без) и
+  `LocaleRoutesTest::test_russian_pages_…` (сравнение /ru с 404) — nonce noscript-стиля нормализуется (новый на каждый ответ).
+  `ShellTest` теперь `RefreshDatabase` (нужны пользователи и сидер для новых тестов).
+
+### Тесты
+- `ShellTest::test_header_is_dark_everywhere_and_overlays_only_the_home_hero`: классы шапки ровно `header header--dark` на
+  /lt и /en без записи home; после сидера — `+ header--overlay` на /lt и /en, без него на /lt/apie-mus, /en/quote, 404,
+  /en/admin (админ) и /en/account (клиент).
+- `ShellTest::test_header_logo_holds_…`: `//header//a[@class="logo"]/img` — 2 узла (`defaults/logo.jpg` alt AIQME без
+  class; `img.logo-white` `defaults/logo-white.png` alt ''); один `//head/noscript/style`, nonce = nonce из
+  `style-src-elem` заголовка CSP ответа, текст `.header--overlay{background:var(--dark)}`.
+- `DefaultMediaTest::test_upload_to_each_slot_…`: слот `logo_white` (XPath `img[@class="logo-white"]/@src`: свой
+  `/storage/…`, после удаления — умолчание); свой `logo` без `logo_white` — нет `img.logo-white`, класс
+  `header--logo-plate`, нет строки `defaults/logo-white.png`; со своим `logo_white` — свой файл, без `header--logo-plate`.
+- Прогон с откатом (один раз, возвращено копией): `'header--logo-plate' => false` в шапке — падает
+  `test_upload_to_each_slot_…` (ожидался `… header--logo-plate`). В `bin/browser-check /lt /lt/apie-mus` одновременно
+  убраны пересчёт стиля перед `header--ready` в header.js и отрицательный margin шапки — 11 ошибок: «hero начинается не
+  от верха окна (108/116/123)», «верх содержимого hero 331 ≠ 123 + 85» на всех ширинах и «/lt/apie-mus @1440 шапка:
+  перезагрузка: header--dark=False, анимаций 10». Случай «открыта прокрученной» проверен именно перезагрузкой (Chromium
+  восстановил прокрутку), запасной путь через якорь не понадобился.
+
+### bin/browser-check
+- `check_styles` на прокрутке 0: `headerDark` true, линия `rgba(255, 255, 255, 0.12)`, CTA `None` или
+  `rgb(156, 196, 255)`; прочие значения §7.1 не менялись; `DEFAULT_MEDIA .logo img` — оба img из `/defaults/`.
+- `check_hero_under_header` (главная, все ширины 320–1440): `header--overlay`, hero.top = 0 ±1, `offsetHeight` = `--header-height`
+  ±1, верх содержимого hero = `--header-height` + 85 (≤600: + 56) ±2. Мелкое решение: done говорит «верх h1», но в hero
+  над h1 стоит eyebrow, и по прототипу 85/56 px — это padding-top `.hero .wrap`; сверяется верх первого элемента
+  содержимого (eyebrow), h1 сдвигается вместе с ним — то есть остаётся на прежней координате.
+- `check_header` (/lt, /en, /lt/apie-mus, /en/quote при 390 и 1440; /en/admin при 1440 после входа): на 0 — тёмный фон
+  (`rgb(10, 17, 25)`, главная `rgba(10, 17, 25, 0.6)`), `.nav a` и `.icon-btn` белые, логотипы opacity 0/1, контраст
+  видимых текстов ≥ 4.5 (полупрозрачный фон — над `rgb(161,161,161)`), `header--ready` и переход 0.3s; прокрутка на
+  `offsetHeight + 250` (`behavior:'instant'`, т. к. у прототипа `html{scroll-behavior:smooth}`) → через 400 мс белая §7.1
+  (фон, линия `rgb(220, 226, 232)`, второй ряд `rgb(248, 250, 252)`, CTA `rgb(8, 103, 255)`, логотипы 1/0, высоты
+  рядов как на 0); возврат на 0 — снова тёмная; ширина документа = окну в обоих состояниях; на 390 меню открыто —
+  фон `rgb(255, 255, 255)`, пункты `rgb(17, 23, 30)`; кадры `shots/header-top|scrolled-<lt|lt__apie-mus|en__admin>-<ширина>.png`.
+- `check_header_cases` (/lt/apie-mus @1440): прокрутка на 800 и перезагрузка — сразу после load нет `header--dark`,
+  `getAnimations({subtree:true})` = 0 (если браузер не восстановит прокрутку — тот же случай через якорь); reduced-motion —
+  `transitionDuration` `0s`; без JS (`java_script_enabled=False`, параметр добавлен в `new_page`) на /lt/apie-mus и /en —
+  `header--dark`, фон `rgb(10, 17, 25)` на 0 и после прокрутки на 1000, ссылки белые, документ не шире окна.
+- docstring дополнен абзацем о шапке. `check_menu`, `check_focus_style`, `check_cookie` не менялись.
+
+### Команды
+- `bin/php vendor/bin/pint --dirty --format agent` — passed.
+- `bin/php artisan test --compact tests/Feature/ShellTest.php tests/Feature/DefaultMediaTest.php` — 17 passed (421 assertions);
+  `tests/Feature/PrototypeRoutesTest.php tests/Feature/LocaleRoutesTest.php` — 199 passed.
+- Первый `bin/check` — FAIL: 67 тестов `PrototypeRoutesTest`/`LocaleRoutesTest` (разный nonce noscript-стиля в двух
+  ответах) → нормализация nonce (см. выше). Итоговый `bin/check` — OK (PHPUnit 703 passed, 75 299 assertions; JS-тесты 39
+  pass; Vite build OK).
+- Первый `bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/paslaugos /en/services /lt/kontaktai /en/contact
+  /lt/kalkuliatorius /en/quote` — FAIL (2): нарушение CSP в консоли при живом поиске `/en @390/@1440` → правка search.js.
+  Повтор — `bin/browser-check: OK (8545 проверок)` (в том числе check_calculator: sticky-сводка не перекрыта; маркеры на
+  этих страницах чисты, allowlist не менялся). Полный bin/browser-check — по правилу 30.10 не запускался (E-10).
+- `bin/demo-check` — не выполнен: порт 8792 занят чужим docker-proxy (контейнер на 127.0.0.1:8792, запущен 29.10, не
+  трогал). Старая сборка `demo/` новую шапку не содержит: `.logo img` из `/defaults/` — проверено чтением кода;
+  выполнение — ждёт пересборки демо (пользователь).
+- `git status --porcelain aiqme-site`: изменены 12 файлов (bin/, docs/progress.md, resources/, tests/), новый —
+  `resources/js/header.js`; `prototype/style.css`, подвал и `experiments/` не менялись.
+
+### Не проверено / ждёт проверки пользователем
+- Ручной просмотр кадров `build/verification/browser-check/shots/header-top-*.png` и `header-scrolled-*.png` (главная
+  /lt 390 и 1440, /lt/apie-mus 390 и 1440, /en/admin 1440). Автор посмотрел главную 1440 и /lt/apie-mus 390 в обоих
+  состояниях: тёмная шапка с белым логотипом поверх видео, после прокрутки — белая прототипа; окончательная оценка — за
+  пользователем.
+- Сам переход 0,3 с глазами (проверены классы, transitionDuration и конечные цвета через 400 мс), Safari и Firefox
+  (sticky с отрицательным margin-bottom) — не проверялись.
+- `bin/demo-check` (см. выше); полный `bin/browser-check` — в E-10.

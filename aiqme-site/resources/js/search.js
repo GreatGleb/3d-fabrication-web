@@ -13,8 +13,11 @@ document.querySelectorAll('form[data-live-search]').forEach((form) => {
             const url = `${form.action}?${new URLSearchParams({ q: input.value.trim() })}`;
             try {
                 const response = await fetch(url, { signal: controller.signal });
-                const page = new DOMParser().parseFromString(await response.text(), 'text/html');
-                results.innerHTML = page.querySelector('main [data-search-results]').innerHTML;
+                // template, а не DOMParser: DOMParser разбирает без скриптов, и noscript-стиль шапки (правка 28.10, П2)
+                // с nonce чужого ответа стал бы элементом style — нарушение CSP в консоли. Содержимое template инертно.
+                const page = document.createElement('template');
+                page.innerHTML = await response.text();
+                results.innerHTML = page.content.querySelector('main [data-search-results]').innerHTML;
             } catch (error) {
                 if (error.name !== 'AbortError') throw error;
             }

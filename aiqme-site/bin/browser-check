@@ -65,6 +65,13 @@ altcha с решением за ≤ 30 с); check_register — /lt/paskyra/regis
 с #account-overview; кадры формы с виджетом shots/altcha-<contact|training|register>-<ширина>.png. Нарушения CSP, ошибки
 консоли, ответы ≥ 400 (в том числе 429 от /altcha) и внешние запросы ловит общая проверка страницы.
 
+Шапка-шторка (правка 28.10, П2): check_styles на прокрутке 0 ждёт тёмную шапку (header--dark, линия rgba(255,255,255,.12),
+CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 1440 после входа) — наверху тёмная (фон, белые пункты
+и значки, белый логотип, контраст текстов ≥ 4.5, у главной — над rgb(161,161,161)), после прокрутки на высоту шапки + 250 px —
+белая §7.1 с теми же высотами рядов, снова тёмная наверху, меню ≤900 px белое; кадры shots/header-top|scrolled-<страница>-<ширина>.png;
+на главной hero от верха окна под шапкой на всех ширинах (check_hero_under_header); check_header_cases на /lt/apie-mus — открытие
+прокрученной страницы без анимации, reduced-motion без перехода, без JS шапка тёмная сплошная (и на /en).
+
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
 и отрисованы; ответы 4xx на ресурсы ловит общая проверка страницы.
@@ -403,6 +410,7 @@ STYLE_PROBE = """() => {
         wrapMax: css('.head-main', 'maxWidth'),
         ctaColor: visible(document.querySelector('.cta-link')) ? css('.cta-link', 'color') : null,
         headerBorder: css('.header', 'borderBottomColor'),
+        headerDark: document.querySelector('.header').classList.contains('header--dark'),
         pageTopBackground: css('.page-top', 'backgroundColor'),
         pageTopText: document.querySelector('.page-top p') ? css('.page-top p', 'color') : null,
         footerBackground: css('.footer', 'backgroundColor'),
@@ -460,8 +468,10 @@ def check_styles(report, page, path, width):
     report.check(near(got['headSub'], expected['head_sub']), f'{where}: высота второго ряда {got["headSub"]} ≠ {expected["head_sub"]}')
     report.check(all(near(p, expected['wrap_padding']) for p in got['wrapPadding']), f'{where}: поля контейнера {got["wrapPadding"]} ≠ {expected["wrap_padding"]}')
     report.check(got['wrapMax'] == '1320px', f'{where}: ширина контейнера {got["wrapMax"]}')
-    report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
-    report.check(got['headerBorder'] == 'rgb(220, 226, 232)', f'{where}: линия шапки {got["headerBorder"]}')
+    # Шапка-шторка (правка 28.10, П2): на прокрутке 0 шапка тёмная; белое состояние §7.1 сверяет check_header после прокрутки.
+    report.check(got['headerDark'], f'{where}: шапка на прокрутке 0 не тёмная (нет header--dark)')
+    report.check(got['ctaColor'] in (None, 'rgb(156, 196, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
+    report.check(got['headerBorder'] == 'rgba(255, 255, 255, 0.12)', f'{where}: линия шапки {got["headerBorder"]}')
     report.check(got['pageTopBackground'] in (None, 'rgb(243, 246, 249)'), f'{where}: фон page-top {got["pageTopBackground"]}')
     report.check(got['pageTopText'] in (None, 'rgb(100, 113, 126)'), f'{where}: цвет вводного текста {got["pageTopText"]}')
     report.check(got['footerBackground'] == 'rgb(255, 255, 255)', f'{where}: подвал не светлый {got["footerBackground"]}')
@@ -549,6 +559,168 @@ def check_cookie(report, page, path):
     report.check(cookie.count() == 0, f'{path}: плашка не скрылась после «Tik būtini»')
     page.reload()
     report.check(not page.locator('.cookie').is_visible(), f'{path}: плашка вернулась после подтверждения')
+
+
+HEADER_PAGES = ['/lt', '/en', '/lt/apie-mus', '/en/quote']  # check_header при 390 и 1440 (правка 28.10, П2); /en/admin — в check_accounts
+HEADER_SHOT_PAGES = ['/lt', '/lt/apie-mus', '/en/admin']  # кадры header-top/header-scrolled для ручного просмотра
+HEADER_PROBE = """() => {
+    const header = document.querySelector('.header');
+    const css = (el, property) => el ? getComputedStyle(el)[property] : null;
+    const visible = (el) => el && el.offsetParent !== null && el.getBoundingClientRect().width > 0;
+    const texts = [...header.querySelectorAll('.nav a, .icon-btn.lang, .icon-btn.lang span, .head-sub > span, .cta-link')]
+        .filter(visible).map((el) => [el.textContent.trim().slice(0, 30), css(el, 'color')]);
+    const logo = header.querySelector('.logo img:not(.logo-white)'), white = header.querySelector('.logo img.logo-white');
+    return {dark: header.classList.contains('header--dark'), ready: header.classList.contains('header--ready'),
+        background: css(header, 'backgroundColor'), border: css(header, 'borderBottomColor'),
+        ctaBackground: css(header.querySelector('.header-cta'), 'backgroundColor'),
+        ctaColor: visible(header.querySelector('.cta-link')) ? css(header.querySelector('.cta-link'), 'color') : null,
+        nav: [...header.querySelectorAll('.nav a')].filter(visible).map((a) => css(a, 'color')),
+        icons: [...header.querySelectorAll('.icon-btn')].filter(visible).map((b) => css(b, 'color')),
+        logo: logo && parseFloat(css(logo, 'opacity')), white: white && parseFloat(css(white, 'opacity')),
+        headMain: header.querySelector('.head-main').getBoundingClientRect().height,
+        headSub: header.querySelector('.head-sub').getBoundingClientRect().height,
+        height: header.offsetHeight, scrollY: window.scrollY, texts, transition: css(header, 'transitionDuration'),
+        animations: header.getAnimations({subtree: true}).length,
+        fits: document.documentElement.scrollWidth <= document.documentElement.clientWidth};
+}"""
+HERO_PROBE = """() => {
+    const header = document.querySelector('.header'), hero = document.querySelector('main > .hero:first-child');
+    const content = hero && hero.querySelector('.wrap').firstElementChild;
+    return {variable: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height')),
+        height: header.offsetHeight, top: header.getBoundingClientRect().top, overlay: header.classList.contains('header--overlay'),
+        hero: hero && hero.getBoundingClientRect().top, content: content && content.getBoundingClientRect().top,
+        h1: hero && hero.querySelector('h1').getBoundingClientRect().top};
+}"""
+HERO_BEHIND = (161, 161, 161)  # худший (светлый) кадр ролика под полупрозрачной шапкой главной (решение №4 плана)
+
+
+def rgba(value):
+    parts = [float(v) for v in re.findall(r'[\d.]+', value)]
+    return (*parts[:3], parts[3] if len(parts) > 3 else 1.0)
+
+
+def contrast(color, background):
+    def luminance(rgb):
+        channels = [c / 255 for c in rgb]
+        channels = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+    light, dark = sorted((luminance(color), luminance(background)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def scroll_to(page, top):
+    page.evaluate("(top) => window.scrollTo({top, behavior: 'instant'})", top)  # html{scroll-behavior:smooth} у прототипа
+    page.wait_for_timeout(400)  # переход 0,3 с
+
+
+def check_hero_under_header(report, page, where, width):
+    """Главная (правка 28.10, П2): hero от верха окна под шапкой, высота шапки = --header-height, содержимое hero на месте."""
+    got = page.evaluate(HERO_PROBE)
+    if not report.check(got['overlay'] and got['hero'] is not None, f'{where}: на главной нет header--overlay или hero {got}'):
+        return
+    near = lambda a, b, d: abs(a - b) <= d  # noqa: E731
+    report.check(near(got['hero'], 0, 1), f'{where}: hero начинается не от верха окна ({got["hero"]})')
+    report.check(near(got['height'], got['variable'], 1), f'{where}: высота шапки {got["height"]} ≠ --header-height {got["variable"]}')
+    offset = 56 if width <= 600 else 85  # padding-top .hero .wrap прототипа
+    report.check(near(got['content'], got['variable'] + offset, 2), f'{where}: верх содержимого hero {got["content"]} ≠ {got["variable"]} + {offset}')
+
+
+def header_shot(page, kind, path, width):
+    page.screenshot(path=str(OUT / 'shots' / f'header-{kind}-{path.strip("/").replace("/", "__")}-{width}.png'))
+
+
+def check_header_dark(report, got, where, home):
+    report.check(got['dark'], f'{where}: на прокрутке 0 нет header--dark')
+    report.check(got['background'] == ('rgba(10, 17, 25, 0.6)' if home else 'rgb(10, 17, 25)'), f'{where}: фон тёмной шапки {got["background"]}')
+    report.check(all(color == 'rgb(255, 255, 255)' for color in got['nav'] + got['icons']), f'{where}: пункты и значки не белые {got["nav"]} {got["icons"]}')
+    report.check((got['logo'], got['white']) in ((0, 1), (1, None)), f'{where}: opacity логотипов {got["logo"]}/{got["white"]}')
+    red, green, blue, alpha = rgba(got['background'])
+    behind = [round(alpha * c + (1 - alpha) * b) for c, b in zip((red, green, blue), HERO_BEHIND)]
+    for text, color in got['texts']:
+        ratio = contrast(rgba(color)[:3], behind)
+        report.check(ratio >= 4.5, f'{where}: контраст «{text}» {color} на {behind} = {ratio:.2f} < 4.5')
+
+
+def check_header(report, new_page, path, width, state=None):
+    """Шапка-шторка (правка 28.10, П2): тёмная на прокрутке 0, белая §7.1 после порога, снова тёмная наверху."""
+    where = f'{path} @{width} шапка'
+    home = path in ('/lt', '/en')
+    context, page, problems = new_page(width, 1000 if width == 1440 else 844, storage_state=state)
+    page.goto(BASE + path, wait_until='networkidle')
+    top = page.evaluate(HEADER_PROBE)
+    check_header_dark(report, top, where, home)
+    report.check(top['ready'] and '0.3s' in top['transition'], f'{where}: переходы не включены после load ({top["ready"]}, {top["transition"]})')
+    report.check(top['fits'], f'{where}: документ шире окна в тёмном состоянии')
+    if path in HEADER_SHOT_PAGES:
+        header_shot(page, 'top', path, width)
+    scroll_to(page, top['height'] + 250)
+    got = page.evaluate(HEADER_PROBE)
+    if report.check(got['scrollY'] > top['height'] + 50, f'{where}: страница не прокрутилась за порог ({got["scrollY"]})'):
+        report.check(not got['dark'], f'{where}: после прокрутки осталась header--dark')
+        report.check(got['background'] == 'rgb(255, 255, 255)' and got['border'] == 'rgb(220, 226, 232)',
+                     f'{where}: белая шапка §7.1: фон {got["background"]}, линия {got["border"]}')
+        report.check(got['ctaBackground'] == 'rgb(248, 250, 252)', f'{where}: фон второго ряда {got["ctaBackground"]}')
+        report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA после прокрутки {got["ctaColor"]}')
+        report.check((got['logo'], got['white']) in ((1, 0), (1, None)), f'{where}: opacity логотипов после прокрутки {got["logo"]}/{got["white"]}')
+        report.check((got['headMain'], got['headSub']) == (top['headMain'], top['headSub']),
+                     f'{where}: высоты рядов {got["headMain"]}/{got["headSub"]} ≠ {top["headMain"]}/{top["headSub"]}')
+        report.check(got['fits'], f'{where}: документ шире окна в белом состоянии')
+        if path in HEADER_SHOT_PAGES:
+            header_shot(page, 'scrolled', path, width)
+        scroll_to(page, 0)
+        check_header_dark(report, page.evaluate(HEADER_PROBE), f'{where} (возврат на 0)', home)
+    if width <= 900:  # выпадающее меню белое с тёмными пунктами и в тёмной шапке
+        page.click('.menu-btn')
+        menu = page.evaluate("""() => ({background: getComputedStyle(document.querySelector('#main-nav')).backgroundColor,
+            links: [...document.querySelectorAll('#main-nav a')].map((a) => getComputedStyle(a).color)})""")
+        report.check(menu['background'] == 'rgb(255, 255, 255)' and set(menu['links']) == {'rgb(17, 23, 30)'}, f'{where}: меню {menu}')
+        page.keyboard.press('Escape')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
+def check_header_cases(report, new_page, path):
+    """Особые случаи шапки (правка 28.10, П2): открытие уже прокрученной страницы — без анимации, reduced-motion, без JS."""
+    where = f'{path} @1440 шапка'
+    context, page, problems = new_page(1440, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    scroll_to(page, 800)
+    page.reload(wait_until='load')
+    got = page.evaluate(HEADER_PROBE)
+    how = 'перезагрузка'
+    if got['scrollY'] == 0:  # браузер не вернул прокрутку — тот же случай через якорь ниже порога
+        anchor = page.evaluate("""() => { const el = [...document.querySelectorAll('main [id]')].find((e) => e.getBoundingClientRect().top > 600);
+            return el && el.id; }""")
+        if report.check(anchor is not None, f'{where}: нет якоря ниже порога'):
+            page.goto(BASE + path + '#' + anchor, wait_until='load')
+            got, how = page.evaluate(HEADER_PROBE), f'якорь #{anchor}'
+    if report.check(got['scrollY'] > got['height'] + 50, f'{where}: {how}: страница не прокручена ({got["scrollY"]})'):
+        report.check(not got['dark'] and got['animations'] == 0, f'{where}: {how}: header--dark={got["dark"]}, анимаций {got["animations"]}')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+    context, page, problems = new_page(1440, 1000, reduced_motion='reduce')
+    page.goto(BASE + path, wait_until='networkidle')
+    got = page.evaluate(HEADER_PROBE)
+    report.check(got['ready'] and got['transition'] == '0s', f'{where}: reduced-motion: transitionDuration {got["transition"]}')
+    context.close()
+
+    for no_js in (path, '/en'):
+        context, page, problems = new_page(1440, 1000, java_script_enabled=False)
+        page.goto(BASE + no_js, wait_until='networkidle')
+        for top in (0, 1000):
+            scroll_to(page, top)
+            got = page.evaluate(HEADER_PROBE)
+            label = f'{no_js} @1440 без JS, прокрутка {got["scrollY"]}'
+            report.check(got['dark'] and got['background'] == 'rgb(10, 17, 25)', f'{label}: шапка {got["dark"]} {got["background"]}')
+            report.check(got['nav'] and set(got['nav']) == {'rgb(255, 255, 255)'}, f'{label}: ссылки {got["nav"]}')
+            report.check(got['fits'], f'{label}: документ шире окна')
+        report.check(page.evaluate('window.scrollY') > 0, f'{no_js} @1440 без JS: страница не прокрутилась')
+        for problem in problems:
+            report.check(False, f'{no_js} без JS: {problem}')
+        context.close()
 
 
 def check_search_modal(report, new_page, path, width, height):
@@ -2034,6 +2206,7 @@ def check_accounts(report, new_page, accounts, ru_paths, allowlist):
     log('== кабинет: карточка, ответ, пересчитать и повторный заказ; гостевая страница (W-15)')
     check_customer_orders(report, new_page, client, accounts['guest_url'], allowlist)
     check_private_pages(report, new_page, ADMIN_PAGES, admin, 'main h1', allowlist, 'администратор')
+    check_header(report, new_page, '/en/admin', 1440, state=admin)
     log('== редактор контента админки (W-08)')
     check_admin_editor(report, new_page, admin)
     log('== редакторы W-26')
@@ -2531,9 +2704,9 @@ def main():
             log('== самопроверка детекторов и модального окна')
             self_test(report, browser, csp, assets)
 
-            def new_page(width, height, reduced_motion='no-preference', storage_state=None):
+            def new_page(width, height, reduced_motion='no-preference', storage_state=None, java_script_enabled=True):
                 context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion=reduced_motion,
-                                              storage_state=storage_state)
+                                              storage_state=storage_state, java_script_enabled=java_script_enabled)
 
                 def guard(route):
                     if MAP_EMBED.match(route.request.url):
@@ -2572,6 +2745,8 @@ def main():
                     check_gutters(report, page, where, width)
                     if width in STYLE_WIDTHS:
                         check_styles(report, page, path, width)
+                    if path in ('/lt', '/en'):
+                        check_hero_under_header(report, page, where, width)
                     if width in (390, 1440):
                         for hit in marker_hits(page, path, allowlist):
                             report.check(False, f'{where}: маркер {hit}')
@@ -2600,6 +2775,11 @@ def main():
                     report.check(scroll <= client, f'{path} @1280: документ шире окна ({scroll} > {client})')
                     check_gutters(report, page, f'{path} @1280', 1280)
                     context.close()
+                if path in HEADER_PAGES:
+                    for width in (390, 1440):
+                        check_header(report, new_page, path, width)
+                if path == '/lt/apie-mus':
+                    check_header_cases(report, new_page, path)
                 if path in ('/lt', '/en'):
                     check_motion(report, browser, new_page, path)
                 if path in ('/en', '/lt/paieska?q=3D'):

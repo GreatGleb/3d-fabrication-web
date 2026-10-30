@@ -79,11 +79,13 @@ class LocaleRoutesTest extends TestCase
     public function test_russian_pages_are_not_found_for_guest_and_customer(): void
     {
         $customer = User::factory()->create();
-        $unknown = $this->get('/lt/nera-tokio')->getContent();
+        // Nonce CSP noscript-стиля шапки (правка 28.10, П2) — новый на каждый ответ.
+        $html = fn (string $content): string => preg_replace('/<style nonce="[^"]+">/', '<style>', $content);
+        $unknown = $html($this->get('/lt/nera-tokio')->getContent());
 
         foreach (['/ru', '/ru/', '/ru/services', '/ru/quote'] as $path) {
             $guest = $this->get($path)->assertNotFound();
-            $this->assertSame($unknown, $guest->getContent(), 'как любой неизвестный адрес: '.$path);
+            $this->assertSame($unknown, $html($guest->getContent()), 'как любой неизвестный адрес: '.$path);
             $this->actingAs($customer)->get($path)->assertNotFound();
             auth()->logout();
         }

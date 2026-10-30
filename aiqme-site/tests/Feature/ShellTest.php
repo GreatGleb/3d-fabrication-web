@@ -2,13 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use Database\Seeders\PrototypeContentSeeder;
 use DOMDocument;
 use DOMXPath;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /** Оболочка по прототипу (W-03, §1.1): шапка, второй ряд, меню, подвал, cookie-плашка; надписи оболочки D-21 не выводятся. */
 class ShellTest extends TestCase
 {
+    use RefreshDatabase;
+
     /** Надписи оболочки прототипа (D-21, «Надписи оболочки») и ссылки группы «Prototipo aplinkos» · «Prototype workspaces». */
     private const SHELL_LABELS = [
         'DEMONSTRACINĖ SVETAINĖ', 'DEMONSTRATION WEBSITE', 'demo-strip',
@@ -45,7 +50,8 @@ class ShellTest extends TestCase
     public function test_shell_labels_of_the_prototype_are_absent_on_lt_and_en_pages(): void
     {
         foreach (['/lt', '/en', '/lt/paslaugos', '/en/contact', '/lt/nera-tokio', '/en/missing'] as $path) {
-            $html = $this->get($path)->getContent();
+            // Единственный допустимый noscript — стиль шапки-шторки (правка 28.10, П2), не надпись прототипа о JavaScript.
+            $html = preg_replace('#<noscript><style nonce="[^"]+">\.header--overlay\{background:var\(--dark\)\}</style></noscript>#', '', $this->get($path)->getContent(), 1);
             foreach (self::SHELL_LABELS as $label) {
                 $this->assertStringNotContainsStringIgnoringCase($label, $html, "$path: «{$label}»");
             }
@@ -168,5 +174,44 @@ class ShellTest extends TestCase
         $app = file_get_contents(resource_path('css/app.css'));
         $this->assertStringContainsString("@import './prototype/style.css';", $app);
         $this->assertStringNotContainsString('tailwindcss', $app, 'preflight Tailwind менял бы вид прототипа');
+    }
+
+    /** Шапка-шторка (правка 28.10, П2): сервер рисует тёмное состояние на всех страницах, полупрозрачное — только над hero. */
+    public function test_header_is_dark_everywhere_and_overlays_only_the_home_hero(): void
+    {
+        $admin = User::factory()->create()->forceFill(['is_admin' => true]);
+        $admin->save();
+        $client = User::factory()->create();
+        $classes = fn (string $html): array => explode(' ', $this->xpath($html)->query('//header')->item(0)->getAttribute('class'));
+
+        // Без записи home главная — заглушка page-top: тёмная шапка без полупрозрачности.
+        foreach (['/lt', '/en'] as $path) {
+            $this->assertSame(['header', 'header--dark'], $classes($this->get($path)->getContent()), "$path без home");
+        }
+        $this->seed(PrototypeContentSeeder::class);
+        $pages = ['/lt' => true, '/en' => true, '/lt/apie-mus' => false, '/en/quote' => false, '/lt/nera-tokio' => false];
+        foreach ($pages as $path => $overlay) {
+            $this->assertSame($overlay ? ['header', 'header--dark', 'header--overlay'] : ['header', 'header--dark'], $classes($this->get($path)->getContent()), $path);
+        }
+        $this->assertSame(['header', 'header--dark'], $classes($this->actingAs($admin)->get('/en/admin')->assertOk()->getContent()), '/en/admin');
+        $this->assertSame(['header', 'header--dark'], $classes($this->actingAs($client)->get('/en/account')->assertOk()->getContent()), '/en/account');
+    }
+
+    public function test_header_logo_holds_the_regular_and_the_white_logo_and_noscript_keeps_the_header_solid(): void
+    {
+        $response = $this->get('/en');
+        $xpath = $this->xpath($response->getContent());
+
+        $images = $xpath->query('//header//a[@class="logo"]/img');
+        $this->assertCount(2, $images);
+        $this->assertSame([asset('defaults/logo.jpg'), 'AIQME', null], [$images->item(0)->getAttribute('src'), $images->item(0)->getAttribute('alt'), $images->item(0)->attributes->getNamedItem('class')?->nodeValue]);
+        $this->assertSame([asset('defaults/logo-white.png'), '', 'logo-white'], [$images->item(1)->getAttribute('src'), $images->item(1)->getAttribute('alt'), $images->item(1)->getAttribute('class')]);
+
+        // Без JS полупрозрачная шапка главной сплошная: стиль в noscript с nonce этого ответа (CSP style-src-elem).
+        preg_match("/style-src-elem 'self' 'nonce-([^']+)'/", $response->headers->get('Content-Security-Policy'), $nonce);
+        $style = $xpath->query('//head/noscript/style');
+        $this->assertCount(1, $style);
+        $this->assertSame($nonce[1], $style->item(0)->getAttribute('nonce'));
+        $this->assertSame('.header--overlay{background:var(--dark)}', $style->item(0)->textContent);
     }
 }

@@ -1,17 +1,20 @@
 {{-- Шапка прототипа (§1.1): логотип ($logo — адрес из layout, D-43), 7 пунктов, поиск, LT/EN, корзина, кнопка меню ≤900 px (resources/js/menu.js)
      и второй ряд с CTA. Активный пункт — текущая страница или вложенная (имя маршрута «<locale>.<page>.…»).
      Поиск — модальное окно прототипа (searchPanel, без JS — ссылка на страницу поиска). Значок кабинета ведёт на кабинет LT/EN (W-07; на /ru — EN). $languages — версии этой страницы для переключателя (W-02); $switchUrl —
-     адрес, если версии другой локали нет (W-05). --}}
-@props(['languages' => [], 'switchUrl' => null, 'logo'])
+     адрес, если версии другой локали нет (W-05).
+     Шапка-шторка (правка 28.10, П2): сервер рисует тёмное состояние header--dark (первый кадр уже тёмный), resources/js/header.js
+     снимает его после прокрутки — белая шапка прототипа §7.1. В a.logo обычный логотип и белый ($logoWhite) поверх него;
+     без белого — обычный на белой подложке (header--logo-plate). $overlay — полупрозрачная шапка поверх hero главной. --}}
+@props(['languages' => [], 'switchUrl' => null, 'logo', 'logoWhite' => null, 'overlay' => false])
 @php
     $locale = app()->getLocale();
     $switchTo = $locale === 'lt' ? 'en' : 'lt';
     $current = request()->route()?->getName() ?? '';
 @endphp
 <a class="skip" href="#main">{{ __('shell.skip') }}</a>
-<header class="header">
+<header @class(['header', 'header--dark', 'header--overlay' => $overlay, 'header--logo-plate' => ! $logoWhite])>
     <div class="wrap head-main">
-        <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ $logo }}" alt="AIQME"></a>
+        <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ $logo }}" alt="AIQME">@if ($logoWhite)<img class="logo-white" src="{{ $logoWhite }}" alt="">@endif</a>
         <nav class="nav" id="main-nav" aria-label="{{ __('shell.nav_label') }}">
             @foreach (__('shell.nav') as $page => $label)
                 @php($active = $current === $locale.'.'.$page || str_starts_with($current, $locale.'.'.$page.'.'))

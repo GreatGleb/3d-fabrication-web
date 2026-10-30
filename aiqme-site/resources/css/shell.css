@@ -29,3 +29,46 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 @media print{.wrap.page-content{padding-left:0;padding-right:0}}
 /* Виджет капчи ALTCHA (правка 28.10, П3): во всю ширину формы, рамка как у .field input прототипа, фирменный синий. */
 altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-border-width:1px;--altcha-border-color:#ccd5e0;--altcha-border-radius:4px;--altcha-color-primary:var(--blue)}
+/* Шапка-шторка (правка 28.10, П2): вверху тёмная (header--dark рисует сервер), после прокрутки больше высоты шапки + 50 px
+   (resources/js/header.js) — белая шапка прототипа §7.1. Меняются только цвета и прозрачность, высоты рядов те же.
+   Цвета тёмного состояния — WCAG AA и над худшим фоном главной (решение №4 плана). Фон полупрозрачной шапки главной
+   задан с весом одного класса: noscript-стиль layout (.header--overlay, позже в каскаде) делает её без JS сплошной. */
+:root{--header-height:123px}
+.header .logo{position:relative}
+.header .logo-white{position:absolute;top:5px;left:5px;width:calc(100% - 10px);opacity:0}
+.header--dark{background:var(--dark);color:#fff;border-bottom-color:rgba(255,255,255,.12)}
+:where(.header--dark).header--overlay{background:rgba(10,17,25,.6)}
+.header--dark:not(.header--logo-plate) .logo{background:transparent}
+.header--dark .logo-white{opacity:1}
+.header--dark:not(.header--logo-plate) .logo img:not(.logo-white){opacity:0}
+.header--dark .nav a:hover,.header--dark .head-sub .cta-link{color:#9cc4ff}
+.header--dark .nav a.active:after{background:#9cc4ff}
+.header--dark .lang span{color:#b7c3ce}
+.header--dark .header-cta{background:transparent;border-top-color:rgba(255,255,255,.12)}
+.header--dark .head-sub>span{color:#d5dde6}
+/* Переходы — только у элементов со своим значением: пункты и значки наследуют цвет шапки (свой переход у наследника
+   отставал бы, догоняя родителя). */
+.header--ready{transition:background-color .3s ease,border-color .3s ease,color .3s ease}
+.header--ready .header-cta,.header--ready .logo{transition:background-color .3s ease,border-color .3s ease}
+.header--ready .cta-link,.header--ready .lang span{transition:color .3s ease}
+.header--ready .logo img{transition:opacity .3s ease}
+/* Главная: hero начинается от верха окна под полупрозрачной шапкой, содержимое hero — на прежних координатах. */
+.header--overlay{margin-bottom:calc(-1*var(--header-height))}
+.header--overlay~main>.hero:first-child{min-height:calc(650px + var(--header-height))}
+.header--overlay~main>.hero:first-child .wrap{padding-top:calc(85px + var(--header-height))}
+@media(max-width:900px){
+ :root{--header-height:116px}
+ .header--overlay~main>.hero:first-child{min-height:calc(620px + var(--header-height))}
+ /* Выпадающее меню остаётся белым прототипа с тёмными пунктами и в тёмной шапке. */
+ .header--dark .nav{color:var(--ink)}
+ .header--dark .nav a:hover{color:var(--blue)}
+ .header--dark .nav a.active:after{background:var(--blue)}
+}
+@media(max-width:600px){
+ :root{--header-height:108px}
+ .header--overlay~main>.hero:first-child{min-height:calc(660px + var(--header-height))}
+ .header--overlay~main>.hero:first-child .wrap{padding-top:calc(56px + var(--header-height))}
+}
+@media(prefers-reduced-motion:reduce){
+ .header--ready,.header--ready .header-cta,.header--ready .logo,.header--ready .cta-link,.header--ready .lang span,.header--ready .logo img{transition:none}
+}

@@ -1,7 +1,8 @@
 {{-- Главная (§1.2): тёмный hero с видео (медиа заказчика, иначе набор прототипа по умолчанию D-43; сцены «СКАН → CAD →
      ДЕТАЛЬ» нет, D-40), сценарии, процесс, услуги, ленты брендов и новостей (заглушка без ленты, пока нет публикаций;
      D-26), категории, CTA. Видео по умолчанию — один набор: при своём video мобильный ролик и постер — только свои,
-     подпись — из источника своего медиа (§7.3). --}}
+     подпись — из источника своего медиа (§7.3). С hero шапка полупрозрачная поверх видео (правка 28.10, П2), у заглушки
+     без записи home — обычная тёмная. --}}
 @use('App\Domain\Content\ContentType')
 @use('App\Domain\Content\Models\ContentItem')
 @use('Illuminate\Support\Facades\Route')
@@ -22,7 +23,7 @@
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.home')" :languages="$languages"
     :image="($poster = $heroMedia?->getFirstMedia('video_poster')) ? $poster->getUrl($poster->hasGeneratedConversion('w1600') ? 'w1600' : '') : null"
-    :noindex="$locale === 'ru'">
+    :noindex="$locale === 'ru'" :header-overlay="(bool) $home">
 @if (! $home)
     <x-page-top :title="$heading" :breadcrumbs="false" />
     <div class="wrap page-content"><x-placeholder /></div>
