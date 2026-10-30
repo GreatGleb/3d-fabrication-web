@@ -30,12 +30,21 @@ class CalculatorPageTest extends TestCase
         // Чистая БД после migrate: начальные настройки W-11 (D-09, D-24) и лимиты config (§6.4).
         $this->assertSame([
             'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 52428800, 'max_files' => 10,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000, 'max_file_bytes' => 52428800, 'max_files' => 10,
         ], json_decode($root->getAttribute('data-settings'), true));
         $texts = json_decode($root->getAttribute('data-texts'), true);
         $this->assertSame('Reading files...', $texts['reading']);
         $this->assertSame(50, $texts['mb']);
         $this->assertSame('en', $root->getAttribute('data-locale'));
+    }
+
+    /** П7: габарит 1000 мм в тексте шага 3 обеих локалей (значение из настроек, знак ×, без разделителя тысяч). */
+    public function test_review_step_shows_build_size_of_1000_mm(): void
+    {
+        foreach (['/lt/kalkuliatorius' => 'Įrangos dydžio ribos', '/en/quote' => 'Build size limits'] as $path => $heading) {
+            $row = $this->page($path)->query('//*[@data-step-panel="2"]//div[@class="check-row"]/div')->item(0);
+            $this->assertSame([$heading, 'FDM: 1000 × 1000 × 1000 mm.'], [Html::text($row->getElementsByTagName('h3')->item(0)), Html::text($row->getElementsByTagName('p')->item(0))], $path);
+        }
     }
 
     public function test_five_steps_and_texts_of_both_locales(): void

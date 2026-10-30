@@ -175,6 +175,24 @@ class OrderSubmissionTest extends TestCase
         $this->assertStringNotContainsString($guestToken, json_encode(OrderMeta::sole()->getAttributes()));
     }
 
+    /**
+     * П7: порог предупреждения на сервере — габарит из настроек, 1000 мм. Куб 10 мм в дюймах: масштаб 473 % ≈ 1201 мм
+     * (больше 1000 — предупреждение), 315 % ≈ 800 мм (без предупреждения; при прежних 250 мм оно было бы).
+     */
+    public function test_server_warns_about_parts_over_the_1000_mm_build_size(): void
+    {
+        $this->submit($this->payload(['parts' => [
+            ['file' => $this->stl('cube-10mm-binary.stl', 'large.stl'), 'unit' => 'in', 'scale' => '473', 'quantity' => '1'],
+            ['file' => $this->stl('cube-10mm-binary.stl', 'medium.stl'), 'unit' => 'in', 'scale' => '315', 'quantity' => '1'],
+        ]]))->assertCreated();
+
+        [$large, $medium] = StlPart::query()->orderBy('id')->get()->all();
+        $this->assertEqualsWithDelta(1201.42, $large->measurement['dimensions_mm'][0], 0.01);
+        $this->assertContains('exceeds_build_size', $large->measurement['warnings']);
+        $this->assertEqualsWithDelta(800.1, $medium->measurement['dimensions_mm'][0], 0.01);
+        $this->assertNotContains('exceeds_build_size', $medium->measurement['warnings']);
+    }
+
     public function test_guest_link_opens_the_order_and_wrong_number_or_token_is_404(): void
     {
         $confirmed = $this->submitAndConfirm($this->payload());

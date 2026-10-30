@@ -48,11 +48,45 @@ class CalculatorSettingsTest extends TestCase
     {
         $expected = [
             'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 250, 'max_file_bytes' => 52428800, 'max_files' => 10,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000, 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
         $this->assertSame($expected, $this->pageSettings('/en/quote'));
         $this->assertSame($expected, $this->pageSettings('/lt/kalkuliatorius'));
-        $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents', 'max_dimension_mm'], app(Settings::class)->unconfirmed());
+        $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents'], app(Settings::class)->unconfirmed());
+    }
+
+    /** П7: габарит 1000 мм подтверждён заказчиком 28.10 — миграция данных меняет только исходные 250 мм W-11. */
+    public function test_migration_sets_confirmed_1000_mm_only_over_the_initial_250(): void
+    {
+        $migration = require database_path('migrations/2026_10_29_000000_set_calculator_max_dimension_1000.php');
+        $settings = app(Settings::class);
+
+        // (а) Запись в виде старой миграции W-11: 250 и пометка → 1000 без пометки; остальное без изменений.
+        Setting::query()->delete();
+        (require database_path('migrations/2026_10_21_100001_insert_calculator_settings.php'))->up();
+        $before = $settings->values();
+        $migration->up();
+        $this->assertSame([...$before, 'max_dimension_mm' => 1000], $settings->values());
+        $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents'], $settings->unconfirmed());
+        $after = Setting::sole()->getRawOriginal('value');
+        $migration->up();
+        $this->assertSame($after, Setting::sole()->getRawOriginal('value'));
+
+        // down() при 1000 возвращает 250 и пометку.
+        $migration->down();
+        $this->assertSame(250, $settings->values()['max_dimension_mm']);
+        $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents', 'max_dimension_mm'], $settings->unconfirmed());
+
+        // (б) Значение администратора (не 250) сохраняется.
+        $settings->save(['max_dimension_mm' => 320] + $settings->values());
+        $migration->up();
+        $this->assertSame(320, $settings->values()['max_dimension_mm']);
+        $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents'], $settings->unconfirmed());
+
+        // (в) Записи нет — без ошибки и без вставки.
+        Setting::query()->delete();
+        $migration->up();
+        $this->assertSame(0, Setting::count());
     }
 
     public function test_data_migration_does_not_overwrite_existing_settings(): void
@@ -68,14 +102,14 @@ class CalculatorSettingsTest extends TestCase
     public function test_admin_tab_shows_prototype_heading_and_unconfirmed_marks_without_demo_prices(): void
     {
         foreach ([
-            '/en/admin/calculator' => ['Materials, settings &amp; pricing', 'Price per gram, € · Not confirmed', 'Build size, mm · Not confirmed', 'Save parameters'],
-            '/lt/administravimas/calculator' => ['Medžiagos, parametrai ir kainodara', 'Kaina už gramą, € · Nepatvirtinta', 'Įrangos kraštinė, mm · Nepatvirtinta', 'Išsaugoti parametrus'],
+            '/en/admin/calculator' => ['Materials, settings &amp; pricing', 'Price per gram, € · Not confirmed', 'Build size, mm', 'Save parameters'],
+            '/lt/administravimas/calculator' => ['Medžiagos, parametrai ir kainodara', 'Kaina už gramą, € · Nepatvirtinta', 'Įrangos kraštinė, mm', 'Išsaugoti parametrus'],
         ] as $path => $texts) {
             $html = $this->actingAs($this->admin)->get($path)->assertOk()->getContent();
             foreach ($texts as $text) {
                 $this->assertStringContainsString($text, $html, $path);
             }
-            foreach (['FDM · ba', 'SLA', 'Metal', 'discount', 'nuolaida', 'Illustrative', 'demonstracinės', 'Demo', 'max_file', '52428800'] as $phrase) {
+            foreach (['Build size, mm · Not confirmed', 'Įrangos kraštinė, mm · Nepatvirtinta', 'FDM · ba', 'SLA', 'Metal', 'discount', 'nuolaida', 'Illustrative', 'demonstracinės', 'Demo', 'max_file', '52428800'] as $phrase) {
                 $this->assertStringNotContainsString($phrase, $html, $path);
             }
         }

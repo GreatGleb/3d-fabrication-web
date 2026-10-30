@@ -3196,3 +3196,54 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид карточек без подписи на экране — ждёт проверки пользователем.
 - Демо `demo/` не пересобиралось (в нём подпись ещё есть до пересборки по указанию пользователя).
 - В админке остаётся поле «Bloko parašas», которое больше ни на что не влияет (риск из README плана; скрыть — отдельной правкой).
+
+## Правки 28.10, E-02 (П7): габарит FDM 1000 × 1000 × 1000 мм
+
+### Сделано
+
+- Новая миграция данных `database/migrations/2026_10_29_000000_set_calculator_max_dimension_1000.php` (через `DB::table`,
+  без модели `Setting`): `up()` — если записи `calculator` нет или `max_dimension_mm !== 250`, ничего не делает; при 250
+  ставит 1000, убирает `max_dimension_mm` из `unconfirmed` (остальные пометки и тарифы не трогает), обновляет `updated_at`.
+  `down()` при 1000 возвращает 250 и пометку. Комментарий: подтверждено заказчиком 28.10 (D-24), значение администратора
+  сохраняется. Старая миграция `2026_10_21_100001` не менялась; код калькулятора, JS, шаблоны и lang не менялись.
+- `tests/Feature/CalculatorSettingsTest.php`: после migrate — 1000, `unconfirmed` = `['materials','rate_per_gram',
+  'order_fee_cents','file_fee_cents']`; админка EN/LT показывает «Build size, mm» / «Įrangos kraštinė, mm» без
+  «· Not confirmed» / «· Nepatvirtinta» (проверяется и отсутствие строки с пометкой); новый
+  `test_migration_sets_confirmed_1000_mm_only_over_the_initial_250`: (а) запись старой миграции (250 + пометка) → 1000 без
+  пометки, остальные значения те же, повторный `up()` не меняет сырое значение; `down()` → 250 и пометка; (б) 320 через
+  `Settings::save` → `up()` оставляет 320; (в) записи нет → без ошибки и без вставки.
+- `tests/Feature/CalculatorPageTest.php`: `data-settings.max_dimension_mm` = 1000; новый
+  `test_review_step_shows_build_size_of_1000_mm`: на `/lt/kalkuliatorius` и `/en/quote` в шаге 3 (панель
+  `data-step-panel="2"`) заголовок «Įrangos dydžio ribos» / «Build size limits» и текст «FDM: 1000 × 1000 × 1000 mm.».
+- `tests/Feature/OrderSubmissionTest.php`: новый `test_server_warns_about_parts_over_the_1000_mm_build_size` —
+  `cube-10mm-binary.stl`, `unit=in`: `scale=473` (1201,42 мм) → `exceeds_build_size` в `StlPart.measurement['warnings']`,
+  `scale=315` (800,1 мм) → нет.
+- `bin/browser-check` `check_calculator_settings` и описание W-11 в docstring модуля: на 1440 у габарита нет пометки
+  «Not confirmed» до и после сохранения, поле равно 1000; сохраняются 300, затем 1000 — каждое видно в `data-settings`
+  `/en/quote` и в тексте шага 3 «FDM: N × N × N mm.»; итог — 1000.
+
+### Проверка, что тесты ловят ошибку
+
+- Миграция временно убрана → `test_settings_and_texts_come_through_data_attributes`,
+  `test_review_step_shows_build_size_of_1000_mm` и `test_server_warns_about_parts_over_the_1000_mm_build_size` падают
+  (при 250 мм деталь 800 мм получает предупреждение). Миграция возвращена — зелёные.
+
+### Команды
+
+- `bin/php artisan test --compact tests/Feature/CalculatorSettingsTest.php tests/Feature/CalculatorPageTest.php
+  tests/Feature/OrderSubmissionTest.php` → passed, 37 тестов.
+- `bin/php vendor/bin/pint --dirty --format agent` → passed.
+- `bin/browser-check --signed-in /en/quote /lt/kalkuliatorius` → OK (4762 проверок), включая `check_calculator_settings`.
+- `bin/check` → **OK**: Node-тесты калькулятора 39/39 (без изменений), PHPUnit 664 passed, Vite OK.
+- Полный `bin/browser-check`: один вызов без путей не уложился в 10-минутный предел команды сессии (прерван `timeout` на
+  26-й странице без ошибок). Поэтому полный список адресов (99, получен теми же функциями `pages_from_routes` +
+  `pages_from_sitemap` + SEARCH/CATALOG/NOT_FOUND) прогнан четырьмя частями: `--signed-in` + адреса 1–18 → OK (6227),
+  19–45 → OK (3310), 46–75 → OK (3529), 76–99 → OK (2456). Журналы и список — `build/verification/e02/` (не отслеживается).
+
+### Не проверено
+
+- Полный `bin/browser-check` одним вызовом в этой сессии не прошёл до конца (только частями, см. выше); его запускает оркестратор.
+- На рабочей БД aiqme.com значение сменит `migrate --force` при выпуске (E-11), только если там стоит 250; если
+  администратор уже поставил другое число, оно сохранится — после deploy проверить вкладку Calculator.
+- Запись в `docs/planning/edition-2/decisions.md` (D-24) не делалась (каталог запрещён ночному автору) — по желанию пользователя.
+- Демо `demo/` не пересобиралось (там ещё 250 мм до пересборки по указанию пользователя).

@@ -69,8 +69,9 @@ W-19: вкладка Integrations (раздел Telegram) — в ADMIN_PAGES.
 W-17: вкладка Settings (реквизиты, VAT и нумерация счетов) — в ADMIN_PAGES; Overview — с предупреждением «незаполненные
 реквизиты» (реквизитов в данных фабрик нет).
 W-11: вкладка Calculator админки — в ADMIN_PAGES; check_calculator_settings на 390 и 1440: форма без расползания и ошибок
-консоли/CSP; на 1440 габарит 300 мм сохраняется через Livewire, пометка «Not confirmed» у него снимается, /en/quote выводит
-300 в data-settings; затем габарит возвращается к 250.
+консоли/CSP; на 1440 пометки «Not confirmed» у габарита нет ни до, ни после сохранения (П7: 1000 мм подтверждён, миграция
+2026_10_29_000000); габарит 300 и затем 1000 мм сохраняется через Livewire, /en/quote выводит его в data-settings и в тексте
+шага 3 «FDM: N × N × N mm.»; в конце габарит — 1000.
 
 W-12: заявка гостя до подтверждения в том же сценарии check_calculator (canvas отключён): пустая форма шага 5 — ошибки
 сервера под полями имени, email и телефона, заказа нет; заполненная — страница подтверждения с номером, суммой 5,12 (те же
@@ -1129,7 +1130,8 @@ def check_admin_editors_w26(report, new_page, state):
 
 def check_calculator_settings(report, new_page, state):
     """Вкладка настроек калькулятора (W-11) в браузере: форма на 390 и 1440 без расползания и ошибок консоли/CSP; на 1440
-    сохранение габарита через Livewire видно в data-settings /en/quote, затем прежнее значение возвращается."""
+    у габарита нет пометки «Not confirmed» (П7: 1000 мм подтверждён), сохранение 300 и затем 1000 через Livewire видно
+    в data-settings /en/quote и в тексте шага 3; в конце габарит — 1000."""
     for width, height in ((390, 844), (1440, 1000)):
         where = f'/en/admin/calculator @{width}'
         context, page, problems = new_page(width, height, storage_state=state)
@@ -1138,8 +1140,9 @@ def check_calculator_settings(report, new_page, state):
         scroll, client = document_fits(page)
         report.check(scroll <= client, f'{where}: документ шире окна ({scroll} > {client})')
         if width == 1440:
-            report.check('Build size, mm · Not confirmed' in page.inner_text('#pricing-form'), f'{where}: нет пометки габарита')
-            for value in ('300', '250'):
+            report.check('Build size, mm · Not confirmed' not in page.inner_text('#pricing-form'), f'{where}: у габарита пометка до сохранения')
+            report.check(page.input_value('#field-maxDimension') == '1000', f'{where}: габарит не 1000 мм')
+            for value in ('300', '1000'):
                 page.fill('#field-maxDimension', value)
                 # Плашка «Saved.» прошлого сохранения ещё видна — ждём ответ именно этого запроса Livewire.
                 with page.expect_response(lambda r: r.request.method == 'POST' and 'livewire' in r.url):
@@ -1149,9 +1152,11 @@ def check_calculator_settings(report, new_page, state):
                 public.goto(BASE + '/en/quote', wait_until='networkidle')
                 shown = json.loads(public.get_attribute('#quote', 'data-settings'))['max_dimension_mm']
                 report.check(shown == int(value), f'{where}: на /en/quote габарит {shown}, сохранено {value}')
+                text = f'FDM: {value} × {value} × {value} mm.'
+                report.check(text in public.locator('[data-step-panel="2"]').text_content(), f'{where}: на /en/quote нет «{text}»')
                 public.close()
             report.check('Not confirmed' not in page.locator('#field-maxDimension').locator('xpath=..').inner_text(),
-                         f'{where}: пометка габарита не снята после изменения')
+                         f'{where}: у габарита пометка после сохранения')
         for problem in problems:
             report.check(False, f'{where}: {problem}')
         context.close()
