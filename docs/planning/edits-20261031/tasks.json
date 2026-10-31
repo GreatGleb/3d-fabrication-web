@@ -1,0 +1,305 @@
+{
+  "schema": "aiqme-implementation-tasks/1",
+  "edition": "docs/planning/edits-20261031/README.md",
+  "created": "2026-10-31",
+  "status": "planned_not_started",
+  "plan_refs": "план docs/planning/edits-20261031/README.md — раздел правки задачи (Г1–Г4); для отступлений 28.10 — docs/planning/edits-20261029/README.md",
+  "agent_note": "Эта очередь — вторая часть правок заказчика (прислана 29.10, план 31.10) к сайту, где уже есть правки 28.10. Перечисленные в README плана отступления от прототипа (новый логотип и его размер, нет ярлыка над заголовком x-page-top, тексты шага 2, нет звёздочек и form_note) — требование, а не расхождение; тексты LT/EN — из README плана.",
+  "rules": [
+    "Задачи выполняются по порядку массива; следующая — после выполнения критериев done предыдущей или явной отметки о блокировке в aiqme-site/docs/progress.md. Задачи, транзитивно зависящие (depends) от заблокированной, пропускаются с отметкой «пропущено: зависит от заблокированной F-xx»; независимые продолжаются.",
+    "Без человека (в том числе ночью) выполняются только задачи с track = L; на задаче с track = P (F-06, выпуск на aiqme.com) прогон останавливается.",
+    "Каждая задача — одна рабочая сессия автора (не больше 3 ч: AIQME_TASK_MINUTES=180, см. «Подготовка прогона» README). Час без заметного прогресса — остановиться, описать препятствие в progress.md и предложить более простой способ.",
+    "Запуск — ночной оркестратор docs/planning/edition-2/run/night.py с этой очередью (подготовка — раздел «Подготовка прогона» README плана): автор не делает git commit, push, stash, reset, checkout и не меняет ветку — коммит после проверки делает оркестратор.",
+    "Меняются только aiqme-site/ (кроме aiqme-site/experiments/ — эталонный эксперимент, не изменять) и, только в задаче F-05, новый раздел «Правки заказчика 30.10 (часть 2)» в docs/requirements.md. Не изменять legacy-landing/ (instance/ не читать), baseline/, docs/customer/ (не читать и не цитировать), docs/planning/ (в том числе этот план и файлы docs/planning/edits-20261031/logo/ — их только копировать), корневой AGENTS.md. Chrome пользователя, CDP и docs/customer-prototype/tools/ не используются; браузерные проверки — bundled Chromium Playwright через aiqme-site/bin/browser-check.",
+    "Рабочий сервер aiqme.com, его .env и БД не трогаются, миграции на чужой БД не запускаются; внешние сервисы не вызываются. Сеть — только загрузки пакетов для версий плана (D-20: Packagist, api.github.com/codeload.github.com только чтение, npm). Google, Stripe, Telegram, SMTP — запрещены; карта Google Maps в проверках подменяется локальной заглушкой (E-04), тесты исходящих HTTP-запросов не делают (Http::preventStrayRequests).",
+    "Источник требований — README плана docs/planning/edits-20261031/README.md (раздел правки задачи). Тексты LT/EN — дословно из README; не придумывать. Перечисленные в README осознанные отступления от прототипа (новый логотип и его размер, нет ярлыка над заголовком страницы, тексты шага 2, нет звёздочек и строки form_note) — требование, а не расхождение, как и отступления правок 28.10 (docs/planning/edits-20261029/README.md); в остальном вид и тексты сайта не меняются.",
+    "CSS прототипа aiqme-site/resources/css/prototype/style.css не изменяется (§7.2): исправления оболочки — resources/css/shell.css, правки публичных страниц — resources/css/public.css.",
+    "Репозиторий публичный: секретов, .env, клиентских файлов (снимков, переписки) в отслеживаемых файлах нет. Новые бинарные файлы — только aiqme-site/public/defaults/logo.png и заменённый aiqme-site/public/defaults/logo-white.png (копии файлов docs/planning/edits-20261031/logo/, байт в байт); удаление defaults/logo.jpg — по F-01. Перед завершением: git status --porcelain aiqme-site — новые файлы только в ожидаемых каталогах.",
+    "Новых зависимостей и обновлений версий нет; проверка версий в bin/check остаётся зелёной. Все команды PHP — через aiqme-site/bin/php (bin/php artisan …, bin/php vendor/bin/pint --dirty --format agent). Boost search-docs не используется (D-20) — документация читается из vendor/.",
+    "Каждая задача меняющая шаблоны прогоняет поиск маркеров bin/browser-check по своим страницам; законные совпадения — только в tests/fixtures/marker-allowlist.json.",
+    "Тесты проверяют поведение, а не только проходят: где done требует «падает до правки» или «прогон с откатом», автор один раз проверяет это и пишет результат в progress.md. Существующие тесты не ослабляются; менять ожидания — только там, где это прямо следует из правки.",
+    "Каждая задача завершается записью в aiqme-site/docs/progress.md («Правки 30.10, F-xx (Гn): …»): что сделано, команды и вывод проверок, что не проверено. Ручной визуальный просмотр, который ночью некому выполнить, — «ждёт проверки пользователем», а не «готово». Старые записи progress.md не переписываются.",
+    "Демо-сборка aiqme-site/demo/ не пересобирается (только по указанию пользователя); код DemoExport и bin/demo-check правятся, если этого требует задача.",
+    "Принцип: максимально просто — только то, что просил заказчик и описано в README плана, в объёме задачи. Ничего сверх: ни функций, настроек, зависимостей, ни абстракций «на будущее». Неопределённое решается простейшим вариантом с записью в progress.md; противоречие плана и кода, которое нельзя решить без догадки, — status blocked с вопросом в progress.md. Приёмщик считает лишнее замечанием.",
+    "Во время разработки — bin/browser-check с путями задачи (поле browser_check) и точечные artisan test; полный bin/check — в конце каждой задачи. Полный bin/browser-check (без путей) — только в F-05: у задач с полем browser_check и автор, и оркестратор запускают bin/browser-check с аргументами browser_check (предел — 60 мин). Ветки проверок, которые ночью не выполняются (bin/demo-check на старой сборке demo/; режим --base-url/--compose-file), отмечаются «проверено чтением кода; выполнение — ждёт пользователя», а в progress.md — в разделе «не проверено»."
+  ],
+  "tasks": [
+    {
+      "id": "F-01",
+      "title": "Г1: новый логотип заказчика и его размер в шапке",
+      "track": "L",
+      "slice": "S1",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261031/README.md (Г1)",
+        "docs/planning/edits-20261031/logo/",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/resources/views/components/layout.blade.php",
+        "aiqme-site/resources/views/components/header.blade.php",
+        "aiqme-site/resources/css/shell.css",
+        "aiqme-site/resources/css/prototype/style.css (только читать)",
+        "aiqme-site/tests/Feature/DefaultMediaTest.php",
+        "aiqme-site/tests/Feature/ShellTest.php",
+        "aiqme-site/bin/browser-check"
+      ],
+      "result": "В шапке и подвале — новый логотип заказчика (logo.png, белый logo-white.png в тёмной шапке), в шапке крупнее: 220/180/140 px по ступеням README или наибольшая помещающаяся ширина; ничего не наезжает на 390–1440.",
+      "touches": [
+        "aiqme-site/public/defaults/logo.png (новый)",
+        "aiqme-site/public/defaults/logo-white.png (заменён)",
+        "aiqme-site/public/defaults/logo.jpg (удалить, если нет ссылок)",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/resources/css/shell.css",
+        "aiqme-site/tests/Feature/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/app/ (только если там есть ссылка на logo.jpg)",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "public/defaults/logo.png и logo-white.png байт в байт равны файлам docs/planning/edits-20261031/logo/ (sha256 записан в progress.md); defaults/logo.jpg удалён или, если на него остались нужные ссылки, — причина в progress.md",
+        "config/aiqme.php: умолчание logo = 'defaults/logo.png'; logo_white — прежний путь; layout и слоты админки не изменены",
+        "shell.css: .header .logo — 220 px (>1150), 180 px (≤1150), 140 px (≤600), с комментарием «правка 30.10, Г1»; prototype/style.css не изменён; подвал не изменён; .logo-white совпадает с обычным логотипом по положению и размеру ±1 px",
+        "bin/browser-check: на 390, 600, 768, 901, 1024, 1150, 1440 (/lt и /en) ширина .header .logo равна целевой ±1 (или уменьшенной, записанной в progress.md); прямоугольник логотипа не пересекается с .nav (если видна) и .tools; нет горизонтальной прокрутки; белый логотип совпадает с обычным ±1 px; кадры header-top-*/header-scrolled-* снимаются, как раньше",
+        "Тесты (DefaultMediaTest, ShellTest, ContentMediaTest и др., где был logo.jpg) — новые пути и размер 1419×262; проверки поведения слотов (свой logo важнее умолчаний, logo_white только без своего logo) сохранены",
+        "progress.md: запись F-01 с размерами по ширинам; вид на телефоне — «ждёт проверки пользователем»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/kontaktai зелёный (точечный прогон; полный — в F-05)"
+      ],
+      "constraints": [
+        "Не перерисовывать и не пересжимать логотип",
+        "Не менять prototype/style.css"
+      ],
+      "unknowns": [],
+      "browser_check": [
+        "--signed-in",
+        "/lt",
+        "/en",
+        "/lt/apie-mus",
+        "/en/about",
+        "/lt/kontaktai"
+      ]
+    },
+    {
+      "id": "F-02",
+      "title": "Г2: без ярлыка над заголовком страницы (x-page-top) на всех страницах",
+      "track": "L",
+      "slice": "S2",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261031/README.md (Г2)",
+        "aiqme-site/resources/views/components/page-top.blade.php",
+        "aiqme-site/resources/views/ (все вызовы x-page-top)",
+        "aiqme-site/lang/lt/",
+        "aiqme-site/lang/en/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json"
+      ],
+      "result": "Ни на одной странице над h1 блока page-top нет ярлыка («AIQME», «AIQME / PASLAUGOS» и т. п.); прочие ярлыки разделов не тронуты.",
+      "touches": [
+        "aiqme-site/resources/views/components/page-top.blade.php",
+        "aiqme-site/resources/views/ (вызовы x-page-top)",
+        "aiqme-site/lang/lt/",
+        "aiqme-site/lang/en/",
+        "aiqme-site/resources/css/public.css (только при нарушенном отступе)",
+        "aiqme-site/tests/Feature/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "page-top.blade.php: нет div.eyebrow и свойства eyebrow; комментарий компонента обновлён (правка 30.10, Г2)",
+        "Во всех шаблонах вызовы x-page-top без :eyebrow; неиспользуемые ключи lang (calculator.eyebrow, public.service.eyebrow, public.product.eyebrow, public.article.eyebrow — если больше нигде не используются) удалены в LT и EN; используемые в других местах — не тронуты (проверено grep, записано в progress.md)",
+        "Тест: на /lt/paslaugos, /en/services, /lt/produktai, /lt/projektai, /lt/informacija, /lt/apie-mus, /lt/kontaktai, странице услуги, товара, статьи, /lt/kalkuliatorius и /lt/paskyra/register в section.page-top нет .eyebrow, первый элемент после крошек — h1; ярлыки разделов вне page-top (например, «APIE AIQME») на месте",
+        "bin/browser-check: сверка текста с эталоном исключает ярлык page-top (TEXT_EXCLUDED_BLOCKS с комментарием, как П4); записи marker-allowlist.json, относившиеся только к нему, удалены; отступ между крошками и h1 на 390 и 1440 не меньше прежнего отступа над ярлыком (иначе — правка в public.css)"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check /lt/paslaugos /en/services /lt/produktai /lt/projektai /lt/informacija /lt/apie-mus /en/about /lt/kontaktai /lt/kalkuliatorius /en/quote /lt/paslaugos/3d-skenavimas /lt/paskyra/register зелёный (точечный прогон; полный — в F-05)"
+      ],
+      "constraints": [
+        "Не трогать ярлыки разделов, hero главной и боковой панели калькулятора"
+      ],
+      "unknowns": [],
+      "browser_check": [
+        "/lt/paslaugos",
+        "/en/services",
+        "/lt/produktai",
+        "/lt/projektai",
+        "/lt/informacija",
+        "/lt/apie-mus",
+        "/en/about",
+        "/lt/kontaktai",
+        "/lt/kalkuliatorius",
+        "/en/quote",
+        "/lt/paslaugos/3d-skenavimas",
+        "/lt/paskyra/register"
+      ]
+    },
+    {
+      "id": "F-03",
+      "title": "Г3: шаг 2 калькулятора — «Papildomos paslaugos (neprivaloma)» и «Nepasirinkta»",
+      "track": "L",
+      "slice": "S3",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261031/README.md (Г3)",
+        "aiqme-site/lang/lt/calculator.php",
+        "aiqme-site/lang/en/calculator.php",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check"
+      ],
+      "result": "Подпись поля — «Papildomos paslaugos (neprivaloma)» / «Additional services (optional)», вариант по умолчанию — «Nepasirinkta» / «Not selected»; значения и поведение прежние.",
+      "touches": [
+        "aiqme-site/lang/lt/calculator.php",
+        "aiqme-site/lang/en/calculator.php",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "lang: service и services.none LT/EN — дословно из таблицы Г3 README; ключ none, порядок вариантов и выбор по умолчанию не изменены",
+        "Тесты калькулятора и заказа (подписи шага 2, сводка, карточка заказа с none) — новые тексты; поведение сохранения не изменено",
+        "bin/browser-check: ожидания шага 2 — новые тексты; кадры calculator-step2-* снимаются"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check --signed-in /lt/kalkuliatorius /en/quote зелёный (точечный прогон; полный — в F-05)"
+      ],
+      "constraints": [],
+      "unknowns": [],
+      "browser_check": [
+        "--signed-in",
+        "/lt/kalkuliatorius",
+        "/en/quote"
+      ]
+    },
+    {
+      "id": "F-04",
+      "title": "Г4: без звёздочек в формах, form_note не выводится",
+      "track": "L",
+      "slice": "S4",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261031/README.md (Г4)",
+        "aiqme-site/lang/lt/public.php",
+        "aiqme-site/lang/en/public.php",
+        "aiqme-site/lang/lt/calculator.php",
+        "aiqme-site/lang/en/calculator.php",
+        "aiqme-site/lang/lt/account.php",
+        "aiqme-site/lang/en/account.php",
+        "aiqme-site/resources/views/public/contact.blade.php",
+        "aiqme-site/app/Domain/Content/ContentTypes.php",
+        "aiqme-site/bin/browser-check"
+      ],
+      "result": "В публичных формах и формах кабинета нет звёздочек и строки «* — būtini laukai.»; необязательные текстовые поля подписаны «(neprivaloma)» / «(optional)».",
+      "touches": [
+        "aiqme-site/lang/lt/",
+        "aiqme-site/lang/en/",
+        "aiqme-site/resources/views/ (кроме admin/)",
+        "aiqme-site/app/Domain/Content/ContentTypes.php (комментарий)",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "В lang/lt и lang/en (кроме admin.php) и в resources/views (кроме admin/) нет подписей полей с « *»: grep-команда и её пустой вывод записаны в progress.md",
+        "contact.blade.php не выводит form_note; поле form_note в ContentTypes, сидере и админке сохранено, в ContentTypes — комментарий «не выводится на сайте с 30.10»; миграции нет",
+        "В контактной форме, регистрации на обучение, контактных данных калькулятора и формах кабинета каждое необязательное текстовое поле или загрузка файла подписано «(neprivaloma)» / «(optional)» (сверено с правилами валидации; список полей в progress.md); атрибуты required и валидация не изменены",
+        "Тесты форм — подписи без звёздочки, form_note не выводится на /lt/kontaktai и /en/contact; bin/browser-check — сверка с эталоном исключает звёздочки и form_note (с комментарием); поиск маркеров зелёный"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check --signed-in /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote /lt/paslaugos/3d-modeliavimo-mokymai /lt/paskyra/register /en/account/register /lt/paskyra/login зелёный (точечный прогон; полный — в F-05)"
+      ],
+      "constraints": [
+        "Админку не менять"
+      ],
+      "unknowns": [],
+      "browser_check": [
+        "--signed-in",
+        "/lt/kontaktai",
+        "/en/contact",
+        "/lt/kalkuliatorius",
+        "/en/quote",
+        "/lt/paslaugos/3d-modeliavimo-mokymai",
+        "/lt/paskyra/register",
+        "/en/account/register",
+        "/lt/paskyra/login"
+      ]
+    },
+    {
+      "id": "F-05",
+      "title": "Сквозная проверка правок 30.10 и статус в docs/requirements.md",
+      "track": "L",
+      "slice": "S5",
+      "depends": [
+        "F-01",
+        "F-02",
+        "F-03",
+        "F-04"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261031/README.md",
+        "aiqme-site/docs/progress.md (разделы F-01…F-04)",
+        "docs/requirements.md"
+      ],
+      "result": "Г1–Г4 проверены вместе: полный bin/check и полный bin/browser-check зелёные, кадры просмотрены, в docs/requirements.md — раздел «Правки заказчика 30.10 (часть 2)».",
+      "touches": [
+        "docs/requirements.md (только новый раздел)",
+        "aiqme-site/docs/progress.md",
+        "исправления в aiqme-site/ только при найденных регрессиях F-01…F-04"
+      ],
+      "done": [
+        "aiqme-site/bin/check и полный aiqme-site/bin/browser-check (без путей) зелёные; итоги и число проверок записаны в progress.md",
+        "Каждый пункт «как должно стать» Г1–Г4 сверен с кодом и выводом проверок; в progress.md — строка «Г<n>: проверено …/не проверено …»; регрессии исправлены (крупные — status blocked)",
+        "Просмотрены (Read) и перечислены кадры: header-top-*/header-scrolled-* на 390 и 1440, верх /lt/paslaugos, /lt/kontaktai, /lt/apie-mus (phone и desktop), calculator-step2-*, формы контакта и регистрации; заметные дефекты описаны; нет кадра — «нет кадра»; сверка с макетами заказчика — «ждёт проверки пользователем»",
+        "git diff --name-status main...HEAD -- aiqme-site docs (плюс незакоммиченное) — файлы только из touches F-01…F-05; новые бинарные — только defaults/logo.png и logo-white.png",
+        "docs/requirements.md: новый раздел «Правки заказчика 30.10 (часть 2)» (новый логотип и размер, без ярлыка над заголовком, шаг 2, без звёздочек) со статусом «сделано в коде и проверено локально; на aiqme.com — после выпуска»; остальные разделы не изменены",
+        "progress.md: итог очереди и шаги пользователя для F-06 (вместе с E-11) со ссылкой на README плана"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)"
+      ],
+      "constraints": [
+        "Новых функций не добавлять",
+        "docs/planning/ не изменять",
+        "Демо не пересобирать"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "F-06",
+      "title": "Выпуск правок 28.10 и 30.10 на aiqme.com",
+      "track": "P",
+      "slice": "S6",
+      "depends": [
+        "F-05"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261031/README.md (F-06)",
+        "docs/planning/edits-20261029/tasks.json (E-11)",
+        "aiqme-site/docs/operations.md"
+      ],
+      "result": "Правки 28.10 (E-11) и 30.10 работают на aiqme.com.",
+      "touches": [
+        "рабочий сервер aiqme.com"
+      ],
+      "done": [
+        "Только по явному разрешению пользователя; всё из E-11 (копия БД, сначала ALTCHA_HMAC_KEY в .env, deploy, migrate, ручные проверки)",
+        "Слоты logo/logo_white в админке aiqme.com проверены: старый загруженный логотип удалён или заменён новым",
+        "Ручной просмотр на ПК и телефоне: шапка с новым логотипом, страницы без ярлыка, формы без звёздочек, шаг 2"
+      ],
+      "checks": [
+        "ручной просмотр по README"
+      ],
+      "constraints": [
+        "Не выполнять без явного разрешения пользователя",
+        "Push — только по указанию пользователя"
+      ],
+      "unknowns": []
+    }
+  ]
+}
