@@ -272,7 +272,7 @@ class PublicSectionsTest extends TestCase
         $this->assertSame('Konkrečios gamybos ribos nustatomos pagal projektą.', Html::text($lt->query('//article[@class="article"]/div[@class="notice gap"]')->item(0)));
         $this->assertSame(['Pradėkite nuo paskirties', 'Patikrinkite mastelį', 'Pažymėkite svarbias vietas'], Html::texts($lt, '//article[@class="article"]/h2'));
         $this->assertSame('LT · AIQME informacinis tekstas', Html::text($lt->query('//article/span[@class="tag"]')->item(0)));
-        $this->assertSame('NEMOKAMA BIBLIOTEKA', Html::text($lt->query('//section[@class="page-top"]//div[@class="eyebrow"]')->item(0)));
+        $this->assertCount(0, $lt->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
         $en = Html::xpath($this->get('/en/library/file-guide')->getContent());
         $this->assertSame('Specific manufacturing limits are set for each project.', Html::text($en->query('//article[@class="article"]/div[@class="notice gap"]')->item(0)));
         $this->assertSame(route('en.contact'), $en->query('//article[@class="article"]/a[@class="btn"]')->item(0)->getAttribute('href'));
@@ -422,5 +422,24 @@ class PublicSectionsTest extends TestCase
         $this->assertNotContains(route('en.projects'), $locs);
         $this->assertNotContains(route('lt.training'), $locs);
         $this->assertSame(['lt' => $project, 'x-default' => $project], $this->sitemapAlternates($project));
+    }
+
+    public function test_page_top_has_no_eyebrow_and_the_title_follows_the_breadcrumbs(): void
+    {
+        // Правка 30.10 (Г2): над h1 блока page-top ярлыка нет ни на одной странице; ярлыки разделов вне page-top остаются.
+        $this->factory()->catalog();
+        $pages = ['/lt/paslaugos', '/en/services', '/lt/produktai', '/lt/projektai', '/lt/informacija', '/lt/apie-mus', '/lt/kontaktai',
+            '/lt/paslaugos/3d-skenavimas', '/lt/produktai/norda-s1-skeneris', '/lt/biblioteka/file-guide', '/lt/kalkuliatorius', '/lt/paskyra/register'];
+        foreach ($pages as $path) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $this->assertCount(1, $xpath->query('//section[@class="page-top"]'), $path);
+            $this->assertCount(0, $xpath->query('//section[@class="page-top"]//*[contains(concat(" ", @class, " "), " eyebrow ")]'), $path);
+            $next = $xpath->query('//section[@class="page-top"]/div[@class="wrap"]/div[@class="breadcrumbs"]/following-sibling::*[1]')->item(0);
+            $this->assertSame('h1', $next?->nodeName, $path);
+        }
+        $about = Html::xpath($this->get('/lt/apie-mus')->getContent());
+        $this->assertSame(['APIE AIQME'], Html::texts($about, '//main//div[@class="eyebrow"]'));
+        $service = Html::xpath($this->get('/lt/paslaugos/3d-skenavimas')->getContent());
+        $this->assertContains('KADA NAUDINGA', Html::texts($service, '//main//div[@class="eyebrow"]'));
     }
 }

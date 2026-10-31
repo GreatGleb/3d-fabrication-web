@@ -6,7 +6,7 @@
 @php($locale = app()->getLocale())
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.products.show', ['slug' => $product->slug])"
     :languages="$languages" :switch-url="$switchUrl" :image="$ogImage" :noindex="$locale === 'ru'">
-    <x-page-top :title="$product->title" :intro="$category?->title" :eyebrow="__('public.product.eyebrow')" />
+    <x-page-top :title="$product->title" :intro="$category?->title" />
     <div class="wrap page-content product-detail">
         <div class="split" style="align-items:start">
             <div>

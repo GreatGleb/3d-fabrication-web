@@ -12,7 +12,7 @@
     $maxMb = intdiv($settings['max_file_bytes'], 1024 * 1024);
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.calculator')" :languages="$languages" :noindex="$locale === 'ru'">
-    <x-page-top :title="$heading" :intro="__('calculator.intro')" :eyebrow="__('calculator.eyebrow')" />
+    <x-page-top :title="$heading" :intro="__('calculator.intro')" />
     <div class="wrap page-content" id="quote" data-locale="{{ $locale }}" data-settings='@json($settings)'
          data-texts='@json(__('calculator.js') + ['mb' => $maxMb])' data-contact-url="{{ $contactUrl }}">
         <div class="steps">

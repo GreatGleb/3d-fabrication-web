@@ -35,7 +35,6 @@ return [
         'contact' => 'Aptarti projektą',
     ],
     'service' => [
-        'eyebrow' => 'AIQME / PASLAUGOS',
         'when' => 'KADA NAUDINGA',
         'need' => "Sprendimas prasideda\nnuo jūsų poreikio.",
         'enquiry' => 'Pateikti užklausą',
@@ -116,7 +115,6 @@ return [
         'documents_count' => 'DOKUMENTŲ: 0',
     ],
     'article' => [
-        'eyebrow' => 'NEMOKAMA BIBLIOTEKA',
         'tag' => 'LT · AIQME informacinis tekstas',
         'limits' => 'Konkrečios gamybos ribos nustatomos pagal projektą.',
         'ask' => 'Paklausti apie savo projektą',
@@ -175,7 +173,6 @@ return [
         'compare_limit' => 'Galite palyginti iki 4 produktų.',
     ],
     'product' => [
-        'eyebrow' => 'AIQME / PRODUKTAI',
         'main_view' => 'Pagrindinis vaizdas',
         'view' => 'Vaizdas :number',
         'quotation' => 'Individualus pasiūlymas',

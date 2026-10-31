@@ -181,7 +181,7 @@ class CatalogTest extends TestCase
         $html = $this->get('/en/products/vekta-p2-printer')->assertOk()->getContent();
         $xpath = Html::xpath($html);
         $this->assertSame('VEKTA P2 printer', Html::text($xpath->query('//h1')->item(0)));
-        $this->assertSame(['AIQME / PRODUCTS'], Html::texts($xpath, '//section[@class="page-top"]//div[@class="eyebrow"]'));
+        $this->assertSame([], Html::texts($xpath, '//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
         $this->assertSame(['3D printers'], Html::texts($xpath, '//section[@class="page-top"]//p'));
         $this->assertSame(['VEKTA'], Html::texts($xpath, '//span[@class="tag blue"]'));
         $this->assertSame('An FDM printer for functional parts.', Html::text($xpath->query('//p[@class="lead"]')->item(0)));

@@ -3,7 +3,7 @@
      Разметка — блоки карточки заказа прототипа (panel, notice success, summary-row); тексты — нейтральные (progress.md). --}}
 @php($locale = app()->getLocale())
 <x-layout :title="__('calculator.order.submitted_title')" :description="__('calculator.order.submitted_title')" :noindex="true">
-    <x-page-top :title="__('calculator.order.submitted_title')" :eyebrow="__('calculator.eyebrow')" />
+    <x-page-top :title="__('calculator.order.submitted_title')" />
     <div class="wrap page-content">
         <div class="panel" data-order-number="{{ $submitted['number'] }}">
             <div class="notice success">{{ __('calculator.order.submitted_text', ['number' => $submitted['number']]) }}</div>

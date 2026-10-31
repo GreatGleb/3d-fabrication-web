@@ -151,7 +151,7 @@ class ShellTest extends TestCase
         $this->assertSame([['Pagrindinis', route('lt.home')]], $this->links($xpath, '//section[@class="page-top"]//div[@class="breadcrumbs"]/a'));
         $this->assertSame(['Pagrindinis', '/', 'Paslaugos jūsų idėjoms ir detalėms.'],
             array_map(fn ($node) => $node->textContent, iterator_to_array($xpath->query('//div[@class="breadcrumbs"]/*'))));
-        $this->assertSame('AIQME', $xpath->query('//section[@class="page-top"]//div[@class="eyebrow"]')->item(0)->textContent);
+        $this->assertCount(0, $xpath->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
         $this->assertSame('Paslaugos jūsų idėjoms ir detalėms.', $xpath->query('//section[@class="page-top"]//h1')->item(0)->textContent);
         $this->assertSame('Nuo vienos užduoties iki viso gamybos proceso. Aiškiai sutariame apimtį, eigą ir rezultatą.',
             $xpath->query('//section[@class="page-top"]//p')->item(0)->textContent);

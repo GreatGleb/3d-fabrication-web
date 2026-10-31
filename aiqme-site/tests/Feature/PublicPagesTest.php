@@ -154,7 +154,7 @@ class PublicPagesTest extends TestCase
         $html = $this->get('/en/services/3d-scanning')->assertOk()->getContent();
         $xpath = Html::xpath($html);
 
-        $this->assertSame('AIQME / SERVICES', Html::text($xpath->query('//section[@class="page-top"]//div[@class="eyebrow"]')->item(0)));
+        $this->assertCount(0, $xpath->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
         $this->assertSame('Turn a physical part into a digital 3D model.', Html::text($xpath->query('//section[@class="page-top"]//p')->item(0)));
         $this->assertSame(['Changed step'], Html::texts($xpath, '//div[@class="section dark panel"]//h3'));
         $this->assertSame(['Is a scan immediately ready for manufacturing?', 'What determines the lead time?'], Html::texts($xpath, '//details[@class="faq"]/summary'));

@@ -4,7 +4,7 @@
      закрыт, «оплата временно недоступна». Разметка — блоки карточки заказа прототипа (panel, summary-row, notice). --}}
 @php($amount = \Illuminate\Support\Number::currency($payment->amount / 100, in: 'EUR', locale: app()->getLocale()))
 <x-layout :title="__('checkout.title')" :description="__('calculator.order.title', ['number' => $number])" noindex>
-    <x-page-top :title="__('checkout.title')" :eyebrow="__('calculator.eyebrow')" />
+    <x-page-top :title="__('checkout.title')" />
     <div class="wrap page-content">
         <div class="panel" id="checkout" data-checkout-status="{{ $status }}">
             <h2>{{ __('calculator.order.title', ['number' => $number]) }}</h2>

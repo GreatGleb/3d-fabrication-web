@@ -35,7 +35,6 @@ return [
         'contact' => 'Discuss a project',
     ],
     'service' => [
-        'eyebrow' => 'AIQME / SERVICES',
         'when' => 'WHEN IT HELPS',
         'need' => "The solution starts\nwith your need.",
         'enquiry' => 'Start an enquiry',
@@ -116,7 +115,6 @@ return [
         'documents_count' => 'DOCUMENTS: 0',
     ],
     'article' => [
-        'eyebrow' => 'FREE LIBRARY',
         'tag' => 'EN · AIQME informational guide',
         'limits' => 'Specific manufacturing limits are set for each project.',
         'ask' => 'Ask about your project',
@@ -175,7 +173,6 @@ return [
         'compare_limit' => 'Compare up to 4 products.',
     ],
     'product' => [
-        'eyebrow' => 'AIQME / PRODUCTS',
         'main_view' => 'Main view',
         'view' => 'View :number',
         'quotation' => 'Tailored quotation',

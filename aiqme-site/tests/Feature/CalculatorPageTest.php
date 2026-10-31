@@ -51,7 +51,7 @@ class CalculatorPageTest extends TestCase
     {
         $lt = $this->page('/lt/kalkuliatorius');
         $this->assertSame(['1Failai', '2Gamyba', '3Patikra', '4Kaina', '5Užsakymas'], Html::texts($lt, '//div[@class="steps"]/button'));
-        $this->assertSame('AIQME / GAMYBOS UŽSAKYMAS', Html::text($lt->query('//section[@class="page-top"]//div[@class="eyebrow"]')->item(0)));
+        $this->assertCount(0, $lt->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
 
         $en = $this->page('/en/quote');
         $this->assertSame(['1Files', '2Production', '3Review', '4Price', '5Checkout'], Html::texts($en, '//div[@class="steps"]/button'));

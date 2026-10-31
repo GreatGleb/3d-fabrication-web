@@ -4,7 +4,7 @@
 @php($locale = app()->getLocale())
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.library.show', ['slug' => $article->slug])"
     :languages="$languages" :switch-url="$switchUrl" :noindex="$locale === 'ru'">
-    <x-page-top :title="$article->title" :intro="$article->field('intro')" :eyebrow="__('public.article.eyebrow')" />
+    <x-page-top :title="$article->title" :intro="$article->field('intro')" />
     <div class="wrap page-content">
         <article class="article">
             <span class="tag">{{ __('public.article.tag') }}</span>

@@ -74,6 +74,8 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 Новый логотип (правка 30.10, Г1): check_logo на /lt и /en при 320/390/600/768/901/1024/1150/1440 — ширина .header .logo
 по LOGO_WIDTHS (220/180/140, на 320 — 132 ±1), не пересекается с .nav (если видна) и .tools, логотип и значки в строке .head-main,
 меню не выше, чем с логотипом ширины прототипа, документ не шире окна, белый логотип совпадает с обычным ±1 px.
+Без ярлыка над заголовком (правка 30.10, Г2): check_styles (1440/768/390) — в .page-top нет .eyebrow, отступ крошки → h1
+не меньше 26 px (прежний отступ над ярлыком); сверка текста с эталоном исключает ярлык page-top (TEXT_EXCLUDED_BLOCKS).
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -416,6 +418,9 @@ STYLE_PROBE = """() => {
         headerDark: document.querySelector('.header').classList.contains('header--dark'),
         pageTopBackground: css('.page-top', 'backgroundColor'),
         pageTopText: document.querySelector('.page-top p') ? css('.page-top p', 'color') : null,
+        pageTopEyebrow: document.querySelectorAll('.page-top .eyebrow').length,
+        pageTopGap: (() => { const crumbs = document.querySelector('.page-top .breadcrumbs'); const title = document.querySelector('.page-top h1');
+            return crumbs && title ? title.getBoundingClientRect().top - crumbs.getBoundingClientRect().bottom : null; })(),
         footerBackground: css('.footer', 'backgroundColor'),
         buttons: [...document.querySelectorAll('.btn:not(.small)')].filter(visible).map((b) => [b.getBoundingClientRect().height, getComputedStyle(b).borderRadius]),
         hero: !!document.querySelector('main .hero h1'),
@@ -477,6 +482,10 @@ def check_styles(report, page, path, width):
     report.check(got['headerBorder'] == 'rgba(255, 255, 255, 0.12)', f'{where}: линия шапки {got["headerBorder"]}')
     report.check(got['pageTopBackground'] in (None, 'rgb(243, 246, 249)'), f'{where}: фон page-top {got["pageTopBackground"]}')
     report.check(got['pageTopText'] in (None, 'rgb(100, 113, 126)'), f'{where}: цвет вводного текста {got["pageTopText"]}')
+    # Правка 30.10 (Г2): ярлыка над h1 в page-top нет; отступ крошки → h1 не меньше прежнего крошки → ярлык
+    # (.breadcrumbs margin-bottom: 26px в CSS прототипа, на всех ширинах).
+    report.check(got['pageTopEyebrow'] == 0, f'{where}: ярлык над h1 в page-top ({got["pageTopEyebrow"]})')
+    report.check(got['pageTopGap'] is None or got['pageTopGap'] >= 25.5, f'{where}: отступ крошки → h1 {got["pageTopGap"]} < 26')
     report.check(got['footerBackground'] == 'rgb(255, 255, 255)', f'{where}: подвал не светлый {got["footerBackground"]}')
     for height, radius in got['buttons']:
         report.check(height >= 48 and radius == '3px', f'{where}: кнопка {height}px, радиус {radius}')
@@ -895,9 +904,12 @@ D21_REPLACEMENTS = [
     (' Manufacturer technical documents and translations are not added until provided.', ''),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
-# черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет).
+# черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),
+# ярлык над h1 блока page-top («AIQME», «AIQME / PASLAUGOS» и т. п.; правка 30.10, Г2: у нас его нет). Пятый элемент — дед
+# узла: div.wrap есть и у hero главной, его ярлык остаётся.
 TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/apie-mus|en/about)$'), ('div', {'grid', 'two'}, None, ('div', {'gap'})),
-                        ('div', {'eyebrow'}, None, ('div', {'service-feature-copy'}))]
+                        ('div', {'eyebrow'}, None, ('div', {'service-feature-copy'})),
+                        ('div', {'eyebrow'}, None, ('div', {'wrap'}), ('section', {'page-top'}))]
 NO_TEXT = {'script', 'style', 'template', 'noscript', 'svg'}
 
 
@@ -949,9 +961,12 @@ def reference_phrases(path, has_project):
             tag, classes = rule[0], rule[1]
             page_rule = rule[2] if len(rule) > 2 else None
             parent_rule = rule[3] if len(rule) > 3 else None
+            grand_rule = rule[4] if len(rule) > 4 else None
             if node['tag'] == tag and node['cls'] == classes and (page_rule is None or re.search(page_rule, path)):
                 parent = node['parent']
-                if parent_rule is None or (parent['tag'] == parent_rule[0] and parent['cls'] == parent_rule[1]):
+                grand = parent['parent'] or {'tag': None, 'cls': set()}
+                if (parent_rule is None or (parent['tag'] == parent_rule[0] and parent['cls'] == parent_rule[1])) \
+                        and (grand_rule is None or (grand['tag'] == grand_rule[0] and grand['cls'] == grand_rule[1])):
                     return True
         if 'project-card' in node['cls']:
             return True  # пример — карточка опубликованного проекта (данные, а не шаблон); без него не выводится (§4.1)

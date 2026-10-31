@@ -2,7 +2,7 @@
 @php($locale = app()->getLocale())
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.services.show', ['slug' => $service->slug])"
     :languages="$languages" :switch-url="$switchUrl" :image="$image" :noindex="$locale === 'ru'">
-    <x-page-top :title="$service->title" :intro="$service->field('short')" :eyebrow="__('public.service.eyebrow')" />
+    <x-page-top :title="$service->title" :intro="$service->field('short')" />
     <div class="wrap page-content">
         <div class="split">
             <div>

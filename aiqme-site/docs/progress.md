@@ -3994,3 +3994,45 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Исправление: в этом тесте фразы ищутся в HTML без значений `nonce="…"` (как уже делают `LocaleRoutesTest`,
   `PrototypeRoutesTest`, `ShellTest`). Поведение страницы не менялось.
 - Повторно: **`bin/check` → OK**; **`bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/kontaktai` → OK (7283 проверок)**.
+
+## Правки 30.10, F-02 (Г2): без ярлыка над заголовком страницы (x-page-top)
+
+### Сделано
+- `resources/views/components/page-top.blade.php`: нет `div.eyebrow` и свойства `eyebrow`; комментарий — «Ярлыка над h1 нет
+  (правка 30.10, Г2)». После хлебных крошек сразу h1 на всех 28 страницах с компонентом.
+- Вызовы `x-page-top` без `:eyebrow`: `service`, `product`, `article`, `calculator`, `checkout`, `order-confirmation`.
+- Ключи lang (grep по `app`, `resources`, `bin`, `database`, `tests`, `lang`):
+  - `public.service.eyebrow`, `public.product.eyebrow`, `public.article.eyebrow` — больше нигде не используются, удалены в LT и EN;
+  - `calculator.eyebrow` — **оставлен**: используется в `account/order.blade.php` (ярлык над «Užsakymas …» в кабинете, не page-top);
+  - `calculator.summary.eyebrow` (PRELIMINARI SĄMATA), `public.articles.*`, поля `*_eyebrow` главной и «О нас» — не тронуты.
+- Ярлыки разделов (`KADA NAUDINGA`, «APIE AIQME», hero «3D ENGINEERING & TECHNOLOGY», боковая панель калькулятора) не тронуты.
+- CSS не менялся: в прототипе `.breadcrumbs{margin-bottom:26px}` на всех ширинах, у ярлыка верхнего отступа нет — отступ
+  крошки → h1 остаётся 26 px (прежний крошки → ярлык).
+- Тесты: новый `PublicSectionsTest::test_page_top_has_no_eyebrow_and_the_title_follows_the_breadcrumbs` — на `/lt/paslaugos`,
+  `/en/services`, `/lt/produktai`, `/lt/projektai`, `/lt/informacija`, `/lt/apie-mus`, `/lt/kontaktai`, услуге
+  `/lt/paslaugos/3d-skenavimas`, товаре `/lt/produktai/norda-s1-skeneris`, статье `/lt/biblioteka/file-guide`,
+  `/lt/kalkuliatorius`, `/lt/paskyra/register`: в `section.page-top` нет `.eyebrow`, первый элемент после `.breadcrumbs` — h1;
+  «APIE AIQME» и «KADA NAUDINGA» вне page-top на месте. Прежние ожидания ярлыка page-top в `ShellTest`, `PublicPagesTest`,
+  `CatalogTest`, `PublicSectionsTest`, `CalculatorPageTest` заменены на «ярлыка нет» (прямо следует из правки).
+- `bin/browser-check`: в `TEXT_EXCLUDED_BLOCKS` добавлен ярлык page-top (`div.eyebrow` с родителем `div.wrap` и дедом
+  `section.page-top`; пятый элемент правила — дед, т. к. `div.wrap > div.eyebrow` есть и у hero главной, его ярлык
+  сверяется как прежде), с комментарием. В `check_styles` (1440/768/390): в `.page-top` нет `.eyebrow`, отступ низ крошек →
+  верх h1 ≥ 26 px. Проверено чтением эталона через `reference_phrases`: на `/lt` «3D ENGINEERING & TECHNOLOGY» остаётся,
+  на `/lt/paslaugos` и `/lt/kalkuliatorius` ярлык page-top исключён.
+- `tests/fixtures/marker-allowlist.json`: записей, относящихся к ярлыку page-top, нет (38 записей — про prototipai/pavyzd…
+  в текстах) — файл не менялся.
+
+### Проверки
+- Падает до правки (один раз): старый `page-top.blade.php` из HEAD → новый тест FAIL («/lt/paslaugos … actual size 1»);
+  файл возвращён.
+- `bin/php artisan test --compact tests/Feature/PublicSectionsTest.php --filter=page_top` → passed (1 тест, 50 проверок).
+- `bin/php vendor/bin/pint --dirty --format agent` → fixed (пустая строка между методами в PublicSectionsTest).
+- **`bin/browser-check /lt/paslaugos /en/services /lt/produktai /lt/projektai /lt/informacija /lt/apie-mus /en/about
+  /lt/kontaktai /lt/kalkuliatorius /en/quote /lt/paslaugos/3d-skenavimas /lt/paskyra/register` → OK (2478 проверок)**.
+- **`bin/check` → OK** (PHPUnit 704 теста, 75 256 проверок; Vite build OK).
+- `git status --porcelain aiqme-site`: только изменённые файлы (шаблоны, lang, тесты, `bin/browser-check`, этот файл), новых нет.
+
+### Не проверено
+- Вид страниц без ярлыка глазами на ПК и телефоне — **ждёт проверки пользователем**.
+- Полный `bin/browser-check` без путей — по плану в F-05; `bin/demo-check` не запускался (демо не пересобирается;
+  старая сборка demo/ ещё содержит ярлык).
