@@ -115,7 +115,9 @@ class CalculatorPageTest extends TestCase
         $this->assertSame('20', $selected($en, 'infill'));
         $this->assertSame(['Visual purposes', 'Practical use', 'Consultation needed'], Html::texts($en, '//select[@name="purpose"]/option'));
         $this->assertSame('', $selected($en, 'purpose'));
-        $this->assertSame(['Not needed', 'Sanding and painting', 'Threaded insert installation', 'Part assembly', 'Consultation needed'], Html::texts($en, '//select[@name="service"]/option'));
+        $this->assertSame(['Not selected', 'Sanding and painting', 'Threaded insert installation', 'Part assembly', 'Consultation needed'], Html::texts($en, '//select[@name="service"]/option'));
+        $this->assertSame('none', $en->query('//select[@name="service"]/option[1]')->item(0)->getAttribute('value'));
+        $this->assertSame('Additional services (optional)', trim($en->query('//label[select[@name="service"]]/text()[1]')->item(0)->textContent));
         $this->assertSame('', $selected($en, 'service'));
         $this->assertSame(['High', 'Standard', 'Simplified', 'Consultation needed'], Html::texts($en, '//select[@name="surface"]/option'));
         $this->assertSame('standard', $selected($en, 'surface'));
@@ -141,7 +143,8 @@ class CalculatorPageTest extends TestCase
             $labels[] = trim($lt->query('//label[select[@name="'.$name.'"]]/text()[1]')->item(0)->textContent);
         }
         $labels[] = trim($lt->query('//label[textarea[@name="notes"]]/text()[1]')->item(0)->textContent);
-        $this->assertSame(['Medžiaga', 'Spalva', 'Detalės paskirtis', 'Papildomos paslaugos', 'Paviršiaus kokybė', 'Užpildas', 'Gamybos terminas', 'Papildoma informacija'], $labels);
+        $this->assertSame(['Medžiaga', 'Spalva', 'Detalės paskirtis', 'Papildomos paslaugos (neprivaloma)', 'Paviršiaus kokybė', 'Užpildas', 'Gamybos terminas', 'Papildoma informacija'], $labels);
+        $this->assertSame(['Nepasirinkta', 'Šlifavimas ir dažymas', 'Srieginių įvorių montavimas', 'Detalių surinkimas', 'Reikia konsultacijos'], Html::texts($lt, '//select[@name="service"]/option'));
         $this->assertSame('FDM parametrai', Html::text($lt->query('//*[@data-step-panel="1"]//*[contains(@class, "inset")]/h3')->item(0)));
     }
 

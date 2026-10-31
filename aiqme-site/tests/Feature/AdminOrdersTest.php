@@ -419,7 +419,7 @@ class AdminOrdersTest extends TestCase
         $job = substr($job, 0, strpos($job, '</div>', strpos($job, 'Automatic print launch')) ?: null);
 
         foreach (['Staff job handoff', OrderMeta::where('order_id', $order->id)->value('number').' · Bambu Studio', 'bracket.stl', 'cover.stl',
-            'PLA', 'Infill 100%', 'Colour: Blue', 'Part purpose: Practical use', 'Additional services: Threaded insert installation',
+            'PLA', 'Infill 100%', 'Colour: Blue', 'Part purpose: Practical use', 'Additional services (optional): Threaded insert installation',
             'Surface quality: High', 'Production lead time: Urgent', 'Units: mm', 'Scale, % 100', 'Automatic print launch is not connected.'] as $text) {
             $this->assertStringContainsString(e($text), $job, $text);
         }
@@ -451,6 +451,14 @@ class AdminOrdersTest extends TestCase
         $this->card($order)->assertSee('Infill 20% · Consultation needed');
         app()->setLocale('lt');
         $this->card($order)->assertSee('Užpildas 20% · Reikia konsultacijos');
+    }
+
+    public function test_order_without_additional_service_shows_not_selected_in_en_and_lt(): void
+    {
+        $order = $this->submitted(preferences: ['color' => 'blue', 'purpose' => 'practical', 'service' => 'none', 'surface' => 'high', 'term' => 'priority'])[0];
+        $this->card($order)->assertOk()->assertSee('Additional services (optional): Not selected');
+        app()->setLocale('lt');
+        $this->card($order)->assertOk()->assertSee('Papildomos paslaugos (neprivaloma): Nepasirinkta');
     }
 
     public function test_order_from_before_28_10_shows_previous_labels_in_en_and_lt(): void

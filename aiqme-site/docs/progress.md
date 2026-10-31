@@ -4036,3 +4036,34 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид страниц без ярлыка глазами на ПК и телефоне — **ждёт проверки пользователем**.
 - Полный `bin/browser-check` без путей — по плану в F-05; `bin/demo-check` не запускался (демо не пересобирается;
   старая сборка demo/ ещё содержит ярлык).
+
+## Правки 30.10, F-03 (Г3): шаг 2 калькулятора — «Papildomos paslaugos (neprivaloma)» и «Nepasirinkta»
+
+- `lang/lt/calculator.php`, `lang/en/calculator.php`: `settings.service` → «Papildomos paslaugos (neprivaloma)» /
+  «Additional services (optional)», `settings.services.none` → «Nepasirinkta» / «Not selected» (дословно из таблицы Г3).
+  Ключи, значение `none`, порядок вариантов и выбор по умолчанию не менялись; шаблоны, JS и сохранение заказа не трогались.
+- Подпись поля берётся из того же ключа и в сводке/ссылке специалиста (`resources/js/calculator/index.js`, `parameters()`),
+  и в карточке заказа админки (`orders-card.blade.php`) — там теперь «Additional services (optional): …». Решено простейшим
+  образом (ключ общий, отдельный ключ без «(optional)» не заводился) — это прямое следствие правки. В кабинете клиента
+  пожелания не выводятся; письма о заказе пожеланий не содержат (проверено поиском `preferences`/`calculator.settings`).
+- Тесты: `CalculatorPageTest::test_step_two_follows_customer_layout_of_28_10` — EN варианты с «Not selected», первый вариант
+  имеет value `none`, подпись EN «Additional services (optional)»; LT подписи с «Papildomos paslaugos (neprivaloma)» и LT
+  варианты с «Nepasirinkta». `AdminOrdersTest`: ожидание листа Bambu — «Additional services (optional): Threaded insert
+  installation»; новый `test_order_without_additional_service_shows_not_selected_in_en_and_lt` — заказ с `service=none` в
+  карточке EN/LT. Сохранение `service=none` — прежний `OrderSubmissionTest` (без изменений, зелёный).
+- `bin/browser-check` (`check_calculator`, шаг 2): подпись поля услуг и выбранный по умолчанию вариант (`none`, «Nepasirinkta» /
+  «Not selected») дословно; кадры `calculator-step2-390/1440.png` снимаются (просмотрен кадр 1440: подпись «Additional
+  services (optional)» на месте, вёрстка не сдвинута).
+
+### Проверки
+- Падает до правки (один раз): lang из HEAD → 3 FAIL (`test_step_two_follows_customer_layout_of_28_10`,
+  `test_bambu_job_sheet_…`, `test_order_without_additional_service_…`); новые lang возвращены.
+- `bin/php artisan test --compact tests/Feature/CalculatorPageTest.php tests/Feature/AdminOrdersTest.php tests/Feature/OrderSubmissionTest.php`
+  → passed (54 теста, 855 проверок); `pint --dirty` → passed.
+- **`bin/browser-check --signed-in /lt/kalkuliatorius /en/quote` → OK (6559 проверок)**.
+- **`bin/check` → OK** (PHPUnit 705 тестов, 75 264 проверки; Vite build OK).
+- `git status --porcelain aiqme-site`: только изменённые файлы (lang ×2, 2 теста, `bin/browser-check`, этот файл), новых нет.
+
+### Не проверено
+- Шаг 2 на телефоне глазами (кадр 390 снят, но не просмотрен человеком) — **ждёт проверки пользователем**.
+- Полный `bin/browser-check` — в F-05; `bin/demo-check` не запускался (демо не пересобирается, в старой сборке прежние тексты).

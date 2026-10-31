@@ -1946,6 +1946,11 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     for technology in ('SLA', 'SLS', 'Metal'):
         report.check(not re.search(rf'\b{technology}\b', panel().inner_text()), f'{where}: на шаге 2 есть «{technology}»')
     report.check(page.locator('select[name=quality], select[name=layer], select[name=finish]').count() == 0, f'{where}: на шаге 2 старые select')
+    # Правка 30.10 (Г3, F-03): подпись «… (neprivaloma)», по умолчанию выбран none — «Nepasirinkta» / «Not selected».
+    service_label = page.locator('label:has(select[name=service])').evaluate('(label) => label.firstChild.textContent.trim()')
+    report.check(service_label == ('Additional services (optional)' if en else 'Papildomos paslaugos (neprivaloma)'), f'{where}: подпись услуг «{service_label}»')
+    service_default = page.locator('select[name=service]').evaluate('(select) => [select.value, select.selectedOptions[0].textContent.trim()]')
+    report.check(service_default == ['none', 'Not selected' if en else 'Nepasirinkta'], f'{where}: услуга по умолчанию {service_default}')
     page.select_option('select[name=material]', 'PLA')
     cents = lambda: int(page.locator('[data-total]').get_attribute('data-cents') or -1)
     page.select_option('select[name=infill]', '20')
