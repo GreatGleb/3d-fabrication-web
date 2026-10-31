@@ -4116,3 +4116,97 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Формы глазами на ПК и телефоне (длинные подписи адресов с «(neprivaloma)» в две колонки) — **ждёт проверки пользователем**.
 - Вкладка адресов кабинета в bin/browser-check этого прогона не открывалась (нет в списке путей задачи) — проверена только
   PHPUnit; полный bin/browser-check — в F-05. `bin/demo-check` не запускался (демо не пересобирается, старая сборка со звёздочками).
+
+## Правки 30.10, F-05: сквозная проверка правок 30.10 (Г1–Г4) и статус в docs/requirements.md
+
+Проверено одно дерево: ветка `auto/night-2026-10-31-0400`, HEAD `cdf919b` (F-01…F-04 закоммичены), изменения кода в F-05 —
+нет (регрессий не найдено). Изменены только `docs/requirements.md` (новый раздел) и этот файл.
+
+### Проверки на одном дереве
+- **`bin/check` → OK** (EXIT 0): PHPUnit **709 passed, 75 537 assertions** (397 с), Vite build OK; Pint, Node-тесты
+  калькулятора, PostgreSQL dev, шаг зависимостей — OK. Журнал — `/tmp/f05-check.log` (не отслеживается).
+- **Полный `bin/browser-check` (без путей) → `bin/browser-check: OK (20468 проверок)`**, ошибок 0, EXIT 0; 99 страниц,
+  вход администратора и клиента, кабинет, все вкладки админки LT/EN, `/ru/` (19 адресов), сброс пароля по письму из Mailpit.
+  Сводка `build/verification/browser-check/summary.md` (07:48): «Прерванные запросы к чужим хостам: нет»; «Карта Google Maps
+  (контакты): подменена заглушкой 37 раз»; `text-discrepancies.md` — «Расхождений нет». Поиск маркеров D-21 — в составе
+  прогона, совпадений вне `marker-allowlist.json` нет. Первый запуск был прерван мной (команда сессии ограничена 10 мин),
+  повторный шёл отдельным процессом (`setsid … timeout 3500`), сессия ждала его завершения в переднем плане;
+  журнал — `/tmp/f05-browser.log`.
+
+### Сверка «как должно стать» с кодом и выводом проверок
+- **Г1: проверено** — `public/defaults/logo.png` и `logo-white.png` байт в байт совпадают с `docs/planning/edits-20261031/logo/`
+  (sha256 `176c42ec…` и `11b4ea58…`, `sha256sum` обеих пар), `logo.jpg` нет; `config/aiqme.php` → `defaults/logo.png`;
+  `shell.css`: `.header .logo` 220/180/140 px (+132 px на ≤360, отступление F-01); `check_logo` (ширины, непересечение
+  с `.nav`/`.tools`, белый логотип ±1 px, ширина документа) в полном прогоне зелёный; `DefaultMediaTest`/`ShellTest` —
+  в bin/check. **Не проверено**: вид на телефоне человеком, слоты админки на aiqme.com (F-06), переключение шторки — только
+  автоматически (кадры top/scrolled ниже).
+- **Г2: проверено** — `components/page-top.blade.php` без `eyebrow`; `grep x-page-top … eyebrow` по `resources/views` — 0;
+  тест `PublicSectionsTest::test_page_top_has_no_eyebrow_…` — в bin/check; `check_styles` (нет `.eyebrow` в `.page-top`,
+  отступ крошки → h1) и сверка текста с эталоном — в полном прогоне зелёные. **Не проверено**: глазами на всех 28 страницах
+  (просмотрены кадры трёх, см. ниже).
+- **Г3: проверено** — `lang/lt/calculator.php`: «Papildomos paslaugos (neprivaloma)», `none` → «Nepasirinkta»;
+  `lang/en/calculator.php`: «Additional services (optional)», «Not selected» — дословно по таблице Г3; `check_calculator`
+  (подпись и вариант по умолчанию) и тесты калькулятора/админки — зелёные. **Не проверено**: письма — по F-03 пожеланий не
+  содержат (чтение кода).
+- **Г4: проверено** — `grep -rnE " \*'|\*<" lang/lt lang/en resources/views --exclude=admin.php --exclude-dir=admin` и
+  расширенный поиск звёздочки после слова/`>*<` (также `resources/js`) — пусто; `form_note` в `resources/views` не выводится
+  (`grep form_note resources/views` — пусто); `FormLabelsTest`, `AuthTest`, `AccountProfileTest` — в bin/check; вкладка
+  адресов кабинета впервые прошла в браузере (полный прогон, вход клиента). **Не проверено**: длинные подписи глазами на
+  телефоне человеком.
+
+### Просмотренные кадры (Read, `build/verification/browser-check/shots/`)
+- `header-top-lt-1440`, `header-scrolled-lt-1440`, `header-top-lt-390`, `header-scrolled-lt-390`: новый логотип вверху белый
+  на тёмной шапке, после прокрутки чёрный на белой; не касается меню и значков; на 390 логотип, поиск, LT/EN, кабинет,
+  корзина и меню в одну строку. Дефектов не замечено. (Есть также `header-*-lt__apie-mus-*` и `header-*-en__admin-1440` —
+  не открывались.)
+- Верх `/lt/paslaugos` (`lt__paslaugos-desktop`, `-phone`), `/lt/kontaktai` (`lt__kontaktai-desktop`, `-phone`),
+  `/lt/apie-mus` (`lt__apie-mus-desktop`, `-phone`): после крошек сразу h1, ярлыка нет, отступ крошки → h1 ровный;
+  «APIE AIQME» (раздел) на месте. На «Kontaktai» под «Projekto užklausa» сразу поля, строки «* — būtini laukai.» нет.
+- `calculator-step2-1440`, `calculator-step2-390`: подпись «Papildomos paslaugos (neprivaloma)», вёрстка не сдвинута; на кадре
+  выбран вариант сценария «Srieginių įvorių montavimas», поэтому «Nepasirinkta» на кадре не видно (вариант по умолчанию
+  проверен `check_calculator`). **Замечено**: на кадре 390 поверх поля «Spalva» видна ссылка «Pereiti prie turinio»
+  (skip-link в фокусе в момент снимка элемента). F-01…F-04 skip-link и этот снимок не меняли (`git diff main...HEAD` —
+  совпадений нет) — особенность кадра проверки, не регрессия; не исправлялось.
+- Формы: `lt__kontaktai-desktop` и `altcha-contact-1440` (EN) — «Vardas», «El. paštas» без «*», «Įmonė/Telefonas/Failai ir
+  nuotraukos/Target date (optional)» с пометкой; `lt__paskyra__register-desktop`, `altcha-register-390` — «Vardas»,
+  «El. paštas», «Slaptažodis» без «*»; `altcha-training-390` — окно обучения без «*» (ярлык «AIQME» в шапке окна — не
+  `x-page-top`, Г2 его не касается, не менялся); `lt__paskyra__addresses-signed-in-1440`, `-390` — 7 полей с «(neprivaloma)»,
+  в две колонки на 1440 строки ровные. Заметных дефектов нет.
+- Нет кадра: отдельного кадра формы входа/восстановления пароля среди просмотренных нет (есть `*__login-*`, `*__reset-*` —
+  не открывались).
+- Сверка с макетами заказчика — **ждёт проверки пользователем**.
+
+### Файлы очереди
+- `git diff --name-status main...HEAD -- aiqme-site docs` + незакоммиченное (`git status --porcelain`: только
+  `docs/requirements.md` и этот файл): изменены шаблоны (`page-top`, 6 вызовов, `contact`, `account/tabs/addresses`),
+  lang LT/EN (`public`, `calculator`, `account`), `config/aiqme.php`, `ContentTypes.php`, `resources/css/shell.css`,
+  `bin/browser-check`, тесты (12 файлов, из них новый `FormLabelsTest.php`), `docs/progress.md`, `docs/requirements.md`.
+  Бинарные: добавлен только `public/defaults/logo.png`, изменён `logo-white.png`, удалён `logo.jpg` (по F-01).
+  `prototype/style.css`, `experiments/`, `demo/`, `marker-allowlist.json` не менялись. Всё — в touches F-01…F-05.
+
+### docs/requirements.md
+- Новый раздел «Правки заказчика 30.10 (часть 2)» после «Правки заказчика 28.10»: Г1–Г4, статус каждой строки «сделано в коде
+  и проверено локально; на aiqme.com — после выпуска». Остальные разделы не изменены (`git diff docs/requirements.md` —
+  только добавленные строки).
+
+### Не проверено
+- Ручной просмотр на телефоне и ПК, сверка с макетами заказчика — **ждёт проверки пользователем**.
+- `bin/demo-check` и режим `--base-url/--compose-file` — не запускались (демо не пересобирается; проверено чтением кода;
+  выполнение — ждёт пользователя). Safari/Firefox — нет.
+- Наблюдения F-01, оставленные пользователю: LT-меню на 1151–1163 px переносит «Apie mus» при логотипе 220 px (вне
+  контрольных ширин README); на 901 px перенос «Apie mus» — прежнее поведение прототипа.
+
+### Итог очереди F-01…F-05
+Г1–Г4 сделаны в коде и проверены локально (bin/check 709 тестов; полный bin/browser-check 20 468 проверок, оба зелёные).
+На aiqme.com не выпущено.
+
+### Шаги пользователя для F-06 (выпуск вместе с E-11)
+По [README плана 31.10, раздел F-06](../../docs/planning/edits-20261031/README.md) и
+[E-11 плана 28.10](../../docs/planning/edits-20261029/README.md):
+1. Копия БД aiqme.com.
+2. **Сначала** `ALTCHA_HMAC_KEY` в `.env` сервера, затем `deploy <rev>` (ревизия с F-01…F-05), `migrate`.
+3. Ручные проверки E-11 (капча, карта, шаг 2/3 калькулятора, поля, шторка).
+4. Админка aiqme.com: слоты `logo` / `logo_white` — если там старый логотип, удалить (заработают новые умолчания) или
+   загрузить новые файлы `logo.png` / `logo-white.png`.
+5. ПК и телефон: шапка с новым логотипом вверху и после прокрутки, страницы без ярлыка над заголовком, формы без звёздочек
+   (в т. ч. «Adresai ir įmonė» в кабинете), шаг 2 калькулятора («Nepasirinkta» по умолчанию).
