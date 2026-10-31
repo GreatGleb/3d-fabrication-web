@@ -76,6 +76,8 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 меню не выше, чем с логотипом ширины прототипа, документ не шире окна, белый логотип совпадает с обычным ±1 px.
 Без ярлыка над заголовком (правка 30.10, Г2): check_styles (1440/768/390) — в .page-top нет .eyebrow, отступ крошки → h1
 не меньше 26 px (прежний отступ над ярлыком); сверка текста с эталоном исключает ярлык page-top (TEXT_EXCLUDED_BLOCKS).
+Без звёздочек в формах (правка 30.10, Г4): сверка текста с эталоном снимает « *» в конце подписей полей и строку form_note
+«* — būtini laukai.» / «* — required fields.» (D21_REPLACEMENTS).
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -899,6 +901,8 @@ D21_REPLACEMENTS = [
     ('Suprantu, kad tai demonstracinė užklausa ir ji nebus siunčiama.', ''), ('I understand this is a demonstration enquiry and will not be sent.', ''),
     ('Peržiūrėti užklausos patvirtinimą', 'Siųsti užklausą'), ('Preview enquiry confirmation', 'Send enquiry'),
     ('DEMONSTRACINIS TVARKARAŠTIS', ''), ('ILLUSTRATIVE SCHEDULE', ''),
+    # Правка 30.10 (Г4): строка form_note над контактной формой не выводится (остаток после удаления демо-фразы выше).
+    ('* — būtini laukai.', ''), ('* — required fields.', ''),
     # Таблица 2 (W-06): заметка автора в карточке статьи удалена, первое предложение осталось.
     (' Techniniai gamintojų dokumentai ir jų vertimai čia nepridedami, kol nėra pateikti.', ''),
     (' Manufacturer technical documents and translations are not added until provided.', ''),
@@ -984,7 +988,8 @@ def reference_phrases(path, has_project):
                 text = ' '.join(child.split())
                 for original, replacement in D21_REPLACEMENTS:
                     text = text.replace(original, replacement)
-                text = ' '.join(text.split())
+                # Правка 30.10 (Г4): у нас подписи полей без звёздочки обязательного поля («Vardas *» → «Vardas»).
+                text = re.sub(r' \*$', '', ' '.join(text.split()))
                 if text:
                     phrases.append(text)
             elif child['tag'] not in NO_TEXT and not excluded(child):

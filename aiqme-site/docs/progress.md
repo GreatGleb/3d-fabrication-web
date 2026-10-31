@@ -4067,3 +4067,52 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 ### Не проверено
 - Шаг 2 на телефоне глазами (кадр 390 снят, но не просмотрен человеком) — **ждёт проверки пользователем**.
 - Полный `bin/browser-check` — в F-05; `bin/demo-check` не запускался (демо не пересобирается, в старой сборке прежние тексты).
+
+## Правки 30.10, F-04 (Г4): без звёздочек в формах, form_note не выводится
+
+- `lang/{lt,en}/public.php` (контакт, регистрация на обучение), `calculator.php` (контактные данные заказа), `account.php`
+  (регистрация, вход, восстановление и новый пароль): у 17 подписей в каждом языке снято « *». Ключи и шаблоны не менялись.
+- `public/contact.blade.php`: строка `<p>{{ form_note }}</p>` под заголовком формы удалена. Блок `form_note` остаётся в
+  `prototype-content.json` (сидер), в админке (редактор page_text выводит все блоки) и в сохранённых черновиках; в
+  `ContentTypes::fields()` — комментарий «не выводится на сайте с 30.10». Миграции нет.
+- Необязательные поля сверены с валидацией (`FormController`, `OrderRequestController`, `AccountController::updateAddresses`,
+  `RegisterController`/`LoginController`/`PasswordResetController`):
+  - контакт: `company`, `phone`, `deadline` уже подписаны; **дописано** `attachments[]` — «Failai ir nuotraukos (neprivaloma)» /
+    «Files & photos (optional)» (правило `nullable`, загрузка файла);
+  - обучение: все текстовые поля обязательны (`name`, `email`, `participants`); `format` — выбор с готовым значением;
+  - калькулятор, контактные данные: `company`, `company_code`, `vat_code` уже подписаны; `country/city/address/postcode`
+    обязательны при доставке (`exclude_unless:delivery,ship` + `required`), `delivery` — выбор;
+  - кабинет: регистрация/вход/восстановление — все поля обязательны; **дописано** «(neprivaloma)» / «(optional)» ко всем 7
+    полям «Adresai ir įmonė» (`nullable`): name, company, company_code, vat_code, address, city, postcode. Решение
+    (простейшее, без догадки о тексте): новый ключ `account.addresses.optional` («(neprivaloma)» / «(optional)») добавляется к
+    подписи в `account/tabs/addresses.blade.php`; ключи `account.addresses.fields.*` не тронуты, потому что их же выводит
+    карточка клиента в админке (админку не менять).
+  - Не тронуто: «Papildoma informacija» (`notes`, шаг 2 калькулятора) — по Г3 «остальные поля шага 2 не меняются», шаг 2 не
+    входит в список форм Г4.
+- Атрибуты `required` и серверная валидация не менялись (тест `FormLabelsTest` сверяет: пометка «(neprivaloma)» ⇔ нет `required`).
+- Тесты: новый `FormLabelsTest` — точные подписи полей контактной формы (LT/EN), окна обучения, контактных данных калькулятора,
+  регистрации/входа/восстановления и адресов кабинета; ни в одной нет «*»; на /lt/kontaktai и /en/contact нет строки
+  «* — būtini laukai.» / «* — required fields.» и `p` в форме; набор `required` контактной формы прежний. Изменены ожидания,
+  прямо следующие из правки: `AuthTest` (подпись пароля без «*», «Naujas slaptažodis» без «*»), `PublicPagesTest` (вместо
+  текста form_note — его отсутствие), `AccountProfileTest` (подписи адресов с «(optional)»), `PublicTextsTest` (фраза form_note
+  из таблицы D-21 осталась в контенте, на страницах — проверяется отсутствие).
+- `bin/browser-check`: сверка текста с эталоном снимает « *» в конце фраз эталона и строку form_note (`D21_REPLACEMENTS`, с
+  комментарием; описание в шапке скрипта). `marker-allowlist.json` не менялся — новых совпадений маркеров нет.
+
+### Проверки
+- `grep -rnE " \*'|\*<" lang/lt lang/en resources/views --exclude=admin.php --exclude-dir=admin` → пустой вывод (exit 1).
+- Падает до правки (один раз): изменения lang и шаблонов откатаны `git apply -R` → `FormLabelsTest` 4 из 4 FAIL (подписи
+  «Vardas *», «Failai ir nuotraukos» без пометки и т. д.); правка возвращена → 4 passed (274 проверки).
+- `bin/php artisan test --compact` FormLabelsTest, AuthTest, PublicPagesTest, AccountProfileTest, FormsTest,
+  CalculatorPageTest, PrototypeContentSeederTest → passed (70 тестов); PublicTextsTest → passed; `pint --dirty` → passed.
+- **`bin/browser-check --signed-in /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote /lt/paslaugos/3d-modeliavimo-mokymai
+  /lt/paskyra/register /en/account/register /lt/paskyra/login` → OK (7484 проверки)**; сверка текста с эталоном шла на
+  /lt/kontaktai и /en/contact (есть в prototype-blocks.json) и прошла без звёздочек.
+- **`bin/check` → OK** (PHPUnit 709 тестов, 75 537 проверок; Vite build OK).
+- `git status --porcelain aiqme-site`: изменённые lang ×6, шаблоны ×2, `ContentTypes.php`, `bin/browser-check`, 4 теста, этот
+  файл; новый — только `tests/Feature/FormLabelsTest.php`.
+
+### Не проверено
+- Формы глазами на ПК и телефоне (длинные подписи адресов с «(neprivaloma)» в две колонки) — **ждёт проверки пользователем**.
+- Вкладка адресов кабинета в bin/browser-check этого прогона не открывалась (нет в списке путей задачи) — проверена только
+  PHPUnit; полный bin/browser-check — в F-05. `bin/demo-check` не запускался (демо не пересобирается, старая сборка со звёздочками).

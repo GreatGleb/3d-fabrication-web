@@ -90,6 +90,7 @@ final class ContentTypes
             return $fields;
         }
 
+        // Блок contact.form_note («* — būtini laukai.») не выводится на сайте с 30.10; оставлен для совместимости черновиков.
         // jsonb не хранит порядок ключей: блоки — по имени (группы hero_*, process_* рядом), части записи — заголовок первым.
         $blocks = $item->pageBlocks();
         ksort($blocks);

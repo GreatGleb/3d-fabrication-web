@@ -12,8 +12,8 @@ return [
     'login' => ['heading' => 'Sign in', 'submit' => 'Sign in'],
     'register' => ['heading' => 'Create an account', 'submit' => 'Create an account'],
     'reset' => ['heading' => 'Reset your password', 'submit' => 'Send reset link'],
-    'new_password' => ['heading' => 'Reset your password', 'field' => 'New password *', 'submit' => 'Save new password'],
-    'fields' => ['name' => 'Name *', 'email' => 'Email *', 'password' => 'Password *'],
+    'new_password' => ['heading' => 'Reset your password', 'field' => 'New password', 'submit' => 'Save new password'],
+    'fields' => ['name' => 'Name', 'email' => 'Email', 'password' => 'Password'],
     'links' => ['register' => 'Register', 'reset' => 'Forgot password?', 'login' => 'Sign in'],
     'guest' => 'Order as a guest',
     'messages' => [
@@ -84,6 +84,7 @@ return [
             'city' => 'City',
             'postcode' => 'Postal code',
         ],
+        'optional' => '(optional)',
         'submit' => 'Save details',
         'saved' => 'Details saved.',
     ],

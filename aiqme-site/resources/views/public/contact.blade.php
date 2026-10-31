@@ -39,7 +39,6 @@
                 <form class="panel" id="contact-form" method="post" action="{{ route($locale.'.contact.store') }}" enctype="multipart/form-data">
                     @csrf
                     <h2>{{ $contact->field('form_title') }}</h2>
-                    <p>{{ $contact->field('form_note') }}</p>
                     <div class="grid two form-grid">
                         <x-field name="name" :label="__('public.contact.name')" required autocomplete="name" />
                         <x-field name="company" :label="__('public.contact.company')" autocomplete="organization" />

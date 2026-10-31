@@ -84,6 +84,12 @@ class PublicTextsTest extends TestCase
         }
         foreach (PrototypeContentSeederTest::D21_TABLE_1 as [, $replacements, $kept]) {
             foreach ([...$replacements, ...$kept] as $phrase) {
+                // Правка 30.10 (Г4): строка form_note осталась в контенте, но на сайте не выводится.
+                if (in_array($phrase, ['* — būtini laukai.', '* — required fields.'], true)) {
+                    $this->assertStringNotContainsString($phrase, $all, 'form_note не выводится');
+
+                    continue;
+                }
                 $this->assertStringContainsString($phrase, $all, 'фраза в новом виде выводится');
             }
         }

@@ -55,7 +55,7 @@ class AuthTest extends TestCase
 
     public function test_login_form_follows_the_prototype_with_real_password_rules_and_no_demo_labels(): void
     {
-        foreach (['lt' => ['Prisijungimas', 'Prisijungti', 'Slaptažodis *'], 'en' => ['Sign in', 'Sign in', 'Password *']] as $locale => [$heading, $submit, $label]) {
+        foreach (['lt' => ['Prisijungimas', 'Prisijungti', '>Slaptažodis'], 'en' => ['Sign in', 'Sign in', '>Password']] as $locale => [$heading, $submit, $label]) {
             $html = $this->get(route($locale.'.account.login'))->assertOk()
                 ->assertHeader('Cache-Control', 'no-store, private')->getContent();
 
@@ -241,7 +241,7 @@ class AuthTest extends TestCase
         $this->assertStringStartsWith(config('app.url').'/lt/paskyra/reset/', $url);
 
         $browser = null;
-        $this->browse('GET', $url, session: $browser)->assertOk()->assertSee('Naujas slaptažodis *')
+        $this->browse('GET', $url, session: $browser)->assertOk()->assertSee('>Naujas slaptažodis', false)->assertDontSee('Naujas slaptažodis *')
             ->assertSee('value="jonas@aiqme.test"', false);
         $this->browse('POST', $url, ['email' => 'jonas@aiqme.test', 'password' => 'new-password-2'], $browser)
             ->assertRedirect(route('lt.account.login'))

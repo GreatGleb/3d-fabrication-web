@@ -268,7 +268,7 @@ class PublicPagesTest extends TestCase
         $this->assertSame(['Choose a service', '3D scanning', '3D modelling & reverse engineering', '3D printing', 'CNC machining', 'Engraving', '3D modelling training', 'Equipment quotation'],
             Html::texts($xpath, '//select[@name="service"]/option'));
         $this->assertSame('Send enquiry', Html::text($xpath->query('//form[@id="contact-form"]//button[@type="submit"]')->item(0)));
-        $this->assertSame('* — required fields.', Html::text($xpath->query('//form[@id="contact-form"]/p')->item(0)));
+        $this->assertCount(0, $xpath->query('//form[@id="contact-form"]/p'), 'form_note не выводится с 30.10 (Г4)');
         $this->assertCount(0, $xpath->query('//input[@type="checkbox"]'));
     }
 

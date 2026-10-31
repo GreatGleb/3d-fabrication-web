@@ -10,8 +10,8 @@ return [
     'login' => ['heading' => 'Prisijungimas', 'submit' => 'Prisijungti'],
     'register' => ['heading' => 'Registracija', 'submit' => 'Sukurti paskyrą'],
     'reset' => ['heading' => 'Slaptažodžio atkūrimas', 'submit' => 'Siųsti atkūrimo nuorodą'],
-    'new_password' => ['heading' => 'Slaptažodžio atkūrimas', 'field' => 'Naujas slaptažodis *', 'submit' => 'Išsaugoti naują slaptažodį'],
-    'fields' => ['name' => 'Vardas *', 'email' => 'El. paštas *', 'password' => 'Slaptažodis *'],
+    'new_password' => ['heading' => 'Slaptažodžio atkūrimas', 'field' => 'Naujas slaptažodis', 'submit' => 'Išsaugoti naują slaptažodį'],
+    'fields' => ['name' => 'Vardas', 'email' => 'El. paštas', 'password' => 'Slaptažodis'],
     'links' => ['register' => 'Registruotis', 'reset' => 'Pamiršote slaptažodį?', 'login' => 'Prisijungti'],
     'guest' => 'Užsakyti be paskyros',
     'messages' => [
@@ -81,6 +81,7 @@ return [
             'city' => 'Miestas',
             'postcode' => 'Pašto kodas',
         ],
+        'optional' => '(neprivaloma)',
         'submit' => 'Išsaugoti duomenis',
         'saved' => 'Duomenys išsaugoti.',
     ],

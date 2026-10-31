@@ -27,7 +27,8 @@ class AccountProfileTest extends TestCase
 
         $this->assertStringContainsString('<h1>Customer account</h1>', $html);
         $this->assertStringContainsString('<h2>Addresses &amp; company details</h2>', $html);
-        foreach (['Name', 'Company', 'Company number', 'VAT number', 'Address', 'City', 'Postal code'] as $label) {
+        foreach (['Name', 'Company', 'Company number', 'VAT number', 'Address', 'City', 'Postal code'] as $field) {
+            $label = $field.' (optional)'; // правка 30.10 (Г4)
             $this->assertMatchesRegularExpression('/<label class="field"[^>]*>'.preg_quote($label, '/').'\s*<input/', $html);
         }
         preg_match('/<form class="panel" id="address-form".*?<\/form>/s', $html, $form);
