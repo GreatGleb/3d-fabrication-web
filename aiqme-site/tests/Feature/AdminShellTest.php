@@ -117,7 +117,8 @@ class AdminShellTest extends TestCase
                 foreach (['Demo administration', 'Demonstracinis administravimas', 'ADMINISTRATION DEMO', 'ADMINISTRAVIMO DEMONSTRACIJA',
                     'demo-role', 'Try a role', 'Išbandyti rolę', 'Production staff', 'Permissions', 'Prieigos teisės', 'admin/telegram', 'administravimas/telegram', 'CSV',
                     'Demonstration prototype', 'Demonstracinis prototipas', 'simulated', 'imituojama', 'Drafts in this session'] as $phrase) {
-                    $this->assertStringNotContainsStringIgnoringCase($phrase, $html, $path);
+                    // Случайный CSP-nonce может содержать, например, «cSV» — его значение не текст страницы.
+                    $this->assertStringNotContainsStringIgnoringCase($phrase, preg_replace('~nonce="[^"]*"~', '', $html), $path);
                 }
                 $this->assertStringContainsString('form="logout-form"', $html);
             }

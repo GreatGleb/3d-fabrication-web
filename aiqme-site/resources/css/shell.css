@@ -35,6 +35,11 @@ altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-b
    задан с весом одного класса: noscript-стиль layout (.header--overlay, позже в каскаде) делает её без JS сплошной. */
 :root{--header-height:123px}
 .header .logo{position:relative}
+/* Новый логотип заказчика крупнее в шапке (правка 30.10, Г1): 220/180/140 px вместо 150/125/115 прототипа; подвал прежний. */
+.header .logo{width:220px}
+@media(max-width:1150px){.header .logo{width:180px}}
+@media(max-width:600px){.header .logo{width:140px}}
+@media(max-width:360px){.header .logo{width:132px}} /* 140 px на 320 px шире окна на 8 px — наибольшая помещающаяся */
 .header .logo-white{position:absolute;top:5px;left:5px;width:calc(100% - 10px);opacity:0}
 .header--dark{background:var(--dark);color:#fff;border-bottom-color:rgba(255,255,255,.12)}
 :where(.header--dark).header--overlay{background:rgba(10,17,25,.6)}

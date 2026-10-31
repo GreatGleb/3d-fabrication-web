@@ -71,6 +71,9 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 белая §7.1 с теми же высотами рядов, снова тёмная наверху, меню ≤900 px белое; кадры shots/header-top|scrolled-<страница>-<ширина>.png;
 на главной hero от верха окна под шапкой на всех ширинах (check_hero_under_header); check_header_cases на /lt/apie-mus — открытие
 прокрученной страницы без анимации, reduced-motion без перехода, без JS шапка тёмная сплошная (и на /en).
+Новый логотип (правка 30.10, Г1): check_logo на /lt и /en при 320/390/600/768/901/1024/1150/1440 — ширина .header .logo
+по LOGO_WIDTHS (220/180/140, на 320 — 132 ±1), не пересекается с .nav (если видна) и .tools, логотип и значки в строке .head-main,
+меню не выше, чем с логотипом ширины прототипа, документ не шире окна, белый логотип совпадает с обычным ±1 px.
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -678,6 +681,48 @@ def check_header(report, new_page, path, width, state=None):
     for problem in problems:
         report.check(False, f'{where}: {problem}')
     context.close()
+
+
+LOGO_WIDTHS = {320: 132, 390: 140, 600: 140, 768: 180, 901: 180, 1024: 180, 1150: 180, 1440: 220}  # .header .logo (правка 30.10, Г1)
+LOGO_PROBE = """() => {
+    const rect = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
+    const visible = (el) => el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
+    const header = document.querySelector('.header'), nav = header.querySelector('.nav');
+    return {logo: rect(header.querySelector('.logo')), img: rect(header.querySelector('.logo img:not(.logo-white)')),
+        white: header.querySelector('.logo img.logo-white') && rect(header.querySelector('.logo img.logo-white')),
+        nav: visible(nav) ? rect(nav) : null, tools: rect(header.querySelector('.tools')),
+        row: rect(header.querySelector('.head-main')), navHeight: visible(nav) ? nav.getBoundingClientRect().height : 0,
+        fits: document.documentElement.scrollWidth <= document.documentElement.clientWidth};
+}"""
+
+
+def check_logo(report, new_page, path):
+    """Новый логотип в шапке (правка 30.10, Г1): ширина по ступеням, не наезжает на меню и значки, белый поверх обычного."""
+    for width, target in LOGO_WIDTHS.items():
+        where = f'{path} @{width} логотип'
+        context, page, problems = new_page(width, 844)
+        page.goto(BASE + path, wait_until='networkidle')
+        got = page.evaluate(LOGO_PROBE)
+        logo = got['logo']
+        report.check(abs(logo[2] - logo[0] - target) <= 1, f'{where}: ширина {logo[2] - logo[0]:.1f} ≠ {target}')
+        apart = lambda a, b: a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1]  # noqa: E731
+        report.check(apart(logo, got['tools']), f'{where}: пересекается со значками {logo} {got["tools"]}')
+        report.check(got['nav'] is None or apart(logo, got['nav']), f'{where}: пересекается с меню {logo} {got["nav"]}')
+        row = got['row']
+        report.check(all(box[1] >= row[1] and box[3] <= row[3] for box in (logo, got['tools'])),
+                     f'{where}: логотип или значки вне строки шапки {logo} {got["tools"]} {row}')
+        # Меню не переносится из-за логотипа: высота .nav та же, что при ширине логотипа прототипа (150/125/115 px);
+        # «Apie mus» на 901 px переносится и в прототипе (см. progress.md, F-01).
+        prototype = 150 if width > 1150 else 125 if width > 600 else 115
+        page.evaluate(f"document.querySelector('.header .logo').style.setProperty('width', '{prototype}px', 'important')")
+        before = page.evaluate(LOGO_PROBE)['navHeight']
+        report.check(abs(got['navHeight'] - before) <= 1, f'{where}: меню выше ({got["navHeight"]}), чем с логотипом {prototype} px ({before})')
+        report.check(got['fits'], f'{where}: документ шире окна')
+        report.check(got['white'] is not None and all(abs(a - b) <= 1 for a, b in zip(got['white'], got['img'])),
+                     f'{where}: белый логотип {got["white"]} не совпадает с обычным {got["img"]}')
+        for problem in problems:
+            report.check(False, f'{where}: {problem}')
+        context.close()
 
 
 def check_header_cases(report, new_page, path):
@@ -2778,6 +2823,8 @@ def main():
                 if path in HEADER_PAGES:
                     for width in (390, 1440):
                         check_header(report, new_page, path, width)
+                if path in ('/lt', '/en'):
+                    check_logo(report, new_page, path)
                 if path == '/lt/apie-mus':
                     check_header_cases(report, new_page, path)
                 if path in ('/lt', '/en'):

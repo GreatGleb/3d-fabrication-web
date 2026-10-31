@@ -136,7 +136,7 @@ class ShellTest extends TestCase
         $xpath = $this->xpath($this->get('/lt')->getContent());
 
         foreach (['//header//a[@class="logo"]/img', '//footer//a[@class="logo"]/img'] as $query) {
-            $this->assertSame(asset('defaults/logo.jpg'), $xpath->query($query)->item(0)->getAttribute('src'));
+            $this->assertSame(asset('defaults/logo.png'), $xpath->query($query)->item(0)->getAttribute('src'));
             $this->assertSame('AIQME', $xpath->query($query)->item(0)->getAttribute('alt'));
         }
         $this->assertSame(asset('defaults/favicon.svg'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
@@ -204,7 +204,7 @@ class ShellTest extends TestCase
 
         $images = $xpath->query('//header//a[@class="logo"]/img');
         $this->assertCount(2, $images);
-        $this->assertSame([asset('defaults/logo.jpg'), 'AIQME', null], [$images->item(0)->getAttribute('src'), $images->item(0)->getAttribute('alt'), $images->item(0)->attributes->getNamedItem('class')?->nodeValue]);
+        $this->assertSame([asset('defaults/logo.png'), 'AIQME', null], [$images->item(0)->getAttribute('src'), $images->item(0)->getAttribute('alt'), $images->item(0)->attributes->getNamedItem('class')?->nodeValue]);
         $this->assertSame([asset('defaults/logo-white.png'), '', 'logo-white'], [$images->item(1)->getAttribute('src'), $images->item(1)->getAttribute('alt'), $images->item(1)->getAttribute('class')]);
 
         // Без JS полупрозрачная шапка главной сплошная: стиль в noscript с nonce этого ответа (CSP style-src-elem).

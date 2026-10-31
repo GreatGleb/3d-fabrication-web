@@ -24,7 +24,7 @@ return [
     'media_defaults' => [
         'page_text' => [
             'home' => [
-                'logo' => 'defaults/logo.jpg',
+                'logo' => 'defaults/logo.png',
                 'logo_white' => 'defaults/logo-white.png', // только пока нет своего logo
                 'favicon' => 'defaults/favicon.svg',
                 'video' => 'defaults/hero-engineering.mp4',

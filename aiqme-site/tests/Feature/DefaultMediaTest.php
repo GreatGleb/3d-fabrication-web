@@ -101,8 +101,8 @@ class DefaultMediaTest extends TestCase
             $this->markTestSkipped('не проверено (нет исходников source-backup)');
         }
         foreach (collect(config('aiqme.media_defaults'))->flatten() as $file) {
-            // logo-white.png — не файл прототипа, а производный от logo.jpg (правка 28.10 П2).
-            if (! str_starts_with($file, 'defaults/services/') && $file !== 'defaults/logo-white.png') {
+            // logo.png и logo-white.png — не файлы прототипа, а новый логотип заказчика (правка 30.10, Г1).
+            if (! str_starts_with($file, 'defaults/services/') && ! in_array($file, ['defaults/logo.png', 'defaults/logo-white.png'], true)) {
                 $this->assertSame(hash_file('sha256', self::SOURCE.'/'.basename($file)), hash_file('sha256', public_path($file)), $file);
             }
         }
@@ -121,17 +121,21 @@ class DefaultMediaTest extends TestCase
         $path = public_path('defaults/logo-white.png');
         $this->assertFileExists($path);
         [$width, $height, $type] = getimagesize($path);
-        $this->assertSame([1280, 320, IMAGETYPE_PNG], [$width, $height, $type]);
-        $this->assertSame([$width, $height], array_slice(getimagesize(public_path('defaults/logo.jpg')), 0, 2));
+        $this->assertSame([1419, 262, IMAGETYPE_PNG], [$width, $height, $type]);
+        $this->assertSame([$width, $height, IMAGETYPE_PNG], array_slice(getimagesize(public_path('defaults/logo.png')), 0, 3));
+        // Копии файлов docs/planning/edits-20261031/logo/ байт в байт (правка 30.10, Г1).
+        $this->assertSame(['176c42ec7630ff7e8e69126023b62f72c8b0cab4eaa9e1552d6a3072d0099540', '11b4ea580f584453773256d8be5717462c8b67d0db2263880a0242e30a1d45fd'],
+            [hash_file('sha256', public_path('defaults/logo.png')), hash_file('sha256', $path)]);
+        $this->assertFileDoesNotExist(public_path('defaults/logo.jpg'));
         $this->assertSame(6, ord(file_get_contents($path, false, null, 25, 1)), 'цветовой тип IHDR — RGBA');
 
         $image = imagecreatefrompng($path);
         $pixel = fn (int $x, int $y): array => imagecolorsforindex($image, imagecolorat($image, $x, $y));
         $this->assertSame(127, $pixel(5, 5)['alpha']);
-        $letter = $pixel(1100, 90);
+        $letter = $pixel(1160, 130);
         $this->assertGreaterThanOrEqual(245, min($letter['red'], $letter['green'], $letter['blue']));
         $this->assertLessThanOrEqual(5, $letter['alpha']);
-        $tail = $pixel(590, 230);
+        $tail = $pixel(720, 240);
         $this->assertGreaterThan(200, $tail['blue']);
         $this->assertLessThan(60, $tail['red']);
     }
@@ -150,8 +154,8 @@ class DefaultMediaTest extends TestCase
         foreach (['Manufacturing illustration', 'Gamybos iliustracija', 'Illustrative', 'Demonstracinė iliustracija', 'DEMONSTRACINĖ ILIUSTRACIJA'] as $absent) {
             $this->assertStringNotContainsString($absent, $html);
         }
-        $this->assertSame(asset('defaults/logo.jpg'), $this->src($html, '//header//a[@class="logo"]/img'));
-        $this->assertSame(asset('defaults/logo.jpg'), $this->src($html, '//footer//a[@class="logo"]/img'));
+        $this->assertSame(asset('defaults/logo.png'), $this->src($html, '//header//a[@class="logo"]/img'));
+        $this->assertSame(asset('defaults/logo.png'), $this->src($html, '//footer//a[@class="logo"]/img'));
         $this->assertSame(asset('defaults/favicon.svg'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
 
         // Шесть услуг: главная, список, своя страница — фрагмент услуги, alt — название услуги, width/height файла.
@@ -180,7 +184,7 @@ class DefaultMediaTest extends TestCase
 
         // Логотип и favicon — и в админке.
         $admin = $this->actingAs($this->admin)->get('/en/admin')->assertOk()->getContent();
-        $this->assertSame(asset('defaults/logo.jpg'), $this->src($admin, '//header//a[@class="logo"]/img'));
+        $this->assertSame(asset('defaults/logo.png'), $this->src($admin, '//header//a[@class="logo"]/img'));
         $this->assertStringContainsString('<link rel="icon" href="'.asset('defaults/favicon.svg').'"', $admin);
     }
 
@@ -211,7 +215,7 @@ class DefaultMediaTest extends TestCase
         $factory->publishDraft(ContentType::Project, 'prototype');
         $home = $this->item(ContentType::PageText, 'home');
         $slots = [
-            ['/en', $home, 'logo', 'defaults/logo.jpg', '//header//a[@class="logo"]/img/@src'],
+            ['/en', $home, 'logo', 'defaults/logo.png', '//header//a[@class="logo"]/img/@src'],
             ['/en', $home, 'logo_white', 'defaults/logo-white.png', '//header//a[@class="logo"]/img[@class="logo-white"]/@src'],
             ['/en', $home, 'favicon', 'defaults/favicon.svg', '//head/link[@rel="icon"]/@href'],
             ['/en/about', $this->item(ContentType::PageText, 'about'), 'images', 'defaults/engineering.jpg', '//div[@class="split-image"]/img/@src'],
@@ -290,13 +294,13 @@ class DefaultMediaTest extends TestCase
         $editor = fn (ContentType $type, string $key) => Livewire::test(ContentEditor::class, ['type' => $type->value, 'itemId' => $this->item($type, $key)->id]);
 
         $home = $editor(ContentType::PageText, 'home');
-        foreach (['logo.jpg', 'logo-white.png', 'favicon.svg', 'hero-engineering.mp4', 'hero-engineering-mobile.mp4', 'hero-video-poster.jpg'] as $file) {
+        foreach (['logo.png', 'logo-white.png', 'favicon.svg', 'hero-engineering.mp4', 'hero-engineering-mobile.mp4', 'hero-video-poster.jpg'] as $file) {
             $home->assertSee(asset('defaults/'.$file), false);
         }
         $home->assertSee('Logo')->assertSee('Favicon (PNG)')->assertSee('(default)')
             ->assertSee('White logo (for the dark header; PNG or WebP)')
             ->assertSee('<img class="admin-media-preview admin-media-preview--dark" src="'.asset('defaults/logo-white.png').'"', false)
-            ->assertSee('<img class="admin-media-preview" src="'.asset('defaults/logo.jpg').'"', false);
+            ->assertSee('<img class="admin-media-preview" src="'.asset('defaults/logo.png').'"', false);
         $editor(ContentType::PageText, 'about')->assertSee(asset('defaults/engineering.jpg'), false);
         $editor(ContentType::Project, 'prototype')->assertSee(asset('defaults/project-prototype.jpg'), false);
 
@@ -321,11 +325,11 @@ class DefaultMediaTest extends TestCase
 
         // Свой обычный logo скрывает белое умолчание AIQME (логотип чужой марки не подменяется белым AIQME).
         $logo = app(ContentService::class)->addMedia($this->admin, $this->item(ContentType::PageText, 'home'), $this->png('logo'), 'logo');
-        $editor(ContentType::PageText, 'home')->assertDontSee('defaults/logo-white.png', false)->assertDontSee(asset('defaults/logo.jpg'), false);
+        $editor(ContentType::PageText, 'home')->assertDontSee('defaults/logo-white.png', false)->assertDontSee(asset('defaults/logo.png'), false);
         app(ContentService::class)->removeMedia($this->admin, $this->item(ContentType::PageText, 'home'), $logo->id);
 
         // Своё video главной скрывает умолчания видео, мобильного ролика и постера, но не логотипа.
         app(ContentService::class)->addMedia($this->admin, $this->item(ContentType::PageText, 'home'), $this->mp4('own'), 'video');
-        $editor(ContentType::PageText, 'home')->assertDontSee('defaults/hero-', false)->assertSee(asset('defaults/logo.jpg'), false);
+        $editor(ContentType::PageText, 'home')->assertDontSee('defaults/hero-', false)->assertSee(asset('defaults/logo.png'), false);
     }
 }

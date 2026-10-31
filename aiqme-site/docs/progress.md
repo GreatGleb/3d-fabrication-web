@@ -3921,3 +3921,76 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 6. Тексты заказчику: раздел cookie о Google Maps (D-27), EN-переводы вариантов шага 2, капча защищает только формы
    aiqme.com, без JavaScript формы не отправить, белый логотип можно заменить в админке.
 7. По желанию: строка D-24 в `decisions.md`, пересборка демо.
+
+## Правки 30.10, F-01 (Г1): новый логотип заказчика и его размер в шапке
+
+### Сделано
+- `public/defaults/logo.png` (новый) и `public/defaults/logo-white.png` (заменён) — копии
+  `docs/planning/edits-20261031/logo/` байт в байт, 1419×262 RGBA, не пересжимались:
+  - `logo.png` — sha256 `176c42ec7630ff7e8e69126023b62f72c8b0cab4eaa9e1552d6a3072d0099540`;
+  - `logo-white.png` — sha256 `11b4ea580f584453773256d8be5717462c8b67d0db2263880a0242e30a1d45fd`.
+- `public/defaults/logo.jpg` удалён: ссылок не осталось (`grep -rn logo.jpg app bin config resources routes database tests` —
+  пусто; DemoExport и bin/* на него не ссылались). Удаление в индексе Git уже помечено (`git rm --cached`, коммита нет).
+- `config/aiqme.php`: умолчание `logo` → `defaults/logo.png`; `logo_white` прежний; layout, header и слоты админки не менялись.
+- `resources/css/shell.css` (комментарий «правка 30.10, Г1»): `.header .logo` 220 px (>1150), 180 px (≤1150), 140 px (≤600)
+  и **132 px при ≤360 px** — см. отступление ниже. `prototype/style.css` и подвал (`.footer .logo` 160 px) не менялись.
+  Белый логотип по-прежнему `position:absolute; top/left 5px; width:calc(100% - 10px)` внутри `.logo` — у файлов одинаковая
+  рамка 1419×262, поэтому совпадает с обычным.
+- Тесты: `DefaultMediaTest` — пути `logo.png`, размер 1419×262 PNG у обоих файлов, sha256 обоих файлов, `logo.jpg` нет,
+  пиксели белого логотипа перенесены на новый рисунок (белая буква E (1160,130), синий хвост Q (720,240)); исключение
+  из сверки с исходниками прототипа — `logo.png` и `logo-white.png` (файлы заказчика, не прототипа). `ShellTest` — путь
+  `logo.png`. Проверки поведения слотов (свой logo важнее умолчаний, logo_white только без своего logo) не менялись и
+  проходят. `ContentMediaTest` ссылок на logo.jpg не имел — без изменений, проходит.
+- `bin/browser-check`: `check_logo` на `/lt` и `/en` при 320/390/600/768/901/1024/1150/1440 — ширина `.header .logo` по
+  `LOGO_WIDTHS` ±1, не пересекается с `.nav` (если видна) и `.tools`, логотип и значки внутри `.head-main`, меню не выше,
+  чем при ширине логотипа прототипа (150/125/115 — то есть логотип не вызывает переноса меню), документ не шире окна,
+  белый логотип совпадает с обычным ±1 px. Кадры `header-top-*`/`header-scrolled-*` снимаются, как раньше.
+
+### Размеры по ширинам (`.header .logo`, Chromium Playwright, /lt и /en)
+| окно | ширина логотипа | заметки |
+|---|---|---|
+| 320 | 132 | 140 давало документ 328 > 320 (на 8 px); 132 — наибольшая помещающаяся |
+| 390 | 140 | |
+| 600 | 140 | |
+| 768 | 180 | |
+| 901 | 180 | «Apie mus» в LT-меню переносится на 2 строки — так же и с логотипом прототипа 125 px (и даже 100 px); помещается лишь при ≈60 px. Перенос не вызван логотипом, поэтому размер не уменьшался |
+| 1024 | 180 | |
+| 1150 | 180 | |
+| 1440 | 220 | |
+
+### Отступление и наблюдения
+- **320 px**: не входит в список README, но существующая проверка ширины документа на 320 px падала (328 > 320) —
+  применено правило README «уменьшить до наибольшей помещающейся»: `@media(max-width:360px){.header .logo{width:132px}}`.
+- **901 px (LT)**: см. таблицу — прежнее поведение прототипа, не изменено.
+- **1151–1163 px (LT)**: с логотипом 220 px «Apie mus» переносится на вторую строку (на 1165+ и на 1150 — нет; в EN —
+  нет). Эти ширины не входят в контрольные ширины README; ступень >1150 оставлена 220 px. Если это заметно —
+  вопрос пользователю: оставить или сделать на 1151–1200 px 205 px (при 205 помещается).
+- Высота `.nav` над строкой: 84 px при `.head-main` 82 px — и с логотипом прототипа (поля `.nav a` 30 px), не правилось.
+
+### Проверки
+- Точечно: `bin/php artisan test --compact tests/Feature/DefaultMediaTest.php tests/Feature/ShellTest.php tests/Feature/ContentMediaTest.php` → passed, 20 тестов, 448 проверок.
+- Откат (один раз): старый `logo-white.png` из HEAD + умолчание `logo.jpg` → `DefaultMediaTest`/`ShellTest` падают
+  (7 из 17, в т. ч. размер, пути, sha256); файлы и конфиг возвращены, sha256 сверены заново.
+- Первый `bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/kontaktai` → FAIL (74): 320 px шире окна на 8 px
+  и слишком строгая проверка строки `.nav` (84 > 82 — прежнее поведение). После 132 px на ≤360 и сравнения с шириной
+  прототипа — **`bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/kontaktai` → OK (7283 проверок)**.
+- `bin/php vendor/bin/pint --dirty --format agent` → passed.
+- **`bin/check` → OK** (PHPUnit 703 теста, 75 300 проверок; Vite build OK).
+- `git status --porcelain aiqme-site`: новые/изменённые — `bin/browser-check`, `config/aiqme.php`,
+  `public/defaults/logo.png` (новый), `public/defaults/logo-white.png`, удалён `public/defaults/logo.jpg`,
+  `resources/css/shell.css`, `tests/Feature/DefaultMediaTest.php`, `tests/Feature/ShellTest.php`, `docs/progress.md`;
+  `prototype/style.css` не изменён.
+
+### Не проверено
+- Вид на телефоне и кадры `build/verification/browser-check/shots/header-top-*`, `header-scrolled-*` глазами — **ждёт
+  проверки пользователем**.
+- Safari/Firefox; aiqme.com (там может быть загружен свой логотип в админке — новые умолчания тогда не видны; F-06).
+- Полный `bin/browser-check` без путей — по плану в F-05; `bin/demo-check` не запускался (демо не пересобирается).
+
+### Доработка после приёмки (замечание «bin/check красный»)
+- Причина: в прогоне приёмщика упал `AdminShellTest::test_shell_follows_the_prototype_without_demo_texts_roles_or_excluded_tabs`
+  — случайный CSP-nonce страницы (`jT61Lvf6y3GH0cSViH59c9F0`) содержал «cSV», а тест ищет «CSV» без учёта регистра.
+  С логотипом не связано: тест нестабилен с вероятностью, зависящей от nonce.
+- Исправление: в этом тесте фразы ищутся в HTML без значений `nonce="…"` (как уже делают `LocaleRoutesTest`,
+  `PrototypeRoutesTest`, `ShellTest`). Поведение страницы не менялось.
+- Повторно: **`bin/check` → OK**; **`bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/kontaktai` → OK (7283 проверок)**.
