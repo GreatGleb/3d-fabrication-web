@@ -35,15 +35,20 @@ altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-b
    задан с весом одного класса: noscript-стиль layout (.header--overlay, позже в каскаде) делает её без JS сплошной. */
 :root{--header-height:123px}
 .header .logo{position:relative}
-/* Новый логотип заказчика крупнее в шапке (правка 30.10, Г1): 220/180/140 px вместо 150/125/115 прототипа; подвал прежний. */
-.header .logo{width:220px}
-@media(max-width:1150px){.header .logo{width:180px}}
-@media(max-width:600px){.header .logo{width:140px}}
-@media(max-width:360px){.header .logo{width:132px}} /* 140 px на 320 px шире окна на 8 px — наибольшая помещающаяся */
-.header .logo-white{position:absolute;top:5px;left:5px;width:calc(100% - 10px);opacity:0}
+/* Новый логотип заказчика крупнее в шапке (правка 30.10, Г1): 220/180/140 px вместо 150/125/115 прототипа; в подвале та же
+   ширина, что в шапке (правка 02.11, Г1; было 160 px). */
+.header .logo,.footer .logo{width:220px}
+@media(max-width:1150px){.header .logo,.footer .logo{width:180px}}
+@media(max-width:600px){.header .logo,.footer .logo{width:140px}}
+@media(max-width:360px){.header .logo,.footer .logo{width:132px}} /* 140 px на 320 px шире окна на 8 px — наибольшая помещающаяся */
+/* Логотипы — PNG заказчика с прозрачным фоном (правка 02.11, Г1): белой подложки прототипа (style.css:682-683) нет ни в тёмной,
+   ни в белой шапке, ни в подвале, фон не анимируется; белый логотип лежит точно поверх обычного. Подложка остаётся только
+   у своего логотипа без белого (header--logo-plate). */
+.header .logo,.footer .logo{background:transparent;padding:0}
+.header--logo-plate .logo{background:#fff;padding:5px}
+.header .logo-white{position:absolute;top:0;left:0;width:100%;opacity:0}
 .header--dark{background:var(--dark);color:#fff;border-bottom-color:rgba(255,255,255,.12)}
 :where(.header--dark).header--overlay{background:rgba(10,17,25,.6)}
-.header--dark:not(.header--logo-plate) .logo{background:transparent}
 .header--dark .logo-white{opacity:1}
 .header--dark:not(.header--logo-plate) .logo img:not(.logo-white){opacity:0}
 .header--dark .nav a:hover,.header--dark .head-sub .cta-link{color:#9cc4ff}
@@ -54,9 +59,14 @@ altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-b
 /* Переходы — только у элементов со своим значением: пункты и значки наследуют цвет шапки (свой переход у наследника
    отставал бы, догоняя родителя). */
 .header--ready{transition:background-color .3s ease,border-color .3s ease,color .3s ease}
-.header--ready .header-cta,.header--ready .logo{transition:background-color .3s ease,border-color .3s ease}
+.header--ready .header-cta{transition:background-color .3s ease,border-color .3s ease}
 .header--ready .cta-link,.header--ready .lang span{transition:color .3s ease}
 .header--ready .logo img{transition:opacity .3s ease}
+/* Главная без второго ряда шапки (правка 02.11, Г1): своя --header-height = 123/116/108 px минус ряд .header-cta (40/40/39 px)
+   у шапки и main — отступ и высота hero ниже считаются от неё, содержимое hero на прежнем расстоянии от низа шапки. */
+.header--no-cta,.header--no-cta~main{--header-height:83px}
+@media(max-width:900px){.header--no-cta,.header--no-cta~main{--header-height:76px}}
+@media(max-width:600px){.header--no-cta,.header--no-cta~main{--header-height:69px}}
 /* Главная: hero начинается от верха окна под полупрозрачной шапкой, содержимое hero — на прежних координатах. */
 .header--overlay{margin-bottom:calc(-1*var(--header-height))}
 .header--overlay~main>.hero:first-child{min-height:calc(650px + var(--header-height))}
@@ -75,5 +85,7 @@ altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-b
  .header--overlay~main>.hero:first-child .wrap{padding-top:calc(56px + var(--header-height))}
 }
 @media(prefers-reduced-motion:reduce){
- .header--ready,.header--ready .header-cta,.header--ready .logo,.header--ready .cta-link,.header--ready .lang span,.header--ready .logo img{transition:none}
+ .header--ready,.header--ready .header-cta,.header--ready .cta-link,.header--ready .lang span,.header--ready .logo img{transition:none}
 }
+/* Карточки «Kuo galime padėti?» (правка 02.11, Г1): у последней та же правая рамка, что у остальных (style.css:100 обнуляла её). */
+.scenario:last-child{border-right:1px solid var(--line)}

@@ -287,7 +287,7 @@ class DemoExport extends Command
             .'<p><a href="'.$target.'">AIQME</a></p></body></html>';
     }
 
-    /** Ресурсы Vite (путь Web Worker — под базовым путём), медиа по умолчанию D-43, favicon и demo.js. */
+    /** Ресурсы Vite (путь Web Worker — под базовым путём), медиа по умолчанию D-43, иконки карточек главной (правка 02.11, Г1), favicon и demo.js. */
     private function copyStatic(string $output): void
     {
         if (! is_file(public_path('build/manifest.json')) || is_file(public_path('hot'))) {
@@ -298,6 +298,7 @@ class DemoExport extends Command
             File::put($file, str_replace('/build/assets/', self::BASE.'/build/assets/', File::get($file)));
         }
         File::copyDirectory(public_path('defaults'), $output.'/defaults');
+        File::copyDirectory(public_path('icons'), $output.'/icons');
         File::copy(public_path('favicon.ico'), $output.'/favicon.ico');
         File::copy(resource_path('js/demo.js'), $output.'/demo.js');
     }

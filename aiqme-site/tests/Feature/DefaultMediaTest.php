@@ -121,10 +121,11 @@ class DefaultMediaTest extends TestCase
         $path = public_path('defaults/logo-white.png');
         $this->assertFileExists($path);
         [$width, $height, $type] = getimagesize($path);
-        $this->assertSame([1419, 262, IMAGETYPE_PNG], [$width, $height, $type]);
+        // Правка 02.11, Г1: обработанные PNG заказчика 1922×349 вместо 1419×262.
+        $this->assertSame([1922, 349, IMAGETYPE_PNG], [$width, $height, $type]);
         $this->assertSame([$width, $height, IMAGETYPE_PNG], array_slice(getimagesize(public_path('defaults/logo.png')), 0, 3));
-        // Копии файлов docs/planning/edits-20261031/logo/ байт в байт (правка 30.10, Г1).
-        $this->assertSame(['176c42ec7630ff7e8e69126023b62f72c8b0cab4eaa9e1552d6a3072d0099540', '11b4ea580f584453773256d8be5717462c8b67d0db2263880a0242e30a1d45fd'],
+        // Копии файлов docs/planning/edits-20261102/logo/ байт в байт (правка 02.11, Г1).
+        $this->assertSame(['68eebc2afd13753a15c76864c0d9db347318829532a0e9902e12fccde82de5a5', 'b0e9cc8e934d4ba97de0be28cfff99205c2469d5f4e497e1a2f003e9c2a6d3fe'],
             [hash_file('sha256', public_path('defaults/logo.png')), hash_file('sha256', $path)]);
         $this->assertFileDoesNotExist(public_path('defaults/logo.jpg'));
         $this->assertSame(6, ord(file_get_contents($path, false, null, 25, 1)), 'цветовой тип IHDR — RGBA');
@@ -132,10 +133,10 @@ class DefaultMediaTest extends TestCase
         $image = imagecreatefrompng($path);
         $pixel = fn (int $x, int $y): array => imagecolorsforindex($image, imagecolorat($image, $x, $y));
         $this->assertSame(127, $pixel(5, 5)['alpha']);
-        $letter = $pixel(1160, 130);
+        $letter = $pixel(1571, 176); // правка 02.11, Г1: точки буквы и хвоста Q в новом масштабе
         $this->assertGreaterThanOrEqual(245, min($letter['red'], $letter['green'], $letter['blue']));
         $this->assertLessThanOrEqual(5, $letter['alpha']);
-        $tail = $pixel(720, 240);
+        $tail = $pixel(924, 252);
         $this->assertGreaterThan(200, $tail['blue']);
         $this->assertLessThan(60, $tail['red']);
     }
@@ -234,23 +235,24 @@ class DefaultMediaTest extends TestCase
         $this->assertStringContainsString('type="image/png"', $this->withMedia($home, 'favicon', fn () => $this->get('/en')->getContent()));
 
         // Шапка-шторка (правка 28.10, П2): свой logo без своего logo_white — белого умолчания AIQME нет, в тёмной шапке
-        // обычный логотип на белой подложке; свой logo_white — свой файл, подложки нет.
+        // обычный логотип на белой подложке; свой logo_white — свой файл, подложки нет. Правка 02.11, Г1: на главной ещё
+        // header--no-cta (без второго ряда).
         $header = fn (): array => [($xpath = Html::xpath($html = $this->get('/en')->getContent()))->query('//header')->item(0)->getAttribute('class'),
             $xpath->query('//header//img[@class="logo-white"]/@src')->item(0)?->nodeValue, $html];
         $logo = $content->addMedia($this->admin, $home, $this->png('logo'), 'logo');
         [$class, $white, $html] = $header();
-        $this->assertSame('header header--dark header--overlay header--logo-plate', $class);
+        $this->assertSame('header header--dark header--overlay header--logo-plate header--no-cta', $class);
         $this->assertNull($white);
         $this->assertStringNotContainsString('defaults/logo-white.png', $html);
         $white = $content->addMedia($this->admin, $home->fresh(), $this->png('logo_white'), 'logo_white');
         [$class, $src] = $header();
-        $this->assertSame('header header--dark header--overlay', $class);
+        $this->assertSame('header header--dark header--overlay header--no-cta', $class);
         $this->assertSame($white->getUrl(), $src);
         $this->assertStringStartsWith('/storage/', parse_url($src, PHP_URL_PATH));
         $content->removeMedia($this->admin, $home->fresh(), $white->id);
         $content->removeMedia($this->admin, $home->fresh(), $logo->id);
         [$class, $src] = $header();
-        $this->assertSame(['header header--dark header--overlay', asset('defaults/logo-white.png')], [$class, $src]);
+        $this->assertSame(['header header--dark header--overlay header--no-cta', asset('defaults/logo-white.png')], [$class, $src]);
 
         // Hero: свой постер или мобильный ролик без своего video перекрывают только свой слот набора умолчаний.
         foreach (['video_poster' => 'png', 'video_mobile' => 'mp4'] as $collection => $kind) {

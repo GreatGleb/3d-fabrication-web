@@ -4210,3 +4210,97 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
    загрузить новые файлы `logo.png` / `logo-white.png`.
 5. ПК и телефон: шапка с новым логотипом вверху и после прокрутки, страницы без ярлыка над заголовком, формы без звёздочек
    (в т. ч. «Adresai ir įmonė» в кабинете), шаг 2 калькулятора («Nepasirinkta» по умолчанию).
+
+## Правки 02.11, G-01 (Г1): шапка и логотип без подложки, подвал, главная без второго ряда, hero LT, карточки
+
+План: [README 02.11, Г1](../../docs/planning/edits-20261102/README.md). Сделано (2026-11-02, ночь):
+
+- **Логотипы.** `public/defaults/logo.png` и `logo-white.png` — копии `docs/planning/edits-20261102/logo/` байт в байт (1922×349
+  RGBA): sha256 `logo.png` — `68eebc2afd13753a15c76864c0d9db347318829532a0e9902e12fccde82de5a5`, `logo-white.png` —
+  `b0e9cc8e934d4ba97de0be28cfff99205c2469d5f4e497e1a2f003e9c2a6d3fe` (совпадают с README). `DefaultMediaTest`: размер
+  1419×262 → 1922×349, sha256 и точки «белая буква»/«синий хвост Q» пересчитаны на новый масштаб (1571,176 и 924,252; прежние
+  точки в новом файле попадают в прозрачное поле). Слоты и пути не менялись. Других тестов с 1419×262 нет (`ContentMediaTest`
+  размер не записывает).
+- **Подложка логотипа** (`shell.css`, «правка 02.11, Г1»): `.header .logo,.footer .logo{background:transparent;padding:0}` в обоих
+  состояниях шапки; переход `background-color` у `.logo` убран (и из reduced-motion списка); прежнее
+  `.header--dark:not(.header--logo-plate) .logo{background:transparent}` стало лишним и удалено; подложка `#fff`/5 px — только
+  `.header--logo-plate .logo`. `.logo-white` — `top:0;left:0;width:100%` (точно поверх обычного).
+- **Подвал:** `.footer .logo` — те же ступени, что у шапки: 220 / 180 (≤1150) / 140 (≤600) / 132 (≤360). На всех ширинах
+  LOGO_WIDTHS (320…1440) ширина подвального = шапочному ±1 px, колонки подвала не переполнены, документ не шире окна —
+  уменьшать не пришлось.
+- **Главная без второго ряда.** Проп `cta` у `x-header` (по умолчанию true), `x-layout` передаёт `headerCta`; шаблон главной —
+  `:header-cta="false"` (и у заглушки без записи home). Без ряда шапка получает класс `header--no-cta`, у неё и у `main`
+  своя `--header-height`: 83 / 76 (≤900) / 69 (≤600) px = 123/116/108 минус ряд `.header-cta` (40/40/39 px с рамкой).
+  `header.js` не менялся. Остальные страницы — прежний ряд.
+  Замер (HERO_PROBE bin/browser-check на /lt; «до» — прогон с временно возвращёнными из HEAD `shell.css`, `public.css`,
+  `home.blade.php`, `line-icon.blade.php`, затем файлы восстановлены, `cmp` совпал):
+  | ширина | шапка до | шапка после | верх содержимого hero − низ шапки до | после |
+  |---|---|---|---|---|
+  | 320 / 390 | 108 | 69 | 56,0 | 56,0 |
+  | 768 | 116 | 76 | 85,0 | 85,0 |
+  | 1024 / 1440 | 123 | 83 | 85,0 | 85,0 |
+- **hero_eyebrow LT** = «3D INŽINERIJA IR TECHNOLOGIJOS» в `prototype-content.json`; миграция данных
+  `2026_11_02_000000_set_home_hero_eyebrow_lt.php`: в `content_translations.fields` (опубликованная) и в последней
+  `content_revisions` (черновик) LT-перевода page_text home меняет поле, только если там прежний «3D ENGINEERING & TECHNOLOGY»;
+  `down` — обратно при том же условии. EN не трогается. Тест `PublicPagesTest::test_hero_eyebrow_migration_changes_only_the_previous_lithuanian_text`:
+  старый → новый (обе версии), повтор не меняет, `down` возвращает, текст администратора не меняется ни в up, ни в down, без
+  записи home — без ошибки.
+- **Третья карточка:** `shell.css` `.scenario:last-child{border-right:1px solid var(--line)}` (перекрывает `style.css:100`).
+- **Иконки карточек:** `public/icons/home/01-scan-to-gear-cube.svg`, `02-file-to-gear-cube.svg`, `03-gear-and-cube.svg` — копии
+  `docs/planning/edits-20261102/icons/home/` байт в байт (sha256 `162ac36b…837d`, `aa0d4dde…c864`, `abf7f60d…814a`; полные — в
+  тесте `PublicPagesTest::test_home_hero_eyebrow_is_lithuanian_on_lt_and_scenario_icons_are_the_customer_svgs`), через `<img alt="">`
+  (проще inline). `public.css`: `.scenario-icon` без своей подложки и ширины 70 px, `img` высотой 70 px в своих пропорциях
+  (125/126/83 px шириной). Неиспользуемые `scanner`/`printer` удалены из `line-icon`.
+  Решение без догадки, но отмечаю: `DemoExport` копировал только `defaults/`; добавлено копирование `public/icons/`, иначе
+  будущая демо-сборка потеряла бы иконки (демо не пересобиралось). `PublicMediaTest` (все `img` в main — из `/defaults/`)
+  исключает иконки карточек — с комментарием «правка 02.11, Г1».
+- **Тесты.** `ShellTest::test_home_has_no_second_header_row_and_inner_pages_keep_it` — на /lt и /en нет `.head-sub` и
+  `.header-cta` (с записью home и без), на /lt/paslaugos, /lt/apie-mus, /en/about, /en/services слоган и CTA есть; ожидания
+  классов шапки главной (`header--no-cta`) в `ShellTest` и `DefaultMediaTest` дополнены с комментарием «правка 02.11».
+  Проверено «падает до правки»: миграция с выключенным `up()` — тест миграции красный; шаблон главной без `:header-cta="false"`
+  и с чужим `src` иконок — оба новых теста красные; после возврата — зелёные.
+- **bin/browser-check.** `check_styles`: на главной `.head-sub` нет, на остальных — прежняя высота; `check_hero_under_header`:
+  нет `.head-sub`, `--header-height` шапки и main = 83/76/69, высота шапки = переменной, содержимое hero на 85/56 px от
+  низа шапки (+ заметка с замером в summary.md); `check_header`: фон второго ряда на главной отсутствует, новый
+  `check_logo_background` — у логотипа шапки фон `rgba(0,0,0,0)`, поле 0, нет перехода фона в тёмном, белом и снова тёмном
+  состоянии (у `header--logo-plate` — белая подложка); `check_logo`: подвальный логотип той же ширины, что шапочный, и
+  целевой, без фона, колонки подвала не переполнены; новый `check_scenarios` на /lt и /en при 320/390/768/1024/1440 — правая
+  рамка всех трёх карточек одинакова и ≥1 px (у последней = левой), иконки — три SVG по порядку, высота 70 ±1 px, пропорции
+  файла, внутри карточки, без подложки; кадры `header-top|scrolled-(lt|en)-(390|1440).png` (добавлена /en). Сверка текста:
+  `D21_REPLACEMENTS` получила необязательный третий элемент — регулярку страницы; запись «3D ENGINEERING & TECHNOLOGY →
+  3D INŽINERIJA IR TECHNOLOGIJOS» только для `^/lt$` с комментарием «правка 02.11, Г1» (там же отмечено, что второй ряд
+  шапки — вне main и сверку текста не затрагивает). Прогон с откатом CSS (`shell.css`/`public.css` из HEAD при новых шаблонах,
+  /lt): 88 ошибок именно в новых проверках (подложка и переход логотипа, подвал 160 px, рамка третьей карточки, иконки
+  с подложкой и 70×39, высота шапки главной); после возврата — зелёный.
+
+### Проверки G-01
+- `bin/php artisan test --compact tests/Feature/ShellTest.php tests/Feature/DefaultMediaTest.php tests/Feature/PublicPagesTest.php
+  tests/Feature/PublicMediaTest.php` — passed.
+- `bin/check` — `bin/check: OK` (PHPUnit 712 тестов, 75 573 проверки; Vite build OK).
+- `bin/browser-check --signed-in /lt /en /lt/apie-mus /en/about /lt/paslaugos /en/services` — `OK (8120 проверок)`, маркеры D-21
+  на этих страницах не найдены (allowlist не менялся). Первый прогон упал на моей же проверке (`transitionProperty: all` при
+  длительности 0 s — умолчание браузера, не переход); проверка уточнена (свойства с ненулевой длительностью).
+- `git status --porcelain aiqme-site`: изменены шаблоны, CSS, тесты, `bin/browser-check`, `DemoExport.php`,
+  `prototype-content.json`, два PNG логотипа; новые — миграция и `public/icons/home/*.svg`. `prototype/style.css`,
+  `experiments/`, `demo/` не менялись.
+- Просмотрены кадры `header-top-lt-1440.png` (тёмная шапка без ряда, логотип без подложки, LT-надпись hero) и
+  `header-scrolled-lt-390.png` (белая шапка без ряда, логотип без серого прямоугольника).
+
+### Не проверено (G-01)
+- Вид на телефоне и ПК, сравнение с видео/снимками заказчика (13.26, 13.45, 14.49) — **ждёт проверки пользователем**.
+- `bin/demo-check` и режим `--base-url/--compose-file` — не запускались; копирование `icons/` в `DemoExport` проверено чтением
+  кода; выполнение — ждёт пользователя. Полный `bin/browser-check` — в G-09.
+- На aiqme.com миграция не запускалась (выпуск — G-10).
+
+### G-01, доработка после приёмки (красный bin/check)
+- Замечание приёмщика: `bin/check` красный (`G-01.check0.log`) — упал
+  `CustomerAccountTest::test_card_shows_stages_payment_open_requests_transactions_tracking_and_reorder`: первой строкой
+  «Платежи и возвраты» шёл Refund, а не Payment. С правками G-01 не связано, но замечание верное — это ошибка кода, не теста.
+- Причина: связь Lunar `Order::transactions()` уже содержит `orderBy('created_at', 'desc')`, а `Account\OrderController`
+  лишь добавлял `orderBy('created_at')->orderBy('id')` вторым ключом. Пока capture и refund создавались в одну секунду,
+  решал `id` и тест проходил; если между ними сменялась секунда (медленный полный прогон) — возврат вставал первым.
+- Исправление: `->reorder('created_at')->orderBy('id')` (порядок по возрастанию даты, как задумано D-04). В тесте между
+  capture и возвратом добавлен `travel(1)->seconds()` — теперь случай воспроизводится всегда: без исправления тест падает
+  (проверено), с исправлением проходит.
+- Проверки: `bin/check` — `bin/check: OK` (PHPUnit 712/712, 75 573 проверки); `bin/browser-check --signed-in /lt /en
+  /lt/apie-mus /en/about /lt/paslaugos /en/services` — `OK (8120 проверок)`. «Не проверено (G-01)» выше остаётся в силе.

@@ -184,14 +184,14 @@ class ShellTest extends TestCase
         $client = User::factory()->create();
         $classes = fn (string $html): array => explode(' ', $this->xpath($html)->query('//header')->item(0)->getAttribute('class'));
 
-        // Без записи home главная — заглушка page-top: тёмная шапка без полупрозрачности.
+        // Без записи home главная — заглушка page-top: тёмная шапка без полупрозрачности (правка 02.11, Г1: и без второго ряда).
         foreach (['/lt', '/en'] as $path) {
-            $this->assertSame(['header', 'header--dark'], $classes($this->get($path)->getContent()), "$path без home");
+            $this->assertSame(['header', 'header--dark', 'header--no-cta'], $classes($this->get($path)->getContent()), "$path без home");
         }
         $this->seed(PrototypeContentSeeder::class);
         $pages = ['/lt' => true, '/en' => true, '/lt/apie-mus' => false, '/en/quote' => false, '/lt/nera-tokio' => false];
         foreach ($pages as $path => $overlay) {
-            $this->assertSame($overlay ? ['header', 'header--dark', 'header--overlay'] : ['header', 'header--dark'], $classes($this->get($path)->getContent()), $path);
+            $this->assertSame($overlay ? ['header', 'header--dark', 'header--overlay', 'header--no-cta'] : ['header', 'header--dark'], $classes($this->get($path)->getContent()), $path);
         }
         $this->assertSame(['header', 'header--dark'], $classes($this->actingAs($admin)->get('/en/admin')->assertOk()->getContent()), '/en/admin');
         $this->assertSame(['header', 'header--dark'], $classes($this->actingAs($client)->get('/en/account')->assertOk()->getContent()), '/en/account');
@@ -213,5 +213,27 @@ class ShellTest extends TestCase
         $this->assertCount(1, $style);
         $this->assertSame($nonce[1], $style->item(0)->getAttribute('nonce'));
         $this->assertSame('.header--overlay{background:var(--dark)}', $style->item(0)->textContent);
+    }
+
+    /** Правка 02.11, Г1: второй ряд шапки (слоган и CTA калькулятора) есть на внутренних страницах и нет на главной. */
+    public function test_home_has_no_second_header_row_and_inner_pages_keep_it(): void
+    {
+        $row = fn (string $path): DOMXPath => $this->xpath($this->get($path)->assertOk()->getContent());
+        $check = function () use ($row): void {
+            foreach (['/lt', '/en'] as $path) {
+                $xpath = $row($path);
+                $this->assertSame(0, $xpath->query('//header//div[contains(@class,"head-sub")]')->length, $path);
+                $this->assertSame(0, $xpath->query('//header//div[contains(@class,"header-cta")]')->length, $path);
+            }
+            foreach (['/lt/paslaugos' => '3D INŽINERIJA IR TECHNOLOGIJOS', '/lt/apie-mus' => '3D INŽINERIJA IR TECHNOLOGIJOS',
+                '/en/about' => '3D ENGINEERING & TECHNOLOGY', '/en/services' => '3D ENGINEERING & TECHNOLOGY'] as $path => $tagline) {
+                $xpath = $row($path);
+                $this->assertSame($tagline, trim($xpath->query('//header//div[contains(@class,"head-sub")]/span')->item(0)?->textContent ?? ''), $path);
+                $this->assertSame(1, $xpath->query('//header//a[@class="cta-link"]')->length, $path);
+            }
+        };
+        $check(); // без записи home (заглушка главной)
+        $this->seed(PrototypeContentSeeder::class);
+        $check();
     }
 }

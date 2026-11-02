@@ -101,7 +101,8 @@ class PublicMediaTest extends TestCase
     {
         foreach (['/lt', '/en/services', '/en/services/3d-scanning', '/lt/apie-mus'] as $path) {
             $html = $this->get($path)->getContent();
-            $images = Html::xpath($html)->query('//main//img');
+            // Правка 02.11, Г1: иконки карточек главной — SVG заказчика из public/icons/home/, не медиа по умолчанию.
+            $images = Html::xpath($html)->query('//main//img[not(parent::span[@class="scenario-icon"])]');
             $this->assertGreaterThan(0, $images->length, $path);
             foreach ($images as $img) {
                 $this->assertStringStartsWith(asset('defaults/'), $img->getAttribute('src'), $path);

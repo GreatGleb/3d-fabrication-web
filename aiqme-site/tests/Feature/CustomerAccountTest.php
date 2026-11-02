@@ -184,6 +184,8 @@ class CustomerAccountTest extends TestCase
         $flow = app(OrderWorkflow::class);
         $flow->requestPayment($this->admin, $a->order, 4000);
         LunarCapture::create($a->order, 2500, 'test-charge-1-not-real');
+        // Возврат на секунду позже: связь Lunar transactions() сортирует по created_at desc, нужен reorder() (G-01).
+        $this->travel(1)->seconds();
         Transaction::create(['order_id' => $a->order->id, 'success' => true, 'type' => 'refund', 'driver' => 'test', 'amount' => 500,
             'reference' => 'test-refund-not-real', 'status' => 'refunded', 'meta' => []]);
         Transaction::create(['order_id' => $a->order->id, 'success' => false, 'type' => 'capture', 'driver' => 'test', 'amount' => 9900,

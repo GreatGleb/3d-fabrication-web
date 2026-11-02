@@ -92,6 +92,75 @@ class PublicPagesTest extends TestCase
         }
     }
 
+    /** Правка 02.11, Г1: надпись над заголовком hero на LT литовская, EN прежняя; иконки карточек — SVG заказчика по порядку. */
+    public function test_home_hero_eyebrow_is_lithuanian_on_lt_and_scenario_icons_are_the_customer_svgs(): void
+    {
+        foreach (['/lt' => '3D INŽINERIJA IR TECHNOLOGIJOS', '/en' => '3D ENGINEERING & TECHNOLOGY'] as $path => $eyebrow) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $this->assertSame($eyebrow, Html::text($xpath->query('//section[@class="hero"]//div[@class="eyebrow"]')->item(0)), $path);
+            $this->assertSame(
+                [asset('icons/home/01-scan-to-gear-cube.svg'), asset('icons/home/02-file-to-gear-cube.svg'), asset('icons/home/03-gear-and-cube.svg')],
+                array_map(fn ($img) => $img->getAttribute('src'), iterator_to_array($xpath->query('//div[@class="scenario"]/span[@class="scenario-icon"]/img[@alt=""]'))),
+                $path,
+            );
+            $this->assertSame(0, $xpath->query('//span[@class="scenario-icon"]//svg')->length, "$path: прежние линейные иконки");
+        }
+        // Файлы — копии docs/planning/edits-20261102/icons/home/ байт в байт.
+        $this->assertSame([
+            '162ac36b415d96fbbcec975c198916f6b90e4f8ad54491490d50cad1dd82837d',
+            'aa0d4dde2426c29bb15df8568ccfd5d8113b07df0c8d649ece65fa7b305ac864',
+            'abf7f60d7f0afbcfacd4beb4b3724639113ef2ec1650b5f88f9171a11d7e814a',
+        ], array_map(fn (string $name): string => hash_file('sha256', public_path("icons/home/$name.svg")),
+            ['01-scan-to-gear-cube', '02-file-to-gear-cube', '03-gear-and-cube']));
+    }
+
+    /** Правка 02.11, Г1: миграция данных меняет прежний hero_eyebrow LT (опубликованный и черновик), правку администратора не трогает. */
+    public function test_hero_eyebrow_migration_changes_only_the_previous_lithuanian_text(): void
+    {
+        $migration = require database_path('migrations/2026_11_02_000000_set_home_hero_eyebrow_lt.php');
+        $home = $this->item(ContentType::PageText, 'home');
+        $eyebrows = function () use ($home): array {
+            $result = [];
+            foreach (['lt', 'en'] as $locale) {
+                $translation = $home->translation($locale)->fresh();
+                $result[$locale] = [$translation->field('hero_eyebrow'), $translation->latestRevision()->fields['hero_eyebrow']];
+            }
+
+            return $result;
+        };
+        $old = '3D ENGINEERING & TECHNOLOGY';
+        $new = '3D INŽINERIJA IR TECHNOLOGIJOS';
+        $this->assertSame(['lt' => [$new, $new], 'en' => [$old, $old]], $eyebrows(), 'новая установка — из prototype-content.json');
+
+        // (а) База как до правки: прежний текст в опубликованной версии и черновике LT → новый; EN не меняется; повтор ничего не меняет.
+        $translation = $home->translation('lt');
+        $translation->forceFill(['fields' => [...$translation->fields, 'hero_eyebrow' => $old]])->save();
+        $draft = $translation->latestRevision();
+        $draft->forceFill(['fields' => [...$draft->fields, 'hero_eyebrow' => $old]])->save();
+        $migration->up();
+        $this->assertSame(['lt' => [$new, $new], 'en' => [$old, $old]], $eyebrows());
+        $migration->up();
+        $this->assertSame(['lt' => [$new, $new], 'en' => [$old, $old]], $eyebrows());
+        $this->get('/lt')->assertSee($new);
+
+        // down() при новом тексте возвращает прежний.
+        $migration->down();
+        $this->assertSame(['lt' => [$old, $old], 'en' => [$old, $old]], $eyebrows());
+
+        // (б) Текст администратора (опубликован) сохраняется в up() и down().
+        $this->republish($home, 'lt', ['hero_eyebrow' => 'MŪSŲ TEKSTAS']);
+        $migration->up();
+        $this->assertSame(['MŪSŲ TEKSTAS', 'MŪSŲ TEKSTAS'], $eyebrows()['lt']);
+        $migration->down();
+        $this->assertSame(['MŪSŲ TEKSTAS', 'MŪSŲ TEKSTAS'], $eyebrows()['lt']);
+        $this->assertSame([$old, $old], $eyebrows()['en']);
+
+        // (в) Записи home нет — без ошибки.
+        ContentItem::query()->delete();
+        $migration->up();
+        $this->assertSame(0, ContentItem::count());
+    }
+
     public function test_service_cards_start_with_the_title_and_keep_the_number_in_the_media_corner(): void
     {
         // Правка 28.10 (П4): подписи «● NN / label» над названием нет; поле label в данных остаётся.

@@ -78,6 +78,13 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 не меньше 26 px (прежний отступ над ярлыком); сверка текста с эталоном исключает ярлык page-top (TEXT_EXCLUDED_BLOCKS).
 Без звёздочек в формах (правка 30.10, Г4): сверка текста с эталоном снимает « *» в конце подписей полей и строку form_note
 «* — būtini laukai.» / «* — required fields.» (D21_REPLACEMENTS).
+Шапка, логотип, главная (правка 02.11, Г1): на главной (/lt, /en) нет .head-sub (check_styles, check_hero_under_header), на
+остальных — прежний; --header-height главной у шапки и main 83/76/69 px, hero от верха окна, содержимое hero на прежних 85/56 px
+от низа шапки; у логотипа шапки фон прозрачный и без поля в тёмном и белом состоянии, без перехода фона (подложка — только
+header--logo-plate; check_header); логотип подвала той же ширины, что в шапке, на всех ширинах LOGO_WIDTHS, без фона (check_logo);
+check_scenarios на главной при всех ширинах — правая рамка третьей карточки как у остальных, иконки — SVG public/icons/home/ по
+порядку, высота 70 ±1 px в своих пропорциях, без подложки и обрезки; кадры header-top|scrolled для /lt и /en при 390 и 1440;
+LT-надпись hero — замена D21_REPLACEMENTS только для /lt.
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -412,7 +419,7 @@ STYLE_PROBE = """() => {
         h1: h1s && {font: h1s.fontFamily, size: parseFloat(h1s.fontSize), weight: h1s.fontWeight, line: parseFloat(h1s.lineHeight), spacing: parseFloat(h1s.letterSpacing)},
         headMain: document.querySelector('.head-main').getBoundingClientRect().height,
         logo: document.querySelector('.header .logo').getBoundingClientRect().height,
-        headSub: document.querySelector('.head-sub').getBoundingClientRect().height,
+        headSub: document.querySelector('.head-sub') && document.querySelector('.head-sub').getBoundingClientRect().height,
         wrapPadding: [parseFloat(css('.head-main', 'paddingLeft')), parseFloat(css('.head-main', 'paddingRight'))],
         wrapMax: css('.head-main', 'maxWidth'),
         ctaColor: visible(document.querySelector('.cta-link')) ? css('.cta-link', 'color') : null,
@@ -475,7 +482,11 @@ def check_styles(report, page, path, width):
                      and abs(card['spacing'] - card['size'] * -0.04) <= 0.1, f'{where}: заголовок карточки услуги {card} ≠ {card_size:.1f}')
     report.check(near(got['headMain'], expected['head_main']), f'{where}: высота шапки {got["headMain"]} ≠ {expected["head_main"]}')
     report.check(0 < got['logo'] <= got['headMain'], f'{where}: логотип {got["logo"]}px не помещается в шапку')
-    report.check(near(got['headSub'], expected['head_sub']), f'{where}: высота второго ряда {got["headSub"]} ≠ {expected["head_sub"]}')
+    # Правка 02.11, Г1: на главной второго ряда шапки (.head-sub) нет, на остальных страницах — прежний.
+    if path in HOME_PAGES:
+        report.check(got['headSub'] is None, f'{where}: на главной есть второй ряд шапки (.head-sub)')
+    else:
+        report.check(near(got['headSub'], expected['head_sub']), f'{where}: высота второго ряда {got["headSub"]} ≠ {expected["head_sub"]}')
     report.check(all(near(p, expected['wrap_padding']) for p in got['wrapPadding']), f'{where}: поля контейнера {got["wrapPadding"]} ≠ {expected["wrap_padding"]}')
     report.check(got['wrapMax'] == '1320px', f'{where}: ширина контейнера {got["wrapMax"]}')
     # Шапка-шторка (правка 28.10, П2): на прокрутке 0 шапка тёмная; белое состояние §7.1 сверяет check_header после прокрутки.
@@ -575,8 +586,9 @@ def check_cookie(report, page, path):
     report.check(not page.locator('.cookie').is_visible(), f'{path}: плашка вернулась после подтверждения')
 
 
+HOME_PAGES = ('/lt', '/en')  # главная: без второго ряда шапки (правка 02.11, Г1)
 HEADER_PAGES = ['/lt', '/en', '/lt/apie-mus', '/en/quote']  # check_header при 390 и 1440 (правка 28.10, П2); /en/admin — в check_accounts
-HEADER_SHOT_PAGES = ['/lt', '/lt/apie-mus', '/en/admin']  # кадры header-top/header-scrolled для ручного просмотра
+HEADER_SHOT_PAGES = ['/lt', '/en', '/lt/apie-mus', '/en/admin']  # кадры header-top/header-scrolled для ручного просмотра (главная — правка 02.11, Г1)
 HEADER_PROBE = """() => {
     const header = document.querySelector('.header');
     const css = (el, property) => el ? getComputedStyle(el)[property] : null;
@@ -592,7 +604,10 @@ HEADER_PROBE = """() => {
         icons: [...header.querySelectorAll('.icon-btn')].filter(visible).map((b) => css(b, 'color')),
         logo: logo && parseFloat(css(logo, 'opacity')), white: white && parseFloat(css(white, 'opacity')),
         headMain: header.querySelector('.head-main').getBoundingClientRect().height,
-        headSub: header.querySelector('.head-sub').getBoundingClientRect().height,
+        headSub: header.querySelector('.head-sub') && header.querySelector('.head-sub').getBoundingClientRect().height,
+        logoBackground: css(header.querySelector('.logo'), 'backgroundColor'), logoPadding: css(header.querySelector('.logo'), 'padding'),
+        logoTransition: (() => { const s = getComputedStyle(header.querySelector('.logo')); const durations = s.transitionDuration.split(', ');
+            return s.transitionProperty.split(', ').filter((p, i) => parseFloat(durations[i % durations.length]) > 0); })(), plate: header.classList.contains('header--logo-plate'),
         height: header.offsetHeight, scrollY: window.scrollY, texts, transition: css(header, 'transitionDuration'),
         animations: header.getAnimations({subtree: true}).length,
         fits: document.documentElement.scrollWidth <= document.documentElement.clientWidth};
@@ -600,7 +615,9 @@ HEADER_PROBE = """() => {
 HERO_PROBE = """() => {
     const header = document.querySelector('.header'), hero = document.querySelector('main > .hero:first-child');
     const content = hero && hero.querySelector('.wrap').firstElementChild;
-    return {variable: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height')),
+    return {variable: parseFloat(getComputedStyle(header).getPropertyValue('--header-height')),
+        mainVariable: parseFloat(getComputedStyle(document.querySelector('main')).getPropertyValue('--header-height')),
+        headSub: !!header.querySelector('.head-sub'),
         height: header.offsetHeight, top: header.getBoundingClientRect().top, overlay: header.classList.contains('header--overlay'),
         hero: hero && hero.getBoundingClientRect().top, content: content && content.getBoundingClientRect().top,
         h1: hero && hero.querySelector('h1').getBoundingClientRect().top};
@@ -628,15 +645,22 @@ def scroll_to(page, top):
 
 
 def check_hero_under_header(report, page, where, width):
-    """Главная (правка 28.10, П2): hero от верха окна под шапкой, высота шапки = --header-height, содержимое hero на месте."""
+    """Главная (правка 28.10, П2): hero от верха окна под шапкой, высота шапки = --header-height, содержимое hero на месте.
+    Правка 02.11, Г1: у главной без второго ряда своя --header-height (123/116/108 минус ряд = 83/76/69 px) у шапки и main;
+    верх содержимого hero от низа шапки — прежние 85/56 px."""
     got = page.evaluate(HERO_PROBE)
     if not report.check(got['overlay'] and got['hero'] is not None, f'{where}: на главной нет header--overlay или hero {got}'):
         return
     near = lambda a, b, d: abs(a - b) <= d  # noqa: E731
+    home_height = 69 if width <= 600 else 76 if width <= 900 else 83
+    report.check(not got['headSub'], f'{where}: на главной есть второй ряд шапки (.head-sub)')
+    report.check(got['variable'] == home_height and got['mainVariable'] == home_height,
+                 f'{where}: --header-height главной {got["variable"]}/{got["mainVariable"]} ≠ {home_height}')
     report.check(near(got['hero'], 0, 1), f'{where}: hero начинается не от верха окна ({got["hero"]})')
     report.check(near(got['height'], got['variable'], 1), f'{where}: высота шапки {got["height"]} ≠ --header-height {got["variable"]}')
     offset = 56 if width <= 600 else 85  # padding-top .hero .wrap прототипа
     report.check(near(got['content'], got['variable'] + offset, 2), f'{where}: верх содержимого hero {got["content"]} ≠ {got["variable"]} + {offset}')
+    report.notes.append(f'{where}: шапка {got["height"]} px, верх содержимого hero − низ шапки = {got["content"] - got["height"]:.1f} px')
 
 
 def header_shot(page, kind, path, width):
@@ -648,11 +672,22 @@ def check_header_dark(report, got, where, home):
     report.check(got['background'] == ('rgba(10, 17, 25, 0.6)' if home else 'rgb(10, 17, 25)'), f'{where}: фон тёмной шапки {got["background"]}')
     report.check(all(color == 'rgb(255, 255, 255)' for color in got['nav'] + got['icons']), f'{where}: пункты и значки не белые {got["nav"]} {got["icons"]}')
     report.check((got['logo'], got['white']) in ((0, 1), (1, None)), f'{where}: opacity логотипов {got["logo"]}/{got["white"]}')
+    check_logo_background(report, got, where)
     red, green, blue, alpha = rgba(got['background'])
     behind = [round(alpha * c + (1 - alpha) * b) for c, b in zip((red, green, blue), HERO_BEHIND)]
     for text, color in got['texts']:
         ratio = contrast(rgba(color)[:3], behind)
         report.check(ratio >= 4.5, f'{where}: контраст «{text}» {color} на {behind} = {ratio:.2f} < 4.5')
+
+
+def check_logo_background(report, got, where):
+    """Правка 02.11, Г1: у логотипа шапки нет белой подложки и перехода фона; подложка — только у header--logo-plate."""
+    if got['plate']:
+        report.check(got['logoBackground'] == 'rgb(255, 255, 255)', f'{where}: у своего логотипа без белого нет подложки ({got["logoBackground"]})')
+    else:
+        report.check(got['logoBackground'] == 'rgba(0, 0, 0, 0)' and got['logoPadding'] == '0px',
+                     f'{where}: у логотипа фон {got["logoBackground"]}, поле {got["logoPadding"]}')
+    report.check(not any(p in ('all', 'background', 'background-color') for p in got['logoTransition']), f'{where}: переход фона у логотипа {got["logoTransition"]}')
 
 
 def check_header(report, new_page, path, width, state=None):
@@ -673,9 +708,10 @@ def check_header(report, new_page, path, width, state=None):
         report.check(not got['dark'], f'{where}: после прокрутки осталась header--dark')
         report.check(got['background'] == 'rgb(255, 255, 255)' and got['border'] == 'rgb(220, 226, 232)',
                      f'{where}: белая шапка §7.1: фон {got["background"]}, линия {got["border"]}')
-        report.check(got['ctaBackground'] == 'rgb(248, 250, 252)', f'{where}: фон второго ряда {got["ctaBackground"]}')
+        report.check(got['ctaBackground'] == (None if home else 'rgb(248, 250, 252)'), f'{where}: фон второго ряда {got["ctaBackground"]}')
         report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA после прокрутки {got["ctaColor"]}')
         report.check((got['logo'], got['white']) in ((1, 0), (1, None)), f'{where}: opacity логотипов после прокрутки {got["logo"]}/{got["white"]}')
+        check_logo_background(report, got, f'{where} после прокрутки')
         report.check((got['headMain'], got['headSub']) == (top['headMain'], top['headSub']),
                      f'{where}: высоты рядов {got["headMain"]}/{got["headSub"]} ≠ {top["headMain"]}/{top["headSub"]}')
         report.check(got['fits'], f'{where}: документ шире окна в белом состоянии')
@@ -694,7 +730,7 @@ def check_header(report, new_page, path, width, state=None):
     context.close()
 
 
-LOGO_WIDTHS = {320: 132, 390: 140, 600: 140, 768: 180, 901: 180, 1024: 180, 1150: 180, 1440: 220}  # .header .logo (правка 30.10, Г1)
+LOGO_WIDTHS = {320: 132, 390: 140, 600: 140, 768: 180, 901: 180, 1024: 180, 1150: 180, 1440: 220}  # .header .logo (правка 30.10, Г1), .footer .logo (02.11)
 LOGO_PROBE = """() => {
     const rect = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
     const visible = (el) => el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
@@ -702,6 +738,9 @@ LOGO_PROBE = """() => {
     return {logo: rect(header.querySelector('.logo')), img: rect(header.querySelector('.logo img:not(.logo-white)')),
         white: header.querySelector('.logo img.logo-white') && rect(header.querySelector('.logo img.logo-white')),
         nav: visible(nav) ? rect(nav) : null, tools: rect(header.querySelector('.tools')),
+        footer: rect(document.querySelector('.footer .logo')), footerImg: rect(document.querySelector('.footer .logo img')),
+        footerBackground: getComputedStyle(document.querySelector('.footer .logo')).backgroundColor,
+        footerOverflow: [...document.querySelectorAll('.footer-top > div')].some((d) => d.scrollWidth > d.clientWidth + 1),
         row: rect(header.querySelector('.head-main')), navHeight: visible(nav) ? nav.getBoundingClientRect().height : 0,
         fits: document.documentElement.scrollWidth <= document.documentElement.clientWidth};
 }"""
@@ -731,9 +770,52 @@ def check_logo(report, new_page, path):
         report.check(got['fits'], f'{where}: документ шире окна')
         report.check(got['white'] is not None and all(abs(a - b) <= 1 for a, b in zip(got['white'], got['img'])),
                      f'{where}: белый логотип {got["white"]} не совпадает с обычным {got["img"]}')
+        # Правка 02.11, Г1: логотип подвала той же ширины, что в шапке, без подложки, колонки подвала не переполнены.
+        footer = got['footer']
+        report.check(abs(footer[2] - footer[0] - (logo[2] - logo[0])) <= 1 and abs(footer[2] - footer[0] - target) <= 1,
+                     f'{where}: ширина логотипа подвала {footer[2] - footer[0]:.1f} ≠ шапке {logo[2] - logo[0]:.1f}')
+        report.check(got['footerBackground'] == 'rgba(0, 0, 0, 0)' and abs(got['footerImg'][2] - got['footerImg'][0] - target) <= 1,
+                     f'{where}: подвал: фон логотипа {got["footerBackground"]}, ширина картинки {got["footerImg"]}')
+        report.check(not got['footerOverflow'], f'{where}: колонка подвала переполнена')
         for problem in problems:
             report.check(False, f'{where}: {problem}')
         context.close()
+
+
+SCENARIO_ICONS = ['01-scan-to-gear-cube.svg', '02-file-to-gear-cube.svg', '03-gear-and-cube.svg']
+SCENARIO_PROBE = """async () => {
+    const cards = [...document.querySelectorAll('main .scenario')];
+    const result = [];
+    for (const card of cards) {
+        const icon = card.querySelector('.scenario-icon'), img = icon && icon.querySelector('img');
+        if (img && !img.complete) { await new Promise((resolve) => { img.onload = img.onerror = resolve; setTimeout(resolve, 5000); }); }
+        const s = getComputedStyle(card), box = card.getBoundingClientRect(), r = img ? img.getBoundingClientRect() : null;
+        result.push({borders: ['Top', 'Right', 'Bottom', 'Left'].map((side) => [parseFloat(s[`border${side}Width`]), s[`border${side}Color`]]),
+            src: img && img.getAttribute('src').split('/').pop(), natural: img && [img.naturalWidth, img.naturalHeight],
+            img: r && [r.left, r.top, r.width, r.height], card: [box.left, box.right],
+            iconBackground: icon && getComputedStyle(icon).backgroundColor, iconSvg: icon ? icon.querySelectorAll('svg').length : null});
+    }
+    return result;
+}"""
+
+
+def check_scenarios(report, page, where):
+    """Правка 02.11, Г1: у последней карточки «Kuo galime padėti?» правая рамка как у остальных; иконки — SVG заказчика по
+    порядку, высота ≈ прежних 70 px, в своих пропорциях, без второй подложки, не выходят за карточку."""
+    cards = page.evaluate(SCENARIO_PROBE)
+    if not report.check(len(cards) == 3, f'{where}: карточек {len(cards)}'):
+        return
+    report.check(all(card['borders'][1] == cards[0]['borders'][1] and card['borders'][1][0] >= 1 for card in cards),
+                 f'{where}: правые рамки карточек {[card["borders"][1] for card in cards]}')
+    report.check(cards[-1]['borders'][1] == cards[-1]['borders'][3], f'{where}: правая рамка последней {cards[-1]["borders"]}')
+    report.check([card['src'] for card in cards] == SCENARIO_ICONS, f'{where}: иконки {[card["src"] for card in cards]}')
+    for i, card in enumerate(cards):
+        natural, img = card['natural'] or [0, 0], card['img'] or [0, 0, 0, 0]
+        report.check(natural[0] > 0 and abs(img[3] - 70) <= 1 and abs(img[2] / img[3] - natural[0] / natural[1]) < 0.02,
+                     f'{where}: иконка {i + 1}: {img} при {natural}')
+        report.check(img[0] >= card['card'][0] and img[0] + img[2] <= card['card'][1], f'{where}: иконка {i + 1} обрезана {img} {card["card"]}')
+        report.check(card['iconBackground'] == 'rgba(0, 0, 0, 0)' and card['iconSvg'] == 0,
+                     f'{where}: иконка {i + 1}: подложка {card["iconBackground"]}, svg {card["iconSvg"]}')
 
 
 def check_header_cases(report, new_page, path):
@@ -875,7 +957,8 @@ def check_blocks(report, page, path, fixture):
     report.check(got == expected, f'{path}: порядок блоков {got} ≠ {expected}')
 
 
-# Таблицы D-21: исходная фраза эталона → наш вид ('' — удалена). Применяются к тексту эталона до сверки.
+# Таблицы D-21: исходная фраза эталона → наш вид ('' — удалена). Применяются к тексту эталона до сверки; третий элемент —
+# регулярное выражение страницы, если замена не для всех страниц.
 D21_REPLACEMENTS = [
     ('Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti iš anksto apmokėjus.', 'Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.'),
     ('We check the result and prepare it for delivery or prepaid collection.', 'We check the result and prepare it for delivery or collection.'),
@@ -906,6 +989,9 @@ D21_REPLACEMENTS = [
     # Таблица 2 (W-06): заметка автора в карточке статьи удалена, первое предложение осталось.
     (' Techniniai gamintojų dokumentai ir jų vertimai čia nepridedami, kol nėra pateikti.', ''),
     (' Manufacturer technical documents and translations are not added until provided.', ''),
+    # Правка 02.11, Г1: надпись над заголовком hero главной на LT — литовская (EN прежняя). Второго ряда шапки на главной нет —
+    # это шапка, а не main: сверку текста не затрагивает, проверяют check_styles и check_hero_under_header.
+    ('3D ENGINEERING & TECHNOLOGY', '3D INŽINERIJA IR TECHNOLOGIJOS', '^/lt$'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),
@@ -986,8 +1072,9 @@ def reference_phrases(path, has_project):
         for child in node['children']:
             if isinstance(child, str):
                 text = ' '.join(child.split())
-                for original, replacement in D21_REPLACEMENTS:
-                    text = text.replace(original, replacement)
+                for original, replacement, *page_rule in D21_REPLACEMENTS:
+                    if not page_rule or re.search(page_rule[0], path):
+                        text = text.replace(original, replacement)
                 # Правка 30.10 (Г4): у нас подписи полей без звёздочки обязательного поля («Vardas *» → «Vardas»).
                 text = re.sub(r' \*$', '', ' '.join(text.split()))
                 if text:
@@ -2815,8 +2902,9 @@ def main():
                     check_gutters(report, page, where, width)
                     if width in STYLE_WIDTHS:
                         check_styles(report, page, path, width)
-                    if path in ('/lt', '/en'):
+                    if path in HOME_PAGES:
                         check_hero_under_header(report, page, where, width)
+                        check_scenarios(report, page, where)
                     if width in (390, 1440):
                         for hit in marker_hits(page, path, allowlist):
                             report.check(False, f'{where}: маркер {hit}')

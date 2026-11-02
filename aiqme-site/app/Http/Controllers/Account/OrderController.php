@@ -84,7 +84,7 @@ class OrderController extends Controller
             'parts' => $parts,
             'balance' => $this->workflow->balance($order),
             'requests' => PaymentRequest::where('order_id', $order->id)->whereIn('state', PaymentRequest::OPEN)->orderBy('id')->get(),
-            'payments' => $order->transactions()->whereIn('type', ['capture', 'refund'])->where('success', true)->orderBy('created_at')->orderBy('id')->get(),
+            'payments' => $order->transactions()->whereIn('type', ['capture', 'refund'])->where('success', true)->reorder('created_at')->orderBy('id')->get(),
             'messages' => OrderMessage::where('order_id', $order->id)->orderBy('id')->get(),
             // Счёт (W-17) — скачивание по тем же правам (владелец, гость с правом в сессии); в демо-сборке блока нет (§8.7).
             'invoice' => app()->environment('demo') ? null : Invoice::where('order_id', $order->id)->first(),

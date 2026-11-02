@@ -4,15 +4,16 @@
      адрес, если версии другой локали нет (W-05).
      Шапка-шторка (правка 28.10, П2): сервер рисует тёмное состояние header--dark (первый кадр уже тёмный), resources/js/header.js
      снимает его после прокрутки — белая шапка прототипа §7.1. В a.logo обычный логотип и белый ($logoWhite) поверх него;
-     без белого — обычный на белой подложке (header--logo-plate). $overlay — полупрозрачная шапка поверх hero главной. --}}
-@props(['languages' => [], 'switchUrl' => null, 'logo', 'logoWhite' => null, 'overlay' => false])
+     без белого — обычный на белой подложке (header--logo-plate). $overlay — полупрозрачная шапка поверх hero главной.
+     $cta — второй ряд (правка 02.11, Г1: главная передаёт false, класс header--no-cta даёт свою --header-height). --}}
+@props(['languages' => [], 'switchUrl' => null, 'logo', 'logoWhite' => null, 'overlay' => false, 'cta' => true])
 @php
     $locale = app()->getLocale();
     $switchTo = $locale === 'lt' ? 'en' : 'lt';
     $current = request()->route()?->getName() ?? '';
 @endphp
 <a class="skip" href="#main">{{ __('shell.skip') }}</a>
-<header @class(['header', 'header--dark', 'header--overlay' => $overlay, 'header--logo-plate' => ! $logoWhite])>
+<header @class(['header', 'header--dark', 'header--overlay' => $overlay, 'header--logo-plate' => ! $logoWhite, 'header--no-cta' => ! $cta])>
     <div class="wrap head-main">
         <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ $logo }}" alt="AIQME">@if ($logoWhite)<img class="logo-white" src="{{ $logoWhite }}" alt="">@endif</a>
         <nav class="nav" id="main-nav" aria-label="{{ __('shell.nav_label') }}">
@@ -29,7 +30,9 @@
             <button class="icon-btn menu-btn" type="button" aria-label="{{ __('shell.menu') }}" aria-expanded="false" aria-controls="main-nav"><x-line-icon name="menu" /></button>
         </div>
     </div>
-    <x-header-cta />
+    @if ($cta)
+        <x-header-cta />
+    @endif
 </header>
 <x-modal id="search-modal" :title="__('public.search.title')">
     @include('public.partials.search-form', ['query' => '', 'results' => collect(), 'inputId' => 'search-modal-input', 'resultsId' => 'search-modal-results'])
