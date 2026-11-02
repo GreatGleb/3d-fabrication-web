@@ -44,19 +44,13 @@
                 <div class="section dark panel">@include('public.partials.process')</div>
             </section>
         @endif
+        {{-- Блока «Vienas kontaktas visam darbui» нет (правка 02.11, Г2): за примером (если есть) сразу FAQ. --}}
         @if ($project)
             <div class="section-head"><h2>{{ __('public.service.example') }}</h2></div>
-        @endif
-        <div class="grid two">
-            @if ($project)
+            <div class="grid two">
                 @include('public.partials.project-card')
-            @endif
-            <div class="panel">
-                <h3>{{ __('public.service.one_contact') }}</h3>
-                <p>{{ __('public.service.one_contact_text') }}</p>
-                <x-button :href="route($locale.'.contact')" arrow>{{ __('public.service.similar') }}</x-button>
             </div>
-        </div>
+        @endif
         @if ($questions->isNotEmpty())
             <h2 class="gap">{{ __('public.service.faq') }}</h2>
             @foreach ($questions as $question)

@@ -151,7 +151,7 @@ class PrototypeContentSeederTest extends TestCase
         }
         $printing = $published->find(ContentType::Service, 'en', '3d-printing');
         $this->assertSame('ONE-OFF PARTS, PROTOTYPES & SERIES PRODUCTION', $printing->field('label'));
-        $this->assertSame('Prototypes, functional components and small batches.', $printing->field('short'));
+        $this->assertSame('Prototypes, functional components and part series.', $printing->field('short')); // правка 02.11, Г2
 
         foreach (['lt', 'en'] as $locale) {
             $articles = $published->list(ContentType::Article, $locale, ['section' => 'library']);

@@ -29,7 +29,7 @@
               },
               {
                 "title": "Turiu failą. Reikia pagaminti.",
-                "text": "Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite kainą."
+                "text": "Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą."
               },
               {
                 "title": "Noriu gaminti pats.",
@@ -92,7 +92,7 @@
               },
               {
                 "title": "I have a file. I need it made.",
-                "text": "Upload your model, choose settings and review the price."
+                "text": "Upload your model, choose settings and review a preliminary price."
               },
               {
                 "title": "I want to make it myself.",
@@ -576,7 +576,7 @@
           "title": "3D spausdinimas",
           "slug": "3d-spausdinimas",
           "fields": {
-            "short": "Prototipai, funkcinės detalės ir mažos serijos.",
+            "short": "Prototipai, funkcinės detalės ir detalių serijos.",
             "label": "VIENETINIAI GAMINIAI, PROTOTIPAI IR SERIJINĖ GAMYBA",
             "benefits": [
               "Vienetiniai gaminiai, prototipai ir serijinė gamyba.",
@@ -586,7 +586,7 @@
             "description": "Pagaminame fizinę detalę pagal 3D modelį. Parenkame procesą pagal paskirtį, paviršių, mechaninius poreikius ir kiekį — nuo plastikų iki metalo sprendimų.",
             "problems": [
               "Norite patikrinti naujo produkto formą",
-              "Reikia vienos detalės ar mažos serijos",
+              "Reikia vienos detalės ar detalių serijos",
               "Sudėtinga geometrija įprastai gamybai"
             ],
             "provide": "STL, STEP arba OBJ failą, kiekį, paskirtį ir norimą terminą. Jei modelio nėra, padėsime jį sukurti.",
@@ -597,7 +597,7 @@
           "title": "3D printing",
           "slug": "3d-printing",
           "fields": {
-            "short": "Prototypes, functional components and small batches.",
+            "short": "Prototypes, functional components and part series.",
             "label": "ONE-OFF PARTS, PROTOTYPES & SERIES PRODUCTION",
             "benefits": [
               "One-off parts, prototypes and series production.",
@@ -607,7 +607,7 @@
             "description": "We produce a physical part from a 3D model. We select a process for the intended use, surface finish, mechanical needs and quantity, from polymers to metal solutions.",
             "problems": [
               "Testing the form of a new product",
-              "A one-off component or a small batch",
+              "A one-off component or a series of parts",
               "Complex geometry for conventional manufacturing"
             ],
             "provide": "An STL, STEP or OBJ file, quantity, intended use and target date. If you do not have a model, we can help create one.",
@@ -932,14 +932,14 @@
           "title": "Nuo ko priklauso terminas?",
           "slug": null,
           "fields": {
-            "answer": "Nuo modelio būklės, proceso, kiekio ir konkretaus užsakymo apimties. Terminą patvirtiname pasiūlyme."
+            "answer": "Nuo detalės dydžio, sudėtingumo, kiekio ir pasirinktos medžiagos."
           }
         },
         "en": {
           "title": "What determines the lead time?",
           "slug": null,
           "fields": {
-            "answer": "The model condition, process, quantity and scope determine timing. We confirm the lead time in the proposal."
+            "answer": "It depends on the part’s size, complexity, quantity and the chosen material."
           }
         }
       }

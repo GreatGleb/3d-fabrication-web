@@ -85,6 +85,9 @@ header--logo-plate; check_header); логотип подвала той же ш�
 check_scenarios на главной при всех ширинах — правая рамка третьей карточки как у остальных, иконки — SVG public/icons/home/ по
 порядку, высота 70 ±1 px в своих пропорциях, без подложки и обрезки; кадры header-top|scrolled для /lt и /en при 390 и 1440;
 LT-надпись hero — замена D21_REPLACEMENTS только для /lt.
+Тексты и блок услуги (правка 02.11, Г2): новые тексты главной, 3D spausdinimas и ответа FAQ services-1 — замены D21_REPLACEMENTS;
+блока «Vienas kontaktas visam darbui» на страницах услуг нет (его фразы — '' в D21_REPLACEMENTS, без примера в check_blocks нет
+и div.grid.two).
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -943,7 +946,8 @@ BLOCKS_PROBE = """() => {
 
 def check_blocks(report, page, path, fixture):
     """Порядок прямых детей main (и div.wrap.page-content) — как в prototype-blocks.json (§7.1). Заголовок примера
-    div.section-head на услугах сверяется, только если пример есть (опубликованный проект услуги, §4.1)."""
+    div.section-head на услугах сверяется, только если пример есть (опубликованный проект услуги, §4.1); без примера нет и
+    div.grid.two (правка 02.11, Г2: блок «Vienas kontaktas» убран, в div.grid.two — только пример)."""
     expected = json.loads(json.dumps(fixture[path]))
     has_project = page.locator('main .project-card').count() > 0
     for entry in expected:
@@ -951,7 +955,8 @@ def check_blocks(report, page, path, fixture):
             for children in entry.values():
                 for i, child in enumerate(children):
                     if child == 'div.section-head' and i + 1 < len(children) and children[i + 1] == 'div.grid.two':
-                        del children[i]
+                        # Правка 02.11, Г2: блока «Vienas kontaktas» нет — без примера нет и div.grid.two, FAQ сразу за разделом.
+                        del children[i:i + 2]
                         break
     got = page.evaluate(BLOCKS_PROBE)
     report.check(got == expected, f'{path}: порядок блоков {got} ≠ {expected}')
@@ -992,6 +997,24 @@ D21_REPLACEMENTS = [
     # Правка 02.11, Г1: надпись над заголовком hero главной на LT — литовская (EN прежняя). Второго ряда шапки на главной нет —
     # это шапка, а не main: сверку текста не затрагивает, проверяют check_styles и check_hero_under_header.
     ('3D ENGINEERING & TECHNOLOGY', '3D INŽINERIJA IR TECHNOLOGIJOS', '^/lt$'),
+    # Правка 02.11, Г2: тексты главной, 3D spausdinimas и ответ FAQ services-1 (LT от заказчика, EN — перевод плана); блока
+    # «Vienas kontaktas visam darbui» с кнопкой «Aptarti panašų projektą» на страницах услуг нет (кнопка на проектах остаётся).
+    ('Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite kainą.', 'Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą.'),
+    ('Upload your model, choose settings and review the price.', 'Upload your model, choose settings and review a preliminary price.'),
+    ('Prototipai, funkcinės detalės ir mažos serijos.', 'Prototipai, funkcinės detalės ir detalių serijos.'),
+    ('Prototypes, functional components and small batches.', 'Prototypes, functional components and part series.'),
+    ('Reikia vienos detalės ar mažos serijos', 'Reikia vienos detalės ar detalių serijos'),
+    ('A one-off component or a small batch', 'A one-off component or a series of parts'),
+    ('Nuo modelio būklės, proceso, kiekio ir konkretaus užsakymo apimties. Terminą patvirtiname pasiūlyme.',
+     'Nuo detalės dydžio, sudėtingumo, kiekio ir pasirinktos medžiagos.'),
+    ('The model condition, process, quantity and scope determine timing. We confirm the lead time in the proposal.',
+     'It depends on the part’s size, complexity, quantity and the chosen material.'),
+    ('Vienas kontaktas visam darbui.', '', '^/lt/paslaugos/.'), ('One point of contact for the whole job.', '', '^/en/services/.'),
+    ('Jei projektui reikia skenavimo, modeliavimo ir gamybos, visus etapus suderina AIQME. Prireikus įtraukiame tinkamus gamybos partnerius.',
+     '', '^/lt/paslaugos/.'),
+    ('If the project needs scanning, modelling and production, AIQME coordinates every step. Suitable manufacturing partners are involved when needed.',
+     '', '^/en/services/.'),
+    ('Aptarti panašų projektą', '', '^/lt/paslaugos/.'), ('Discuss a similar project', '', '^/en/services/.'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),

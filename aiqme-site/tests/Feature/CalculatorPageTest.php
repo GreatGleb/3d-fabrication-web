@@ -153,9 +153,11 @@ class CalculatorPageTest extends TestCase
         $en = $this->page('/en/quote');
         $this->assertSame(['Part', 'Quantity', 'Estimate'], Html::texts($en, '//*[@data-step-panel="3"]//th'));
         $this->assertSame(['Estimated total'], Html::texts($en, '//aside//div[contains(@class, "total")]/span[1]'));
-        $this->assertSame('Preliminary estimate. If the model needs support material for printing, the price may increase. '
-            .'The administrator confirms the final price and delivery after reviewing your order.',
+        // Правка 02.11, Г2: новый текст заметки панели (LT дословно от заказчика, EN — перевод плана).
+        $this->assertSame('The administrator will confirm the final price and delivery date after reviewing the order.',
             Html::text($en->query('//aside/div[contains(@class, "summary-note")]')->item(0)));
+        $this->assertSame('Galutinę kainą ir pristatymo terminą administratorius patvirtins, peržiūrėjęs užsakymą.',
+            Html::text($this->page('/lt/kalkuliatorius')->query('//aside/div[contains(@class, "summary-note")]')->item(0)));
         $this->assertSame(1, $en->query('//form[@id="checkout-form"]//input[@name="vat_code"]')->length);
         $this->assertSame(['Delivery throughout the EU', 'Collection'], Html::texts($en, '//select[@name="delivery"]/option'));
         // Отправка заявки включена (W-12): кнопка доступна, надписи «недоступно» нет.

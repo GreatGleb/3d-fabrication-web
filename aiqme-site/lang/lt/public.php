@@ -45,9 +45,6 @@ return [
         'workflow' => 'Aiški darbų eiga.',
         'example' => 'Pritaikymo pavyzdys',
         'view_project' => 'Peržiūrėti projektą ↗',
-        'one_contact' => 'Vienas kontaktas visam darbui.',
-        'one_contact_text' => 'Jei projektui reikia skenavimo, modeliavimo ir gamybos, visus etapus suderina AIQME. Prireikus įtraukiame tinkamus gamybos partnerius.',
-        'similar' => 'Aptarti panašų projektą',
         'faq' => 'Dažniausiai užduodami klausimai',
     ],
     'training' => [

@@ -4304,3 +4304,47 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   (проверено), с исправлением проходит.
 - Проверки: `bin/check` — `bin/check: OK` (PHPUnit 712/712, 75 573 проверки); `bin/browser-check --signed-in /lt /en
   /lt/apie-mus /en/about /lt/paslaugos /en/services` — `OK (8120 проверок)`. «Не проверено (G-01)» выше остаётся в силе.
+
+## Правки 02.11, G-02 (Г2): тексты главной, 3D spausdinimas, FAQ, заметка калькулятора; без блока «Vienas kontaktas»
+
+### Сделано
+- `database/seeders/data/prototype-content.json` — четыре текста таблицы Г2 дословно (LT и EN): `home.scenarios[1].text`,
+  `printing.short`, `printing.problems[1]`, ответ FAQ `services-1`. Заголовки FAQ не менялись.
+- `lang/lt|en/calculator.php` — `summary.note` дословно из Г2 (панель калькулятора, подтверждение заказа, кабинет — один ключ).
+- Миграция данных `database/migrations/2026_11_02_100000_update_texts_g2.php` (по образцу 2026_10_29 и G-01): для каждого из
+  8 полей (4 текста × LT/EN) меняет значение в опубликованной версии (`content_translations.fields`) и в черновике
+  (`content_revisions` с `revision` перевода) — только если там прежний текст прототипа; `down()` возвращает при том же
+  условии. Отредактированное администратором не меняется (на aiqme.com при выпуске G-10, если так, в progress.md —
+  «не изменено: отредактировано администратором»).
+- `resources/views/public/service.blade.php` — блока «Vienas kontaktas visam darbui» с кнопкой нет на всех услугах;
+  `div.grid.two` выводится только с примером (опубликованный проект), FAQ (`h2.gap`) идёт сразу за предыдущим разделом с его
+  обычным отступом `.gap` (28 px), CSS не менялся. Ключи `public.service.one_contact`, `one_contact_text`, `similar` удалены
+  из LT и EN (grep: больше не используются; `public.projects.similar` на страницах проектов остаётся).
+- `bin/browser-check`: `D21_REPLACEMENTS` с комментарием «правка 02.11, Г2» — 8 новых текстов и удаление фраз блока
+  (только на страницах услуг); `check_blocks` без примера убирает из эталона и `div.grid.two`.
+- `tests/fixtures/marker-allowlist.json` — только фразы, которые изменились («Prototipai, … mažos serijos.» /
+  «Prototypes, … small batches.» → новые тексты; маркер «prototip» в них остаётся законным).
+- Тесты: `PublicPagesTest::test_g2_texts_are_shown_and_service_pages_have_no_one_contact_block` (/lt, /en, обе страницы
+  печати, ответ FAQ на всех 12 страницах услуг, нет фраз блока и сырых ключей lang),
+  `test_g2_text_migration_changes_only_the_previous_texts` (старый → новый в обеих версиях, повтор, `down`, правка
+  администратора сохраняется в up/down, только черновик администратора не трогается, нет записей — без ошибки);
+  ожидания с комментарием «правка 02.11» в `test_service_page_uses_shared_process…` (нет блока, порядок блоков до FAQ),
+  `CalculatorPageTest` (новая заметка EN и LT), `PrototypeContentSeederTest` (новый `short`).
+
+### Проверено, что тесты ловят ошибку
+- Миграция без условия «прежний текст» → тест миграции падает; `down()` без действия → падает.
+- Прежний `service.blade.php` → оба теста страниц услуг падают.
+
+### Проверки
+- `bin/php artisan test --compact tests/Feature/PublicPagesTest.php tests/Feature/CalculatorPageTest.php
+  tests/Feature/PrototypeContentSeederTest.php tests/Feature/PublicSectionsTest.php` — 47 passed.
+- `bin/browser-check /lt /en /lt/paslaugos/3d-spausdinimas /en/services/3d-printing /lt/paslaugos/frezavimas
+  /en/services/cnc-machining` — `OK (2082 проверок)`, расхождений текста с эталоном нет, маркеры не найдены.
+- `bin/check` — `bin/check: OK` (PHPUnit 714/714, 75 626 проверок; Vite build OK).
+- `git status --porcelain aiqme-site`: изменены JSON контента, lang, шаблон услуги, тесты, `bin/browser-check`, allowlist;
+  новый файл — только миграция. `prototype/style.css`, `experiments/`, `demo/` не менялись.
+
+### Не проверено (G-02)
+- Вид страницы услуги без блока (отступ перед FAQ на телефоне и ПК) — **ждёт проверки пользователем** (кадры browser-check —
+  только первый экран).
+- На aiqme.com миграция не запускалась (выпуск — G-10). Полный `bin/browser-check` — в G-09.

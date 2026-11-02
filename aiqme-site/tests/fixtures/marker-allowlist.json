@@ -31,7 +31,7 @@
  },
  {
   "page": "/lt/paslaugos/3d-spausdinimas",
-  "phrase": "Prototipai, funkcinės detalės ir mažos serijos.",
+  "phrase": "Prototipai, funkcinės detalės ir detalių serijos.",
   "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
  },
  {
@@ -41,7 +41,7 @@
  },
  {
   "page": "/en/services/3d-printing",
-  "phrase": "Prototypes, functional components and small batches.",
+  "phrase": "Prototypes, functional components and part series.",
   "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
  },
  {
@@ -81,12 +81,12 @@
  },
  {
   "page": "/lt/paieska?q=3D",
-  "phrase": "Prototipai, funkcinės detalės ir mažos serijos.",
+  "phrase": "Prototipai, funkcinės detalės ir detalių serijos.",
   "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
  },
  {
   "page": "/en/search?q=3D",
-  "phrase": "Prototypes, functional components and small batches.",
+  "phrase": "Prototypes, functional components and part series.",
   "reason": "Текст услуги 3D-печати: «prototype/prototipai» — услуга AIQME, а не пометка демо (D-21: остальное дословно, «в том числе prototype/prototipai как услуга»)."
  },
  {

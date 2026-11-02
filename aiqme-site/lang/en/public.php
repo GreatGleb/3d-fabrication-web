@@ -45,9 +45,6 @@ return [
         'workflow' => 'A clear workflow.',
         'example' => 'Application example',
         'view_project' => 'View project ↗',
-        'one_contact' => 'One point of contact for the whole job.',
-        'one_contact_text' => 'If the project needs scanning, modelling and production, AIQME coordinates every step. Suitable manufacturing partners are involved when needed.',
-        'similar' => 'Discuss a similar project',
         'faq' => 'Frequently asked questions',
     ],
     'training' => [
