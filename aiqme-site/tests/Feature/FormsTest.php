@@ -110,7 +110,7 @@ class FormsTest extends TestCase
 
         $response = $this->post('/en/contact', [...$this->contact(), 'attachments' => [$pdf, $stl]]);
 
-        $response->assertRedirect('/en/contact')->assertSessionHasNoErrors();
+        $response->assertRedirect('/en/contact#contact-result')->assertSessionHasNoErrors(); // правка 02.11: якорь сообщения
         $request = ContactRequest::sole();
         $this->assertSame(['Ona Petraitė', 'ona@example.test', 'printing', 'en', '2027-03-01'],
             [$request->name, $request->email, $request->service, $request->locale, $request->deadline->format('Y-m-d')]);
@@ -170,6 +170,39 @@ class FormsTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    /** Правка 02.11 (Г3): после отправки — к якорю формы, чтобы сообщение было видно без прокрутки. */
+    public function test_contact_form_redirects_to_its_anchor_after_success_and_errors(): void
+    {
+        Mail::fake();
+        $this->post('/lt/kontaktai', [...$this->contact(), 'service' => '3d-spausdinimas'])
+            ->assertHeader('Location', url('/lt/kontaktai').'#contact-result');
+        $this->from('/en/contact?service=3d-printing')->post('/en/contact', $this->contact(['email' => 'not-an-email']))
+            ->assertHeader('Location', url('/en/contact?service=3d-printing').'#contact-form')->assertSessionHasErrors('email');
+        $this->from('/en/contact')->post('/en/contact', $this->contact(['altcha' => 'abc']))
+            ->assertHeader('Location', url('/en/contact').'#contact-result')->assertSessionHasErrors('altcha');
+        $this->from('/en/contact')->post('/en/contact', $this->contact(['website_hp' => 'x']))
+            ->assertHeader('Location', url('/en/contact').'#contact-result')->assertSessionHasErrors('form');
+    }
+
+    /** Правка 02.11 (Г3): своя кнопка выбора файла LT/EN над системным полем; поле, accept и multiple прежние. */
+    public function test_contact_attachments_field_has_its_own_choose_button(): void
+    {
+        foreach (['/lt/kontaktai' => ['Pasirinkti failus', 'Failas nepasirinktas'], '/en/contact' => ['Choose files', 'No file selected']] as $path => [$button, $empty]) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $label = $xpath->query('//form[@id="contact-form"]//label[@for="field-attachments--"]')->item(0);
+            $input = $xpath->query('./input[@type="file"][@name="attachments[]"]', $label)->item(0);
+            $this->assertNotNull($input, $path);
+            $this->assertTrue($input->hasAttribute('multiple'), $path);
+            $this->assertSame('.stl,.step,.stp,.obj,.pdf,.jpg,.jpeg,.png', $input->getAttribute('accept'), $path);
+            $this->assertFalse(str_contains($input->getAttribute('class'), 'sr-only'), "$path: без JS поле обычное");
+            $pick = $xpath->query('./span[@data-file-pick]', $label)->item(0);
+            $this->assertTrue($pick->hasAttribute('hidden'), "$path: кнопку показывает скрипт");
+            $this->assertSame($button, Html::text($xpath->query('./span[contains(@class, "btn")]', $pick)->item(0)), $path);
+            $this->assertSame($empty, Html::text($xpath->query('./span[@data-file-names]', $pick)->item(0)), $path);
+        }
+        $this->assertCount(0, Html::xpath($this->get('/en/quote')->getContent())->query('//span[@data-file-pick]'), 'только контактная форма');
+    }
+
     public function test_attachments_follow_section_6_4_limits_and_signatures(): void
     {
         Mail::fake();
@@ -226,7 +259,7 @@ class FormsTest extends TestCase
     {
         Mail::fake();
         // Сообщение сессии проверяется на странице: assertSessionHasErrors здесь состарил бы flash до следующего запроса.
-        $this->from('/en/contact')->post('/en/contact', [...$this->contact(), 'website_hp' => 'http://spam.test'])->assertRedirect('/en/contact');
+        $this->from('/en/contact')->post('/en/contact', [...$this->contact(), 'website_hp' => 'http://spam.test'])->assertRedirect('/en/contact#contact-result'); // правка 02.11
         $this->assertSame('The request was not accepted. Please try again.', Html::text(Html::xpath($this->get('/en/contact')->getContent())
             ->query('//*[@id="contact-result"]/div')->item(0)));
         $training = $this->training();
@@ -340,7 +373,7 @@ class FormsTest extends TestCase
     {
         $this->failingMail();
         $training = $this->training();
-        $this->post('/en/contact', $this->contact())->assertRedirect('/en/contact')->assertSessionHasNoErrors();
+        $this->post('/en/contact', $this->contact())->assertRedirect('/en/contact#contact-result')->assertSessionHasNoErrors(); // правка 02.11
         $this->post('/en/training', ['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'online', 'participants' => 1])
             ->assertSessionHasNoErrors();
 

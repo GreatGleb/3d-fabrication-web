@@ -22,6 +22,8 @@ use Illuminate\Validation\ValidationException;
  * middleware throttle:forms. Запись, событие и письмо — FormSubmissions. Успех — сообщение на странице формы.
  * Капча ALTCHA (правка 28.10 П3): после honeypot и до проверки полей — верное одноразовое решение, иначе ошибка 'altcha'
  * без записи (поля формы сохраняются в old()).
+ * Правка 02.11 (Г3): после отправки контактной формы переход к якорю — успех и ошибки формы/капчи к #contact-result
+ * (под кнопкой), ошибки полей к #contact-form, — сообщение видно без прокрутки.
  */
 class FormController extends Controller
 {
@@ -30,6 +32,17 @@ class FormController extends Controller
     public function __construct(private readonly PublishedContent $content, private readonly FormSubmissions $forms, private readonly Altcha $altcha) {}
 
     public function contact(Request $request): RedirectResponse
+    {
+        try {
+            return $this->storeContact($request);
+        } catch (ValidationException $exception) {
+            $anchor = array_diff(array_keys($exception->errors()), ['form', 'altcha']) === [] ? '#contact-result' : '#contact-form';
+
+            throw $exception->redirectTo(url()->previous(route(app()->getLocale().'.contact')).$anchor);
+        }
+    }
+
+    private function storeContact(Request $request): RedirectResponse
     {
         $locale = app()->getLocale();
         $this->rejectHoneypot($request);
@@ -63,7 +76,7 @@ class FormController extends Controller
             $service?->title ?? __('public.contact.equipment'),
         );
 
-        return redirect()->route($locale.'.contact')->with('contact_sent', count($files));
+        return redirect()->to(route($locale.'.contact').'#contact-result')->with('contact_sent', count($files));
     }
 
     public function training(Request $request): RedirectResponse

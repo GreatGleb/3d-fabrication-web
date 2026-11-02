@@ -1897,6 +1897,29 @@ def check_contact_map(report, new_page, path, width, shots_dir):
     context.close()
 
 
+def check_altcha_checkbox(report, page, form, where, name, width):
+    """Флажок капчи до проверки (правка 02.11, Г3): рамка видна — вычисленный border-color не прозрачный, ширина ≥ 1 px;
+    кадр формы shots/altcha-<страница>-<ширина>-before.png."""
+    box = form.locator('altcha-widget input[type=checkbox]')
+    try:
+        box.wait_for(state='visible', timeout=10000)
+    except PlaywrightTimeout:
+        report.check(False, f'{where}: флажок капчи не виден')
+        return
+    style = box.evaluate('''(input) => {
+        const s = getComputedStyle(input);
+        return {color: s.borderTopColor, width: parseFloat(s.borderTopWidth), style: s.borderTopStyle,
+                background: s.backgroundColor, checked: input.checked};
+    }''')
+    visible = style['style'] != 'none' and style['width'] >= 1 and style['color'] not in ('transparent', 'rgba(0, 0, 0, 0)')
+    report.check(not style['checked'] and visible, f'{where}: рамка флажка капчи не видна {style}')
+    report.check(style['color'] == 'rgb(138, 153, 171)' and style['background'] == 'rgb(255, 255, 255)',
+                 f'{where}: цвета флажка капчи не из shell.css (#8a99ab, белый) {style}')
+    page.evaluate("document.querySelector('.cookie')?.remove()")
+    box.scroll_into_view_if_needed()
+    form.locator('altcha-widget').screenshot(path=str(OUT / 'shots' / f'altcha-{name}-{width}-before.png'))
+
+
 def wait_altcha(report, page, form, where):
     """Капча ALTCHA (П3): фокус в форме запускает решение (auto=onfocus); ждём скрытое поле altcha с решением и надпись
     «Verified»/«Patvirtinta» (≤ 30 с). Возвращает виджет."""
@@ -1921,12 +1944,53 @@ def altcha_shot(page, form, name, width):
     page.evaluate("document.querySelectorAll('.header').forEach((h) => h.style.visibility = '')")
 
 
+FILE_PICK = {'/lt/kontaktai': ('Pasirinkti failus', 'Failas nepasirinktas'), '/en/contact': ('Choose files', 'No file selected')}
+
+
+def check_file_pick(report, page, form, path, where, files):
+    """Своё поле выбора файла (правка 02.11, Г3): системное поле скрыто (sr-only), кнопка и строка «не выбрано» на языке
+    страницы; фокус клавиатуры на поле виден рамкой кнопки; после выбора — имена файлов."""
+    button, empty = FILE_PICK[path]
+    pick = form.locator('[data-file-pick]')
+    names = pick.locator('[data-file-names]')
+    report.check(pick.is_visible() and pick.locator('.btn').inner_text().strip() == button,
+                 f'{where}: кнопка выбора файла «{pick.locator(".btn").inner_text().strip() if pick.count() else ""}»')
+    report.check(names.inner_text().strip() == empty, f'{where}: строка без файлов «{names.inner_text().strip()}»')
+    field = form.locator('input[type=file]')
+    report.check(field.evaluate('(input) => input.classList.contains("sr-only") && input.getBoundingClientRect().width <= 1'),
+                 f'{where}: системное поле выбора файла видно')
+    form.locator('textarea[name=description]').focus()
+    page.keyboard.press('Tab')
+    outline = pick.locator('.btn').evaluate('(button) => getComputedStyle(button).outlineStyle')
+    report.check(field.evaluate('(input) => document.activeElement === input') and outline != 'none',
+                 f'{where}: фокус клавиатуры на поле файла не виден (outline {outline})')
+    field.set_input_files(files)
+    expected = ', '.join(Path(file).name for file in files)
+    report.check(names.inner_text().strip() == expected, f'{where}: после выбора «{names.inner_text().strip()}», ждали «{expected}»')
+
+
+def check_contact_lt(report, new_page, path, width):
+    """LT-контакты (правка 02.11, Г3): флажок капчи до проверки и своё поле выбора файла, без отправки."""
+    where = f'{path} @{width} форма'
+    context, page, problems = new_page(width, 1000)
+    page.goto(BASE + path, wait_until='networkidle')
+    form = page.locator('#contact-form')
+    check_altcha_checkbox(report, page, form, where, 'contact-lt', width)
+    with tempfile.TemporaryDirectory() as directory:
+        file = Path(directory) / 'brėžinys.pdf'
+        file.write_bytes(b'%PDF-1.4\n')
+        check_file_pick(report, page, form, path, where, [str(file)])
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def check_contact_form(report, new_page, path, width):
     """Контактная форма (W-09): заполнение, два вложения, отправка, сообщение в #contact-result, письмо AIQME в Mailpit."""
     where = f'{path} @{width} форма'
     token = 'bc' + secrets.token_hex(6)
     email = f'{token}@example.test'
-    context, page, problems = new_page(width, 1000)
+    context, page, problems = new_page(width, 844 if width < 900 else 1000)
     page.goto(BASE + path, wait_until='networkidle')
     with tempfile.TemporaryDirectory() as directory:
         pdf = Path(directory) / 'drawing.pdf'
@@ -1938,7 +2002,8 @@ def check_contact_form(report, new_page, path, width):
         form.locator('input[name=email]').fill(email)
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
-        form.locator('input[type=file]').set_input_files([str(pdf), str(stl)])
+        check_altcha_checkbox(report, page, form, where, 'contact', width)
+        check_file_pick(report, page, form, path, where, [str(pdf), str(stl)])
         wait_altcha(report, page, form, where)
         altcha_shot(page, form, 'contact', width)
         with page.expect_navigation(wait_until='networkidle'):
@@ -1946,6 +2011,14 @@ def check_contact_form(report, new_page, path, width):
     result = page.locator('#contact-result').inner_text().strip()
     report.check(result == 'AIQME has received your enquiry. Files attached: 2.', f'{where}: результат «{result}»')
     report.check(urlparse(page.url).path == path, f'{where}: после отправки открылся {page.url}')
+    # Правка 02.11 (Г3): переход к якорю — сообщение в окне и не под липкой шапкой.
+    box = page.evaluate('''() => {
+        const r = document.querySelector('#contact-result .notice').getBoundingClientRect();
+        return {top: r.top, bottom: r.bottom, header: document.querySelector('.header').getBoundingClientRect().bottom, height: innerHeight};
+    }''')
+    report.check(urlparse(page.url).fragment == 'contact-result' and box['top'] >= box['header'] and box['bottom'] <= box['height'],
+                 f'{where}: сообщение после отправки не в видимой области {box} ({page.url})')
+    page.screenshot(path=str(OUT / 'shots' / f'contact-result-{width}.png'))
     check_form_mail(report, where, token, 'Nauja projekto užklausa', email, [f'Ona {token}', '3D printing', '<td>2</td>'])
     for problem in problems:
         report.check(False, f'{where}: {problem}')
@@ -2334,6 +2407,7 @@ def check_training_modal(report, new_page, path, width):
     modal.locator('select[name=format]').select_option('aiqme')
     modal.locator('input[name=participants]').fill('3')
     form = modal.locator('form')
+    check_altcha_checkbox(report, page, form, where, 'training', width)
     wait_altcha(report, page, form, where)
     altcha_shot(page, modal.locator('[role=dialog]'), 'training', width)
     with page.expect_navigation(wait_until='networkidle'):
@@ -2364,6 +2438,7 @@ def check_register(report, new_page, path, width):
     form.locator('input[name=name]').fill(f'Rūta {token}')
     form.locator('input[name=email]').fill(f'{token}@example.test')
     form.locator('input[name=password]').fill(secrets.token_urlsafe(12))
+    check_altcha_checkbox(report, page, form, where, 'register', width)
     widget = wait_altcha(report, page, form, where)
     report.check('Patvirtinta' in widget.inner_text(), f'{where}: надпись виджета «{widget.inner_text().strip()}»')
     altcha_shot(page, form, 'register', width)
@@ -2981,9 +3056,12 @@ def main():
                     for width in (390, 1440):
                         check_contact_map(report, new_page, path, width, shots_dir)
                 if path == '/en/contact':
-                    check_contact_form(report, new_page, path, FORM_PAGES[path])
+                    for width in (390, FORM_PAGES[path]):
+                        check_contact_form(report, new_page, path, width)
                 elif path in FORM_PAGES:
                     check_training_modal(report, new_page, path, FORM_PAGES[path])
+                if path == '/lt/kontaktai':
+                    check_contact_lt(report, new_page, path, 390)
                 if path == '/lt/paskyra/register':
                     check_register(report, new_page, path, 390)
 

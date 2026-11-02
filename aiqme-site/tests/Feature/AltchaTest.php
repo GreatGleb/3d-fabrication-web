@@ -212,9 +212,11 @@ class AltchaTest extends TestCase
             'чужой ключ' => $this->foreignKeyPayload(),
             'просрочка' => $this->expiredPayload(),
         ];
+        // Правка 02.11 (Г3): контактная форма возвращает к якорю #contact-result, где видна ошибка капчи.
+        $back = $form === 'contact' ? $url.'#contact-result' : $url;
         foreach ($rejected as $case => $payload) {
             $this->from($url)->post($url, [...$data('reject@example.test'), ...($payload === null ? [] : ['altcha' => $payload])])
-                ->assertRedirect($url)->assertSessionHasErrors(['altcha' => self::MESSAGE[$locale]]);
+                ->assertRedirect($back)->assertSessionHasErrors(['altcha' => self::MESSAGE[$locale]]);
             $this->assertStored($form, 0, $case);
         }
         Mail::assertNothingSent();
@@ -232,7 +234,7 @@ class AltchaTest extends TestCase
 
         // Повтор того же решения (для регистрации — с другим e-mail) не принимается.
         $this->from($url)->post($url, [...$data('second@example.test'), 'altcha' => $payload])
-            ->assertRedirect($url)->assertSessionHasErrors(['altcha' => self::MESSAGE[$locale]]);
+            ->assertRedirect($back)->assertSessionHasErrors(['altcha' => self::MESSAGE[$locale]]);
         $this->assertStored($form, 1, 'повтор');
         Mail::assertSent(FormSubmitted::class, $form === 'register' ? 0 : 1);
     }

@@ -4348,3 +4348,68 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид страницы услуги без блока (отступ перед FAQ на телефоне и ПК) — **ждёт проверки пользователем** (кадры browser-check —
   только первый экран).
 - На aiqme.com миграция не запускалась (выпуск — G-10). Полный `bin/browser-check` — в G-09.
+
+## Правки 02.11, G-03 (Г3): виден флажок капчи, свой выбор файла, сообщение после отправки видно
+
+Статус: **done**.
+
+### Причина невидимого флажка (установлена в bundled Chromium)
+- До правки `bin/browser-check /lt/paskyra/register` (новый замер `check_altcha_checkbox`) у
+  `altcha-widget input[type=checkbox]` до проверки: `border-top-style: none`, ширина 0, фон `rgba(0, 0, 0, 0)` — рамки и
+  фона нет и в Chromium, т. е. дело не только в старых браузерах.
+- Причина: `altcha.css` задаёт `--altcha-checkbox-border-color`, `--altcha-color-base` и др. через `light-dark()`, а сборка
+  Vite (lightningcss) переписывает их в полифил `var(--lightningcss-light,<цвет>)var(--lightningcss-dark,<цвет>)`
+  (видно в `public/build/assets/altcha-*.css`). Переменные `--lightningcss-*` выставляются только правилом `color-scheme`,
+  которого на сайте нет, — остаются два цвета подряд, значение недействительно, `border`/`background` флажка сбрасываются.
+  Зелёный «проверено» (`--altcha-color-success`) задан без `light-dark()`, поэтому был виден.
+- Исправление (`resources/css/shell.css`, у `altcha-widget`): явные цвета без `light-dark()` — рамка флажка `#8a99ab`, фон
+  `#fff`, текст `var(--ink)`, нейтральный `#ccd5e0`; также `--altcha-input-background-color`, `--altcha-input-color`,
+  `--altcha-spinner-color` — они вычисляются на `:root` из недействительной переменной и наследуются готовыми (первый
+  прогон после правки показал прозрачный фон, пока их не задал). `prototype/style.css` и `altcha.css` не менялись.
+
+### Своё поле выбора файла (контактная форма)
+- `components/field.blade.php`: параметр `picker` (только у `attachments[]` в `contact.blade.php`; загрузка админки и
+  калькулятор не затронуты) — после системного поля `span[data-file-pick][hidden]` с `.btn.secondary.small`
+  «Pasirinkti failus» / «Choose files» (aria-hidden, имя поля — подпись label) и строкой «Failas nepasirinktas» /
+  «No file selected» (`lang/*/public.php`, `forms.choose_files`, `forms.no_files`).
+- `resources/js/file-field.js` (подключён в `app.js`): поле получает `sr-only`, кнопка показывается, по `change` строка —
+  имена через запятую. Без JS кнопка скрыта атрибутом `hidden`, поле — обычное системное.
+- `public.css`: `.field input.sr-only` (размеры `.field input` прототипа сильнее `.sr-only`), фокус клавиатуры на поле —
+  рамка `:focus-visible` прототипа на кнопке, наведение — как у `.upload`. Подпись, `accept`, `multiple`, лимиты, серверная
+  проверка не менялись; поле даты не менялось.
+
+### Сообщение после отправки
+- `FormController::contact`: успех → `…/kontaktai#contact-result`; ошибки только `form`/`altcha` (сообщение под кнопкой) →
+  предыдущий адрес + `#contact-result`; ошибки полей → предыдущий адрес (с `?service=` предзаполнения) + `#contact-form`.
+  Регистрация на обучение не менялась (у неё окно подтверждения).
+- `public.css`: `scroll-margin-top` у `#contact-form` (шапка + 16 px) и `#contact-result` (шапка + 160 px, чтобы над
+  сообщением были видны кнопка и ошибка капчи) — липкая шапка не закрывает.
+
+### Тесты
+- Новые: `FormsTest::test_contact_form_redirects_to_its_anchor_after_success_and_errors` (Location с якорем: успех LT,
+  ошибка поля с сохранением `?service=`, капча, honeypot), `test_contact_attachments_field_has_its_own_choose_button`
+  (LT/EN тексты, accept/multiple, без JS поле не sr-only, кнопка hidden, на калькуляторе нет).
+- Ожидания с комментарием «правка 02.11» (адрес перенаправления теперь с `#contact-result`): `FormsTest` (3 места),
+  `AltchaTest` (контактная форма LT/EN), `Scenarios/ContactRequestScenarioTest`.
+- Проверено откатом: якоря в контроллере убраны → новый тест падает (`Location …/lt/kontaktai` без якоря); возвращены →
+  проходит. Флажок: до правки CSS `check_altcha_checkbox` падал (см. выше), после — проходит.
+- `bin/browser-check`: `check_altcha_checkbox` (до решения: border-style не none, ширина ≥ 1 px, цвет не прозрачный, ровно
+  `#8a99ab` и белый фон; кадр `shots/altcha-<форма>-<ширина>-before.png`) на контактах EN 390/1440, LT 390, регистрации
+  кабинета 390 и в окне обучения; `check_file_pick` (кнопка и строка LT/EN, системное поле ≤ 1 px, Tab с описания → фокус
+  на поле и outline кнопки, после `set_input_files` — имена); отправка `/en/contact` теперь на 390×844 и 1440×1000:
+  URL с `#contact-result`, `.notice` ниже шапки и в окне (кадр `shots/contact-result-<ширина>.png`).
+
+### Проверки
+- `bin/php artisan test --compact tests/Feature/FormsTest.php tests/Feature/AltchaTest.php tests/Feature/FormLabelsTest.php
+  tests/Feature/PublicPagesTest.php` — 65 passed.
+- `bin/browser-check /lt/kontaktai /en/contact /lt/paskyra/register` — `bin/browser-check: OK (545 проверок)`; маркеры не
+  найдены. Кадры просмотрены: флажок с серой рамкой до проверки, «Choose files» и «drawing.pdf, part.stl», сообщение на 390
+  под шапкой.
+- `bin/check` — `bin/check: OK` (PHPUnit 716/716, 75 663 проверки; Vite build OK). `pint --dirty` — passed.
+- `git status --porcelain aiqme-site`: изменены контроллер, lang, CSS, `app.js`, шаблоны, тесты, `bin/browser-check`,
+  progress.md; новый файл — только `resources/js/file-field.js`.
+
+### Не проверено (G-03)
+- Вид флажка и поля файла в Safari/Firefox и на телефоне заказчика — **ждёт проверки пользователем** (проверено только в
+  bundled Chromium; причина в собранном CSS одинакова для всех браузеров).
+- Окно обучения (`/en/training`) с новым замером флажка в этой задаче не прогонялось — войдёт в полный прогон G-09.

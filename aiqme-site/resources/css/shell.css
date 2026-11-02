@@ -29,6 +29,11 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 @media print{.wrap.page-content{padding-left:0;padding-right:0}}
 /* Виджет капчи ALTCHA (правка 28.10, П3): во всю ширину формы, рамка как у .field input прототипа, фирменный синий. */
 altcha-widget{display:block;margin:4px 0 16px;--altcha-max-width:100%;--altcha-border-width:1px;--altcha-border-color:#ccd5e0;--altcha-border-radius:4px;--altcha-color-primary:var(--blue)}
+/* Флажок капчи до проверки (правка 02.11, Г3): цвета altcha.css заданы через light-dark(), а сборка Vite (lightningcss)
+   превращает их в var(--lightningcss-light,…)var(--lightningcss-dark,…) — без color-scheme на странице это недействительный
+   цвет, рамка и фон флажка пропадали во всех браузерах. Явные цвета без light-dark(): рамка #8a99ab (≥3:1 к белому);
+   производные переменные (фон поля, спиннер) altcha.css вычисляет на :root — их тоже задаём здесь. */
+altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--altcha-color-neutral:#ccd5e0;--altcha-color-neutral-content:var(--muted);--altcha-checkbox-border-color:#8a99ab;--altcha-input-background-color:#fff;--altcha-input-color:var(--ink);--altcha-spinner-color:var(--ink)}
 /* Шапка-шторка (правка 28.10, П2): вверху тёмная (header--dark рисует сервер), после прокрутки больше высоты шапки + 50 px
    (resources/js/header.js) — белая шапка прототипа §7.1. Меняются только цвета и прозрачность, высоты рядов те же.
    Цвета тёмного состояния — WCAG AA и над худшим фоном главной (решение №4 плана). Фон полупрозрачной шапки главной

@@ -49,7 +49,7 @@
                     </div>
                     <x-field name="service" type="select" :label="__('public.contact.service')" :options="$serviceOptions" :value="$prefill['service']" required />
                     <x-field name="description" type="textarea" :label="__('public.contact.description')" :value="$prefill['description']" required minlength="10" />
-                    <x-field name="attachments[]" type="file" :label="__('public.contact.files')" multiple accept=".stl,.step,.stp,.obj,.pdf,.jpg,.jpeg,.png" />
+                    <x-field name="attachments[]" type="file" :label="__('public.contact.files')" picker multiple accept=".stl,.step,.stp,.obj,.pdf,.jpg,.jpeg,.png" />
                     <x-field name="deadline" type="date" :label="__('public.contact.deadline')" />
                     @include('public.partials.honeypot')
                     @include('public.partials.altcha')

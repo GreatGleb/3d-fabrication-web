@@ -44,7 +44,7 @@ class ContactRequestScenarioTest extends TestCase
             'service' => '3d-printing', 'description' => 'Need ten brackets printed in PETG.', 'deadline' => '2027-03-01',
             'altcha' => $this->altcha(),
             'attachments' => [UploadedFile::fake()->createWithContent('drawing.pdf', $pdf), UploadedFile::fake()->createWithContent('part.stl', $stl)],
-        ])->assertRedirect('/en/contact')->assertSessionHasNoErrors();
+        ])->assertRedirect('/en/contact#contact-result')->assertSessionHasNoErrors(); // правка 02.11: якорь сообщения
         $result = Html::xpath($this->get('/en/contact')->getContent())->query('//*[@id="contact-result"]/div')->item(0);
         $this->assertSame('AIQME has received your enquiry. Files attached: 2.', Html::text($result));
 

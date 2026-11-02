@@ -196,6 +196,9 @@ return [
         'empty' => 'Krepšelis kol kas tuščias',
     ],
     'forms' => [
+        // Своё поле выбора файла контактной формы (правка 02.11, Г3).
+        'choose_files' => 'Pasirinkti failus',
+        'no_files' => 'Failas nepasirinktas',
         'required' => 'Užpildykite šį lauką.',
         'email' => 'Įveskite teisingą el. pašto adresą.',
         'max' => 'Per ilga reikšmė: iki :max simbolių.',

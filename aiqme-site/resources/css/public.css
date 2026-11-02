@@ -25,6 +25,18 @@
 /* Зона загрузки — label скрытого поля: фокус клавиатуры виден на зоне, наведение — как у .btn.secondary. */
 .upload:focus-within{outline:2px solid var(--blue);outline-offset:2px}
 .upload:hover .btn.secondary{background:#edf3fa}
+/* Своё поле выбора файла (правка 02.11, Г3): скрытое поле — sr-only вопреки размерам .field input прототипа; фокус
+   клавиатуры виден на кнопке, имена файлов — под ней обычным текстом. */
+.field input.sr-only{width:1px;height:1px;min-height:0;padding:0;border:0}
+.file-pick{display:flex;flex-direction:column;align-items:flex-start;gap:7px;cursor:pointer}
+.file-pick[hidden]{display:none}
+.field:hover .file-pick .btn.secondary{background:#edf3fa}
+.field input.sr-only:focus-visible+.file-pick .btn{outline:3px solid #1685ff;outline-offset:4px}
+/* Якоря контактной формы после отправки (правка 02.11, Г3): липкая шапка не закрывает форму; над #contact-result видны
+   кнопка отправки и ошибка капчи. */
+#contact-form{scroll-margin-top:calc(var(--header-height) + 16px)}
+#contact-result{scroll-margin-top:calc(var(--header-height) + 160px)}
+.file-names{font-weight:400;color:var(--muted);overflow-wrap:anywhere}
 /* Пометка под ценой: цена может вырасти (поддержки), окончательную подтверждает администратор — заметнее серого .legal-note. */
 .summary-note{font-size:13px;margin:6px 0 22px}
 /* Контакты, правка 28.10 П5: в рамке карты iframe (320/260 px — style.css прототипа) и ссылка под ним; высота 210 px

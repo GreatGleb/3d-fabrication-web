@@ -196,6 +196,9 @@ return [
         'empty' => 'Your basket is empty',
     ],
     'forms' => [
+        // Своё поле выбора файла контактной формы (правка 02.11, Г3).
+        'choose_files' => 'Choose files',
+        'no_files' => 'No file selected',
         'required' => 'Fill in this field.',
         'email' => 'Enter a valid email address.',
         'max' => 'Too long: up to :max characters.',
