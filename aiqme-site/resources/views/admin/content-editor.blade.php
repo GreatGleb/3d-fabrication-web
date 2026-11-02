@@ -1,9 +1,8 @@
-{{-- Общий редактор контента (W-08, W-26; content-edit-form прототипа): атрибуты элемента, поля перевода LT и EN рядом, RU —
-     ниже; публикация и снятие по каждому языку; медиа элемента. «Save as a draft» прототипа нет: сохранение всегда черновик, публикация — отдельной кнопкой.
+{{-- Общий редактор контента (W-08, W-26; content-edit-form прототипа): атрибуты элемента, поля перевода LT и EN рядом
+     (RU в редакторе не показывается — правка 02.11, Г4; сохранённый RU не меняется); публикация и снятие LT и EN; медиа элемента. «Save as a draft» прототипа нет: сохранение всегда черновик, публикация — отдельной кнопкой.
      Слот без своего файла показывает превью файла по умолчанию D-43 с пометкой (то, что сейчас на сайте); умолчания
      video_mobile и video_poster при своём video на сайте не используются и не показываются. --}}
 @php
-    $locales = \App\Domain\Content\ContentService::LOCALES;
     $rows = array_merge(['title' => 'line'], $item->type->hasSlug() ? ['slug' => 'line'] : [],
         array_map(fn (array $field): string => $field['kind'], $fields),
         $item->type->hasSeo() ? ['seo_title' => 'line', 'seo_description' => 'text'] : []);
@@ -15,7 +14,7 @@
         <x-status :message="$status" />
         @if ($item->exists)
             <div class="admin-publication">
-                @foreach ($locales as $locale)
+                @foreach (['lt', 'en'] as $locale)
                     <div class="buttons" data-locale="{{ $locale }}">
                         <strong>{{ strtoupper($locale) }}</strong>
                         <span @class(['tag', 'blue' => $states[$locale]['key'] === 'published', 'orange' => $states[$locale]['key'] === 'changes'])>{{ __('admin.editor.state.'.$states[$locale]['key']) }}</span>
@@ -56,10 +55,6 @@
                     @include('admin.partials.editor-field')
                 @endforeach
             </div>
-        @endforeach
-        <h3>RU</h3>
-        @foreach ($rows as $name => $kind)
-            @include('admin.partials.editor-field', ['locale' => 'ru'])
         @endforeach
         <x-button type="submit">{{ __('admin.editor.save') }}</x-button>
     </form>

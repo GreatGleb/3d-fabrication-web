@@ -289,7 +289,8 @@ class AdminEditorsTest extends TestCase
         $this->get('/en')->assertSee('/en/services" >Services</a>', false);
 
         $editor = Livewire::test(UiTextEditor::class, ['textKey' => 'shell.nav.services'])
-            ->assertSet('values.lt', 'Paslaugos')->assertSet('values.en', 'Services')->assertSet('values.ru', 'Services')
+            ->assertSet('values.lt', 'Paslaugos')->assertSet('values.en', 'Services')
+            ->assertDontSeeHtml('wire:model="values.ru"')->assertDontSee('Text RU') // правка 02.11, Г4: поля RU нет
             ->set('values.en', 'Our services')
             ->call('save')->assertHasNoErrors()->assertSee('Saved.');
 
@@ -302,6 +303,21 @@ class AdminEditorsTest extends TestCase
         $editor->set('values.en', '')->call('save')->assertHasNoErrors()->assertSet('values.en', 'Services');
         $this->assertSame(0, UiText::count());
         $this->get('/en')->assertSee('/en/services" >Services</a>', false);
+    }
+
+    /** Правка 02.11, Г4: поля RU в редакторе нет, сохранённое RU-переопределение при сохранении LT/EN не меняется. */
+    public function test_ui_text_save_keeps_the_russian_override(): void
+    {
+        $ru = app(ContentService::class)->saveUiText($this->admin, 'ru', 'shell.nav.services', 'Услуги', 0, Channel::Web);
+
+        Livewire::test(UiTextEditor::class, ['textKey' => 'shell.nav.services'])
+            ->assertDontSeeHtml('wire:model="values.ru"')
+            ->set('values.lt', 'Mūsų paslaugos')->set('values.en', 'Our services')->call('save')->assertHasNoErrors();
+
+        $this->assertSame(['en' => 'Our services', 'lt' => 'Mūsų paslaugos', 'ru' => 'Услуги'],
+            UiText::where('key', 'shell.nav.services')->orderBy('locale')->pluck('value', 'locale')->all());
+        $this->assertSame($ru->revision, $ru->fresh()->revision);
+        $this->get('/ru')->assertOk()->assertSee('Услуги');
     }
 
     public function test_ui_text_conflict_keeps_the_input_and_saves_nothing(): void

@@ -4413,3 +4413,37 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид флажка и поля файла в Safari/Firefox и на телефоне заказчика — **ждёт проверки пользователем** (проверено только в
   bundled Chromium; причина в собранном CSS одинакова для всех браузеров).
 - Окно обучения (`/en/training`) с новым замером флажка в этой задаче не прогонялось — войдёт в полный прогон G-09.
+
+## Правки 02.11, G-04 (Г4): редакторы админки без RU
+
+### Сделано
+- `resources/views/admin/content-editor.blade.php`: строка публикации — только LT и EN (`['lt', 'en']` вместо
+  `ContentService::LOCALES`), блок «RU» с полями перевода удалён; комментарий шаблона обновлён.
+- `resources/views/admin/ui-text-editor.blade.php`: поле `values.ru` удалено.
+- `ContentService::LOCALES`, `RestrictRussianToAdmin`, маршруты `/ru/` и Livewire-компоненты не менялись: форма RU
+  по-прежнему загружается из БД и не отличается от сохранённого, поэтому `changedLocales()` / `UiTextEditor::save()` RU
+  не пишут — правка `app/Livewire/Admin/` не понадобилась (подтверждено тестами ниже).
+
+### Тесты
+- `AdminContentEditorTest`: `test_russian_is_edited_with_the_same_editor` заменён на
+  `test_editor_hides_russian_and_keeps_the_stored_translation` (опубликованный RU через ContentService; в редакторе нет
+  `data-locale="ru"`, `form.ru.*`, «Title RU», «Publish RU»; сохранение и публикация LT/EN не меняют ревизии и текст RU;
+  `/ru/services/3d-skanirovanie` — 200 администратору, 404 гостю, как раньше); в первом тесте `assertSee('Title RU')` →
+  `assertDontSee` (комментарий «правка 02.11, Г4»).
+- `AdminEditorsTest`: `assertSet('values.ru', …)` заменён на «поля RU нет» (комментарий «правка 02.11, Г4»); новый
+  `test_ui_text_save_keeps_the_russian_override` (RU-переопределение «Услуги» после сохранения LT/EN то же, ревизия та же,
+  `/ru` админу 200 и показывает его).
+- Проверено откатом: с прежними шаблонами (`git show HEAD:…`) два файла тестов — 20 из 24 passed (4 падают на новых
+  ожиданиях «нет RU»); с правкой — 24/24.
+
+### Проверки
+- `bin/php artisan test --compact tests/Feature/AdminContentEditorTest.php tests/Feature/AdminEditorsTest.php` — 24 passed.
+- `pint --dirty` — passed. `bin/check` — `bin/check: OK` (PHPUnit 717/717, 75 680 проверок; Vite build OK).
+- `git status --porcelain aiqme-site`: изменены 2 шаблона админки, 2 теста, progress.md; новых файлов нет.
+
+### Не проверено (G-04)
+- `bin/browser-check` в этой задаче не запускался (у G-04 нет поля browser_check; страницы — редакторы админки за входом,
+  в `bin/browser-check` ожиданий RU в редакторах нет — проверено чтением). Войдёт в полный прогон G-09.
+- Вид редактора без блока RU — **ждёт проверки пользователем**.
+- Livewire-действие `publish('ru')` по-прежнему принимается сервером при ручном вызове (кнопки нет); задача требует скрыть RU
+  только в интерфейсе — не менялось.

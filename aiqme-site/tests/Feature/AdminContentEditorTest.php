@@ -17,7 +17,7 @@ use Tests\TestCase;
 
 /**
  * Общий редактор контента W-08 (§1.4, §4.2) на услугах и текстах страниц: создание, правка черновика, публикация и снятие
- * по языкам (видно на публичных страницах), SEO-поля, RU, конфликт ревизии без потери ввода, проверки полей.
+ * по языкам (видно на публичных страницах), SEO-поля, RU вне редактора, конфликт ревизии без потери ввода, проверки полей.
  */
 class AdminContentEditorTest extends TestCase
 {
@@ -48,7 +48,8 @@ class AdminContentEditorTest extends TestCase
     public function test_a_new_service_is_created_as_a_draft_and_published_language_by_language(): void
     {
         $editor = Livewire::test(ContentEditor::class, ['type' => 'service'])
-            ->assertSee('Content editor')->assertSee('Pavadinimas LT')->assertSee('Title EN')->assertSee('Title RU')
+            ->assertSee('Content editor')->assertSee('Pavadinimas LT')->assertSee('Title EN')
+            ->assertDontSee('Title RU') // правка 02.11, Г4: полей RU нет
             ->assertDontSee('Publish LT')->assertDontSee('Files &amp; photos', false)
             ->set('form.lt.title', '3D matavimas')
             ->set('form.lt.slug', '3d-matavimas')
@@ -225,15 +226,32 @@ class AdminContentEditorTest extends TestCase
         }
     }
 
-    public function test_russian_is_edited_with_the_same_editor(): void
+    /** Правка 02.11, Г4: в редакторе нет полей и публикации RU; сохранённый RU-перевод не меняется, /ru/ — только администратору. */
+    public function test_editor_hides_russian_and_keeps_the_stored_translation(): void
     {
         $scanning = $this->item(ContentType::Service, 'scanning');
-        $editor = $this->editor($scanning)
-            ->set('form.ru.title', '3D сканирование')->set('form.ru.slug', '3d-skanirovanie')->call('save')->assertHasNoErrors()
-            ->call('publish', 'ru')->assertHasNoErrors();
-        $this->assertTrue($scanning->translation('ru')->fresh()->isPublished());
+        $content = app(ContentService::class);
+        $ru = ContentTypes::fromForm($scanning, ContentTypes::toForm($scanning, $scanning->translation('en')->latestRevision()->toArray()));
+        $ru['title'] = '3D сканирование';
+        $ru['slug'] = '3d-skanirovanie';
+        $content->saveDraft($this->admin, $scanning, 'ru', $ru, 0, Channel::Web);
+        $stored = $content->publish($this->admin, $scanning, 'ru', 1, Channel::Web);
+
+        $this->editor($scanning)
+            ->assertSeeHtml('data-locale="lt"')->assertSeeHtml('data-locale="en"')
+            ->assertDontSeeHtml('data-locale="ru"')->assertDontSeeHtml('wire:model="form.ru.')->assertDontSee('Title RU')->assertDontSee('Publish RU')
+            ->set('form.lt.title', '3D skenavimas (nauja)')->set('form.en.title', '3D scanning (new)')->call('save')->assertHasNoErrors()
+            ->call('publish', 'lt')->assertHasNoErrors()->call('publish', 'en')->assertHasNoErrors();
+
+        $this->assertSame('3D skenavimas (nauja)', $scanning->translation('lt')->fresh()->latestRevision()->title);
+        $this->assertSame('3D scanning (new)', $scanning->translation('en')->fresh()->latestRevision()->title);
+        $after = $stored->fresh();
+        $this->assertSame([$stored->revision, $stored->published_revision], [$after->revision, $after->published_revision], 'RU не меняется');
+        $this->assertSame('3D сканирование', $after->latestRevision()->title);
+
         $this->get('/ru/services/3d-skanirovanie')->assertOk()->assertSee('3D сканирование');
-        $editor->assertSeeHtml('data-locale="ru"');
+        auth()->logout();
+        $this->get('/ru/services/3d-skanirovanie')->assertNotFound();
     }
 
     public function test_service_fields_are_described_once(): void
