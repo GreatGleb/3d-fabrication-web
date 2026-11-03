@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Content\ContentService;
+use App\Domain\Content\ContentType;
 use App\Domain\Integrations\Models\IntegrationEvent;
 use App\Domain\Invoices\InvoicePdf;
 use App\Domain\Invoices\InvoiceService;
@@ -54,6 +56,12 @@ class InvoicesTest extends TestCase
     use SignedStripeEvents;
 
     private const LITHUANIAN = 'ąčęėįšųūž';
+
+    /** Необязательные тестовые реквизиты счёта (правка 02.11, Г5). */
+    private const OPTIONAL = [
+        'bank' => 'TEST bankas', 'swift' => 'TESTLT2X', 'iban' => 'LT00 TEST 0000 0000 0000', 'email' => 'info@test.example',
+        'phone' => '+370 600 11111', 'website' => 'www.test.example', 'delivery_terms' => 'EXW Vilnius', 'issued_by' => 'Jonas TEST',
+    ];
 
     private User $client;
 
@@ -138,14 +146,17 @@ class InvoicesTest extends TestCase
         return $this->sendStripe($this->succeededPayload($request, $eventId))->assertOk();
     }
 
-    /** Текст PDF через pdftotext; без него тест пропускается (причина — в docs/progress.md). */
-    private function pdfText(Invoice $invoice): string
+    /**
+     * Текст PDF через pdftotext; без него тест пропускается (причина — в docs/progress.md). $raw — в порядке потока PDF
+     * (порядок блоков шаблона), а не раскладки колонок.
+     */
+    private function pdfText(Invoice $invoice, bool $raw = false): string
     {
         $binary = (new ExecutableFinder)->find('pdftotext');
         if ($binary === null) {
             $this->markTestSkipped('pdftotext не установлен (poppler-utils)');
         }
-        $process = new Process([$binary, '-enc', 'UTF-8', Storage::disk('local')->path($invoice->pdf_path), '-']);
+        $process = new Process([$binary, ...($raw ? ['-raw'] : []), '-enc', 'UTF-8', Storage::disk('local')->path($invoice->pdf_path), '-']);
         $process->mustRun();
 
         return $process->getOutput();
@@ -184,6 +195,31 @@ class InvoicesTest extends TestCase
         Storage::disk('local')->assertExists($invoice->pdf_path);
         Livewire::test(Overview::class)->assertDontSeeHtml('id="overview-seller-missing"');
         $this->get('/en/admin/settings')->assertOk()->assertSee('TEST-LT1');
+    }
+
+    /** Правка 02.11, Г5: необязательные поля счёта в форме — EXW Vilnius по умолчанию, пустые — null, complete() их не требует. */
+    public function test_settings_form_saves_the_optional_invoice_details(): void
+    {
+        $this->actingAs($this->admin);
+        $form = Livewire::test(Settings::class)->assertSet('deliveryTerms', 'EXW Vilnius')->assertSet('bank', '')
+            ->assertSeeHtml('id="field-iban"')->assertSeeHtml('id="field-issuedBy"');
+        $form->set('name', 'TEST UAB')->set('companyCode', 'TEST-1')->set('address', 'TEST g. 1')
+            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('vatRate', '9')->set('series', 'TEST')->set('firstNumber', '1')
+            ->set('bank', ' TEST bankas ')->set('iban', 'LT00 TEST')->set('email', 'not-an-email')->call('save')->assertHasErrors('email');
+        $form->set('email', 'info@test.example')->set('deliveryTerms', '')->call('save')->assertHasNoErrors();
+
+        $values = app(SellerSettings::class)->values();
+        $this->assertSame(
+            ['bank' => 'TEST bankas', 'swift' => null, 'iban' => 'LT00 TEST', 'email' => 'info@test.example', 'phone' => null, 'website' => null, 'delivery_terms' => null, 'issued_by' => null],
+            array_intersect_key($values, self::OPTIONAL),
+        );
+        $this->assertTrue(app(SellerSettings::class)->complete());
+        Livewire::test(Settings::class)->assertSet('bank', 'TEST bankas')->assertSet('deliveryTerms', '');
+
+        // Запись, сохранённая до правки (без новых ключей), — полная; форма подставляет умолчание условий поставки.
+        $this->seller();
+        $this->assertTrue(app(SellerSettings::class)->complete());
+        Livewire::test(Settings::class)->assertSet('deliveryTerms', 'EXW Vilnius')->assertSet('iban', '');
     }
 
     public function test_vat_payer_status_and_numbering_are_required_and_a_non_payer_gets_zero_vat_with_the_note(): void
@@ -313,7 +349,8 @@ class InvoicesTest extends TestCase
         $invoice = Invoice::sole();
         $this->assertSame([7, 7], [$invoice->number, $this->counter()]);
         Storage::disk('local')->assertExists($invoice->pdf_path);
-        $this->assertSame(['TEST-7.pdf'], array_map('basename', Storage::disk('local')->allFiles('invoices')));
+        // Правка 02.11, Г5: номер без дефиса из 5 цифр.
+        $this->assertSame(['TEST00007.pdf'], array_map('basename', Storage::disk('local')->allFiles('invoices')));
     }
 
     public function test_issued_event_is_written_in_the_same_transaction_as_the_invoice(): void
@@ -337,7 +374,8 @@ class InvoicesTest extends TestCase
         IntegrationEvent::flushEventListeners();
         IssueInvoice::dispatchSync($order->id);
         $event = IntegrationEvent::where('type', 'invoice.issued')->sole();
-        $this->assertSame(['invoices', Invoice::sole()->id, 'TEST-7', '95.00', 'none'], [
+        // Правка 02.11, Г5: номер без дефиса.
+        $this->assertSame(['invoices', Invoice::sole()->id, 'TEST00007', '95.00', 'none'], [
             $event->entity_type, $event->entity_id, $event->data['invoice_number'], $event->data['amount'], $event->mail_status,
         ]);
     }
@@ -364,19 +402,182 @@ class InvoicesTest extends TestCase
             IssueInvoice::dispatchSync($order->id);
         }
 
+        // Правка 02.11, Г5: надписи образца заказчика в верхнем регистре.
         $ltText = $this->pdfText(Invoice::where('order_id', $lt->id)->sole());
         $this->assertStringContainsString('TEST UAB '.self::LITHUANIAN, $ltText);
-        $this->assertStringContainsString('PVM sąskaita faktūra', $ltText);
+        $this->assertStringContainsString('PVM SĄSKAITA FAKTŪRA', $ltText);
         $this->assertStringContainsString('Pristatymas', $ltText);
-        $this->assertStringContainsString('Iš viso', $ltText);
+        $this->assertStringContainsString('IŠ VISO', $ltText);
         $enText = $this->pdfText(Invoice::where('order_id', $en->id)->sole());
-        $this->assertStringContainsString('VAT invoice', $enText);
+        $this->assertStringContainsString('VAT INVOICE', $enText);
         $this->assertStringContainsString('Delivery', $enText);
         $this->assertStringContainsString(self::LITHUANIAN, $enText);
-        $this->assertStringNotContainsString('PVM sąskaita', $enText);
+        $this->assertStringNotContainsString('PVM SĄSKAITA', $enText);
 
-        $html = view('invoices.pdf', ['invoice' => Invoice::where('order_id', $en->id)->sole(), 'locale' => 'en', 'orderNumber' => 1])->render();
-        $this->assertDoesNotMatchRegularExpression('/https?:|src=|<link|url\(|@import/i', $html);
+        // Внешних ресурсов нет: единственный src — логотип data:image/ (правка 02.11, Г5), ссылок и url() нет.
+        $html = view('invoices.pdf', ['invoice' => Invoice::where('order_id', $en->id)->sole(), 'locale' => 'en', 'orderDate' => now(), 'logo' => InvoicePdf::logo()])->render();
+        $this->assertSame(1, preg_match_all('/src=/i', $html));
+        $this->assertMatchesRegularExpression('/<img src="data:image\/png;base64,[A-Za-z0-9+\/=]+"/', $html);
+        $withoutLogo = preg_replace('/src="data:image\/[^"]+"/', '', $html);
+        $this->assertDoesNotMatchRegularExpression('/https?:|src=|href=|<link|url\(|@import/i', $withoutLogo);
+    }
+
+    /**
+     * Правка 02.11, Г5: блоки образца LT/EN по порядку — номер без дефиса, дата, покупатель, заказ с телефоном и датой
+     * заказа (placed_at), условия поставки, KAINA за единицу без VAT, итоги, сумма прописью, «Apmokėta», банк, «gavau»,
+     * подписи и подвал продавца из настроек.
+     */
+    public function test_new_invoice_follows_the_customer_sample_in_lithuanian_and_english(): void
+    {
+        $this->seller(self::OPTIONAL);
+        $lt = $this->order($this->client, 'lt')->order;
+        $en = $this->order($this->client, 'en')->order;
+        foreach ([$lt, $en] as $order) {
+            $order->update(['placed_at' => '2026-10-08 10:00:00']);
+            LunarCapture::create($order, 9500);
+            IssueInvoice::dispatchSync($order->id);
+        }
+        $ltInvoice = Invoice::where('order_id', $lt->id)->sole();
+        $enInvoice = Invoice::where('order_id', $en->id)->sole();
+        $this->assertSame(['TEST00007', 'TEST00008'], [$ltInvoice->label(), $enInvoice->label()]);
+        $this->assertSame(['Ona TEST', '+370 600 00000'], [$ltInvoice->buyer['name'], $ltInvoice->buyer['phone']]);
+
+        // Порядок блоков — по тексту HTML, из которого dompdf рисует PDF (в тексте PDF ячейки одной строки при переносе
+        // перемешиваются); подвал (position: fixed) стоит в разметке первым и проверяется отдельно.
+        // Строки: детали 30 EUR × 2 шт. (нетто 27,52, за единицу 13,76), плата 5 EUR, доставка 30 EUR; итог 95 EUR с VAT 9 %.
+        $this->assertInOrder($this->htmlText($ltInvoice), [
+            'TEST UAB '.self::LITHUANIAN, 'TEST g. 1, Vilnius', 'ĮMONĖS KODAS: TEST-000000', 'PVM MOKĖTOJO KODAS: TEST-LT000000',
+            'info@test.example', '+370 600 11111', 'www.test.example',
+            'PVM SĄSKAITA FAKTŪRA', 'TEST00007', 'Data : '.now()->format('Y-m-d'),
+            'PIRKĖJAS', 'Ona TEST', 'Gedimino pr. 1, Vilnius, LT-01103, LT',
+            'UŽSAKYMAS: Ona TEST, TEL. +370 600 00000', 'UŽSAKYMO DATA: 2026-10-08', 'PRISTATYMO SĄLYGOS (INCOTERMS 2010): EXW Vilnius',
+            'PAVADINIMAS KIEKIS KAINA SUMA', 'bracket.stl 2 13,76 27,52', 'cover.stl 2 13,76 27,52', 'Užsakymo mokestis 1 4,59 4,59',
+            'Pristatymas 1 27,52 27,52', 'IŠ VISO 87,15', 'PVM 9 % 7,85', 'Devyniasdešimt penki EUR 00 ct IŠ VISO SU PVM 95,00',
+            'Apmokėta: 95,00 EUR', 'Bankas: TEST bankas SWIFT: TESTLT2X', 'A / S: LT00 TEST 0000 0000 0000',
+            'PREKES / PASLAUGAS GAVAU. PRETENZIJŲ KIEKIUI IR KOKYBEI NETURIU.',
+            'IŠRAŠĖ / IŠDAVĖ: Jonas TEST', '(PAREIGOS, VARDAS, PAVARDĖ, PARAŠAS)', 'GAVO:', '(PAREIGOS, VARDAS, PAVARDĖ, PARAŠAS)',
+        ]);
+        $this->assertInOrder($this->htmlText($enInvoice), [
+            'TEST UAB', 'COMPANY NUMBER: TEST-000000', 'VAT NUMBER: TEST-LT000000', 'info@test.example', 'www.test.example',
+            'VAT INVOICE', 'TEST00008', 'Date: '.now()->format('Y-m-d'), 'BUYER', 'Ona TEST',
+            'ORDER: Ona TEST, TEL. +370 600 00000', 'ORDER DATE: 2026-10-08', 'DELIVERY TERMS (INCOTERMS 2010): EXW Vilnius',
+            'DESCRIPTION QTY PRICE AMOUNT', 'bracket.stl 2 13.76 27.52', 'Order fee 1 4.59 4.59', 'Delivery 1 27.52 27.52',
+            'TOTAL 87.15', 'VAT 9 % 7.85', 'Ninety-five EUR 00 ct TOTAL INCL. VAT 95.00',
+            'Paid: 95.00 EUR', 'Bank: TEST bankas SWIFT: TESTLT2X', 'Account: LT00 TEST 0000 0000 0000',
+            'GOODS / SERVICES RECEIVED. NO CLAIMS AS TO QUANTITY AND QUALITY.', 'ISSUED BY: Jonas TEST', 'RECEIVED BY:', '(POSITION, NAME, SURNAME, SIGNATURE)',
+        ]);
+
+        // Сам PDF: те же надписи и значения в тексте pdftotext.
+        $ltText = $this->pdfText($ltInvoice);
+        foreach (['PVM SĄSKAITA FAKTŪRA', 'TEST00007', 'PIRKĖJAS', 'UŽSAKYMO DATA', '2026-10-08', 'EXW Vilnius', 'KAINA', '13,76',
+            'Devyniasdešimt penki EUR 00 ct', 'IŠ VISO SU PVM', 'Apmokėta: 95,00 EUR', 'SWIFT: TESTLT2X', 'A / S: LT00 TEST 0000 0000 0000',
+            'NETURIU.', 'IŠRAŠĖ / IŠDAVĖ: Jonas TEST', 'GAVO:', 'TEST UAB '.self::LITHUANIAN, 'www.test.example'] as $part) {
+            $this->assertStringContainsString($part, $ltText);
+        }
+        foreach (['TEST-7', 'Apmokėti iki', 'Liko apmokėti'] as $absent) {
+            $this->assertStringNotContainsString($absent, $ltText);
+        }
+        $enText = $this->pdfText($enInvoice);
+        foreach (['VAT INVOICE', 'TEST00008', 'ORDER DATE', 'PRICE', '13.76', 'Ninety-five EUR 00 ct', 'TOTAL INCL. VAT', 'Paid: 95.00 EUR', 'RECEIVED BY:'] as $part) {
+            $this->assertStringContainsString($part, $enText);
+        }
+        $this->snapshot($ltInvoice, 'lt');
+        $this->snapshot($enInvoice, 'en');
+    }
+
+    /** Правка 02.11, Г5: без необязательных настроек их строк в счёте нет (записи, сохранённые до правки, — без ключей). */
+    public function test_empty_optional_seller_details_are_not_printed(): void
+    {
+        $this->seller();
+        $order = $this->order($this->client, 'lt')->order;
+        LunarCapture::create($order, 9500);
+        IssueInvoice::dispatchSync($order->id);
+
+        $text = $this->pdfText(Invoice::sole());
+        foreach (['Bankas', 'SWIFT', 'A / S', 'PRISTATYMO SĄLYGOS', 'IŠRAŠĖ', 'EXW'] as $absent) {
+            $this->assertStringNotContainsString($absent, $text);
+        }
+        $this->assertStringContainsString('Apmokėta: 95,00 EUR', $text);
+        $this->assertStringContainsString('GAVO:', $text);
+    }
+
+    /** Правка 02.11, Г5: счёт, выписанный до правки (AIQ-1), показывается и скачивается с прежним номером. */
+    public function test_invoice_issued_before_the_change_keeps_its_printed_number(): void
+    {
+        $this->seller(['series' => 'AIQ', 'first_number' => 1]);
+        $submitted = $this->order($this->client);
+        LunarCapture::create($submitted->order, 9500);
+        IssueInvoice::dispatchSync($submitted->order->id);
+        $invoice = Invoice::sole();
+        $this->assertSame('AIQ00001', $invoice->label());
+        // Запись до правки: PDF по пути «серия-номер».
+        Storage::disk('local')->move($invoice->pdf_path, 'invoices/AIQ-1.pdf');
+        $invoice->update(['pdf_path' => 'invoices/AIQ-1.pdf']);
+        $url = '/invoices/'.$invoice->id;
+
+        $this->assertSame('AIQ-1', $invoice->fresh()->label());
+        $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="AIQ-1"', false)->assertSee('AIQ-1 ·', false);
+        $this->get('/en/account/orders/'.$submitted->meta->number)->assertOk()->assertSee('Invoice AIQ-1 (PDF)');
+        $this->get($url)->assertOk()->assertHeader('Content-Disposition', 'attachment; filename=AIQ-1.pdf');
+        $this->actingAs($this->admin);
+        Livewire::test(Card::class, ['orderId' => $submitted->order->id])->assertSeeHtml('data-invoice="AIQ-1"');
+    }
+
+    /** Свой логотип сайта из админки важнее defaults/logo.png (правка 02.11, Г5). */
+    public function test_invoice_logo_is_the_site_logo_as_data_uri(): void
+    {
+        $default = 'data:image/png;base64,'.base64_encode((string) file_get_contents(public_path('defaults/logo.png')));
+        $this->assertSame($default, InvoicePdf::logo());
+
+        Storage::fake('public');
+        $image = imagecreatetruecolor(40, 10);
+        $path = sys_get_temp_dir().'/aiqme-invoice-logo-'.bin2hex(random_bytes(4)).'.png';
+        imagepng($image, $path);
+        $home = app(ContentService::class)->createItem($this->admin, ContentType::PageText, 'home');
+        app(ContentService::class)->addMedia($this->admin, $home, $path, 'logo');
+        @unlink($path);
+
+        $logo = InvoicePdf::logo();
+        $this->assertNotSame($default, $logo);
+        $this->assertSame(file_get_contents($home->fresh()->getFirstMedia('logo')->getPath()), base64_decode(substr($logo, strlen('data:image/png;base64,'))));
+    }
+
+    /**
+     * Кадр первой страницы образцового счёта (pdftoppm) в игнорируемый каталог отчёта build/verification/invoices/ —
+     * для сверки человеком с образцом заказчика (правка 02.11, Г5). Без pdftoppm кадра нет.
+     */
+    private function snapshot(Invoice $invoice, string $locale): void
+    {
+        $binary = (new ExecutableFinder)->find('pdftoppm');
+        if ($binary === null) {
+            return;
+        }
+        $directory = base_path('build/verification/invoices');
+        @mkdir($directory, 0777, true);
+        copy(Storage::disk('local')->path($invoice->pdf_path), $directory.'/invoice-'.$locale.'.pdf');
+        (new Process([$binary, '-png', '-r', '100', '-f', '1', '-singlefile', $directory.'/invoice-'.$locale.'.pdf', $directory.'/invoice-'.$locale]))->mustRun();
+    }
+
+    /** Текст HTML шаблона счёта без тегов с пробелами вместо переносов — те же параметры, что у InvoicePdf. */
+    private function htmlText(Invoice $invoice): string
+    {
+        $html = view('invoices.pdf', ['invoice' => $invoice, 'locale' => $invoice->locale, 'orderDate' => $invoice->order->placed_at, 'logo' => ''])->render();
+
+        $html = (string) preg_replace(['/<(style|title)>.*?<\/\1>/s', '/<[^>]+>/'], ['', ' '], $html);
+
+        return html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
+    }
+
+    /** @param  list<string>  $parts  фрагменты текста в этом порядке */
+    private function assertInOrder(string $text, array $parts): void
+    {
+        $text = (string) preg_replace('/\s+/u', ' ', $text);
+        $offset = 0;
+        foreach ($parts as $part) {
+            $position = mb_strpos($text, $part, $offset);
+            $this->assertNotFalse($position, 'нет «'.$part.'» после позиции '.$offset.' в: '.$text);
+            $offset = $position + mb_strlen($part);
+        }
     }
 
     public function test_buyer_address_comes_from_the_request_or_the_profile_and_a_profile_change_does_not_touch_the_pdf(): void
@@ -436,8 +637,9 @@ class InvoicesTest extends TestCase
             }
         }
 
+        // Правка 02.11, Г5: имя файла — номер без дефиса.
         $visitor()->actingAs($this->client)->get($ownUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf')
-            ->assertHeader('Content-Disposition', 'attachment; filename=TEST-7.pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
+            ->assertHeader('Content-Disposition', 'attachment; filename=TEST00007.pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->get($guestUrl)->assertNotFound();
         $visitor()->actingAs($this->admin)->get($ownUrl)->assertOk();
         $this->get($guestUrl)->assertOk();
@@ -459,7 +661,8 @@ class InvoicesTest extends TestCase
         IssueInvoice::dispatchSync($submitted->order->id);
         $url = '/invoices/'.Invoice::sole()->id;
 
-        $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="TEST-7"', false)->assertSee($url, false);
+        // Правка 02.11, Г5: номер без дефиса.
+        $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="TEST00007"', false)->assertSee($url, false);
         $this->actingAs($this->clientB)->get('/en/account/invoices')->assertOk()->assertDontSee($url, false)->assertSee('No invoices yet.');
         $this->actingAs($this->client)->get('/en/account/orders/'.$submitted->meta->number)->assertOk()->assertSee($url, false);
         $this->actingAs($this->admin);

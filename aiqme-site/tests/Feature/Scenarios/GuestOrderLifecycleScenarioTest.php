@@ -34,7 +34,7 @@ use Tests\TestCase;
  * Сценарий 2 §9.3 (W-30, уровень L): гость отправляет калькулятор с 2 STL (POST /en/quote, W-12) → гостевая ссылка
  * (W-15) → администратор скачивает STL (W-32) и подтверждает 150 EUR = 120 + доставка 30 в карточке (W-14) → запрос
  * аванса 40 EUR → гость открывает оплату (W-16, мок StripeClientInterface) → подписанное payment_intent.succeeded (W-28)
- * → производство при долге 110 EUR после подтверждения → запрос остатка → оплата → счёт TEST-7 по тестовым реквизитам
+ * → производство при долге 110 EUR после подтверждения → запрос остатка → оплата → счёт TEST00007 (правка 02.11, Г5: номер без дефиса) по тестовым реквизитам
  * (W-17) → shipped с треком → completed. После каждого шага сверяются строки Orders, Payments и Events фейка сетки (W-18).
  */
 class GuestOrderLifecycleScenarioTest extends TestCase
@@ -205,8 +205,9 @@ class GuestOrderLifecycleScenarioTest extends TestCase
         $this->assertSame(0, Invoice::count());
         $this->guestPays($guestUrl, $rest, 'evt_test_rest');
         $invoice = Invoice::sole();
-        $this->assertSame(['TEST-7', 15000], [$invoice->label(), $invoice->total]);
-        $this->assertSame(['in_production', '150.00', '150.00', '0.00', 'paid', '', 'TEST-7'], $this->orderRow($number));
+        // Правка 02.11, Г5: номер счёта без дефиса.
+        $this->assertSame(['TEST00007', 15000], [$invoice->label(), $invoice->total]);
+        $this->assertSame(['in_production', '150.00', '150.00', '0.00', 'paid', '', 'TEST00007'], $this->orderRow($number));
         $this->assertSame([
             $advance->public_id => ['40.00', 'paid', 'ch_test_'.$advance->public_id],
             $rest->public_id => ['110.00', 'paid', 'ch_test_'.$rest->public_id],
@@ -220,13 +221,13 @@ class GuestOrderLifecycleScenarioTest extends TestCase
         // 9. Контроль качества, готово, трек, shipped, completed.
         $this->card($order)->call('advance', 'quality_check')->call('advance', 'ready')
             ->call('advance', 'shipped')->assertSee(__('orders.workflow.tracking_required'));
-        $this->assertSame(['ready', '150.00', '150.00', '0.00', 'paid', '', 'TEST-7'], $this->orderRow($number));
+        $this->assertSame(['ready', '150.00', '150.00', '0.00', 'paid', '', 'TEST00007'], $this->orderRow($number));
         $this->card($order)->set('carrier', 'DPD')->set('trackingNumber', 'TEST-TRACK-1')->call('setTracking')->assertSee('Tracking saved.');
-        $this->assertSame(['ready', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST-7'], $this->orderRow($number));
+        $this->assertSame(['ready', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST00007'], $this->orderRow($number));
         $this->card($order)->call('advance', 'shipped')->assertHasNoErrors();
-        $this->assertSame(['shipped', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST-7'], $this->orderRow($number));
+        $this->assertSame(['shipped', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST00007'], $this->orderRow($number));
         $this->card($order)->call('advance', 'completed')->assertHasNoErrors();
-        $this->assertSame(['completed', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST-7'], $this->orderRow($number));
+        $this->assertSame(['completed', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST00007'], $this->orderRow($number));
         $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.stage_changed',
             'payment_request.created', 'payment.succeeded', 'invoice.issued',
             'order.stage_changed', 'order.stage_changed', 'order.tracking_set', 'order.stage_changed', 'order.stage_changed']);

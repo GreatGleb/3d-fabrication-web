@@ -4447,3 +4447,63 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид редактора без блока RU — **ждёт проверки пользователем**.
 - Livewire-действие `publish('ru')` по-прежнему принимается сервером при ручном вызове (кнопки нет); задача требует скрыть RU
   только в интерфейсе — не менялось.
+
+## Правки 02.11, G-05 (Г5): счёт по образцу заказчика, номер без дефиса, сумма прописью, реквизиты
+
+### Сделано
+- `resources/views/invoices/pdf.blade.php` переписан по составу и порядку образца (LT/EN, DejaVu Sans): заголовок
+  «PVM SĄSKAITA FAKTŪRA» / «VAT INVOICE» (неплательщик — «SĄSKAITA FAKTŪRA» / «INVOICE») и номер жирным слева, логотип и
+  «Data : …» справа; рамка «PIRKĖJAS» (компания или имя, адрес, ĮMONĖS KODAS, PVM MOKĖTOJO KODAS — пустые не выводятся);
+  строка «UŽSAKYMAS: имя, TEL. …» | «UŽSAKYMO DATA» (placed_at) | «PRISTATYMO SĄLYGOS (INCOTERMS 2010): …»; таблица
+  PAVADINIMAS | KIEKIS | KAINA (нетто/кол-во, округление до цента) | SUMA (нетто строки из БД); IŠ VISO, PVM n %, сумма
+  прописью слева и IŠ VISO SU PVM; «Apmokėta: … EUR» / «Paid: … EUR» вместо «Apmokėti iki»/пени; vat_note неплательщика —
+  как раньше; «Bankas … SWIFT …», «A / S: IBAN» — если заданы; «PREKES / PASLAUGAS GAVAU…»; подписи «IŠRAŠĖ / IŠDAVĖ» (только
+  если задано «кто выписал») и «GAVO» с «(PAREIGOS, VARDAS, PAVARDĖ, PARAŠAS)»; подвал в 4 колонки на каждой странице
+  (position: fixed): название и адрес; коды; почта и телефон; сайт. Полей соцсетей в настройках сайта нет — значков нет.
+- Логотип: `InvoicePdf::logo()` — свой logo главной (медиа ContentItem page_text/home), иначе `defaults/logo.png`, data-URI;
+  `isRemoteEnabled` по-прежнему false.
+- `Invoice::label()` — серия + номер до 5 цифр с ведущими нулями (`Invoice::number()`, `AIQW00001`); новые PDF —
+  `invoices/AIQW00001.pdf`. Старые счета определяются по `pdf_path` = `invoices/<серия>-<номер>.pdf` и показываются как
+  `AIQ-1` (кабинет, админка, имя файла, таблица). Миграция не нужна; PDF выписанных счетов не перерисовываются.
+- Снимок покупателя (`InvoiceService::buyer`) — плюс `phone` из `OrderMeta.contact` (имя контактного лица там уже было).
+- `SellerSettings` + форма Settings: необязательные bank, swift, iban, email (проверка email), phone, website,
+  delivery_terms (в форме по умолчанию «EXW Vilnius»), issued_by; пустое сохраняется null, `complete()` не менялся.
+- `App\Domain\Invoices\AmountInWords::eur()` — сумма прописью LT/EN своим кодом (до 999 999 999 EUR).
+- Решения «простейшим вариантом»: центы всегда двумя цифрами («05 ct», «00 ct»); 1 тысяча/1 миллион — «Vienas
+  tūkstantis»/«Vienas milijonas» (как «Vienas šimtas» образца); EN — без «and» («One hundred eight», как в README).
+  Номер заказа сайта в счёте больше не печатается — в образце строка «UŽSAKYMAS» содержит имя и телефон, не номер.
+  Переводы EN, которых нет в README (взяты как перевод образца): «GOODS / SERVICES RECEIVED. NO CLAIMS AS TO QUANTITY AND
+  QUALITY.», «(POSITION, NAME, SURNAME, SIGNATURE)», «Account» (для «A / S»), «COMPANY NUMBER», «VAT NUMBER», «TEL.».
+  Надписи полей админки (Bankas, SWIFT, IBAN, El. paštas, Telefonas, Svetainė, Pristatymo sąlygos (Incoterms 2010), Sąskaitą
+  išrašė (vardas, pavardė) / EN) — нейтральные.
+
+### Тесты
+- `tests/Unit/AmountInWordsTest.php`: LT 0, 1, 2, 10, 11, 19, 21, 100, 108,90 → «Vienas šimtas aštuoni EUR 90 ct», 1000,
+  2021, 1 000 000 и формы тысяч/сотен; EN — те же значения («One hundred eight EUR 90 ct»).
+- `InvoicesTest`: новый `test_new_invoice_follows_the_customer_sample_in_lithuanian_and_english` (порядок блоков по тексту
+  HTML шаблона, тексты и значения — в pdftotext LT/EN, нет «TEST-7»/«Apmokėti iki»); `test_empty_optional_seller_details_are_not_printed`;
+  `test_invoice_issued_before_the_change_keeps_its_printed_number` (AIQ-1 в кабинете, карточке админки и имени файла);
+  `test_invoice_logo_is_the_site_logo_as_data_uri`; `test_settings_form_saves_the_optional_invoice_details`. Проверка
+  внешних ресурсов: ровно один `src=` — `data:image/png;base64,…`, без него нет `https?:`, `href=`, `<link`, `url(`, `@import`.
+  Рендер — 530–614 мс (<10 с).
+- Ожидания с комментарием «правка 02.11, Г5»: номер TEST00007 вместо TEST-7 в `InvoicesTest`, `SheetsTest`,
+  `Scenarios/GuestOrderLifecycleScenarioTest`; надписи PDF в верхнем регистре в тесте литовских символов.
+- Проверено откатом: `label()` временно возвращал прежнее «серия-номер» — InvoicesTest 15 из 20 passed (падают тест образца,
+  старого номера, события, скачивания и кабинета); с прежним шаблоном (`git show HEAD:…`) — 4 из 20 passed (в основном из-за переменной `$orderNumber`, которую InvoicePdf больше не передаёт, поэтому этот откат слабее); с правкой — 20/20.
+
+### Проверки
+- `bin/php artisan test --compact tests/Feature/InvoicesTest.php tests/Feature/SheetsTest.php
+  tests/Feature/Scenarios/GuestOrderLifecycleScenarioTest.php tests/Unit/AmountInWordsTest.php` — 37 passed.
+- `pint --dirty` — passed. `bin/check` — `bin/check: OK` (PHPUnit 724/724, 75 859 проверок; Vite build OK).
+- Кадры первой страницы образцового счёта (pdftoppm, 100 dpi; пишет тест образца):
+  `aiqme-site/build/verification/invoices/invoice-lt.png` и `invoice-en.png` (рядом PDF). Просмотрены автором: блоки на
+  месте, подвал внизу страницы, переносов внутри дат нет.
+- `git status --porcelain aiqme-site`: изменены Domain/Invoices, Settings, lang, 2 шаблона, 3 теста, progress.md; новые —
+  только `app/Domain/Invoices/AmountInWords.php` и `tests/Unit/AmountInWordsTest.php`.
+
+### Не проверено (G-05)
+- Сверка вида с образцом заказчика (рамки, размеры, расстановка) — **ждёт проверки пользователем** по кадрам выше.
+- `bin/browser-check` не запускался: у G-05 нет поля browser_check, PDF им не проверяется; форма Settings — за входом
+  администратора, войдёт в полный прогон G-09.
+- Свой логотип в формате webp в PDF не проверялся (dompdf и webp — зависит от GD сервера); проверен PNG.
+- Банк/SWIFT/IBAN/почта/сайт/«кто выписал» на aiqme.com вписываются при выпуске (G-10).

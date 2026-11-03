@@ -13,10 +13,15 @@ use Livewire\Component;
  * Вкладка Settings (§3.5, D-05, W-17): реквизиты продавца (название, код, VAT-код, адрес), статус плательщика VAT и
  * ставка (целые проценты) или пометка для счёта неплательщика, серия и первый номер счетов. Значений по умолчанию нет;
  * после сохранения ставится задание «ожидающие счета». Первый номер действует, пока по серии не выпущено ни одного
- * счёта. Каждый запрос — только администратору, иначе 404.
+ * счёта. Каждый запрос — только администратору, иначе 404. Необязательные поля счёта (правка 02.11, Г5): банк, SWIFT,
+ * IBAN, почта, телефон, сайт, условия поставки (по умолчанию EXW Vilnius) и «кто выписал»; пустое сохраняется как null.
  */
 class Settings extends Component
 {
+    /** Необязательные поля счёта: свойство => ключ настроек. */
+    private const OPTIONAL = ['bank' => 'bank', 'swift' => 'swift', 'iban' => 'iban', 'email' => 'email', 'phone' => 'phone',
+        'website' => 'website', 'deliveryTerms' => 'delivery_terms', 'issuedBy' => 'issued_by'];
+
     #[Locked]
     public string $uiLocale;
 
@@ -38,6 +43,22 @@ class Settings extends Component
     public string $series = '';
 
     public string $firstNumber = '1';
+
+    public string $bank = '';
+
+    public string $swift = '';
+
+    public string $iban = '';
+
+    public string $email = '';
+
+    public string $phone = '';
+
+    public string $website = '';
+
+    public string $deliveryTerms = 'EXW Vilnius';
+
+    public string $issuedBy = '';
 
     public ?string $status = null;
 
@@ -65,6 +86,11 @@ class Settings extends Component
             $this->vatNote = (string) $values['vat_note'];
             $this->series = $values['series'];
             $this->firstNumber = (string) $values['first_number'];
+            foreach (self::OPTIONAL as $property => $key) {
+                if (array_key_exists($key, $values)) {
+                    $this->{$property} = (string) $values[$key];
+                }
+            }
         }
     }
 
@@ -81,6 +107,8 @@ class Settings extends Component
             'vatNote' => ['required_if:vatPayer,0', 'nullable', 'string', 'max:255'],
             'series' => ['required', 'regex:/^[A-Z0-9]{1,10}$/D'],
             'firstNumber' => ['required', 'integer', 'between:1,999999999'],
+            ...array_fill_keys(array_keys(self::OPTIONAL), ['nullable', 'string', 'max:255']),
+            'email' => ['nullable', 'email', 'max:255'],
         ], ['*' => __('admin.calculator.invalid')]);
 
         $payer = $this->vatPayer === '1';
@@ -94,6 +122,7 @@ class Settings extends Component
             'vat_note' => $payer || trim($this->vatNote) === '' ? null : trim($this->vatNote),
             'series' => $this->series,
             'first_number' => (int) $this->firstNumber,
+            ...array_map(fn (string $property): ?string => trim($this->{$property}) === '' ? null : trim($this->{$property}), array_flip(self::OPTIONAL)),
         ]);
         IssuePendingInvoices::dispatch();
         $this->status = __('admin.calculator.saved');

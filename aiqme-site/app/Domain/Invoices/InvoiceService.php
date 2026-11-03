@@ -65,7 +65,7 @@ final class InvoiceService
                 'net_total' => $lines->sum('net'),
                 'vat_total' => $lines->sum('vat'),
                 'total' => $lines->sum('gross'),
-                'pdf_path' => 'invoices/'.$seller['series'].'-'.$number.'.pdf',
+                'pdf_path' => 'invoices/'.Invoice::number($seller['series'], $number).'.pdf',
                 'issued_at' => now(),
             ]);
             $invoice->lines()->createMany($lines->all());
@@ -134,7 +134,9 @@ final class InvoiceService
     /**
      * Покупатель (§3.5, D-23): контакты заявки; адрес — из заявки или профиля клиента, если есть, иначе без адреса.
      *
-     * @return array{name: ?string, company: ?string, company_code: ?string, vat_code: ?string, address: ?string}
+     * Телефон и контактное лицо — для строки «Užsakymas» (правка 02.11, Г5).
+     *
+     * @return array{name: ?string, company: ?string, company_code: ?string, vat_code: ?string, address: ?string, phone: ?string}
      */
     private function buyer(Order $order, OrderMeta $meta): array
     {
@@ -152,6 +154,7 @@ final class InvoiceService
             'company_code' => $contact['company_code'] ?? null,
             'vat_code' => $contact['vat_code'] ?? null,
             'address' => $address,
+            'phone' => $contact['phone'] ?? null,
         ];
     }
 }

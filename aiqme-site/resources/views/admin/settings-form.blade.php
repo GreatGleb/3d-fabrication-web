@@ -1,5 +1,5 @@
 {{-- Форма вкладки Settings (W-17): реквизиты продавца, VAT и нумерация счетов. В прототипе вкладки нет — разметка
-     формы калькулятора (.panel, .grid.two.form-grid, x-field), надписи нейтральные (docs/progress.md). --}}
+     формы калькулятора (.panel, .grid.two.form-grid, x-field), надписи нейтральные (docs/progress.md). Необязательные поля счёта — правка 02.11, Г5. --}}
 <form class="panel" id="invoice-settings-form" wire:submit="save">
     <h2>{{ __('admin.settings.heading') }}</h2>
     <x-status :message="$status" />
@@ -17,6 +17,9 @@
         @endif
         <x-field name="series" :label="__('admin.settings.series')" :value="$series" maxlength="10" wire:model="series" />
         <x-field name="firstNumber" type="number" :label="__('admin.settings.first_number')" :value="$firstNumber" min="1" wire:model="firstNumber" />
+        @foreach (['bank', 'swift', 'iban', 'email', 'phone', 'website', 'deliveryTerms', 'issuedBy'] as $optional)
+            <x-field :name="$optional" :label="__('admin.settings.'.$optional)" :value="$this->{$optional}" maxlength="255" wire:model="{{ $optional }}" />
+        @endforeach
     </div>
     <p>{{ __('admin.settings.hint') }}</p>
     <x-button type="submit" class="gap">{{ __('admin.settings.save') }}</x-button>

@@ -268,7 +268,8 @@ class SheetsTest extends TestCase
         $number = (string) DB::table('order_meta')->where('order_id', $order->id)->value('number');
         $this->assertCount(1, $this->sheets->rows('Orders'));
         $row = $this->sheets->row('Orders', $number);
-        $this->assertSame(['Ona TEST', 'ona@example.test', 'UAB TEST', '2', 'quality_check', '95.00', '95.00', '0.00', 'paid', 'ship', 'DPD TEST-TRACK-1', 'TEST-7'],
+        // Правка 02.11, Г5: номер счёта без дефиса.
+        $this->assertSame(['Ona TEST', 'ona@example.test', 'UAB TEST', '2', 'quality_check', '95.00', '95.00', '0.00', 'paid', 'ship', 'DPD TEST-TRACK-1', 'TEST00007'],
             [$row['Customer'], $row['Email'], $row['Company'], $row['Files'], $row['Production stage'], $row['Confirmed price EUR'], $row['Paid EUR'],
                 $row['Due EUR'], $row['Payment state'], $row['Delivery'], $row['Tracking'], $row['Invoice No']]);
         $this->assertSame(route('lt.admin', ['order' => $order->id]), $row['Admin link']);
@@ -285,7 +286,8 @@ class SheetsTest extends TestCase
         $this->assertSame(['Ona TEST', '+370 600 00000', 'UAB TEST', 'TEST-123', '', 'no'], [$contact['Name'], $contact['Phone'], $contact['Company'], $contact['Company code'], $contact['VAT code'], $contact['Registered']]);
 
         $invoiceEvent = IntegrationEvent::where('type', 'invoice.issued')->firstOrFail();
-        $this->assertSame([(string) $invoiceEvent->id, $invoiceEvent->created_at->utc()->format('Y-m-d H:i:s'), 'Order '.$number, 'invoice.issued', 'Invoice issued: TEST-7', '95.00'],
+        // Правка 02.11, Г5: номер счёта без дефиса.
+        $this->assertSame([(string) $invoiceEvent->id, $invoiceEvent->created_at->utc()->format('Y-m-d H:i:s'), 'Order '.$number, 'invoice.issued', 'Invoice issued: TEST00007', '95.00'],
             array_values($this->sheets->row('Events', (string) $invoiceEvent->id) ?? []));
         $stage = IntegrationEvent::where('type', 'order.stage_changed')->firstOrFail();
         $this->assertSame('', $this->sheets->row('Events', (string) $stage->id)['Amount EUR'], 'unknown amount is not written as 0');

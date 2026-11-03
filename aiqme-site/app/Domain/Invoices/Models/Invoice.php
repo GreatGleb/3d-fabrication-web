@@ -23,10 +23,21 @@ class Invoice extends Model
         return ['seller' => 'array', 'buyer' => 'array', 'issued_at' => 'datetime'];
     }
 
-    /** Номер для показа: серия и номер. */
+    /**
+     * Номер для показа (правка 02.11, Г5): серия и номер из 5 цифр с ведущими нулями без дефиса (AIQW00001). Счета,
+     * выписанные до правки, показываются, как напечатаны в их PDF: «серия-номер», что видно по их pdf_path.
+     */
     public function label(): string
     {
-        return $this->series.'-'.$this->number;
+        $old = $this->series.'-'.$this->number;
+
+        return $this->pdf_path === 'invoices/'.$old.'.pdf' ? $old : self::number($this->series, $this->number);
+    }
+
+    /** Номер нового счёта: серия + номер до 5 цифр с ведущими нулями. */
+    public static function number(string $series, int $number): string
+    {
+        return $series.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
     }
 
     /** @return BelongsTo<Order, $this> */
