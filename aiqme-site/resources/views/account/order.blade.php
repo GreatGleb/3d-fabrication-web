@@ -60,6 +60,10 @@
                     @foreach ($parts as $line)
                         @php($part = $line->purchasable)
                         <div class="summary-row"><a class="text-link" href="{{ route('stl.download', $part->file->id) }}">{{ $part->file->original_name }}</a><b>× {{ $part->parameters['quantity'] }}</b></div>
+                        {{-- Правка 02.11, Г7: способ и параметры одной строкой; без оценки до подтверждения — «Kainą įvertins specialistas». --}}
+                        @isset($part->parameters['method'])
+                            <p data-part-label><small>{{ $part->label($locale) }}@if ($part->estimate === null && ! $state->confirmed_at) · {{ __('calculator.price.specialist') }}@endif</small></p>
+                        @endisset
                     @endforeach
                 </div>
                 <div id="order-payment">

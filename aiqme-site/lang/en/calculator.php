@@ -59,6 +59,8 @@ return [
     ],
     // Gamybos būdas kiekvienai detalei (pataisa 02.11, Г6).
     'methods' => ['printing' => '3D printing', 'milling' => 'Milling', 'engraving' => 'Engraving'],
+    // Pozicijos parametrai (pataisa 02.11, Г7; tekstai — plano README).
+    'part' => ['thickness' => 'Thickness', 'depth' => 'Engraving depth', 'urgent' => 'Urgent', 'needed_by' => 'Needed by'],
     'review' => [
         'title' => '03. Model review',
         'build' => 'Build size limits',
@@ -70,6 +72,7 @@ return [
         'part' => 'Part',
         'estimate' => 'Estimate',
         'note' => 'The price recalculates with scale, material, quantity and settings.',
+        'specialist' => 'Price to be assessed by a specialist',
     ],
     'checkout' => [
         'title' => 'Buyer & delivery',
@@ -93,6 +96,7 @@ return [
         'title' => 'Order summary',
         'total' => 'Estimated total',
         'note' => 'The administrator will confirm the final price and delivery date after reviewing the order.',
+        'specialist' => '+ parts assessed by a specialist',
     ],
     // Order submission (W-12): neutral texts (no prototype equivalent), listed in aiqme-site/docs/progress.md.
     'submit' => [

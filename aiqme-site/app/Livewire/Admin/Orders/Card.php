@@ -13,6 +13,7 @@ use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Domain\Payments\PaymentRequestService;
 use App\Models\OrderCharge;
+use App\Models\StlPart;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -256,7 +257,7 @@ class Card extends Component
         $this->loadForm();
     }
 
-    /** Поля форм — из текущего заказа: цены строк, доставка, трек. */
+    /** Поля форм — из текущего заказа: цены строк (у неоценённой позиции с ценой 0 — пусто), доставка, трек. */
     private function loadForm(): void
     {
         $order = Order::with('lines.purchasable')->findOrFail($this->orderId);
@@ -267,7 +268,9 @@ class Card extends Component
             if (self::isDelivery($line)) {
                 $this->delivery = $euros($line->unit_price->value);
             } else {
-                $this->prices[$line->id] = $euros($line->unit_price->value);
+                // Позиция без оценки до назначения цены — пустое поле: цену вписывает администратор (правка 02.11, Г7).
+                $unpriced = $line->purchasable instanceof StlPart && $line->purchasable->estimate === null && $line->unit_price->value === 0;
+                $this->prices[$line->id] = $unpriced ? '' : $euros($line->unit_price->value);
             }
         }
         $this->carrier = (string) $state->carrier;

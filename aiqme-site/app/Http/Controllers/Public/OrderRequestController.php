@@ -6,6 +6,7 @@ use App\Domain\Orders\OrderFileFormat;
 use App\Domain\Orders\OrderSubmission;
 use App\Domain\Pricing\CalculatorSettings;
 use App\Http\Controllers\Controller;
+use App\Models\StlPart;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,15 @@ class OrderRequestController extends Controller
         $request->session()->flash('order_submitted', [
             'number' => $result->meta->number,
             'total_cents' => $result->order->total->value,
+            // Правка 02.11, Г7: позиции со способом; cents NULL — цену оценит специалист.
+            'parts' => $result->order->lines()->with('purchasable')->orderBy('id')->get()
+                ->filter(fn ($line): bool => $line->purchasable instanceof StlPart)
+                ->map(fn ($line): array => [
+                    'name' => $line->purchasable->file->original_name,
+                    'quantity' => $line->purchasable->parameters['quantity'],
+                    'label' => $line->purchasable->label($locale),
+                    'cents' => $line->purchasable->estimate,
+                ])->values()->all(),
             'guest_url' => $result->guestToken === null ? null : route($locale.'.order.guest', [$result->meta->number, $result->guestToken]),
         ]);
 

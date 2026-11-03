@@ -1,13 +1,18 @@
 {{-- Карточка заказа (§1.4 Orders, W-14) в разметке adminOrder() прототипа: заголовок с номером и стадией, «Files & production
      settings», notice проверки и кнопки; ниже — разделы панелей: цена, оплата, производство и трек, сообщения и ответы,
      гостевая ссылка, отмена, история; скачивание счёта (W-17). Не переносятся (D-21, §1.4): флажок «demo approval», упаковка и ярлык, «Customer
-     view» демо-кабинета, демо-тексты листа задания и его JSON. STL — только ссылки защищённой выдачи (route stl.download). --}}
+     view» демо-кабинета, демо-тексты листа задания и его JSON. STL — только ссылки защищённой выдачи (route stl.download).
+     Правка 02.11, Г7: у позиций с method — способ и параметры по способу, «Skubu» и «Reikalinga iki», заметка позиции; у
+     позиции без оценки — «Kainą įvertins specialistas» и пустое поле цены; лист Bambu — только печать из STL; файлы любых
+     форматов скачиваются той же выдачей. Позиции до правки (без method) выводятся как раньше. --}}
 @php
     $locale = app()->getLocale();
     $money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale);
     $stage = $state->stage;
     $open = ! in_array($stage, [\App\Domain\Orders\ProductionStage::Completed, \App\Domain\Orders\ProductionStage::Cancelled], true);
     $next = $stage->next($pickup);
+    // Лист Bambu — только печать из STL (правка 02.11, Г7).
+    $jobParts = $parts->filter(fn ($line): bool => $line->purchasable->method() === 'printing' && $line->purchasable->file->format() === 'stl')->values();
     $lineLabel = fn ($line): string => match (true) {
         $line->purchasable instanceof \App\Models\StlPart => $line->purchasable->file->original_name,
         $line->purchasable->kind === \App\Models\OrderCharge::DELIVERY => __('admin.orders.delivery'),
@@ -18,7 +23,15 @@
         'service' => ['calculator.settings', 'services'], 'surface' => ['calculator.settings', 'surfaces'],
         'quality' => ['admin.orders.legacy', 'qualities'], 'layer' => ['admin.orders.legacy', 'layers'],
         'finish' => ['admin.orders.legacy', 'finishes'], 'term' => ['calculator.settings', 'terms']];
-    $parameters = function (array $p) use ($settings): string {
+    $size = fn ($mm): string => ($locale === 'lt' ? str_replace('.', ',', (string) $mm) : (string) $mm).' mm';
+    $parameters = function (array $p) use ($settings, $size, $locale): string {
+        $method = $p['method'] ?? 'printing';
+        if ($method !== 'printing') {
+            $material = $locale === 'lt' ? $p['material'] : ($p['material_en'] ?? $p['material']);
+            $values = [$material, $method === 'milling' ? __('calculator.part.thickness').': '.$size($p['thickness']) : __('calculator.part.depth').': '.$size($p['depth'])];
+
+            return implode(' / ', [...$values, __('calculator.settings.term').': '.__('calculator.settings.terms')[$p['term']]]);
+        }
         $values = [$p['material'], __('calculator.settings.infill').' '.$p['infill'].'%'
             .(empty($p['infill_consult']) ? '' : ' · '.__('calculator.settings.infill_consult'))];
         foreach ($settings as $key => [$group, $options]) {
@@ -51,17 +64,19 @@
         @elseif ($open && $next && $stage !== \App\Domain\Orders\ProductionStage::Review)
             <button class="btn small" type="button" wire:click="advance('{{ $next->value }}')">{{ __('admin.orders.next') }}: {{ __('admin.orders.stages.'.$next->value) }}</button>
         @endif
-        <button class="btn small secondary" type="button" wire:click="toggleJob" aria-expanded="{{ $showJob ? 'true' : 'false' }}" aria-controls="bambu-job">{{ __('admin.orders.job') }}</button>
+        @if ($jobParts->isNotEmpty())
+            <button class="btn small secondary" type="button" wire:click="toggleJob" aria-expanded="{{ $showJob ? 'true' : 'false' }}" aria-controls="bambu-job">{{ __('admin.orders.job') }}</button>
+        @endif
     </div>
 
-    @if ($showJob)
+    @if ($showJob && $jobParts->isNotEmpty())
         <div class="inset gap" id="bambu-job">
             <h3>{{ __('admin.orders.job_heading') }}</h3>
             <p>{{ $meta->number }} · Bambu Studio</p>
             <x-table>
                 <thead><tr><th>{{ __('admin.orders.file') }}</th><th>{{ __('admin.orders.quantity') }}</th><th>{{ __('admin.orders.parameters') }}</th></tr></thead>
                 <tbody>
-                    @foreach ($parts as $line)
+                    @foreach ($jobParts as $line)
                         @php($part = $line->purchasable)
                         <tr wire:key="job-{{ $line->id }}">
                             <td><a class="text-link" href="{{ route('stl.download', $part->file) }}">{{ $part->file->original_name }}</a></td>
@@ -83,15 +98,29 @@
                 @php($part = $line->purchasable)
                 <tr wire:key="part-{{ $line->id }}">
                     <td>{{ $part->file->original_name }}<br><a class="text-link" href="{{ route('stl.download', $part->file) }}">{{ __('admin.orders.download') }}</a></td>
-                    <td>{{ __('admin.orders.quantity') }}: {{ $part->parameters['quantity'] }}<br>{{ $parameters($part->parameters) }}<br>{{ __('admin.orders.unit') }}: {{ $part->parameters['unit'] }} · {{ __('admin.orders.scale') }} {{ $part->parameters['scale'] }}</td>
-                    <td>
-                        {{ implode(' × ', array_map(fn ($mm) => number_format($mm, 1, '.', ''), $part->measurement['dimensions_mm'])) }} mm<br>
-                        {{ number_format($part->measurement['volume_cm3'], 2, '.', '') }} cm³ · {{ number_format($part->measurement['mass_grams'], 2, '.', '') }} g
-                        @foreach ($part->measurement['warnings'] as $warning)
-                            <br><small>{{ $warning === 'open_mesh' ? __('calculator.js.open_mesh', ['name' => $part->file->original_name]) : __('calculator.js.exceeds', ['name' => $part->file->original_name, 'mm' => $meta->settings['max_dimension_mm'] ?? '']) }}</small>
-                        @endforeach
+                    <td data-part-parameters>{{ __('admin.orders.quantity') }}: {{ $part->parameters['quantity'] }}<br>
+                        @isset($part->parameters['method'])<b>{{ __('calculator.methods.'.$part->method()) }}</b><br>@endisset
+                        {{ $parameters($part->parameters) }}
+                        @isset($part->parameters['unit'])<br>{{ __('admin.orders.unit') }}: {{ $part->parameters['unit'] }} · {{ __('admin.orders.scale') }} {{ $part->parameters['scale'] }}@endisset
+                        @if (($part->parameters['term'] ?? null) === 'priority' && isset($part->parameters['method']))
+                            <br><span class="tag blue" data-urgent>{{ __('calculator.part.urgent') }}</span>@if (filled($part->parameters['needed_by'] ?? null)) {{ __('calculator.part.needed_by') }}: {{ $part->parameters['needed_by'] }}@endif
+                        @endif
+                        @if (filled($part->parameters['notes'] ?? null))
+                            <br><small data-part-notes>{{ __('calculator.settings.notes') }}: <span style="white-space:pre-line">{{ $part->parameters['notes'] }}</span></small>
+                        @endif
                     </td>
-                    <td>{{ $money($part->estimate) }}</td>
+                    <td>
+                        @if ($part->measurement === null)
+                            —
+                        @else
+                            {{ implode(' × ', array_map(fn ($mm) => number_format($mm, 1, '.', ''), $part->measurement['dimensions_mm'])) }} mm<br>
+                            {{ number_format($part->measurement['volume_cm3'], 2, '.', '') }} cm³@isset($part->measurement['mass_grams']) · {{ number_format($part->measurement['mass_grams'], 2, '.', '') }} g @endisset
+                            @foreach ($part->measurement['warnings'] as $warning)
+                                <br><small>{{ $warning === 'open_mesh' ? __('calculator.js.open_mesh', ['name' => $part->file->original_name]) : __('calculator.js.exceeds', ['name' => $part->file->original_name, 'mm' => $meta->settings['max_dimension_mm'] ?? '']) }}</small>
+                            @endforeach
+                        @endif
+                    </td>
+                    <td>{{ $part->estimate === null ? __('calculator.price.specialist') : $money($part->estimate) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -120,7 +149,11 @@
         <h3>{{ __('admin.orders.price') }}</h3>
         <div class="grid two form-grid">
             @foreach ($priced as $line)
-                <x-field :name="'prices.'.$line->id" type="number" step="0.01" min="0" :label="$lineLabel($line).', €'" :value="$prices[$line->id] ?? ''" wire:model="prices.{{ $line->id }}" wire:key="price-{{ $line->id }}" />
+                @if ($line->purchasable instanceof \App\Models\StlPart && $line->purchasable->estimate === null)
+                    <x-field :name="'prices.'.$line->id" type="number" step="0.01" min="0" :label="$lineLabel($line).', €'" :value="$prices[$line->id] ?? ''" :placeholder="__('calculator.price.specialist')" wire:model="prices.{{ $line->id }}" wire:key="price-{{ $line->id }}" />
+                @else
+                    <x-field :name="'prices.'.$line->id" type="number" step="0.01" min="0" :label="$lineLabel($line).', €'" :value="$prices[$line->id] ?? ''" wire:model="prices.{{ $line->id }}" wire:key="price-{{ $line->id }}" />
+                @endif
             @endforeach
             <x-field name="delivery" type="number" step="0.01" min="0" :label="__('admin.orders.delivery').', €'" :value="$delivery" wire:model="delivery" />
         </div>

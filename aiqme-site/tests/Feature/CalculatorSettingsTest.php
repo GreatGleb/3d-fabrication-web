@@ -197,4 +197,56 @@ class CalculatorSettingsTest extends TestCase
         $this->assertSame($before, app(Settings::class)->values());
         $this->assertSame('Check the value.', $this->valid()->set('maxDimension', '1')->call('save')->errors()->first('maxDimension'));
     }
+
+    /** Правка 02.11, Г7: списки фрезеровки и гравировки и предел редактируются в той же форме. */
+    public function test_milling_and_engraving_lists_and_limit_are_edited_and_reach_the_calculator(): void
+    {
+        $this->valid()
+            ->assertSet('millingMaterials', [...self::millingDefaults()['milling_materials'], ['lt' => '', 'en' => '']])
+            ->assertSet('millingThicknesses', "1\n2\n3\n4\n5\n6\n8\n10")
+            ->assertSet('engravingDepths', "0.1\n0.2\n0.3\n0.5")
+            ->assertSet('millingWidth', '2000')->assertSet('millingLength', '4000')
+            ->assertSee('Milling materials')->assertSee('Engraving depths, mm')
+            ->set('millingMaterials.1', ['lt' => '', 'en' => ''])
+            ->set('millingMaterials.5', ['lt' => ' Titanas ', 'en' => 'Titanium'])
+            ->set('engravingMaterials.3', ['lt' => '', 'en' => ''])
+            ->set('millingThicknesses', "1,5\n 12 \n\n")
+            ->set('engravingDepths', '0,25')
+            ->set('millingWidth', '1500')->set('millingLength', '3000')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertSee('Saved.')
+            ->assertSet('millingThicknesses', "1.5\n12");
+
+        $values = app(Settings::class)->values();
+        $this->assertSame([['lt' => 'Aliuminis', 'en' => 'Aluminium'], ['lt' => 'Nerūdijantis plienas', 'en' => 'Stainless steel'], ['lt' => 'Žalvaris', 'en' => 'Brass'],
+            ['lt' => 'Plastikas', 'en' => 'Plastic'], ['lt' => 'Titanas', 'en' => 'Titanium']], $values['milling_materials']);
+        $this->assertSame(['Aliuminis', 'Nerūdijantis plienas', 'Plastikas'], array_column($values['engraving_materials'], 'lt'));
+        $this->assertSame([[1.5, 12], [0.25], [1500, 3000]], [$values['milling_thicknesses_mm'], $values['engraving_depths_mm'], $values['milling_max_mm']]);
+        // Прежние тарифы и пометки не меняются.
+        $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents'], app(Settings::class)->unconfirmed());
+        $this->assertSame([1.5, 12], $this->pageSettings('/en/quote')['milling_thicknesses_mm']);
+        $this->assertSame([1500, 3000], $this->pageSettings('/lt/kalkuliatorius')['milling_max_mm']);
+    }
+
+    public function test_invalid_milling_and_engraving_values_are_not_saved(): void
+    {
+        $before = app(Settings::class)->values();
+        foreach ([
+            ['millingMaterials.0.en', ''], ['millingMaterials.5', ['lt' => '', 'en' => 'Titanium']], ['millingMaterials.1.lt', 'Aliuminis'],
+            ['engravingMaterials.0.lt', '123'], ['engravingMaterials.4', ['lt' => 'x', 'en' => str_repeat('a', 61)]],
+            ['millingThicknesses', ''], ['millingThicknesses', '0'], ['millingThicknesses', '-1'], ['millingThicknesses', '1 2'], ['millingThicknesses', 'abc'],
+            ['engravingDepths', '0,0'], ['engravingDepths', '0.1.2'], ['engravingDepths', '0.123'],
+            ['millingWidth', '0'], ['millingWidth', ''], ['millingLength', '2.5'], ['millingLength', 'x'],
+        ] as [$field, $value]) {
+            $component = $this->valid()->set($field, $value)->call('save');
+            $this->assertNotEmpty($component->errors()->all(), "{$field} = ".json_encode($value));
+            $this->assertNull($component->get('status'), $field);
+        }
+        $empty = [['lt' => '', 'en' => ''], ['lt' => '', 'en' => '']];
+        $this->valid()->set('millingMaterials', $empty)->call('save')->assertHasErrors('millingMaterials.0.lt');
+        $this->valid()->set('engravingMaterials', $empty)->call('save')->assertHasErrors('engravingMaterials.0.lt');
+        $this->assertSame($before, app(Settings::class)->values());
+        $this->assertSame('Check the value.', $this->valid()->set('millingThicknesses', '0')->call('save')->errors()->first('millingThicknesses'));
+    }
 }

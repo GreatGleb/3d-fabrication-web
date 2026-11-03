@@ -167,7 +167,7 @@ final class OrderSubmission
             'channel_id' => Channel::getDefault()->id,
             'currency_id' => Currency::whereCode('EUR')->firstOrFail()->id,
         ]);
-        $files = [];
+        $files = $labels = [];
         foreach ($parts as $index => $part) {
             $files[] = $file = StlFile::create([
                 'user_id' => $user?->id,
@@ -184,13 +184,15 @@ final class OrderSubmission
                 ],
             ]);
             $line = $estimate['lines'][$index];
-            $cart->add(StlPart::create([
+            $cart->add($stlPart = StlPart::create([
                 'stl_file_id' => $file->id,
                 'parameters' => $part['parameters'],
                 'measurement' => $part['measurement'] === null ? null
                     : [...$part['measurement'], ...($line === null ? [] : ['mass_grams' => $line['mass_grams']])],
                 'estimate' => $line['cents'] ?? null,
             ]), 1);
+            // Письмо AIQME (на LT, правка 02.11, Г7): у каждого файла способ.
+            $labels[] = $part['name'].' — '.$stlPart->label('lt');
         }
         $fee = $estimate['order_fee_cents'] + $estimate['file_fees_cents'];
         $charge = $fee > 0 ? OrderCharge::create(['kind' => OrderCharge::FEE, 'amount' => $fee]) : null;
@@ -232,6 +234,8 @@ final class OrderSubmission
             'subject' => (string) $meta->number,
             'summary' => Str::limit(implode(', ', array_column($parts, 'name')), 200),
             'attachments' => count($parts),
+            'files' => $labels,
+            'specialist' => in_array(null, $estimate['lines'], true),
             'amount' => number_format($estimate['total_cents'] / 100, 2, '.', ''),
             'admin_url' => route('lt.admin', ['order' => $order->id]),
         ]);

@@ -256,7 +256,8 @@ class InvoicesTest extends TestCase
             $invoice->lines->sortBy('id')->map(fn ($line): array => [$line->gross, $line->vat, $line->net])->values()->all(),
         );
         $this->assertSame([785, 8715], [$invoice->vat_total, $invoice->net_total]);
-        $this->assertSame(['bracket.stl', 'cover.stl', 'Order fee', 'Delivery'], $invoice->lines->sortBy('id')->pluck('description')->all());
+        // Правка 02.11, Г7: описание строки — имя файла и способ.
+        $this->assertSame(['bracket.stl — 3D printing, PLA', 'cover.stl — 3D printing, PLA', 'Order fee', 'Delivery'], $invoice->lines->sortBy('id')->pluck('description')->all());
         $this->assertSame([2, 2, 1, 1], $invoice->lines->sortBy('id')->pluck('quantity')->all());
 
         // Повтор события и повтор задания номер не меняют.
@@ -442,13 +443,14 @@ class InvoicesTest extends TestCase
         // Порядок блоков — по тексту HTML, из которого dompdf рисует PDF (в тексте PDF ячейки одной строки при переносе
         // перемешиваются); подвал (position: fixed) стоит в разметке первым и проверяется отдельно.
         // Строки: детали 30 EUR × 2 шт. (нетто 27,52, за единицу 13,76), плата 5 EUR, доставка 30 EUR; итог 95 EUR с VAT 9 %.
+        // Правка 02.11, Г7: в описании детали — имя файла и способ.
         $this->assertInOrder($this->htmlText($ltInvoice), [
             'TEST UAB '.self::LITHUANIAN, 'TEST g. 1, Vilnius', 'ĮMONĖS KODAS: TEST-000000', 'PVM MOKĖTOJO KODAS: TEST-LT000000',
             'info@test.example', '+370 600 11111', 'www.test.example',
             'PVM SĄSKAITA FAKTŪRA', 'TEST00007', 'Data : '.now()->format('Y-m-d'),
             'PIRKĖJAS', 'Ona TEST', 'Gedimino pr. 1, Vilnius, LT-01103, LT',
             'UŽSAKYMAS: Ona TEST, TEL. +370 600 00000', 'UŽSAKYMO DATA: 2026-10-08', 'PRISTATYMO SĄLYGOS (INCOTERMS 2010): EXW Vilnius',
-            'PAVADINIMAS KIEKIS KAINA SUMA', 'bracket.stl 2 13,76 27,52', 'cover.stl 2 13,76 27,52', 'Užsakymo mokestis 1 4,59 4,59',
+            'PAVADINIMAS KIEKIS KAINA SUMA', 'bracket.stl — 3D spausdinimas, PLA 2 13,76 27,52', 'cover.stl — 3D spausdinimas, PLA 2 13,76 27,52', 'Užsakymo mokestis 1 4,59 4,59',
             'Pristatymas 1 27,52 27,52', 'IŠ VISO 87,15', 'PVM 9 % 7,85', 'Devyniasdešimt penki EUR 00 ct IŠ VISO SU PVM 95,00',
             'Apmokėta: 95,00 EUR', 'Bankas: TEST bankas SWIFT: TESTLT2X', 'A / S: LT00 TEST 0000 0000 0000',
             'PREKES / PASLAUGAS GAVAU. PRETENZIJŲ KIEKIUI IR KOKYBEI NETURIU.',
@@ -458,7 +460,7 @@ class InvoicesTest extends TestCase
             'TEST UAB', 'COMPANY NUMBER: TEST-000000', 'VAT NUMBER: TEST-LT000000', 'info@test.example', 'www.test.example',
             'VAT INVOICE', 'TEST00008', 'Date: '.now()->format('Y-m-d'), 'BUYER', 'Ona TEST',
             'ORDER: Ona TEST, TEL. +370 600 00000', 'ORDER DATE: 2026-10-08', 'DELIVERY TERMS (INCOTERMS 2010): EXW Vilnius',
-            'DESCRIPTION QTY PRICE AMOUNT', 'bracket.stl 2 13.76 27.52', 'Order fee 1 4.59 4.59', 'Delivery 1 27.52 27.52',
+            'DESCRIPTION QTY PRICE AMOUNT', 'bracket.stl — 3D printing, PLA 2 13.76 27.52', 'Order fee 1 4.59 4.59', 'Delivery 1 27.52 27.52',
             'TOTAL 87.15', 'VAT 9 % 7.85', 'Ninety-five EUR 00 ct TOTAL INCL. VAT 95.00',
             'Paid: 95.00 EUR', 'Bank: TEST bankas SWIFT: TESTLT2X', 'Account: LT00 TEST 0000 0000 0000',
             'GOODS / SERVICES RECEIVED. NO CLAIMS AS TO QUANTITY AND QUALITY.', 'ISSUED BY: Jonas TEST', 'RECEIVED BY:', '(POSITION, NAME, SURNAME, SIGNATURE)',

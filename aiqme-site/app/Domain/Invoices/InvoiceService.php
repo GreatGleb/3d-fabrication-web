@@ -15,6 +15,7 @@ use App\Models\StlPart;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use RuntimeException;
@@ -119,6 +120,8 @@ final class InvoiceService
 
             return [
                 'description' => match (true) {
+                    // Правка 02.11, Г7: имя файла и способ («Dangtelis.STL — 3D spausdinimas, ABS»); позиции до правки — только имя.
+                    $part !== null && isset($part->parameters['method']) => Str::limit($part->file->original_name.' — '.$part->label($locale, ', '), 255, ''),
                     $part !== null => $part->file->original_name,
                     $line->purchasable instanceof OrderCharge && $line->purchasable->kind === OrderCharge::DELIVERY => __('admin.orders.delivery', [], $locale),
                     default => __('calculator.js.order_fee', [], $locale),

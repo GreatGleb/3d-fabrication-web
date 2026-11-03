@@ -1,4 +1,5 @@
 {{-- Письмо AIQME о заявке формы (W-09, §5.2) и о заявке на изготовление (W-12: номер, файлы, предварительная сумма): минимум данных и ссылка в админку; вложений и полного текста нет.
+     Заказ (правка 02.11, Г7): у каждого файла способ (files; у событий до правки — summary), при неоценённых позициях к сумме — пометка.
      Тема — «Nauja projekto užklausa» прототипа; подписи — поля форм прототипа; остальное — нейтральные надписи (progress.md). --}}
 @php
     $rows = array_filter([
@@ -10,8 +11,8 @@
         __('admin.requests.fields.format') => isset($data['format']) ? __('public.training.formats.'.$data['format']) : null,
         __('admin.requests.fields.participants') => $data['participants'] ?? null,
         __('admin.requests.fields.description') => $data['kind'] === 'contact' ? $data['summary'] : null,
-        __('admin.requests.fields.files') => match ($data['kind']) { 'contact' => $data['attachments'], 'order' => $data['summary'], default => null },
-        __('admin.requests.fields.estimate') => $data['kind'] === 'order' ? $data['amount'].' EUR' : null,
+        __('admin.requests.fields.files') => match ($data['kind']) { 'contact' => $data['attachments'], 'order' => implode(', ', $data['files'] ?? [$data['summary']]), default => null },
+        __('admin.requests.fields.estimate') => $data['kind'] === 'order' ? $data['amount'].' EUR'.(empty($data['specialist']) ? '' : ' '.__('calculator.summary.specialist')) : null,
     ], fn ($value) => $value !== null && $value !== '');
 @endphp
 <!DOCTYPE html>

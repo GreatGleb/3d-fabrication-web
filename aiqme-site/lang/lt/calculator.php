@@ -59,6 +59,8 @@ return [
     ],
     // Gamybos būdas kiekvienai detalei (pataisa 02.11, Г6).
     'methods' => ['printing' => '3D spausdinimas', 'milling' => 'Frezavimas', 'engraving' => 'Graviravimas'],
+    // Pozicijos parametrai (pataisa 02.11, Г7; tekstai — plano README).
+    'part' => ['thickness' => 'Storis', 'depth' => 'Graviravimo gylis', 'urgent' => 'Skubu', 'needed_by' => 'Reikalinga iki'],
     'review' => [
         'title' => '03. Modelių patikra',
         'build' => 'Įrangos dydžio ribos',
@@ -70,6 +72,7 @@ return [
         'part' => 'Detalė',
         'estimate' => 'Sąmata',
         'note' => 'Kaina perskaičiuojama keičiant mastelį, medžiagą, kiekį ir parametrus.',
+        'specialist' => 'Kainą įvertins specialistas',
     ],
     'checkout' => [
         'title' => 'Pirkėjas ir pristatymas',
@@ -93,6 +96,7 @@ return [
         'title' => 'Užsakymo suvestinė',
         'total' => 'Preliminari suma',
         'note' => 'Galutinę kainą ir pristatymo terminą administratorius patvirtins, peržiūrėjęs užsakymą.',
+        'specialist' => '+ specialisto vertinamos detalės',
     ],
     // Užsakymo pateikimas (W-12): neutralūs tekstai (prototipe jų nėra), išvardyti aiqme-site/docs/progress.md.
     'submit' => [

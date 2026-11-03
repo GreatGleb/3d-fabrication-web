@@ -48,9 +48,10 @@ class StlPart extends Model implements Purchasable
 
     /**
      * Подпись позиции по способу на языке $locale: «3D spausdinimas / ABS», «Frezavimas / Aliuminis, 6 mm»,
-     * «Graviravimas / Aliuminis, 0,1 mm» (в LT — десятичная запятая).
+     * «Graviravimas / Aliuminis, 0,1 mm» (в LT — десятичная запятая); $separator — между способом и материалом (в счёте
+     * «, »: «3D spausdinimas, ABS», правка 02.11, Г7).
      */
-    public function label(string $locale): string
+    public function label(string $locale, string $separator = ' / '): string
     {
         $parameters = $this->parameters;
         $method = __('calculator.methods.'.$this->method(), [], $locale);
@@ -61,11 +62,11 @@ class StlPart extends Model implements Purchasable
             default => null,
         };
         if ($size === null) {
-            return $method.' / '.$material;
+            return $method.$separator.$material;
         }
         $size = (string) $size;
 
-        return $method.' / '.$material.', '.($locale === 'lt' ? str_replace('.', ',', $size) : $size).' mm';
+        return $method.$separator.$material.', '.($locale === 'lt' ? str_replace('.', ',', $size) : $size).' mm';
     }
 
     public function getDescription(): string

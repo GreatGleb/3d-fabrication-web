@@ -1540,7 +1540,8 @@ def check_admin_editors_w26(report, new_page, state):
 def check_calculator_settings(report, new_page, state):
     """Вкладка настроек калькулятора (W-11) в браузере: форма на 390 и 1440 без расползания и ошибок консоли/CSP; на 1440
     у габарита нет пометки «Not confirmed» (П7: 1000 мм подтверждён), сохранение 300 и затем 1000 через Livewire видно
-    в data-settings /en/quote и в тексте шага 3; в конце габарит — 1000."""
+    в data-settings /en/quote и в тексте шага 3; в конце габарит — 1000. Правка 02.11, Г7: списки фрезеровки видны, предел
+    1500 и затем 2000 мм доходит до data-settings."""
     for width, height in ((390, 844), (1440, 1000)):
         where = f'/en/admin/calculator @{width}'
         context, page, problems = new_page(width, height, storage_state=state)
@@ -1566,6 +1567,20 @@ def check_calculator_settings(report, new_page, state):
                 public.close()
             report.check('Not confirmed' not in page.locator('#field-maxDimension').locator('xpath=..').inner_text(),
                          f'{where}: у габарита пометка после сохранения')
+            # Правка 02.11, Г7: списки фрезеровки и гравировки и предел — в той же форме; сохранение доходит до /en/quote.
+            report.check(page.input_value('#field-millingThicknesses') == '1\n2\n3\n4\n5\n6\n8\n10'
+                         and page.input_value('#field-millingMaterials-0-en') == 'Aluminium',
+                         f'{where}: нет списков фрезеровки')
+            for value in ('1500', '2000'):
+                page.fill('#field-millingWidth', value)
+                with page.expect_response(lambda r: r.request.method == 'POST' and 'livewire' in r.url):
+                    page.click('#pricing-form button[type=submit]')
+                page.wait_for_selector('#pricing-form .notice.success:has-text("Saved.")')
+                public = page.context.new_page()
+                public.goto(BASE + '/en/quote', wait_until='networkidle')
+                shown = json.loads(public.get_attribute('#quote', 'data-settings'))['milling_max_mm']
+                report.check(shown == [int(value), 4000], f'{where}: на /en/quote предел {shown}, сохранено {value}')
+                public.close()
         for problem in problems:
             report.check(False, f'{where}: {problem}')
         context.close()
@@ -2988,7 +3003,9 @@ def main():
 
             log(f'== страницы: {len(pages)}')
             for path in pages:
-                expect_status = 404 if path in NOT_FOUND_PAGES else 200
+                # Правка 02.11, Г7: вкладка админки, указанная путём, здесь открывается без входа — 404 (после входа
+                # администратора её проверяет check_private_pages с --signed-in).
+                expect_status = 404 if path in NOT_FOUND_PAGES or path in ADMIN_PAGES else 200
                 for width in WIDTHS:
                     height = {320: 568, 390: 844, 768: 1024, 1024: 768, 1440: 1000}[width]
                     context, page, problems = new_page(width, height)

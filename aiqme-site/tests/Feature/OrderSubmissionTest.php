@@ -320,7 +320,9 @@ class OrderSubmissionTest extends TestCase
 
             return $mail->hasTo('info@aiqme.com') && ! $mail->hasTo('ona@example.test') && $mail->hasReplyTo('ona@example.test')
                 && str_contains($html, '<title>Naujas gamybos užsakymas</title>')
-                && str_contains($html, 'bracket.stl, spacer.stl') && str_contains($html, '5.49 EUR');
+                // Правка 02.11, Г7: у каждого файла способ; все позиции оценены — без пометки специалиста.
+                && str_contains($html, 'bracket.stl — 3D spausdinimas / PLA, spacer.stl — 3D spausdinimas / PLA') && str_contains($html, '5.49 EUR')
+                && ! str_contains($html, 'specialisto');
         });
     }
 
