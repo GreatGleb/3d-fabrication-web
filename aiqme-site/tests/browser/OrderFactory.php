@@ -28,15 +28,17 @@ final class OrderFactory
             'file' => UploadedFile::fake()->createWithContent($name, $cube),
             'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => $quantity, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
         ];
-        $order = app(OrderSubmission::class)->submit([
+        $submitted = app(OrderSubmission::class)->submit([
             'submission_token' => (string) Str::uuid(),
             'locale' => 'en',
             'contact' => ['name' => 'Rūta Jankauskienė', 'email' => 'ruta@aiqme.test', 'phone' => '+370 600 00001', 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => 'ship',
             'address' => ['country' => 'LT', 'city' => 'Kaunas', 'address' => 'Laisvės al. 1', 'postcode' => '44001'],
-            'notes' => "Pagaminti iki penktadienio.\nDetales supakuoti atskirai.",
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
-        ], null)->order;
+        ], null);
+        // Правка 02.11, Г8: заметка на весь заказ — только у заказов до правки (order_meta.notes); карточка выводит её как раньше.
+        $submitted->meta->update(['notes' => "Pagaminti iki penktadienio.\nDetales supakuoti atskirai."]);
+        $order = $submitted->order;
 
         $ids = $order->lines()->orderBy('id')->get()
             ->reject(fn (OrderLine $line): bool => $line->purchasable instanceof OrderCharge && $line->purchasable->kind === OrderCharge::DELIVERY)

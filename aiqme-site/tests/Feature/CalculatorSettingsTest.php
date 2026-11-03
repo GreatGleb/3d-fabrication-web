@@ -161,7 +161,8 @@ class CalculatorSettingsTest extends TestCase
         $this->assertSame($expected, array_intersect_key($this->pageSettings('/en/quote'), $expected));
         $lt = $this->pageSettings('/lt/kalkuliatorius');
         $this->assertSame($expected, $lt);
-        $this->assertSame(['PLA', 'PETG', 'TPU'], Html::texts(Html::xpath($this->get('/en/quote')->getContent()), '//select[@name="material"]/option'));
+        // Правка 02.11, Г8: список материалов карточки строит JS из data-settings.
+        $this->assertSame(['PLA', 'PETG', 'TPU'], array_keys(json_decode(Html::xpath($this->get('/en/quote')->getContent())->query('//*[@id="quote"]')->item(0)->getAttribute('data-settings'), true)['materials']));
 
         // EstimateService — по тем же значениям: 1 см³ PLA 1,3 г × 0,125 €/г = 16,25 → 16 центов; 750 + 2 × 105.
         $estimate = app(EstimateService::class)->estimate([['volume_cm3' => 1.0, 'quantity' => 1, 'material' => 'PLA', 'infill' => 100], ['volume_cm3' => 2.0, 'quantity' => 1, 'material' => 'PLA', 'infill' => 100]]);

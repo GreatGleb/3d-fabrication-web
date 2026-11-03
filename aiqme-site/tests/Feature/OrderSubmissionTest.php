@@ -57,7 +57,7 @@ class OrderSubmissionTest extends TestCase
      * @param  array<string, mixed>  $override
      * @return array<string, mixed>
      */
-    private function payload(array $override = []): array
+    private function payload(array $override = [], array $printing = []): array
     {
         return [
             'submission_token' => $this->token,
@@ -72,19 +72,25 @@ class OrderSubmissionTest extends TestCase
             'city' => 'Vilnius',
             'address' => 'Gedimino pr. 1',
             'postcode' => 'LT-01103',
-            'material' => 'PLA',
-            'infill' => '100',
-            'color' => 'black',
-            'purpose' => 'visual',
-            'service' => 'none',
-            'surface' => 'standard',
-            'term' => 'standard',
             'parts' => [
-                ['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '3'],
-                ['file' => $this->stl('cube-10mm-binary.stl', 'spacer.stl'), 'unit' => 'cm', 'scale' => '10', 'quantity' => '1'],
+                $this->printed(['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '3', ...$printing]),
+                $this->printed(['file' => $this->stl('cube-10mm-binary.stl', 'spacer.stl'), 'unit' => 'cm', 'scale' => '10', 'quantity' => '1', ...$printing]),
             ],
             ...$override,
         ];
+    }
+
+    /**
+     * Позиция печати в формате позиций (правка 02.11, Г8: общих параметров у заказа больше нет): PLA, 100 %, пожелания по
+     * умолчанию, обычный срок.
+     *
+     * @param  array<string, mixed>  $part
+     * @return array<string, mixed>
+     */
+    private function printed(array $part): array
+    {
+        return ['method' => 'printing', 'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'purpose' => 'visual', 'service' => 'none',
+            'surface' => 'standard', 'priority' => 'standard', ...$part];
     }
 
     /** @param  array<string, mixed>  $payload */
@@ -120,8 +126,8 @@ class OrderSubmissionTest extends TestCase
     {
         // Клиентская сумма и цена строки игнорируются.
         $confirmed = $this->submitAndConfirm($this->payload(['total' => '1', 'total_cents' => '1', 'parts' => [
-            ['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '3', 'cents' => '1'],
-            ['file' => $this->stl('cube-10mm-binary.stl', 'spacer.stl'), 'unit' => 'cm', 'scale' => '10', 'quantity' => '1'],
+            $this->printed(['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '3', 'cents' => '1']),
+            $this->printed(['file' => $this->stl('cube-10mm-binary.stl', 'spacer.stl'), 'unit' => 'cm', 'scale' => '10', 'quantity' => '1']),
         ]]));
 
         $order = Order::with('lines.purchasable')->sole();
@@ -140,7 +146,7 @@ class OrderSubmissionTest extends TestCase
         $this->assertSame([3, 1], $parts->map(fn ($line) => $line->purchasable->parameters['quantity'])->all());
         $this->assertSame([37, 12], $parts->map(fn ($line) => $line->purchasable->estimate)->all());
         $this->assertEqualsWithDelta(3.72, $parts[0]->purchasable->measurement['mass_grams'], 1e-9);
-        // Правка 02.11, Г6: прежний общий формат копируется в позицию — способ printing, дата и заметка позиции пустые.
+        // Правка 02.11, Г6, Г8: параметры позиции — способ printing, дата и заметка позиции пустые.
         $this->assertSame(['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 3, 'color' => 'black',
             'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null], $parts[0]->purchasable->parameters);
         $fee = $order->lines->first(fn ($line) => $line->purchasable instanceof OrderCharge);
@@ -184,9 +190,10 @@ class OrderSubmissionTest extends TestCase
     public function test_infill_consultation_preferences_and_notes(): void
     {
         config(['aiqme.orders.per_hour' => 100]);
-        $order = function (array $override): array {
+        // Правка 02.11, Г8: пожелания, срок и заметка — у каждой позиции ($printing — в обе позиции заявки); у заказа notes нет.
+        $order = function (array $printing): array {
             $this->token = (string) Str::uuid();
-            $total = $this->submitAndConfirm($this->payload($override))['total'];
+            $total = $this->submitAndConfirm($this->payload([], $printing))['total'];
             $meta = OrderMeta::where('submission_token', $this->token)->sole();
             $part = Order::findOrFail($meta->order_id)->lines->first(fn ($line) => $line->purchasable instanceof StlPart)->purchasable;
 
@@ -194,26 +201,25 @@ class OrderSubmissionTest extends TestCase
         };
 
         [$at20, $parameters20] = $order(['infill' => '20']);
-        [$atConsult, $parametersConsult, $notesConsult] = $order(['infill' => 'consult', 'notes' => '']);
+        [$atConsult, $parametersConsult] = $order(['infill' => 'consult', 'notes' => '']);
         [$at100] = $order([]);
         $this->assertSame($at20, $atConsult);
         $this->assertNotSame($at100, $atConsult);
         $this->assertSame([20, false], [$parameters20['infill'], $parameters20['infill_consult']]);
         $this->assertSame([20, true], [$parametersConsult['infill'], $parametersConsult['infill_consult']]);
-        $this->assertNull($notesConsult);
+        $this->assertNull($parametersConsult['notes']);
 
         $notes = "Iki penktadienio.\n<b>Matinis</b> paviršius";
-        [$wishes, $parameters, $storedNotes] = $order(['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'term' => 'priority', 'notes' => $notes]);
+        [$wishes, $parameters, $orderNotes] = $order(['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'priority' => 'priority', 'notes' => $notes]);
         $this->assertSame($at100, $wishes);
         $this->assertSame(['consult', 'painting', 'high', 'priority'], [$parameters['purpose'], $parameters['service'], $parameters['surface'], $parameters['term']]);
-        // Правка 02.11, Г6: у позиции своя заметка (здесь пустая); notes прежнего формата — у заказа.
-        $this->assertNull($parameters['notes']);
-        $this->assertSame($notes, $storedNotes);
+        $this->assertSame($notes, $parameters['notes']);
+        $this->assertNull($orderNotes);
 
-        // Тот же токен с другим notes или с консультацией — отказ без записей.
+        // Тот же токен с другой заметкой или с консультацией — отказ без записей.
         $count = [Order::count(), StlFile::count(), IntegrationEvent::count()];
         foreach ([['notes' => 'Kita'], ['notes' => $notes, 'infill' => 'consult']] as $override) {
-            $this->submit($this->payload(['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'term' => 'priority', ...$override]))
+            $this->submit($this->payload([], ['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'priority' => 'priority', ...$override]))
                 ->assertUnprocessable()->assertJsonPath('errors.submission_token.0', 'This order has already been submitted with other details. Reload the page and try again.');
         }
         $this->assertSame($count, [Order::count(), StlFile::count(), IntegrationEvent::count()]);
@@ -226,8 +232,8 @@ class OrderSubmissionTest extends TestCase
     public function test_server_warns_about_parts_over_the_1000_mm_build_size(): void
     {
         $this->submit($this->payload(['parts' => [
-            ['file' => $this->stl('cube-10mm-binary.stl', 'large.stl'), 'unit' => 'in', 'scale' => '473', 'quantity' => '1'],
-            ['file' => $this->stl('cube-10mm-binary.stl', 'medium.stl'), 'unit' => 'in', 'scale' => '315', 'quantity' => '1'],
+            $this->printed(['file' => $this->stl('cube-10mm-binary.stl', 'large.stl'), 'unit' => 'in', 'scale' => '473', 'quantity' => '1']),
+            $this->printed(['file' => $this->stl('cube-10mm-binary.stl', 'medium.stl'), 'unit' => 'in', 'scale' => '315', 'quantity' => '1']),
         ]]))->assertCreated();
 
         [$large, $medium] = StlPart::query()->orderBy('id')->get()->all();
@@ -283,7 +289,7 @@ class OrderSubmissionTest extends TestCase
         $this->submitAndConfirm($this->payload());
         $this->submit($this->payload(['phone' => '+370 600 11111']))
             ->assertUnprocessable()->assertJsonPath('errors.submission_token.0', 'This order has already been submitted with other details. Reload the page and try again.');
-        $this->submit($this->payload(['parts' => [['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '4']]]))
+        $this->submit($this->payload(['parts' => [$this->printed(['file' => $this->stl('cube-10mm-ascii.stl', 'bracket.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '4'])]]))
             ->assertUnprocessable();
 
         $this->assertSame([1, 2, 1], [Order::count(), StlFile::count(), IntegrationEvent::count()]);
@@ -400,9 +406,9 @@ class OrderSubmissionTest extends TestCase
         Mail::fake();
         // upload_max_filesize: PHP отдаёт файл без содержимого с ошибкой загрузки.
         $tooBig = new UploadedFile(base_path('tests/fixtures/stl/cube-10mm-binary.stl'), 'huge.stl', null, UPLOAD_ERR_INI_SIZE, true);
-        $this->submit($this->payload(['parts' => [['file' => $tooBig, 'unit' => 'mm', 'scale' => '100', 'quantity' => '1']]]))
+        $this->submit($this->payload(['parts' => [$this->printed(['file' => $tooBig, 'unit' => 'mm', 'scale' => '100', 'quantity' => '1'])]]))
             ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.file' => ['File exceeds the 50 MB limit']]);
-        $this->submit($this->payload(['parts' => [['file' => $tooBig, 'unit' => 'mm', 'scale' => '100', 'quantity' => '1']]]), 'lt')
+        $this->submit($this->payload(['parts' => [$this->printed(['file' => $tooBig, 'unit' => 'mm', 'scale' => '100', 'quantity' => '1'])]]), 'lt')
             ->assertJsonPath('errors', ['parts.0.file' => ['Failas viršija 50 MB ribą']]);
 
         // post_max_size: тело отброшено целиком — 413 с понятным сообщением на языке адреса.
@@ -419,21 +425,22 @@ class OrderSubmissionTest extends TestCase
     {
         Mail::fake();
         config(['aiqme.orders.per_hour' => 100]);
-        $part = fn (array $override = [], string $fixture = 'cube-10mm-ascii.stl'): array => ['file' => $this->stl($fixture), 'unit' => 'mm', 'scale' => '100', 'quantity' => '1', ...$override];
+        $part = fn (array $override = [], string $fixture = 'cube-10mm-ascii.stl'): array => $this->printed(['file' => $this->stl($fixture), 'unit' => 'mm', 'scale' => '100', 'quantity' => '1', ...$override]);
         $cases = [
             'parts.0.file' => [['parts' => [$part([], 'truncated-binary.stl')]], 'truncated-binary.stl: Could not read geometry'],
             'parts.1.file' => [['parts' => [$part(), $part([], 'nan-binary.stl')]], 'nan-binary.stl: Could not read geometry'],
             'parts.0.scale' => [['parts' => [$part(['scale' => '0'])]], 'Scale must be between 1 and 1000%.'],
             'parts.0.quantity' => [['parts' => [$part(['quantity' => '101'])]], 'Quantity: from 1 to 100.'],
-            'infill' => [['infill' => '101'], 'Choose a value from the list.'],
-            'purpose' => [['purpose' => 'fine'], 'Choose a value from the list.'],
-            'service' => [['service' => 'smooth'], 'Choose a value from the list.'],
-            'surface' => [['surface' => '0.2'], 'Choose a value from the list.'],
-            'term' => [['term' => 'express'], 'Choose a value from the list.'],
-            'notes' => [['notes' => str_repeat('a', 2001)], 'Too long: up to 2000 characters.'],
+            // Правка 02.11, Г8: параметры печати, срок и заметка — у позиции (parts.N.*), а не у заказа.
+            'parts.0.infill' => [['parts' => [$part(['infill' => '101'])]], 'Choose a value from the list.'],
+            'parts.0.purpose' => [['parts' => [$part(['purpose' => 'fine'])]], 'Choose a value from the list.'],
+            'parts.0.service' => [['parts' => [$part(['service' => 'smooth'])]], 'Choose a value from the list.'],
+            'parts.0.surface' => [['parts' => [$part(['surface' => '0.2'])]], 'Choose a value from the list.'],
+            'parts.0.priority' => [['parts' => [$part(['priority' => 'express'])]], 'Choose a value from the list.'],
+            'parts.0.notes' => [['parts' => [$part(['notes' => str_repeat('a', 2001)])]], 'Too long: up to 2000 characters.'],
             'parts.0.unit' => [['parts' => [$part(['unit' => 'ft'])]], 'Choose a value from the list.'],
             'parts' => [['parts' => array_map(fn () => $part(), range(1, 11))], 'No more than 10 files.'],
-            'material' => [['material' => 'Titanium'], 'Choose a value from the list.'],
+            'parts.0.material' => [['parts' => [$part(['material' => 'Titanium'])]], 'Choose a value from the list.'],
             'phone' => [['phone' => ''], 'Fill in this field.'],
             'city' => [['city' => ''], 'Fill in this field.'],
             'email' => [['email' => 'not-an-email'], 'Enter a valid email address.'],
@@ -443,9 +450,9 @@ class OrderSubmissionTest extends TestCase
             $response = $this->submit($this->payload($override));
             $this->assertSame([422, $message], [$response->status(), $response->json('errors')[$field][0] ?? null], $field.': '.json_encode($response->json('errors')));
         }
-        $response = $this->submit($this->payload(['infill' => 'abc']));
-        $this->assertSame([422, 'Choose a value from the list.'], [$response->status(), $response->json('errors.infill.0')]);
-        $this->submit(array_diff_key($this->payload(), ['purpose' => 1]))->assertUnprocessable()->assertJsonPath('errors.purpose.0', 'Fill in this field.');
+        $response = $this->submit($this->payload([], ['infill' => 'abc']));
+        $this->assertSame([422, 'Choose a value from the list.'], [$response->status(), $response->json('errors')['parts.0.infill'][0] ?? null]);
+        $this->submit($this->payload(['parts' => [array_diff_key($part(), ['purpose' => 1])]]))->assertUnprocessable()->assertJsonPath('errors', ['parts.0.purpose' => ['Fill in this field.']]);
         // Пустая заявка (эксперимент: пустая корзина) — «Upload a model.».
         $this->submit(array_diff_key($this->payload(), ['parts' => 1]))->assertUnprocessable()->assertJsonPath('errors.parts.0', 'Upload a model.');
 

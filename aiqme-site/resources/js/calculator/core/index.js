@@ -157,11 +157,10 @@ export function measure(model, { unit, scale, maxDimensionMm }) {
 }
 
 // Оценка по §3.1 в целых центах. Плотность — только из настроек материала (своей плотности клиента нет).
-// Материал и заполнение — свои у каждой позиции (правка 02.11, Г6); общие material и infill — значения для позиций без
-// своих, пока шаг 2 общий (их уберёт G-08). Позиция null (не STL + печать) не оценивается: строка null, в сумму не входит,
-// плата за файл за неё берётся.
+// Материал и заполнение — свои у каждой позиции (правка 02.11, Г6, Г8). Позиция null (не STL + печать) не оценивается:
+// строка null, в сумму не входит, плата за файл за неё берётся.
 // settings: { densities: { PLA: 1.24, … }, ratePerGram: '0.10' | 0.1, orderFeeCents, fileFeeCents }.
-export function estimate({ parts, material, infill }, settings) {
+export function estimate({ parts }, settings) {
   const rate = Number(settings.ratePerGram);
   const { orderFeeCents, fileFeeCents } = settings;
   if (!Number.isFinite(rate) || rate < 0) throw new RangeError('ratePerGram');
@@ -171,15 +170,13 @@ export function estimate({ parts, material, infill }, settings) {
   const lines = parts.map((part) => {
     if (part === null) return null;
     if ('density' in part) throw new RangeError('density');
-    const partMaterial = part.material ?? material;
-    const partInfill = part.infill ?? infill;
-    const density = Object.hasOwn(settings.densities, partMaterial) ? Number(settings.densities[partMaterial]) : NaN;
+    const { volumeCm3, quantity, material, infill } = part;
+    const density = Object.hasOwn(settings.densities, material) ? Number(settings.densities[material]) : NaN;
     if (!Number.isFinite(density) || density <= 0) throw new RangeError('material');
-    if (!Number.isFinite(partInfill) || partInfill < 0 || partInfill > 100) throw new RangeError('infill');
-    const { volumeCm3, quantity } = part;
+    if (!Number.isFinite(infill) || infill < 0 || infill > 100) throw new RangeError('infill');
     if (!Number.isFinite(volumeCm3) || volumeCm3 <= 0) throw new RangeError('volumeCm3');
     if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) throw new RangeError('quantity');
-    const massGrams = volumeCm3 * density * (0.2 + 0.8 * partInfill / 100) * quantity;
+    const massGrams = volumeCm3 * density * (0.2 + 0.8 * infill / 100) * quantity;
     return { massGrams, cents: Math.floor(massGrams * rate * 100 + 0.5) };
   });
   const fileFeesCents = parts.length * fileFeeCents;

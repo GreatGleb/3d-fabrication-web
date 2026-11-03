@@ -229,29 +229,30 @@ class OrderPositionsTest extends TestCase
         $this->assertSame([0, 0, 0], [Order::count(), StlFile::count(), IntegrationEvent::count()]);
     }
 
-    public function test_previous_shared_format_still_works_and_rejects_dxf(): void
+    /** Правка 02.11, Г8: прежний общий формат (параметры печати, срок и notes на весь заказ) удалён — отказ проверки без записей. */
+    public function test_previous_shared_format_is_rejected(): void
     {
-        $legacy = fn (array $parts): TestResponse => $this->post('/en/quote', [
+        $this->post('/en/quote', [
             'submission_token' => $this->token, 'name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'delivery' => 'pickup',
             'material' => 'PETG', 'infill' => '100', 'color' => 'blue', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'priority',
-            'notes' => 'Bendra pastaba.', 'parts' => $parts,
-        ], ['Accept' => 'application/json']);
+            'notes' => 'Bendra pastaba.', 'parts' => [
+                ['file' => $this->upload('stl/cube-10mm-binary.stl', 'a.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '1'],
+                ['file' => $this->upload('stl/cube-10mm-ascii.stl', 'b.stl'), 'unit' => 'cm', 'scale' => '10', 'quantity' => '2'],
+            ],
+        ], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonPath('errors', [
+            'parts.0.method' => ['Fill in this field.'], 'parts.0.priority' => ['Fill in this field.'],
+            'parts.1.method' => ['Fill in this field.'], 'parts.1.priority' => ['Fill in this field.'],
+        ]);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertSame([0, 0, 0], [Order::count(), StlFile::count(), IntegrationEvent::count()]);
 
-        $legacy([['file' => $this->upload('cad/plate.dxf', 'plate.dxf'), 'quantity' => '1']])
-            ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.file' => ['Choose a value from the list.']]);
-        $this->assertSame(0, Order::count());
-
-        // Общие поля копируются в каждую позицию; notes — у заказа, как раньше.
-        $legacy([
-            ['file' => $this->upload('stl/cube-10mm-binary.stl', 'a.stl'), 'unit' => 'mm', 'scale' => '100', 'quantity' => '1'],
-            ['file' => $this->upload('stl/cube-10mm-ascii.stl', 'b.stl'), 'unit' => 'cm', 'scale' => '10', 'quantity' => '2'],
-        ])->assertCreated();
-        $this->assertSame('Bendra pastaba.', OrderMeta::sole()->notes);
-        foreach ($this->positions() as $part) {
-            $this->assertSame(['printing', 'PETG', 'blue', 'priority', null, null],
-                [$part->parameters['method'], $part->parameters['material'], $part->parameters['color'], $part->parameters['term'], $part->parameters['needed_by'], $part->parameters['notes']]);
-        }
-        $this->assertSame([13, 25], array_map(fn (StlPart $part): int => $part->estimate, $this->positions()));
+        // Общие поля при позициях нового формата не используются: заметка заказа не сохраняется.
+        $this->post('/en/quote', [
+            'submission_token' => $this->token, 'name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'delivery' => 'pickup',
+            'material' => 'PETG', 'notes' => 'Bendra pastaba.', 'parts' => [$this->printed('a.stl')],
+        ], ['Accept' => 'application/json'])->assertCreated();
+        $this->assertNull(OrderMeta::sole()->notes);
+        $this->assertSame('PLA', StlPart::sole()->parameters['material']);
     }
 
     public function test_digest_covers_position_parameters(): void

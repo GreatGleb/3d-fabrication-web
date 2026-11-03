@@ -77,9 +77,10 @@ class AdminOrdersTest extends TestCase
             'contact' => ['name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'company' => 'UAB Detalė', 'company_code' => null, 'vat_code' => null],
             'delivery' => $delivery,
             'address' => $delivery === 'ship' ? ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gatvė 1', 'postcode' => '01100'] : null,
-            'notes' => $notes,
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], $guest ? null : $this->client);
+        // Правка 02.11, Г8: заметка на весь заказ больше не отправляется — order_meta.notes есть только у заказов до правки.
+        $result->meta->update(['notes' => $notes]);
 
         return [$result->order, $result->guestToken];
     }

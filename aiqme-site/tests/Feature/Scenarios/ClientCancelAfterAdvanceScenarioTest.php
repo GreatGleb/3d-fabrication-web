@@ -69,9 +69,10 @@ class ClientCancelAfterAdvanceScenarioTest extends TestCase
             'submission_token' => (string) Str::uuid(),
             'name' => 'Rūta TEST', 'email' => 'ruta@example.test', 'phone' => '+370 622 22222', 'company' => '', 'company_code' => '', 'vat_code' => '',
             'delivery' => 'ship', 'country' => 'LT', 'city' => 'Kaunas', 'address' => 'Laisvės al. 1', 'postcode' => 'LT-44000',
-            'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard',
+            // Правка 02.11, Г8: параметры печати и срок — у каждой позиции.
             'parts' => [['file' => UploadedFile::fake()->createWithContent('bracket.stl', file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'))),
-                'unit' => 'mm', 'scale' => '100', 'quantity' => '1']],
+                'unit' => 'mm', 'scale' => '100', 'quantity' => '1',
+                'method' => 'printing', 'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'priority' => 'standard']],
         ], ['Accept' => 'application/json'])->assertCreated()->json('redirect');
         $this->get($redirect)->assertOk()->assertSee('The order is saved in your account.')->assertDontSee('data-guest-link', false);
         $order = Order::sole();

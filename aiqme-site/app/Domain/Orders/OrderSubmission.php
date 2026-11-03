@@ -56,7 +56,7 @@ final class OrderSubmission
      * infill, infill_consult, color, purpose, service, surface; у milling — material, material_en, thickness; у engraving —
      * material, material_en, depth. Параметры проверены заранее (OrderRequestController) и сохраняются как есть.
      *
-     * @param  array{submission_token: string, locale: string, contact: array<string, ?string>, delivery: string, address: ?array<string, string>, notes?: ?string, parts: list<array{file: UploadedFile, parameters: array<string, mixed>}>}  $data
+     * @param  array{submission_token: string, locale: string, contact: array<string, ?string>, delivery: string, address: ?array<string, string>, parts: list<array{file: UploadedFile, parameters: array<string, mixed>}>}  $data
      */
     public function submit(array $data, ?User $user): SubmittedOrder
     {
@@ -221,7 +221,6 @@ final class OrderSubmission
             'delivery' => $data['delivery'],
             'address' => $data['address'],
             'settings' => $estimate['settings'],
-            'notes' => $data['notes'] ?? null,
         ]);
         ProductionState::create(['order_id' => $order->id]);
         $this->events->record('order.submitted', $order, [
@@ -267,7 +266,7 @@ final class OrderSubmission
     }
 
     /**
-     * Отпечаток данных отправки: отправитель, локаль, контакты, получение, notes заказа и по каждому файлу — sha256
+     * Отпечаток данных отправки: отправитель, локаль, контакты, получение и по каждому файлу — sha256
      * содержимого, имя и все параметры позиции (способ и его параметры, единицы, масштаб, количество, срок, дата, заметка).
      *
      * @param  list<array<string, mixed>>  $parts
@@ -280,7 +279,6 @@ final class OrderSubmission
             $data['contact'],
             $data['delivery'],
             $data['address'],
-            $data['notes'] ?? null,
             array_map(fn (array $part): array => [$part['sha256'], $part['name'], array_map(
                 fn (mixed $value): mixed => is_int($value) || is_float($value) ? (float) $value : $value,
                 $part['parameters'],

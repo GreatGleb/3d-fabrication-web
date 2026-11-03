@@ -154,11 +154,12 @@ describe('единицы, масштаб и габарит оборудован�
 });
 
 describe('оценка §3.1', () => {
-  const onePart = (overrides = {}) => ({ parts: [{ volumeCm3: 1, quantity: 1 }], material: 'PLA', infill: 100, ...overrides });
+  // Правка 02.11, Г8: материал и заполнение — только у позиции (общих значений больше нет).
+  const onePart = (overrides = {}) => ({ parts: [{ volumeCm3: 1, quantity: 1, material: 'PLA', infill: 100, ...overrides }] });
 
   test('контрольный пример: куб 10 мм, PLA, 100 %, qty 1, 0,10 EUR/г, 5 EUR → 1,24 г, 512 центов', () => {
     const { volumeCm3 } = measure(parse('cube-10mm-ascii.stl'), mm);
-    const result = estimate({ parts: [{ volumeCm3, quantity: 1 }], material: 'PLA', infill: 100 }, settings);
+    const result = estimate({ parts: [{ volumeCm3, quantity: 1, material: 'PLA', infill: 100 }] }, settings);
     close(result.lines[0].massGrams, 1.24);
     assert.equal(result.lines[0].cents, 12);
     assert.equal(result.orderFeeCents, 500);
@@ -173,7 +174,7 @@ describe('оценка §3.1', () => {
   });
 
   test('qty 3 → 3,72 г и строка 37 центов (не 3 × 12)', () => {
-    const result = estimate(onePart({ parts: [{ volumeCm3: 1, quantity: 3 }] }), settings);
+    const result = estimate(onePart({ quantity: 3 }), settings);
     assert.ok(Math.abs(result.lines[0].massGrams - 3.72) < 1e-12);
     assert.equal(result.lines[0].cents, 37);
     assert.equal(result.totalCents, 537);
@@ -181,18 +182,18 @@ describe('оценка §3.1', () => {
 
   test('округление half-up на границе половины цента: floor(x + 0,5)', () => {
     const half = { ...settings, densities: { X: 1 }, ratePerGram: '0.5' };
-    const exact = { parts: [{ volumeCm3: 0.25, quantity: 1 }], material: 'X', infill: 100 };
+    const exact = { parts: [{ volumeCm3: 0.25, quantity: 1, material: 'X', infill: 100 }] };
     assert.equal(0.25 * 1 * 0.5 * 100, 12.5); // x ровно 12,5
     assert.equal(estimate(exact, half).lines[0].cents, 13);
     assert.equal(estimate(exact, { ...half, ratePerGram: '0.4999' }).lines[0].cents, 12);
     // Не банковское округление: 12,5 → 13, 37,5 → 38, 62,5 → 63.
     for (const [volumeCm3, cents] of [[0.25, 13], [0.75, 38], [1.25, 63]]) {
-      assert.equal(estimate({ ...exact, parts: [{ volumeCm3, quantity: 1 }] }, half).lines[0].cents, cents, String(volumeCm3));
+      assert.equal(estimate({ parts: [{ ...exact.parts[0], volumeCm3 }] }, half).lines[0].cents, cents, String(volumeCm3));
     }
   });
 
   test('несколько файлов: Σ строк + плата за заказ + n × плата за файл', () => {
-    const order = { parts: [{ volumeCm3: 1, quantity: 1 }, { volumeCm3: 8, quantity: 2 }], material: 'ABS', infill: 20 };
+    const order = { parts: [{ volumeCm3: 1, quantity: 1, material: 'ABS', infill: 20 }, { volumeCm3: 8, quantity: 2, material: 'ABS', infill: 20 }] };
     const result = estimate(order, { ...settings, fileFeeCents: 150 });
     const expected = [1 * 1.04 * (0.2 + 0.8 * 20 / 100) * 1, 8 * 1.04 * (0.2 + 0.8 * 20 / 100) * 2]
       .map((mass) => Math.floor(mass * 0.1 * 100 + 0.5));
@@ -213,15 +214,15 @@ describe('оценка §3.1', () => {
     assert.deepEqual(result.lines.map((line) => line && line.cents), [abs, null, petg]);
     assert.equal(result.fileFeesCents, 450);
     assert.equal(result.totalCents, abs + petg + 500 + 450);
-    // Своё значение позиции важнее общего; только неоценённые — сумма из сборов.
-    assert.equal(estimate({ parts: [{ volumeCm3: 1, quantity: 1, material: 'PETG' }], material: 'PLA', infill: 100 }, settings).lines[0].massGrams, 1.27);
+    // Только неоценённые — сумма из сборов; общих material и infill нет (правка 02.11, Г8): позиция без своих — отказ.
+    assert.throws(() => estimate({ parts: [{ volumeCm3: 1, quantity: 1 }], material: 'PLA', infill: 100 }, settings), RangeError);
     assert.equal(estimate({ parts: [null, null] }, settings).totalCents, 500);
     assert.throws(() => estimate({ parts: [{ volumeCm3: 1, quantity: 1, material: 'PLA', infill: 101 }] }, settings), RangeError);
     assert.throws(() => estimate({ parts: [{ volumeCm3: 1, quantity: 1, material: 'NYLON', infill: 20 }] }, settings), RangeError);
   });
 
   test('плотность — только из материала в настройках; своя плотность не принимается', () => {
-    assert.throws(() => estimate(onePart({ parts: [{ volumeCm3: 1, quantity: 1, density: 5 }] }), settings), RangeError);
+    assert.throws(() => estimate(onePart({ density: 5 }), settings), RangeError);
     assert.equal(estimate(onePart({ material: 'PETG' }), settings).lines[0].massGrams, 1.27);
     const changed = { ...settings, densities: { ...settings.densities, PLA: 2 } };
     assert.equal(estimate(onePart(), changed).lines[0].massGrams, 2);
@@ -235,11 +236,11 @@ describe('оценка §3.1', () => {
     assert.throws(() => estimate(onePart(), { ...settings, ratePerGram: 'abc' }), RangeError);
     assert.throws(() => estimate(onePart(), { ...settings, orderFeeCents: 5.5 }), RangeError);
     for (const quantity of [0, 101, 1.5]) {
-      assert.throws(() => estimate(onePart({ parts: [{ volumeCm3: 1, quantity }] }), settings), RangeError, String(quantity));
+      assert.throws(() => estimate(onePart({ quantity }), settings), RangeError, String(quantity));
     }
     for (const infill of [-1, 101, NaN]) assert.throws(() => estimate(onePart({ infill }), settings), RangeError);
-    assert.throws(() => estimate(onePart({ parts: [] }), settings), RangeError);
-    assert.throws(() => estimate(onePart({ parts: [{ volumeCm3: 0, quantity: 1 }] }), settings), RangeError);
+    assert.throws(() => estimate({ parts: [] }, settings), RangeError);
+    assert.throws(() => estimate(onePart({ volumeCm3: 0 }), settings), RangeError);
   });
 });
 

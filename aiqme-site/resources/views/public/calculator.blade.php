@@ -1,20 +1,22 @@
 {{-- Калькулятор (§1.2, W-27): 5 шагов прототипа (quote()) на ядре W-10, расчёт — в браузере, resources/js/calculator/.
-     Без выбора технологии (FDM, D-37), без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров
-     и флажка сценария риска (D-21). Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 отправляет заявку fetch-запросом
-     multipart (W-12): токен отправки — UUID формы, профиль вошедшего клиента ($buyer) подставлен в поля.
-     Шаг 2 — по макету заказчика (правка 28.10, E-05): цену меняют только материал и заполнение («Reikia konsultacijos»
-     считается по заполнению по умолчанию), остальные поля и notes — пожелания к заявке.
-     data-settings — тарифы, заполнение по умолчанию и габарит из настроек админки (W-11) и лимиты файлов из
-     config('aiqme.calculator'); тексты для JS — data-texts. --}}
+     Без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров и флажка сценария риска (D-21).
+     Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 отправляет заявку fetch-запросом multipart (W-12): токен отправки —
+     UUID формы, профиль вошедшего клиента ($buyer) подставлен в поля.
+     Правка 02.11, Г8 (макет 17.09): шаг 1 принимает STL/STEP/OBJ/DXF/DWG; шаг 2 — карточка на каждый файл (её строит JS
+     в [data-cards]: способ, параметры, количество, приоритет, дата, заметка); шаг 3 — проверка по файлам; шаг 4 и панель —
+     суммы оценённых позиций и «Kainą įvertins specialistas»; на шаге 1 в панели сумм нет.
+     data-settings — тарифы, заполнение по умолчанию, габарит, списки фрезеровки и гравировки и их предел из настроек админки
+     (W-11, Г6) и лимиты файлов из config('aiqme.calculator'); тексты для JS — data-texts, значки icons/ui — data-icons. --}}
 @php
     $locale = app()->getLocale();
-    $infills = collect([15, 20, 40, 60, 80, 100, $settings['default_infill']])->unique()->sort()->values();
     $maxMb = intdiv($settings['max_file_bytes'], 1024 * 1024);
+    $texts = __('calculator.js') + ['mb' => $maxMb] + collect(__('calculator'))->only(['settings', 'methods', 'part', 'review', 'price'])->all();
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.calculator')" :languages="$languages" :noindex="$locale === 'ru'">
     <x-page-top :title="$heading" :intro="__('calculator.intro')" />
     <div class="wrap page-content" id="quote" data-locale="{{ $locale }}" data-settings='@json($settings)'
-         data-texts='@json(__('calculator.js') + ['mb' => $maxMb])' data-contact-url="{{ $contactUrl }}">
+         data-texts='@json($texts)'
+         data-icons="{{ asset('icons/ui') }}" data-contact-url="{{ $contactUrl }}">
         <div class="steps">
             @foreach (__('calculator.steps') as $index => $step)
                 <button type="button" @class(['step', 'active' => $index === 0]) data-step="{{ $index }}" @disabled($index > 0)><b>{{ $index + 1 }}</b>{{ $step }}</button>
@@ -29,7 +31,7 @@
                     <label class="upload" id="drop-zone">
                         <x-line-icon name="upload" />
                         <strong>{{ __('calculator.files.drop') }}</strong>
-                        <input type="file" id="model-upload" class="sr-only" multiple accept=".stl,.step,.stp,.obj" aria-label="{{ __('calculator.files.select') }}">
+                        <input type="file" id="model-upload" class="sr-only" multiple accept=".stl,.step,.stp,.obj,.dxf,.dwg" aria-label="{{ __('calculator.files.select') }}">
                         <span class="btn secondary small" aria-hidden="true">{{ __('calculator.files.select') }}</span>
                         <p>{{ __('calculator.files.limit', ['mb' => $maxMb]) }}</p>
                     </label>
@@ -52,45 +54,14 @@
 
                 <section class="panel" data-step-panel="1" hidden>
                     <h2>{{ __('calculator.settings.title') }}</h2>
-                    <p>{{ __('calculator.settings.intro') }}</p>
-                    <div class="grid two form-grid">
-                        <x-field name="material" type="select" :label="__('calculator.settings.material')"
-                                 :options="array_combine(array_keys($settings['materials']), array_keys($settings['materials']))" />
-                        <x-field name="color" type="select" :label="__('calculator.settings.color')" :options="__('calculator.settings.colors')" />
-                        <x-field name="purpose" type="select" :label="__('calculator.settings.purpose')" :options="__('calculator.settings.purposes')" />
-                        <x-field name="service" type="select" :label="__('calculator.settings.service')" :options="__('calculator.settings.services')" />
-                    </div>
-                    <div class="inset">
-                        <h3>{{ __('calculator.settings.fdm') }}</h3>
-                        <div class="grid two form-grid">
-                            <x-field name="surface" type="select" :label="__('calculator.settings.surface')" :options="__('calculator.settings.surfaces')" value="standard" />
-                            <x-field name="infill" type="select" :label="__('calculator.settings.infill')" :value="$settings['default_infill']"
-                                     :options="$infills->mapWithKeys(fn ($value) => [$value => __('calculator.settings.infill_option', ['value' => $value])
-                                         .($value === $settings['default_infill'] ? __('calculator.settings.recommended') : '')])->all()
-                                         + ['consult' => __('calculator.settings.infill_consult')]" />
-                        </div>
-                    </div>
-                    <div class="gap">
-                        <x-field name="term" type="select" :label="__('calculator.settings.term')" :options="__('calculator.settings.terms')" />
-                        <p class="legal-note">{{ __('calculator.settings.term_note') }}</p>
-                    </div>
-                    <h3 class="gap">{{ __('calculator.settings.quantities') }}</h3>
-                    <div data-quantities></div>
-                    <div class="gap">
-                        <x-field name="notes" type="textarea" :label="__('calculator.settings.notes')" maxlength="2000" />
-                    </div>
+                    <p>{{ __('calculator.part.intro') }}</p>
+                    <div data-cards></div>
+                    <p class="part-note gap"><img class="ui-icon" src="{{ asset('icons/ui/info.svg') }}" alt="" width="20" height="20">{{ __('calculator.part.hint') }}</p>
                 </section>
 
                 <section class="panel" data-step-panel="2" hidden>
                     <h2>{{ __('calculator.review.title') }}</h2>
                     <div data-review></div>
-                    <div class="check-row">
-                        <x-line-icon name="check" />
-                        <div>
-                            <h3>{{ __('calculator.review.build') }}</h3>
-                            <p>{{ __('calculator.review.build_text', ['mm' => $settings['max_dimension_mm']]) }}</p>
-                        </div>
-                    </div>
                     <div data-warnings hidden>
                         <div class="notice warning gap" data-warning-list></div>
                         <a class="btn gap" href="{{ $contactUrl }}" data-specialist>{{ __('calculator.review.specialist') }} <x-line-icon name="arrow" /></a>
@@ -147,6 +118,7 @@
                 <h3>{{ __('calculator.summary.title') }}</h3>
                 <div data-summary-rows></div>
                 <div class="summary-row total"><span>{{ __('calculator.summary.total') }}</span><span data-total></span></div>
+                <p class="summary-specialist" data-specialist-total hidden>{{ __('calculator.summary.specialist') }}</p>
                 <div class="notice summary-note">{{ __('calculator.summary.note') }}</div>
                 <div class="help-box">
                     <h3>{{ __('calculator.help.title') }}</h3>

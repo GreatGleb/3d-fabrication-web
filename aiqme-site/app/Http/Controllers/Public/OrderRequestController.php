@@ -17,8 +17,9 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Заявка на изготовление из шага 5 калькулятора (§3.1, W-12): один multipart-запрос fetch (файлы и параметры у каждой
- * позиции — правка 02.11, Г6; текст клиента notes, контакты, способ получения, токен отправки). Прежний общий формат
- * (параметры печати и срок на весь заказ) ещё принимается и копируется в каждую позицию — до G-08. Частота по IP — middleware throttle:orders,
+ * позиции — способ и его параметры, количество, срок, дата, заметка — правка 02.11, Г6; контакты, способ получения, токен
+ * отправки). Прежний общий формат (параметры печати, срок и notes на весь заказ) не принимается (Г8): без способа у позиции —
+ * ошибка проверки. Частота по IP — middleware throttle:orders,
  * honeypot — как у форм W-09 (ошибка формы, ложного успеха с номером нет). Клиентская сумма не принимается. Ответ — адрес страницы
  * подтверждения; номер и гостевая ссылка передаются ей через flash сессии и показываются один раз.
  */
@@ -35,8 +36,6 @@ class OrderRequestController extends Controller
         $limits = config('aiqme.calculator');
         $maxMb = intdiv($limits['max_file_bytes'], 1024 * 1024);
         $settings = $this->settings->values();
-        // Прежний общий формат шага 2 (общие параметры печати, правка 28.10) — пока его отправляет браузер; удаляет G-08.
-        $legacy = $request->exists('material');
         $rules = [
             'submission_token' => ['required', 'uuid'],
             'name' => ['required', 'string', 'max:255'],
@@ -50,15 +49,11 @@ class OrderRequestController extends Controller
             'city' => ['exclude_unless:delivery,ship', 'required', 'string', 'max:255'],
             'address' => ['exclude_unless:delivery,ship', 'required', 'string', 'max:255'],
             'postcode' => ['exclude_unless:delivery,ship', 'required', 'string', 'max:50'],
-            'notes' => ['nullable', 'string', 'max:2000'],
             'parts' => ['required', 'array', 'list', 'max:'.$limits['max_files']],
         ];
-        if ($legacy) {
-            $rules += [...$this->printingRules('', $settings), 'term' => $this->choice('calculator.settings.terms')];
-        }
         $input = $request->all()['parts'] ?? null;
         foreach (is_array($input) ? array_keys($input) : [] as $index) {
-            $rules += $this->partRules("parts.{$index}", $request, $legacy, $settings, $limits);
+            $rules += $this->partRules("parts.{$index}", $request, $settings, $limits);
         }
         $data = $request->validate($rules, [
             'required' => __('public.forms.required'),
@@ -97,11 +92,9 @@ class OrderRequestController extends Controller
             'address' => $data['delivery'] === 'ship'
                 ? ['country' => $data['country'], 'city' => $data['city'], 'address' => $data['address'], 'postcode' => $data['postcode']]
                 : null,
-            'notes' => $data['notes'] ?? null,
             'parts' => array_map(fn (array $part): array => [
                 'file' => $part['file'],
-                // Прежний формат: общие параметры печати и срок копируются в каждую позицию; notes остаётся у заказа.
-                'parameters' => $this->parameters($legacy ? ['method' => 'printing', ...$part, ...$data, 'priority' => $data['term'], 'notes' => null] : $part, $settings),
+                'parameters' => $this->parameters($part, $settings),
             ], $data['parts']),
         ], $user);
 
@@ -130,7 +123,7 @@ class OrderRequestController extends Controller
     }
 
     /**
-     * Параметры печати (материал, заполнение, пожелания) — у позиции $prefix или, в прежнем формате, общие ($prefix '').
+     * Параметры печати позиции $prefix: материал, заполнение, пожелания.
      *
      * @param  array<string, mixed>  $settings
      * @return array<string, list<mixed>>
@@ -155,18 +148,15 @@ class OrderRequestController extends Controller
      * @param  array<string, int>  $limits
      * @return array<string, list<mixed>>
      */
-    private function partRules(string $prefix, Request $request, bool $legacy, array $settings, array $limits): array
+    private function partRules(string $prefix, Request $request, array $settings, array $limits): array
     {
         $file = $request->file($prefix.'.file');
         $extension = $file instanceof UploadedFile ? OrderFileFormat::extension($file->getClientOriginalName()) : null;
         $printable = $extension === null || in_array($extension, OrderFileFormat::THREE_D, true);
         $rules = [
-            $prefix.'.file' => ['required', 'file', 'max:'.intdiv($limits['max_file_bytes'], 1024), function (string $attribute, mixed $value, Closure $fail) use ($extension, $legacy, $printable): void {
+            $prefix.'.file' => ['required', 'file', 'max:'.intdiv($limits['max_file_bytes'], 1024), function (string $attribute, mixed $value, Closure $fail) use ($extension): void {
                 if ($extension === null) {
                     $fail(__('calculator.js.unsupported', ['name' => basename($value->getClientOriginalName())]));
-                } elseif ($legacy && ! $printable) {
-                    // Прежний формат — всегда печать: DXF и DWG в нём не принимаются.
-                    $fail(__('public.forms.choice'));
                 }
             }],
             $prefix.'.quantity' => ['required', 'integer', 'min:1', 'max:100'],
@@ -174,9 +164,6 @@ class OrderRequestController extends Controller
         if ($extension === 'stl' || $extension === null) {
             $rules[$prefix.'.unit'] = ['required', Rule::in(['mm', 'cm', 'in'])];
             $rules[$prefix.'.scale'] = ['required', 'numeric', 'min:1', 'max:1000'];
-        }
-        if ($legacy) {
-            return $rules;
         }
         $rules += [
             $prefix.'.method' => ['required', Rule::in($printable ? ['printing', 'milling', 'engraving'] : ['milling', 'engraving'])],

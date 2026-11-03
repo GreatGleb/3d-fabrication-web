@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Domain\Pricing\CalculatorSettings;
 use Database\Seeders\PrototypeContentSeeder;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -10,7 +9,7 @@ use Tests\Support\Html;
 use Tests\TestCase;
 
 /**
- * Калькулятор W-27 (§1.2): разметка 5 шагов, значения D-09/D-24 (настройки W-11) и §6.4 (конфигурация) в data-атрибутах, шаг 2 без
+ * Калькулятор W-27 (§1.2; правка 02.11, Г8 — карточки шага 2 и проверку шага 3 строит JS): разметка 5 шагов, значения D-09/D-24 (настройки W-11) и §6.4 (конфигурация) в data-атрибутах, шаг 2 без
  * технологии (D-37), шаг 4 и сводка без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей (D-21),
  * ссылка специалиста по контракту предзаполнения. Поведение шагов в браузере — bin/browser-check, логика — tests/js/.
  */
@@ -39,14 +38,30 @@ class CalculatorPageTest extends TestCase
         $this->assertSame('Reading files...', $texts['reading']);
         $this->assertSame(50, $texts['mb']);
         $this->assertSame('en', $root->getAttribute('data-locale'));
+        // Правка 02.11, Г8: карточки шага 2, шаги 3 и 4 строит JS — тексты способов, полей, карточки и проверки в data-texts,
+        // значки icons/ui — data-icons.
+        $this->assertSame(['printing' => '3D printing', 'milling' => 'Milling', 'engraving' => 'Engraving'], $texts['methods']);
+        $this->assertSame(['standard' => 'Standard', 'priority' => 'Urgent'], $texts['settings']['terms']);
+        $this->assertSame('Price to be assessed by a specialist', $texts['price']['specialist']);
+        $this->assertSame(asset('icons/ui'), $root->getAttribute('data-icons'));
+        $this->assertArrayNotHasKey('specialist_format', $texts);
     }
 
-    /** П7: габарит 1000 мм в тексте шага 3 обеих локалей (значение из настроек, знак ×, без разделителя тысяч). */
-    public function test_review_step_shows_build_size_of_1000_mm(): void
+    /**
+     * Шаг 3 по файлам (правка 02.11, Г8): блоки строит JS по data-texts — строка FDM (П7: 1000 мм из настроек), строка предела
+     * фрезеровки и гравировки и «Failą peržiūrės specialistas.» для файлов без разбора; общей строки FDM в разметке нет.
+     */
+    public function test_review_step_texts_of_both_locales(): void
     {
-        foreach (['/lt/kalkuliatorius' => 'Įrangos dydžio ribos', '/en/quote' => 'Build size limits'] as $path => $heading) {
-            $row = $this->page($path)->query('//*[@data-step-panel="2"]//div[@class="check-row"]/div')->item(0);
-            $this->assertSame([$heading, 'FDM: 1000 × 1000 × 1000 mm.'], [Html::text($row->getElementsByTagName('h3')->item(0)), Html::text($row->getElementsByTagName('p')->item(0))], $path);
+        foreach ([
+            '/lt/kalkuliatorius' => ['Įrangos dydžio ribos', 'FDM: :mm × :mm × :mm mm.', 'Frezavimo ir graviravimo matmenys :w × :h mm.', 'Failą peržiūrės specialistas.'],
+            '/en/quote' => ['Build size limits', 'FDM: :mm × :mm × :mm mm.', 'Milling and engraving dimensions: :w × :h mm.', 'A specialist will review the file.'],
+        ] as $path => $expected) {
+            $page = $this->page($path);
+            $review = json_decode($page->query('//*[@id="quote"]')->item(0)->getAttribute('data-texts'), true)['review'];
+            $this->assertSame($expected, [$review['build'], $review['build_text'], $review['cnc'], $review['specialist_file']], $path);
+            $this->assertSame(0, $page->query('//*[@data-step-panel="2"]//*[contains(@class, "check-row")]')->length, $path);
+            $this->assertSame(1, $page->query('//*[@data-step-panel="2"]//*[@data-review]')->length, $path);
         }
     }
 
@@ -61,7 +76,8 @@ class CalculatorPageTest extends TestCase
         $this->assertSame(['01. Upload your models', '02. Production settings', '03. Model review', '04. Part pricing', 'Buyer & delivery'],
             Html::texts($en, '//*[@data-step-panel]/h2'));
         $this->assertSame(1, $en->query('//*[@data-step-panel and not(@hidden)]')->length, 'видим только шаг 1');
-        $this->assertSame('.stl,.step,.stp,.obj', $en->query('//input[@id="model-upload"]')->item(0)->getAttribute('accept'));
+        // Правка 02.11, Г8: принимаются DXF и DWG.
+        $this->assertSame('.stl,.step,.stp,.obj,.dxf,.dwg', $en->query('//input[@id="model-upload"]')->item(0)->getAttribute('accept'));
         $this->assertSame(1, $en->query('//*[@data-viewer and contains(@class, "viewer")]')->length, 'место просмотра W-31');
     }
 
@@ -81,74 +97,78 @@ class CalculatorPageTest extends TestCase
         }
     }
 
+    /** Правка 02.11, Г8: тексты шага 1 — дословно из README плана; предел — из config. */
     public function test_size_limit_label_comes_from_config(): void
     {
-        $this->assertSame('Up to 50 MB per file. STL files are priced instantly; STEP and OBJ files are priced by a specialist.',
-            Html::text($this->page('/en/quote')->query('//*[@id="drop-zone"]/p')->item(0)));
+        $en = $this->page('/en/quote');
+        $this->assertSame('STL, STEP, OBJ, DXF, DWG. You can select several files.', Html::text($en->query('//*[@data-step-panel="0"]/p')->item(0)));
+        $this->assertSame('Up to 50 MB per file.', Html::text($en->query('//*[@id="drop-zone"]/p')->item(0)));
 
         config(['aiqme.calculator.max_file_bytes' => 10 * 1024 * 1024]);
-        $this->assertSame('Iki 10 MB vienam failui. STL failų kaina apskaičiuojama iš karto, STEP ir OBJ failus įvertina specialistas.',
-            Html::text($this->page('/lt/kalkuliatorius')->query('//*[@id="drop-zone"]/p')->item(0)));
+        $lt = $this->page('/lt/kalkuliatorius');
+        $this->assertSame('STL, STEP, OBJ, DXF, DWG. Galite pasirinkti kelis failus.', Html::text($lt->query('//*[@data-step-panel="0"]/p')->item(0)));
+        $this->assertSame('Iki 10 MB vienam failui.', Html::text($lt->query('//*[@id="drop-zone"]/p')->item(0)));
+        // Надпись области и кнопка не меняются (17.17).
+        $this->assertSame(['Nutempkite failus čia arba pasirinkite', 'Pasirinkti 3D modelius'],
+            [Html::text($lt->query('//*[@id="drop-zone"]/strong')->item(0)), Html::text($lt->query('//*[@id="drop-zone"]/span[contains(@class, "btn")]')->item(0))]);
     }
 
-    public function test_step_two_has_no_technology_and_infill_list_of_prototype_with_default(): void
+    public function test_step_two_has_no_technology_choice_of_prototype(): void
     {
         $en = $this->page('/en/quote');
         $this->assertSame(0, $en->query('//*[contains(@class, "tech-choices")]')->length);
-        $this->assertSame(['PLA', 'PETG', 'ABS'], Html::texts($en, '//select[@name="material"]/option'));
+        // Правка 02.11, Г8: материалы печати — из настроек в data-settings (списки карточки строит JS).
+        $this->assertSame(['PLA', 'PETG', 'ABS'], array_keys(json_decode($en->query('//*[@id="quote"]')->item(0)->getAttribute('data-settings'), true)['materials']));
     }
 
-    /** Шаг 2 по макету заказчика (правка 28.10, E-05): состав, порядок и варианты полей, пояснение срока, notes. */
-    public function test_step_two_follows_customer_layout_of_28_10(): void
+    /**
+     * Шаг 2 по макету 17.09 (правка 02.11, Г8): общих полей, общего срока и его пояснения нет — карточки на каждый файл строит
+     * JS ([data-cards]); подзаголовок и нижняя подсказка — дословно из README плана; тексты карточки (способы, поля, приоритет,
+     * дата, заметка) и прежние списки печати (правка 28.10, E-05; 30.10, Г3) — в data-texts.
+     */
+    public function test_step_two_has_cards_with_texts_of_the_plan(): void
     {
-        $en = $this->page('/en/quote');
-        $panel = $en->query('//*[@data-step-panel="1"]')->item(0);
-        $names = [];
-        foreach ($en->query('.//*[@name]', $panel) as $field) {
-            $names[] = $field->getAttribute('name');
+        foreach ([
+            '/en/quote' => [
+                'Choose the manufacturing method and parameters for each model.', 'A separate production deadline can be chosen for each part.',
+                ['thickness' => 'Thickness', 'depth' => 'Engraving depth', 'urgent' => 'Urgent', 'needed_by' => 'Needed by',
+                    'intro' => 'Choose the manufacturing method and parameters for each model.', 'hint' => 'A separate production deadline can be chosen for each part.',
+                    'change' => 'Change parameters', 'method' => 'Manufacturing method', 'priority' => 'Production priority',
+                    'rush_note' => 'The rush deadline will be confirmed separately.', 'notes' => 'Additional information (optional)',
+                    'notes_placeholder' => 'E.g. additional requirements, remarks or other important instructions…'],
+                ['Material', 'Colour', 'Part purpose', 'Additional services (optional)', 'Surface quality', 'Infill'],
+                ['none' => 'Not selected', 'painting' => 'Sanding and painting', 'inserts' => 'Threaded insert installation', 'assembly' => 'Part assembly', 'consult' => 'Consultation needed'],
+            ],
+            '/lt/kalkuliatorius' => [
+                'Kiekvienam modeliui pasirinkite gamybos būdą ir parametrus.', 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
+                ['thickness' => 'Storis', 'depth' => 'Graviravimo gylis', 'urgent' => 'Skubu', 'needed_by' => 'Reikalinga iki',
+                    'intro' => 'Kiekvienam modeliui pasirinkite gamybos būdą ir parametrus.', 'hint' => 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
+                    'change' => 'Keisti parametrus', 'method' => 'Gamybos būdas', 'priority' => 'Gamybos prioritetas',
+                    'rush_note' => 'Skubos terminas bus patvirtintas atskirai.', 'notes' => 'Papildoma informacija (neprivaloma)',
+                    'notes_placeholder' => 'Pvz. papildomi reikalavimai, pastabos ar kiti svarbūs nurodymai…'],
+                ['Medžiaga', 'Spalva', 'Detalės paskirtis', 'Papildomos paslaugos (neprivaloma)', 'Paviršiaus kokybė', 'Užpildas'],
+                ['none' => 'Nepasirinkta', 'painting' => 'Šlifavimas ir dažymas', 'inserts' => 'Srieginių įvorių montavimas', 'assembly' => 'Detalių surinkimas', 'consult' => 'Reikia konsultacijos'],
+            ],
+        ] as $path => [$intro, $hint, $part, $labels, $services]) {
+            $page = $this->page($path);
+            $panel = $page->query('//*[@data-step-panel="1"]')->item(0);
+            $this->assertSame(0, $page->query('.//*[@name]', $panel)->length, "$path: общих полей шага 2 нет");
+            $this->assertSame(1, $page->query('.//*[@data-cards]', $panel)->length, $path);
+            $this->assertSame([$intro, $hint], Html::texts($page, '//*[@data-step-panel="1"]/p'), $path);
+            $this->assertSame(asset('icons/ui/info.svg'), $page->query('//*[@data-step-panel="1"]/p[contains(@class, "part-note")]/img')->item(0)->getAttribute('src'));
+            $texts = json_decode($page->query('//*[@id="quote"]')->item(0)->getAttribute('data-texts'), true);
+            $this->assertSame($part, $texts['part'], $path);
+            $settings = $texts['settings'];
+            $this->assertSame($labels, [$settings['material'], $settings['color'], $settings['purpose'], $settings['service'], $settings['surface'], $settings['infill']], $path);
+            $this->assertSame($services, $settings['services'], $path);
+            foreach (['intro', 'fdm', 'term_note', 'quantities'] as $removed) {
+                $this->assertArrayNotHasKey($removed, $settings, "$path: {$removed}");
+            }
+            $text = Html::text($panel);
+            foreach (['Production lead time', 'Gamybos terminas', 'FDM', 'Part quantities', 'Detalių kiekiai'] as $old) {
+                $this->assertStringNotContainsString($old, $text, $path);
+            }
         }
-        $this->assertSame(['material', 'color', 'purpose', 'service', 'surface', 'infill', 'term', 'notes'], $names);
-        foreach (['quality', 'layer', 'finish'] as $old) {
-            $this->assertSame(0, $en->query('//*[@name="'.$old.'"]')->length, $old);
-        }
-        $selected = fn (DOMXPath $page, string $name): string => $page->query('//select[@name="'.$name.'"]/option[@selected]')->item(0)?->getAttribute('value') ?? '';
-
-        $this->assertSame(['15%', '20% · recommended', '40%', '60%', '80%', '100%', 'Consultation needed'], Html::texts($en, '//select[@name="infill"]/option'));
-        $this->assertSame('consult', $en->query('//select[@name="infill"]/option[last()]')->item(0)->getAttribute('value'));
-        $this->assertSame('20', $selected($en, 'infill'));
-        $this->assertSame(['Visual purposes', 'Practical use', 'Consultation needed'], Html::texts($en, '//select[@name="purpose"]/option'));
-        $this->assertSame('', $selected($en, 'purpose'));
-        $this->assertSame(['Not selected', 'Sanding and painting', 'Threaded insert installation', 'Part assembly', 'Consultation needed'], Html::texts($en, '//select[@name="service"]/option'));
-        $this->assertSame('none', $en->query('//select[@name="service"]/option[1]')->item(0)->getAttribute('value'));
-        $this->assertSame('Additional services (optional)', trim($en->query('//label[select[@name="service"]]/text()[1]')->item(0)->textContent));
-        $this->assertSame('', $selected($en, 'service'));
-        $this->assertSame(['High', 'Standard', 'Simplified', 'Consultation needed'], Html::texts($en, '//select[@name="surface"]/option'));
-        $this->assertSame('standard', $selected($en, 'surface'));
-        $this->assertSame(['Standard', 'Urgent'], Html::texts($en, '//select[@name="term"]/option'));
-        $this->assertSame('If you choose urgent production, state the required completion date in the “Additional information” field. The lead time is counted from order confirmation. We will agree the exact lead time after reviewing the model and quantity.',
-            Html::text($en->query('//label[select[@name="term"]]/following-sibling::p[@class="legal-note"]')->item(0)));
-        $text = Html::text($panel);
-        foreach (['do not change the estimate', 'A smaller layer', 'Quality level', 'Layer height', 'Requested schedule'] as $old) {
-            $this->assertStringNotContainsString($old, $text);
-        }
-        $notes = $en->query('//*[@data-quantities]/following-sibling::div[contains(@class, "gap")]//textarea[@name="notes"]')->item(0);
-        $this->assertNotNull($notes);
-        $this->assertSame('2000', $notes->getAttribute('maxlength'));
-        $this->assertSame('Additional information', trim($en->query('//label[textarea[@name="notes"]]/text()[1]')->item(0)->textContent));
-
-        $settings = app(CalculatorSettings::class);
-        $settings->save(['default_infill' => 30] + $settings->values());
-        $lt = $this->page('/lt/kalkuliatorius');
-        $this->assertSame(['15 %', '20 %', '30 % · rekomenduojama', '40 %', '60 %', '80 %', '100 %', 'Reikia konsultacijos'], Html::texts($lt, '//select[@name="infill"]/option'));
-        $this->assertSame('30', $selected($lt, 'infill'));
-        $labels = [];
-        foreach (['material', 'color', 'purpose', 'service', 'surface', 'infill', 'term'] as $name) {
-            $labels[] = trim($lt->query('//label[select[@name="'.$name.'"]]/text()[1]')->item(0)->textContent);
-        }
-        $labels[] = trim($lt->query('//label[textarea[@name="notes"]]/text()[1]')->item(0)->textContent);
-        $this->assertSame(['Medžiaga', 'Spalva', 'Detalės paskirtis', 'Papildomos paslaugos (neprivaloma)', 'Paviršiaus kokybė', 'Užpildas', 'Gamybos terminas', 'Papildoma informacija'], $labels);
-        $this->assertSame(['Nepasirinkta', 'Šlifavimas ir dažymas', 'Srieginių įvorių montavimas', 'Detalių surinkimas', 'Reikia konsultacijos'], Html::texts($lt, '//select[@name="service"]/option'));
-        $this->assertSame('FDM parametrai', Html::text($lt->query('//*[@data-step-panel="1"]//*[contains(@class, "inset")]/h3')->item(0)));
     }
 
     public function test_price_table_summary_and_checkout_have_no_vat_delivery_discount_or_unit_price(): void
