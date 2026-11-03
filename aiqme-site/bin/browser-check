@@ -2025,11 +2025,12 @@ def check_contact_form(report, new_page, path, width):
         stl = Path(directory) / 'part.stl'
         stl.write_text('solid part\nendsolid part\n')
         form = page.locator('#contact-form')
+        # До заполнения: фокус в форме запускает решение капчи (auto=onfocus), кадр «до проверки» снимался бы с «Verifying…».
+        check_altcha_checkbox(report, page, form, where, 'contact', width)
         form.locator('input[name=name]').fill(f'Ona {token}')
         form.locator('input[name=email]').fill(email)
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
-        check_altcha_checkbox(report, page, form, where, 'contact', width)
         check_file_pick(report, page, form, path, where, [str(pdf), str(stl)])
         wait_altcha(report, page, form, where)
         altcha_shot(page, form, 'contact', width)
@@ -2555,12 +2556,12 @@ def check_training_modal(report, new_page, path, width):
     report.check(page.evaluate(f"document.activeElement.matches('[data-modal-open=\"{modal_id}\"]')"), f'{where}: фокус не вернулся на кнопку')
 
     button.click()
+    form = modal.locator('form')
+    check_altcha_checkbox(report, page, form, where, 'training', width)  # до заполнения, как у контактной формы
     modal.locator('input[name=name]').fill(f'Jonas {token}')
     modal.locator('input[name=email]').fill(email)
     modal.locator('select[name=format]').select_option('aiqme')
     modal.locator('input[name=participants]').fill('3')
-    form = modal.locator('form')
-    check_altcha_checkbox(report, page, form, where, 'training', width)
     wait_altcha(report, page, form, where)
     altcha_shot(page, modal.locator('[role=dialog]'), 'training', width)
     with page.expect_navigation(wait_until='networkidle'):
@@ -2588,10 +2589,10 @@ def check_register(report, new_page, path, width):
     context, page, problems = new_page(width, 844)
     page.goto(BASE + path, wait_until='networkidle')
     form = page.locator('#auth-form[data-mode=register]')
+    check_altcha_checkbox(report, page, form, where, 'register', width)  # до заполнения, как у контактной формы
     form.locator('input[name=name]').fill(f'Rūta {token}')
     form.locator('input[name=email]').fill(f'{token}@example.test')
     form.locator('input[name=password]').fill(secrets.token_urlsafe(12))
-    check_altcha_checkbox(report, page, form, where, 'register', width)
     widget = wait_altcha(report, page, form, where)
     report.check('Patvirtinta' in widget.inner_text(), f'{where}: надпись виджета «{widget.inner_text().strip()}»')
     altcha_shot(page, form, 'register', width)
