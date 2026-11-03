@@ -4507,3 +4507,86 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   администратора, войдёт в полный прогон G-09.
 - Свой логотип в формате webp в PDF не проверялся (dompdf и webp — зависит от GD сервера); проверен PNG.
 - Банк/SWIFT/IBAN/почта/сайт/«кто выписал» на aiqme.com вписываются при выпуске (G-10).
+
+## Правки 02.11, G-06 (Г6): калькулятор — данные и сервер (2026-11-03)
+
+### Сделано
+- **Таблицы и поля** (миграция `2026_11_03_000000_allow_order_files_of_any_format`): `stl_files.triangles`, `stl_files.analysis`,
+  `stl_parts.estimate` и `stl_parts.measurement` — nullable (measurement тоже: у DXF/DWG/STEP/OBJ его нет). Поле `format` не
+  добавлено: путь хранения теперь `stl/<uuid>.<расширение исходного файла>`, формат — `StlFile::format()` из пути. `down` возвращает
+  NOT NULL и отказывает (RuntimeException), если уже есть файлы/позиции без разбора или оценки.
+- **Настройки** (миграция данных `2026_11_03_100000_add_milling_engraving_calculator_settings`, запись `settings.calculator`):
+  `milling_materials` и `engraving_materials` (списки `{lt, en}`), `milling_thicknesses_mm` [1,2,3,4,5,6,8,10],
+  `engraving_depths_mm` [0.1,0.2,0.3,0.5], `milling_max_mm` [2000, 4000] — заглушки README; ключ добавляется, только если его
+  нет; `down` удаляет ключ, только если значение прежнее. В `prototype-content.json` настроек калькулятора нет (их кладут только
+  миграции) — правка там не нужна. `CalculatorSettings::save()` теперь сохраняет ключи, которых нет в форме (иначе сохранение
+  админки до G-07 стёрло бы новые списки). Новые ключи сами попадают в `data-settings` страницы калькулятора (JS их пока не читает).
+- **Позиция** (`stl_parts.parameters`): `method` (printing|milling|engraving), `quantity`, `term` (standard|priority), `needed_by`
+  (Y-m-d|null, хранится только при priority), `notes` (строка|null); у STL — `unit`, `scale`; у printing — `material`, `infill`,
+  `infill_consult`, `color`, `purpose`, `service`, `surface`; у milling — `material` (LT-название из списка), `material_en`,
+  `thickness`; у engraving — `material`, `material_en`, `depth`. `order_meta.notes` остаётся заметкой заказа.
+- **Запрос** (`OrderRequestController`): новый формат — `parts.N.{file, method, quantity, priority, needed_by, notes}` + параметры
+  способа + у STL `unit`, `scale`. Правила строятся по каждой позиции: белый список расширений (stl, step, stp, obj, dxf, dwg;
+  иначе «:name: unsupported format…»), печать только для stl/step/stp/obj (DXF/DWG + printing → «Choose a value from the list.»
+  у `parts.N.method`), материалы/толщины/глубины — из настроек, цвета/назначения/услуги/поверхности/сроки — из lang, дата — не
+  раньше завтра. Размер — прежний предел 50 МБ, 10 файлов.
+- **Прежний общий формат** (top-level material, infill, color, purpose, service, surface, term, notes) по-прежнему принимается,
+  чтобы текущий шаг 2 работал: общие поля копируются в каждую позицию (method printing, needed_by и notes позиции — null, notes
+  остаётся у заказа); DXF/DWG в нём — отказ. **Его удаляет G-08** вместе с переводом браузера.
+- **Проверка формата** — `App\Domain\Orders\OrderFileFormat` (своим кодом, без пакетов): STL — `StlAnalyzer` (только для STL),
+  DWG — сигнатура `AC` + 4 цифры, STEP/STP — `ISO-10303-21;`, DXF — двоичная сигнатура или текст, OBJ — текст (первые 4 КиБ без
+  NUL и без `MZ`/ELF). Содержимое не разбирается. `.exe`, `x.dxf.exe`, программа под именем `.dxf/.dwg/.step/.obj` — отказ, под
+  именем `.stl` — «Could not read geometry».
+- **Оценка**: `EstimateService::estimate($parts)` — материал и заполнение у каждой позиции, позиция `null` не оценивается;
+  `file_fee` — за каждый файл любого формата, `order_fee` — один. JS `core estimate()` — то же (свой material/infill у позиции,
+  общие — запасные значения для текущего `quote.js`, их уберёт G-08; `null` — без оценки). Паритет: `stl-parity.mjs` и
+  `StlParityTest` считают с материалом/заполнением каждой позиции и заявку с неоценённой позицией.
+- **OrderSubmission**: оценивается только STL + printing; у остальных `estimate` NULL, цена строки Lunar 0 (`lineCents()`),
+  сумма заказа сверяется с суммой оценённых позиций и сборов. `digest` — sha256, имя и все параметры каждой позиции + notes
+  заказа. `OrderWorkflow::setPrices` уже требовал ≥1 цент у каждой StlPart — не менялся, проверено тестом.
+- **Подписи**: `StlPart::method()` (без method → printing), `StlPart::label($locale)` — «3D spausdinimas / ABS»,
+  «Frezavimas / Aliuminis, 6 mm», «Graviravimas / Mediena, 0,1 mm» (EN — «3D printing / ABS», «Milling / Aluminium, 6 mm»,
+  «Engraving / Wood, 0.1 mm», в EN точка). `getOption()` — подпись на текущем языке; строки Lunar создаются на языке заказа.
+  Названия способов — новый `calculator.methods` (LT/EN из README). Уже записанные `order_lines.option` старых заказов
+  («FDM / PLA») не переписываются.
+- **Saved models и повтор** (`?models=`) — только STL (`ownModels` по пути `%.stl`; у заказа без STL нет кнопки повтора).
+- `DemoSeeder`, `tests/browser/OrderFactory` и прямые вызовы `OrderSubmission` в 8 тестах переведены на `parts.*.parameters`
+  (значения прежние). Демо-сборка не пересобиралась.
+- Фикстуры: `tests/fixtures/cad/plate.dxf` (78 байт, текст DXF с одной линией), `tests/fixtures/cad/plate.dwg` (64 байта,
+  `AC1032` + нули) — синтетические.
+
+### Тесты
+- Новый `tests/Feature/OrderPositionsTest.php` (10 тестов): смешанный заказ STL×2 (ABS 20 % ×2 и PETG 100 %) + STEP (печать,
+  консультация) + DXF (фрезеровка, скорая, дата, заметка) + DWG (гравировка): estimate [7, 13, null, null, null], цены строк
+  [7, 13, 0, 0, 0], сумма 7+13+500+5×25, параметры каждой позиции целиком, пути с расширением, NULL у разбора/измерения,
+  подписи EN/LT; подтверждение администратором (0 у неоценённой → отказ, оплата до подтверждения → отказ, со всеми ценами —
+  подтверждено и создан платёжный запрос); 23 отказа проверки без записей (печать DXF/DWG, способ, .exe, двойное расширение,
+  программа под .dxf/.dwg/.step/.obj/.stl, материалы/толщина/глубина не из списка, unit у STL, срок, дата вчера/сегодня, заметка,
+  количество); прежний формат (копирование в позиции, notes у заказа, отказ DXF); digest (заметка позиции, глубина → конфликт);
+  старые позиции без method → «3D spausdinimas / ABS», без «FDM»; Saved models/повтор только STL; `EstimateService` по позициям;
+  миграция схемы (вперёд, `down`, отказ `down` с NULL) и настроек (добавление, повтор, значение администратора, `down`, нет записи).
+- JS: `calculator-core.test.js` — новый тест позиций со своим материалом/заполнением и `null`.
+- Ожидания с комментарием «правка 02.11, Г6»: параметры позиции прежнего формата (`method`, `needed_by`, `notes`) в
+  `OrderSubmissionTest`; `data-settings` с заглушками в `CalculatorPageTest`, `CalculatorSettingsTest`; вызовы
+  `EstimateService` с материалом у позиции (`EstimateServiceTest`, `CalculatorSettingsTest`, `StlParityTest`).
+- Проверено откатом (один раз, затем возвращено): без `OrderFileFormat::matches`, с прежним «FDM / » в `getOption` и с одним
+  материалом PLA для всех позиций в `EstimateService` — 6 из 11 тестов `OrderPositionsTest` + `StlParityTest` падают (смешанный
+  заказ, отказ «exe as DXF», прежний формат, старые позиции, EstimateService, паритет); с правкой — все зелёные.
+
+### Проверки
+- `bin/check` — `bin/check: OK` (PHPUnit 734/734; node --test 40/40; Vite build OK), 7 мин 37 с.
+- `bin/browser-check --signed-in /lt/kalkuliatorius /en/quote` — `bin/browser-check: OK (6577 проверок)`, в том числе карточка
+  заказа W-14 на заказе `OrderFactory` в новом формате и поиск маркеров по двум страницам.
+- `pint --dirty` — passed. `git status --porcelain aiqme-site`: новые файлы — `app/Domain/Orders/OrderFileFormat.php`, 2 миграции,
+  `tests/Feature/OrderPositionsTest.php`, `tests/fixtures/cad/`.
+
+### Не проверено / оставлено следующим задачам
+- **Отображение заказов с не-STL и STL-фрезеровкой — G-07.** Карточка заказа в админке читает `measurement['dimensions_mm']` и
+  `mass_grams`, у позиций DXF/DWG/STEP/OBJ measurement NULL, у STL + фрезеровка/гравировка нет `mass_grams` — до G-07 такая карточка
+  упадёт. Через текущий интерфейс такие заказы не создаются (браузер шлёт прежний формат и отвергает STEP/OBJ), поэтому до G-08
+  на сайте их нет. Кабинет клиента (страница заказа, Saved models) проверен тестом на смешанном заказе.
+- У STL + фрезеровка/гравировка measurement считает прежнее предупреждение `exceeds_build_size` по пределу FDM (1000 мм);
+  сравнение с 2000 × 4000 — на шаге 3 в браузере (G-08); на сервере не добавлялось.
+- EN-подпись толщины/глубины — с точкой («0.1 mm»): в README пример только LT; простейший вариант.
+- Повтор заказа и Saved models — только STL; не-STL в них не попадают (как в README).
+- Ручной просмотр не нужен (интерфейс не менялся).

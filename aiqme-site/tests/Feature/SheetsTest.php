@@ -113,11 +113,8 @@ class SheetsTest extends TestCase
             'contact' => ['name' => $name, 'email' => $email, 'phone' => '+370 600 00000', 'company' => 'UAB TEST', 'company_code' => 'TEST-123', 'vat_code' => null],
             'delivery' => 'ship',
             'address' => ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gedimino pr. 1', 'postcode' => 'LT-01103'],
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => array_map(fn (string $file): array => [
-                'file' => UploadedFile::fake()->createWithContent($file, $cube), 'unit' => 'mm', 'scale' => 100, 'quantity' => 2,
+                'file' => UploadedFile::fake()->createWithContent($file, $cube), 'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 2, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
             ], ['bracket.stl', 'cover.stl']),
         ], null);
     }

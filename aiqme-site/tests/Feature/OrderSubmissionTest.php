@@ -140,8 +140,9 @@ class OrderSubmissionTest extends TestCase
         $this->assertSame([3, 1], $parts->map(fn ($line) => $line->purchasable->parameters['quantity'])->all());
         $this->assertSame([37, 12], $parts->map(fn ($line) => $line->purchasable->estimate)->all());
         $this->assertEqualsWithDelta(3.72, $parts[0]->purchasable->measurement['mass_grams'], 1e-9);
-        $this->assertSame(['material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 3, 'color' => 'black',
-            'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'], $parts[0]->purchasable->parameters);
+        // Правка 02.11, Г6: прежний общий формат копируется в позицию — способ printing, дата и заметка позиции пустые.
+        $this->assertSame(['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 3, 'color' => 'black',
+            'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null], $parts[0]->purchasable->parameters);
         $fee = $order->lines->first(fn ($line) => $line->purchasable instanceof OrderCharge);
         $this->assertSame([OrderCharge::FEE, 500, 1, $order->id], [$fee->purchasable->kind, $fee->unit_price->value, $fee->quantity, $fee->purchasable->order_id]);
 
@@ -205,7 +206,8 @@ class OrderSubmissionTest extends TestCase
         [$wishes, $parameters, $storedNotes] = $order(['purpose' => 'consult', 'service' => 'painting', 'surface' => 'high', 'term' => 'priority', 'notes' => $notes]);
         $this->assertSame($at100, $wishes);
         $this->assertSame(['consult', 'painting', 'high', 'priority'], [$parameters['purpose'], $parameters['service'], $parameters['surface'], $parameters['term']]);
-        $this->assertArrayNotHasKey('notes', $parameters);
+        // Правка 02.11, Г6: у позиции своя заметка (здесь пустая); notes прежнего формата — у заказа.
+        $this->assertNull($parameters['notes']);
         $this->assertSame($notes, $storedNotes);
 
         // Тот же токен с другим notes или с консультацией — отказ без записей.

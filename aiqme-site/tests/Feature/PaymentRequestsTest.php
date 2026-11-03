@@ -90,11 +90,8 @@ class PaymentRequestsTest extends TestCase
             'contact' => ['name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => 'ship',
             'address' => ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gedimino pr. 1', 'postcode' => 'LT-01103'],
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => array_map(fn (string $name): array => [
-                'file' => UploadedFile::fake()->createWithContent($name, $cube), 'unit' => 'mm', 'scale' => 100, 'quantity' => 2,
+                'file' => UploadedFile::fake()->createWithContent($name, $cube), 'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 2, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
             ], ['bracket.stl', 'cover.stl']),
         ], $user);
         if ($confirm) {

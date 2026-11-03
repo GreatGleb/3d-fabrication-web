@@ -201,6 +201,25 @@ describe('оценка §3.1', () => {
     assert.equal(result.totalCents, expected[0] + expected[1] + 500 + 300);
   });
 
+  // Правка 02.11, Г6: материал и заполнение у каждой позиции; позиция null (не STL + печать) не входит в сумму, плата за файл — да.
+  test('позиции со своим материалом и заполнением; null — без оценки', () => {
+    const result = estimate({ parts: [
+      { volumeCm3: 1, quantity: 1, material: 'ABS', infill: 20 },
+      null,
+      { volumeCm3: 8, quantity: 2, material: 'PETG', infill: 100 },
+    ] }, { ...settings, fileFeeCents: 150 });
+    const abs = Math.floor(1 * 1.04 * (0.2 + 0.8 * 20 / 100) * 1 * 0.1 * 100 + 0.5);
+    const petg = Math.floor(8 * 1.27 * 1 * 2 * 0.1 * 100 + 0.5);
+    assert.deepEqual(result.lines.map((line) => line && line.cents), [abs, null, petg]);
+    assert.equal(result.fileFeesCents, 450);
+    assert.equal(result.totalCents, abs + petg + 500 + 450);
+    // Своё значение позиции важнее общего; только неоценённые — сумма из сборов.
+    assert.equal(estimate({ parts: [{ volumeCm3: 1, quantity: 1, material: 'PETG' }], material: 'PLA', infill: 100 }, settings).lines[0].massGrams, 1.27);
+    assert.equal(estimate({ parts: [null, null] }, settings).totalCents, 500);
+    assert.throws(() => estimate({ parts: [{ volumeCm3: 1, quantity: 1, material: 'PLA', infill: 101 }] }, settings), RangeError);
+    assert.throws(() => estimate({ parts: [{ volumeCm3: 1, quantity: 1, material: 'NYLON', infill: 20 }] }, settings), RangeError);
+  });
+
   test('плотность — только из материала в настройках; своя плотность не принимается', () => {
     assert.throws(() => estimate(onePart({ parts: [{ volumeCm3: 1, quantity: 1, density: 5 }] }), settings), RangeError);
     assert.equal(estimate(onePart({ material: 'PETG' }), settings).lines[0].massGrams, 1.27);

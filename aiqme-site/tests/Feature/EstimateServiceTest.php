@@ -19,7 +19,8 @@ class EstimateServiceTest extends TestCase
 
     private function estimate(array $parts, string $material = 'PLA', int $infill = 100): array
     {
-        return app(EstimateService::class)->estimate($parts, $material, $infill);
+        // Правка 02.11, Г6: материал и заполнение — у каждой позиции.
+        return app(EstimateService::class)->estimate(array_map(fn (array $part): array => [...$part, 'material' => $material, 'infill' => $infill], $parts));
     }
 
     /** @param  array<string, mixed>  $changes */

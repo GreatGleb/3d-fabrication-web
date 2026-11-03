@@ -26,9 +26,7 @@ final class OrderFactory
         $cube = file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'));
         $part = fn (string $name, int $quantity): array => [
             'file' => UploadedFile::fake()->createWithContent($name, $cube),
-            'unit' => 'mm',
-            'scale' => 100,
-            'quantity' => $quantity,
+            'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => $quantity, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
         ];
         $order = app(OrderSubmission::class)->submit([
             'submission_token' => (string) Str::uuid(),
@@ -36,9 +34,6 @@ final class OrderFactory
             'contact' => ['name' => 'Rūta Jankauskienė', 'email' => 'ruta@aiqme.test', 'phone' => '+370 600 00001', 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => 'ship',
             'address' => ['country' => 'LT', 'city' => 'Kaunas', 'address' => 'Laisvės al. 1', 'postcode' => '44001'],
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'notes' => "Pagaminti iki penktadienio.\nDetales supakuoti atskirai.",
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], null)->order;
@@ -66,14 +61,9 @@ final class OrderFactory
             'contact' => ['name' => $client->name, 'email' => $client->email, 'phone' => '+370 600 00002', 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => 'pickup',
             'address' => null,
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [[
                 'file' => UploadedFile::fake()->createWithContent('cube-10mm-binary.stl', file_get_contents(base_path('tests/fixtures/stl/cube-10mm-binary.stl'))),
-                'unit' => 'mm',
-                'scale' => 100,
-                'quantity' => 1,
+                'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 1, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
             ]],
         ], $client)->order;
 

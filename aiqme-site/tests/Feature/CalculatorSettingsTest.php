@@ -39,6 +39,12 @@ class CalculatorSettingsTest extends TestCase
         return json_decode($root->getAttribute('data-settings'), true);
     }
 
+    /** @return array<string, mixed> заглушки фрезеровки и гравировки (правка 02.11, Г6) */
+    private static function millingDefaults(): array
+    {
+        return (require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES;
+    }
+
     private function valid(): Testable
     {
         return Livewire::actingAs($this->admin)->test(CalculatorSettings::class);
@@ -48,7 +54,9 @@ class CalculatorSettingsTest extends TestCase
     {
         $expected = [
             'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000, 'max_file_bytes' => 52428800, 'max_files' => 10,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000,
+            // Правка 02.11, Г6: заглушки фрезеровки и гравировки из миграции данных.
+            ...self::millingDefaults(), 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
         $this->assertSame($expected, $this->pageSettings('/en/quote'));
         $this->assertSame($expected, $this->pageSettings('/lt/kalkuliatorius'));
@@ -146,7 +154,9 @@ class CalculatorSettingsTest extends TestCase
         config(['aiqme.calculator.rate_per_gram' => '9.99', 'aiqme.calculator.default_infill' => 77, 'aiqme.calculator.max_dimension_mm' => 5]);
         $expected = [
             'materials' => ['PLA' => 1.3, 'PETG' => 1.27, 'TPU' => 1.21], 'rate_per_gram' => '0.125', 'order_fee_cents' => 750,
-            'file_fee_cents' => 105, 'default_infill' => 30, 'max_dimension_mm' => 300, 'max_file_bytes' => 52428800, 'max_files' => 10,
+            'file_fee_cents' => 105, 'default_infill' => 30, 'max_dimension_mm' => 300,
+            // Правка 02.11, Г6: списков фрезеровки и гравировки нет в форме — сохранение их не теряет.
+            ...self::millingDefaults(), 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
         $this->assertSame($expected, array_intersect_key($this->pageSettings('/en/quote'), $expected));
         $lt = $this->pageSettings('/lt/kalkuliatorius');
@@ -154,7 +164,7 @@ class CalculatorSettingsTest extends TestCase
         $this->assertSame(['PLA', 'PETG', 'TPU'], Html::texts(Html::xpath($this->get('/en/quote')->getContent()), '//select[@name="material"]/option'));
 
         // EstimateService — по тем же значениям: 1 см³ PLA 1,3 г × 0,125 €/г = 16,25 → 16 центов; 750 + 2 × 105.
-        $estimate = app(EstimateService::class)->estimate([['volume_cm3' => 1.0, 'quantity' => 1], ['volume_cm3' => 2.0, 'quantity' => 1]], 'PLA', 100);
+        $estimate = app(EstimateService::class)->estimate([['volume_cm3' => 1.0, 'quantity' => 1, 'material' => 'PLA', 'infill' => 100], ['volume_cm3' => 2.0, 'quantity' => 1, 'material' => 'PLA', 'infill' => 100]]);
         $this->assertSame([16, 33], array_column($estimate['lines'], 'cents'));
         $this->assertSame(16 + 33 + 750 + 210, $estimate['total_cents']);
         $this->assertSame(array_diff_key($lt, ['max_file_bytes' => 0, 'max_files' => 0]), $estimate['settings']);

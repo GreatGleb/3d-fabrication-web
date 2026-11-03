@@ -97,10 +97,11 @@ class AccountController extends Controller
         return Order::where('user_id', $user->id)->whereNotNull('placed_at')->latest('id');
     }
 
-    /** @return Builder<StlFile> модели Saved models: STL заказов клиента, не скрытые */
+    /** @return Builder<StlFile> модели Saved models: STL заказов клиента (другие форматы — нет, правка 02.11, Г6), не скрытые */
     private function ownModels(User $user): Builder
     {
-        return StlFile::where('user_id', $user->id)->whereIn('order_id', $this->ownOrders($user)->select('id'))->whereNull('hidden_at');
+        return StlFile::where('user_id', $user->id)->whereIn('order_id', $this->ownOrders($user)->select('id'))->whereNull('hidden_at')
+            ->where('path', 'like', '%.stl');
     }
 
     /**

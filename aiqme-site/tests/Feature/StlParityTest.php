@@ -150,22 +150,28 @@ class StlParityTest extends TestCase
                 foreach ($measured['dimensions_mm'] as $axis => $dimension) {
                     $this->assertClose($case['dimensionsMm'][$axis], $dimension, "{$label} мм {$axis}");
                 }
-                $estimate = $estimates->estimate([['volume_cm3' => $measured['volume_cm3'], 'quantity' => $case['quantity']]], $case['material'], $case['infill']);
+                $estimate = $estimates->estimate([['volume_cm3' => $measured['volume_cm3'], 'quantity' => $case['quantity'], 'material' => $case['material'], 'infill' => $case['infill']]]);
                 $this->assertClose($case['estimate']['lines'][0]['massGrams'], $estimate['lines'][0]['mass_grams'], "{$label} масса");
                 $this->assertSame([$case['estimate']['lines'][0]['cents'], $case['estimate']['fileFeesCents'], $case['estimate']['totalCents']],
                     [$estimate['lines'][0]['cents'], $estimate['file_fees_cents'], $estimate['total_cents']], $label);
                 $warnings = [...$warnings, ...$measured['warnings']];
                 $cases++;
             }
-            $parts[] = ['volume_cm3' => $analyzer->measure($model, 'mm', 100, $values['max_dimension_mm'])['volume_cm3'], 'quantity' => 2];
+            $materials = array_keys($values['materials']);
+            $parts[] = ['volume_cm3' => $analyzer->measure($model, 'mm', 100, $values['max_dimension_mm'])['volume_cm3'], 'quantity' => 2,
+                'material' => $materials[count($parts) % count($materials)], 'infill' => count($parts) % 2 ? 100 : $values['default_infill']];
         }
 
-        // Все принятые файлы одной заявкой: строки, плата за заказ и n × плата за файл.
-        $order = $estimates->estimate($parts, 'PLA', $values['default_infill']);
-        $this->assertSame(array_column($js['order']['lines'], 'cents'), array_column($order['lines'], 'cents'));
+        // Все принятые файлы одной заявкой (правка 02.11, Г6: свои материал и заполнение у позиций, последняя — без оценки):
+        // строки, плата за заказ и n × плата за файл.
+        $order = $estimates->estimate([...$parts, null]);
+        $this->assertNull(end($js['order']['lines']));
+        $this->assertNull(end($order['lines']));
+        $this->assertSame(array_map(fn (?array $line): ?int => $line['cents'] ?? null, $js['order']['lines']), array_map(fn (?array $line): ?int => $line['cents'] ?? null, $order['lines']));
+        $this->assertCount(4, array_unique(array_column($parts, 'material')));
         $this->assertSame([$js['order']['orderFeeCents'], $js['order']['fileFeesCents'], $js['order']['totalCents']],
             [$order['order_fee_cents'], $order['file_fees_cents'], $order['total_cents']]);
-        $this->assertSame($accepted * 35, $order['file_fees_cents']);
+        $this->assertSame(($accepted + 1) * 35, $order['file_fees_cents']);
 
         // Корпус не вырожден: есть и принятые, и отклонённые файлы, оба предупреждения и ненулевые оценки.
         $this->assertGreaterThanOrEqual(15, $accepted);

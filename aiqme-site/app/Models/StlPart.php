@@ -10,11 +10,14 @@ use Illuminate\Support\Collection;
 use Lunar\Base\Purchasable;
 
 /**
- * Строка заказа «деталь из STL» (§2.5, §3.1): закрытая спецификация изготовления, не товар каталога. Параметры —
- * материал, заполнение (infill; infill_consult — клиент просил консультацию, infill = заполнение по умолчанию), единицы,
- * масштаб, количество (parameters.quantity) и пожелания color, purpose, service, surface, term (у заказов до 28.10 —
- * quality, layer, finish); estimate — серверная оценка строки в центах (EstimateService), она же цена строки Lunar при
- * quantity = 1.
+ * Строка заказа «деталь из файла» (§2.5, §3.1): закрытая спецификация изготовления, не товар каталога. Параметры —
+ * у каждой позиции (правка 02.11, Г6): способ method (printing, milling, engraving; у позиций до 02.11 его нет — это
+ * печать FDM), количество (parameters.quantity), срок term, needed_by, notes; у STL — единицы и масштаб; у печати —
+ * материал, заполнение (infill; infill_consult — клиент просил консультацию, infill = заполнение по умолчанию) и пожелания
+ * color, purpose, service, surface (у заказов до 28.10 — quality, layer, finish); у фрезеровки — material, material_en,
+ * thickness (мм), у гравировки — material, material_en, depth (мм). estimate — серверная оценка строки в центах
+ * (EstimateService, только STL + печать), она же цена строки Lunar при quantity = 1; NULL — цену назначит специалист при
+ * подтверждении, до того цена строки 0.
  */
 #[Fillable(['stl_file_id', 'parameters', 'measurement', 'estimate'])]
 class StlPart extends Model implements Purchasable
@@ -34,7 +37,35 @@ class StlPart extends Model implements Purchasable
 
     public function lineCents(): int
     {
-        return $this->estimate;
+        return $this->estimate ?? 0;
+    }
+
+    /** Способ изготовления; позиции до правки 02.11 — печать. */
+    public function method(): string
+    {
+        return $this->parameters['method'] ?? 'printing';
+    }
+
+    /**
+     * Подпись позиции по способу на языке $locale: «3D spausdinimas / ABS», «Frezavimas / Aliuminis, 6 mm»,
+     * «Graviravimas / Aliuminis, 0,1 mm» (в LT — десятичная запятая).
+     */
+    public function label(string $locale): string
+    {
+        $parameters = $this->parameters;
+        $method = __('calculator.methods.'.$this->method(), [], $locale);
+        $material = $locale === 'lt' ? $parameters['material'] : ($parameters['material_en'] ?? $parameters['material']);
+        $size = match ($this->method()) {
+            'milling' => $parameters['thickness'],
+            'engraving' => $parameters['depth'],
+            default => null,
+        };
+        if ($size === null) {
+            return $method.' / '.$material;
+        }
+        $size = (string) $size;
+
+        return $method.' / '.$material.', '.($locale === 'lt' ? str_replace('.', ',', $size) : $size).' mm';
     }
 
     public function getDescription(): string
@@ -44,7 +75,7 @@ class StlPart extends Model implements Purchasable
 
     public function getOption(): string
     {
-        return 'FDM / '.$this->parameters['material'];
+        return $this->label(app()->getLocale());
     }
 
     public function getOptions(): Collection

@@ -57,6 +57,8 @@ return [
         'notes' => 'Papildoma informacija',
         'quantities' => 'Detalių kiekiai',
     ],
+    // Gamybos būdas kiekvienai detalei (pataisa 02.11, Г6).
+    'methods' => ['printing' => '3D spausdinimas', 'milling' => 'Frezavimas', 'engraving' => 'Graviravimas'],
     'review' => [
         'title' => '03. Modelių patikra',
         'build' => 'Įrangos dydžio ribos',

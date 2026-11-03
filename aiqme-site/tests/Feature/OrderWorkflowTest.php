@@ -90,9 +90,7 @@ class OrderWorkflowTest extends TestCase
         $cube = file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'));
         $part = fn (string $name, int $quantity): array => [
             'file' => UploadedFile::fake()->createWithContent($name, $cube),
-            'unit' => 'mm',
-            'scale' => 100,
-            'quantity' => $quantity,
+            'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => $quantity, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
         ];
 
         return app(OrderSubmission::class)->submit([
@@ -101,9 +99,6 @@ class OrderWorkflowTest extends TestCase
             'contact' => ['name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => $delivery,
             'address' => $delivery === 'ship' ? ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gatvė 1', 'postcode' => '01100'] : null,
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], $guest ? null : ($user ?? $this->client))->order;
     }

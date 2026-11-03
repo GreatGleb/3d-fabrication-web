@@ -11,6 +11,7 @@ use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Http\Controllers\Controller;
+use App\Models\StlFile;
 use App\Models\StlPart;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -75,6 +76,8 @@ class OrderController extends Controller
             && ! ($pickup && $stage === ProductionStage::Shipped)));
         $parts = $order->lines->filter(fn ($line) => $line->purchasable instanceof StlPart)->values();
 
+        $models = $parts->map(fn ($line) => $line->purchasable->file)->filter(fn (StlFile $file): bool => $file->format() === 'stl')->pluck('id');
+
         return view('account.order', [
             'meta' => $meta,
             'order' => $order,
@@ -88,7 +91,8 @@ class OrderController extends Controller
             'messages' => OrderMessage::where('order_id', $order->id)->orderBy('id')->get(),
             // Счёт (W-17) — скачивание по тем же правам (владелец, гость с правом в сессии); в демо-сборке блока нет (§8.7).
             'invoice' => app()->environment('demo') ? null : Invoice::where('order_id', $order->id)->first(),
-            'reorder' => $owner ? route(app()->getLocale().'.calculator', ['models' => $parts->map(fn ($line) => $line->purchasable->file->id)->join(',')]) : null,
+            // Повтор заказа — только STL (правка 02.11, Г6); заказ без STL повторить нельзя.
+            'reorder' => $owner && $models->isNotEmpty() ? route(app()->getLocale().'.calculator', ['models' => $models->join(',')]) : null,
         ]);
     }
 }

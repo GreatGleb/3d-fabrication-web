@@ -55,10 +55,7 @@ class StlDownloadTest extends TestCase
             'contact' => ['name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => 'pickup',
             'address' => null,
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
-            'parts' => [['file' => $upload, 'unit' => 'mm', 'scale' => 100, 'quantity' => 1]],
+            'parts' => [['file' => $upload, 'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 1, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null]]],
         ], $user);
         $this->assertSame($user?->id, $result->order->user_id);
 

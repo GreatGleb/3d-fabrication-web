@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Lunar\Models\Order;
 
 /**
- * Приватный STL заявки (§2.5, §6.4): файл на диске local (storage/app/private) под именем UUID, назначенным сервером;
- * исходное имя, размер и sha256 — метаданные; результат анализа StlAnalyzer (в единицах файла) и его версия.
+ * Приватный файл заявки (§2.5, §6.4): файл на диске local (storage/app/private) под именем UUID, назначенным сервером, с
+ * расширением исходного файла (правка 02.11, Г6: STL, STEP, STP, OBJ, DXF, DWG — формат берётся из пути); исходное имя,
+ * размер и sha256 — метаданные; у STL — результат анализа StlAnalyzer (в единицах файла) и его версия, у остальных NULL.
  * Владелец — клиент (user_id) или, у гостевой заявки, только заказ (order_id). hidden_at — клиент скрыл модель из
  * Saved models (W-15); файл остаётся у заказа.
  */
@@ -22,6 +23,12 @@ class StlFile extends Model
     protected function casts(): array
     {
         return ['analysis' => 'array', 'hidden_at' => 'datetime'];
+    }
+
+    /** Формат файла — расширение пути хранения. */
+    public function format(): string
+    {
+        return pathinfo($this->path, PATHINFO_EXTENSION);
     }
 
     /** @return BelongsTo<Order, $this> */

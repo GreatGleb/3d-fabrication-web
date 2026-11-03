@@ -19,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Localizable;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
@@ -28,9 +29,12 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Отправка заявки на изготовление (§3.1, W-12) — гостем или вошедшим клиентом. Каждый STL проверяет StlAnalyzer, оценку
- * пересчитывает EstimateService по текущим настройкам (клиентская сумма не используется). Файлы сохраняются на диск local
- * под именем UUID, затем в одной транзакции: корзина Lunar (строки StlPart с quantity = 1 и служебная OrderCharge fee, если
+ * Отправка заявки на изготовление (§3.1, W-12) — гостем или вошедшим клиентом. Параметры — у каждой позиции (правка 02.11,
+ * Г6): способ (printing, milling, engraving) и его параметры, количество, срок, дата, заметка. Каждый STL проверяет
+ * StlAnalyzer, остальные форматы — OrderFileFormat (начало файла, без разбора). Оценку пересчитывает EstimateService по
+ * текущим настройкам (клиентская сумма не используется) — только для STL + печать; у остальных позиций estimate NULL и цена
+ * строки Lunar 0 до подтверждения администратором. Файлы сохраняются на диск local под именем UUID с расширением исходного
+ * файла, затем в одной транзакции: корзина Lunar (строки StlPart с quantity = 1 и служебная OrderCharge fee, если
  * плата > 0) → заказ через RequestCartValidator, порядковый номер (OrderNumber), order_meta с хешем гостевого токена,
  * состояние production_states в стадии review (W-13) и событие outbox «заявка отправлена» (письмо на info@aiqme.com после commit, канал sheets — pending). Ошибка после записи
  * файлов удаляет их — сирот нет. Повтор токена отправки с теми же данными возвращает тот же заказ (гостю — с новым
@@ -38,6 +42,8 @@ use Throwable;
  */
 final class OrderSubmission
 {
+    use Localizable;
+
     public function __construct(
         private readonly StlAnalyzer $analyzer,
         private readonly CalculatorSettings $settings,
@@ -46,7 +52,11 @@ final class OrderSubmission
     ) {}
 
     /**
-     * @param  array{submission_token: string, locale: string, contact: array<string, ?string>, delivery: string, address: ?array<string, string>, material: string, infill: int, infill_consult?: bool, preferences: array<string, string>, notes?: ?string, parts: list<array{file: UploadedFile, unit: string, scale: int|float, quantity: int}>}  $data
+     * Позиция: file и parameters — method, quantity, term, needed_by, notes; у STL — unit, scale; у printing — material,
+     * infill, infill_consult, color, purpose, service, surface; у milling — material, material_en, thickness; у engraving —
+     * material, material_en, depth. Параметры проверены заранее (OrderRequestController) и сохраняются как есть.
+     *
+     * @param  array{submission_token: string, locale: string, contact: array<string, ?string>, delivery: string, address: ?array<string, string>, notes?: ?string, parts: list<array{file: UploadedFile, parameters: array<string, mixed>}>}  $data
      */
     public function submit(array $data, ?User $user): SubmittedOrder
     {
@@ -54,20 +64,33 @@ final class OrderSubmission
         $parts = [];
         foreach ($data['parts'] as $index => $part) {
             $name = Str::limit(basename($part['file']->getClientOriginalName()), 200, '');
-            try {
-                $model = $this->analyzeOneAtATime($part['file']->getRealPath(), "parts.{$index}.file", $name);
-            } catch (StlException $exception) {
-                throw ValidationException::withMessages(["parts.{$index}.file" => __('calculator.js.'.($exception->reason === 'size' ? 'too_large' : 'invalid'), [
-                    'name' => $name,
-                    'mb' => intdiv(config('aiqme.calculator.max_file_bytes'), 1024 * 1024),
-                ])]);
+            $extension = OrderFileFormat::extension($name);
+            $parameters = $part['parameters'];
+            $printing = $parameters['method'] === 'printing';
+            if ($extension === null || ($printing && ! in_array($extension, OrderFileFormat::THREE_D, true))
+                || ($extension !== 'stl' && ! OrderFileFormat::matches($part['file']->getRealPath(), $extension))) {
+                throw ValidationException::withMessages(["parts.{$index}.file" => __('calculator.js.unsupported', ['name' => $name])]);
+            }
+            $model = $measurement = null;
+            if ($extension === 'stl') {
+                try {
+                    $model = $this->analyzeOneAtATime($part['file']->getRealPath(), "parts.{$index}.file", $name);
+                } catch (StlException $exception) {
+                    throw ValidationException::withMessages(["parts.{$index}.file" => __('calculator.js.'.($exception->reason === 'size' ? 'too_large' : 'invalid'), [
+                        'name' => $name,
+                        'mb' => intdiv(config('aiqme.calculator.max_file_bytes'), 1024 * 1024),
+                    ])]);
+                }
+                $measurement = $this->analyzer->measure($model, $parameters['unit'], $parameters['scale'], $settings['max_dimension_mm']);
             }
             $parts[] = [
                 ...$part,
                 'name' => $name,
+                'extension' => $extension,
                 'model' => $model,
+                'priced' => $extension === 'stl' && $printing,
                 'sha256' => hash_file('sha256', $part['file']->getRealPath()),
-                'measurement' => $this->analyzer->measure($model, $part['unit'], $part['scale'], $settings['max_dimension_mm']),
+                'measurement' => $measurement,
             ];
         }
         $digest = $this->digest($data, $parts, $user);
@@ -75,15 +98,16 @@ final class OrderSubmission
             return $repeat;
         }
 
-        $estimate = $this->estimates->estimate(
-            array_map(fn (array $part): array => ['volume_cm3' => $part['measurement']['volume_cm3'], 'quantity' => $part['quantity']], $parts),
-            $data['material'],
-            $data['infill'],
-        );
+        $estimate = $this->estimates->estimate(array_map(fn (array $part): ?array => $part['priced'] ? [
+            'volume_cm3' => $part['measurement']['volume_cm3'],
+            'quantity' => $part['parameters']['quantity'],
+            'material' => $part['parameters']['material'],
+            'infill' => $part['parameters']['infill'],
+        ] : null, $parts));
         $stored = [];
         try {
             foreach ($parts as $part) {
-                $path = $part['file']->storeAs(StlFile::DIRECTORY, Str::uuid().'.stl', 'local');
+                $path = $part['file']->storeAs(StlFile::DIRECTORY, Str::uuid().'.'.$part['extension'], 'local');
                 if ($path === false) {
                     throw new RuntimeException('STL was not stored.');
                 }
@@ -134,7 +158,7 @@ final class OrderSubmission
     /**
      * @param  list<array<string, mixed>>  $parts
      * @param  list<string>  $paths
-     * @param  array{lines: list<array{mass_grams: float, cents: int}>, order_fee_cents: int, file_fees_cents: int, total_cents: int, settings: array<string, mixed>}  $estimate
+     * @param  array{lines: list<?array{mass_grams: float, cents: int}>, order_fee_cents: int, file_fees_cents: int, total_cents: int, settings: array<string, mixed>}  $estimate
      */
     private function createOrder(array $data, array $parts, array $paths, array $estimate, string $digest, ?User $user): SubmittedOrder
     {
@@ -151,27 +175,21 @@ final class OrderSubmission
                 'original_name' => $part['name'],
                 'size' => $part['file']->getSize(),
                 'sha256' => $part['sha256'],
-                'triangles' => $part['model']->triangles,
-                'analysis' => [
+                'triangles' => $part['model']?->triangles,
+                'analysis' => $part['model'] === null ? null : [
                     'size' => $part['model']->size,
                     'volume' => $part['model']->volume,
                     'closed' => $part['model']->closed,
                     'analyzer' => StlAnalyzer::VERSION,
                 ],
             ]);
+            $line = $estimate['lines'][$index];
             $cart->add(StlPart::create([
                 'stl_file_id' => $file->id,
-                'parameters' => [
-                    'material' => $data['material'],
-                    'infill' => $data['infill'],
-                    'infill_consult' => $data['infill_consult'] ?? false,
-                    'unit' => $part['unit'],
-                    'scale' => $part['scale'],
-                    'quantity' => $part['quantity'],
-                    ...$data['preferences'],
-                ],
-                'measurement' => [...$part['measurement'], 'mass_grams' => $estimate['lines'][$index]['mass_grams']],
-                'estimate' => $estimate['lines'][$index]['cents'],
+                'parameters' => $part['parameters'],
+                'measurement' => $part['measurement'] === null ? null
+                    : [...$part['measurement'], ...($line === null ? [] : ['mass_grams' => $line['mass_grams']])],
+                'estimate' => $line['cents'] ?? null,
             ]), 1);
         }
         $fee = $estimate['order_fee_cents'] + $estimate['file_fees_cents'];
@@ -180,7 +198,8 @@ final class OrderSubmission
             $cart->add($charge, 1);
         }
 
-        $order = $cart->createOrder();
+        // Подписи строк Lunar (StlPart::getOption) — на языке заказа.
+        $order = $this->withLocale($data['locale'], fn (): Order => $cart->createOrder());
         $order->update(['placed_at' => now()]);
         StlFile::whereKey(array_column($files, 'id'))->update(['order_id' => $order->id]);
         $charge?->update(['order_id' => $order->id]);
@@ -244,9 +263,8 @@ final class OrderSubmission
     }
 
     /**
-     * Отпечаток данных отправки: отправитель, локаль, контакты, получение, параметры (с консультацией по заполнению и
-     * notes) и по каждому файлу — sha256 содержимого,
-     * имя, единицы, масштаб и количество.
+     * Отпечаток данных отправки: отправитель, локаль, контакты, получение, notes заказа и по каждому файлу — sha256
+     * содержимого, имя и все параметры позиции (способ и его параметры, единицы, масштаб, количество, срок, дата, заметка).
      *
      * @param  list<array<string, mixed>>  $parts
      */
@@ -258,12 +276,11 @@ final class OrderSubmission
             $data['contact'],
             $data['delivery'],
             $data['address'],
-            $data['material'],
-            $data['infill'],
-            $data['infill_consult'] ?? false,
-            $data['preferences'],
             $data['notes'] ?? null,
-            array_map(fn (array $part): array => [$part['sha256'], $part['name'], $part['unit'], (float) $part['scale'], $part['quantity']], $parts),
+            array_map(fn (array $part): array => [$part['sha256'], $part['name'], array_map(
+                fn (mixed $value): mixed => is_int($value) || is_float($value) ? (float) $value : $value,
+                $part['parameters'],
+            )], $parts),
         ], JSON_THROW_ON_ERROR));
     }
 }

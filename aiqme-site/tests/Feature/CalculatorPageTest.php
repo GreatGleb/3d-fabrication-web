@@ -30,7 +30,10 @@ class CalculatorPageTest extends TestCase
         // Чистая БД после migrate: начальные настройки W-11 (D-09, D-24) и лимиты config (§6.4).
         $this->assertSame([
             'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000, 'max_file_bytes' => 52428800, 'max_files' => 10,
+            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000,
+            // Правка 02.11, Г6: заглушки фрезеровки и гравировки из миграции данных.
+            ...(require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES,
+            'max_file_bytes' => 52428800, 'max_files' => 10,
         ], json_decode($root->getAttribute('data-settings'), true));
         $texts = json_decode($root->getAttribute('data-texts'), true);
         $this->assertSame('Reading files...', $texts['reading']);

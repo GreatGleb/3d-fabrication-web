@@ -65,11 +65,11 @@ class AdminOrdersTest extends TestCase
     private function submitted(bool $guest = false, string $delivery = 'ship', array $preferences = [], ?string $notes = "Need it by Friday.\n<b>Matte</b> please", bool $consult = false): array
     {
         $cube = file_get_contents(base_path('tests/fixtures/stl/cube-10mm-ascii.stl'));
+        // Правка 02.11, Г6: параметры — у каждой позиции.
         $part = fn (string $name, int $quantity): array => [
             'file' => UploadedFile::fake()->createWithContent($name, $cube),
-            'unit' => 'mm',
-            'scale' => 100,
-            'quantity' => $quantity,
+            'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => $consult ? 20 : 100, 'infill_consult' => $consult, 'unit' => 'mm', 'scale' => 100, 'quantity' => $quantity,
+                ...($preferences ?: ['color' => 'blue', 'purpose' => 'practical', 'service' => 'inserts', 'surface' => 'high', 'term' => 'priority']), 'needed_by' => null, 'notes' => null],
         ];
         $result = app(OrderSubmission::class)->submit([
             'submission_token' => (string) Str::uuid(),
@@ -77,10 +77,6 @@ class AdminOrdersTest extends TestCase
             'contact' => ['name' => 'Ona', 'email' => 'ona@example.test', 'phone' => '+370 600 00000', 'company' => 'UAB Detalė', 'company_code' => null, 'vat_code' => null],
             'delivery' => $delivery,
             'address' => $delivery === 'ship' ? ['country' => 'LT', 'city' => 'Vilnius', 'address' => 'Gatvė 1', 'postcode' => '01100'] : null,
-            'material' => 'PLA',
-            'infill' => $consult ? 20 : 100,
-            'infill_consult' => $consult,
-            'preferences' => $preferences ?: ['color' => 'blue', 'purpose' => 'practical', 'service' => 'inserts', 'surface' => 'high', 'term' => 'priority'],
             'notes' => $notes,
             'parts' => [$part('bracket.stl', 1), $part('cover.stl', 2)],
         ], $guest ? null : $this->client);

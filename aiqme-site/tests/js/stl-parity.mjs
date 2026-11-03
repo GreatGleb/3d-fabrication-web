@@ -1,7 +1,8 @@
 // Выдача ядра JS для теста паритета PHP ↔ JS (W-11, tests/Feature/StlParityTest.php): не тест node --test, а скрипт.
 // stdin — JSON { files: [путь], settings: настройки калькулятора W-11, matrix: { units, scales, infills, quantities } };
 // stdout — JSON по каждому файлу: код отказа или модель, а для каждой комбинации матрицы и материала — измерения и оценка;
-// в конце — оценка всех принятых файлов одной заявкой (несколько строк, плата за заказ и за файлы).
+// в конце — оценка всех принятых файлов одной заявкой (несколько строк со своими материалом и заполнением, одна позиция
+// без оценки — null, плата за заказ и за файлы; правка 02.11, Г6).
 import { readFileSync } from 'node:fs';
 import { StlError, estimate, measure, parseStl } from '../../resources/js/calculator/core/index.js';
 
@@ -33,16 +34,21 @@ for (const path of input.files) {
       for (const material of Object.keys(settings.materials)) {
         for (const infill of matrix.infills) {
           for (const quantity of matrix.quantities) {
-            const result = estimate({ parts: [{ volumeCm3: measured.volumeCm3, quantity }], material, infill }, core);
+            const result = estimate({ parts: [{ volumeCm3: measured.volumeCm3, quantity, material, infill }] }, core);
             cases.push({ unit, scale, material, infill, quantity, ...measured, estimate: result });
           }
         }
       }
     }
   }
-  parts.push({ volumeCm3: measure(model, { unit: 'mm', scale: 100, maxDimensionMm: settings.max_dimension_mm }).volumeCm3, quantity: 2 });
+  const materials = Object.keys(settings.materials);
+  parts.push({
+    volumeCm3: measure(model, { unit: 'mm', scale: 100, maxDimensionMm: settings.max_dimension_mm }).volumeCm3,
+    quantity: 2,
+    material: materials[parts.length % materials.length],
+    infill: parts.length % 2 ? 100 : settings.default_infill,
+  });
   files.push({ path, triangles: model.triangles, size: model.size, volume: model.volume, closed: model.closed, cases });
 }
-const material = Object.keys(settings.materials)[0];
-const order = estimate({ parts, material, infill: settings.default_infill }, core);
+const order = estimate({ parts: [...parts, null] }, core);
 process.stdout.write(JSON.stringify({ files, order }));

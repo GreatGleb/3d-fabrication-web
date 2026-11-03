@@ -53,14 +53,9 @@ class DemoSeeder extends Seeder
             'contact' => [...$contact, 'company' => null, 'company_code' => null, 'vat_code' => null],
             'delivery' => 'pickup',
             'address' => null,
-            'material' => 'PLA',
-            'infill' => 100,
-            'preferences' => ['color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard'],
             'parts' => [[
                 'file' => UploadedFile::fake()->createWithContent('cube-10mm.stl', (string) file_get_contents(base_path('tests/fixtures/stl/cube-10mm-binary.stl'))),
-                'unit' => 'mm',
-                'scale' => 100,
-                'quantity' => 1,
+                'parameters' => ['method' => 'printing', 'material' => 'PLA', 'infill' => 100, 'infill_consult' => false, 'unit' => 'mm', 'scale' => 100, 'quantity' => 1, 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null],
             ]],
         ], $user)->order;
     }

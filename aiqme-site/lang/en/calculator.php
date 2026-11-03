@@ -57,6 +57,8 @@ return [
         'notes' => 'Additional information',
         'quantities' => 'Part quantities',
     ],
+    // Gamybos būdas kiekvienai detalei (pataisa 02.11, Г6).
+    'methods' => ['printing' => '3D printing', 'milling' => 'Milling', 'engraving' => 'Engraving'],
     'review' => [
         'title' => '03. Model review',
         'build' => 'Build size limits',
