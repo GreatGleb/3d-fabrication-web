@@ -12,14 +12,9 @@
           "title": "Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo.",
           "slug": null,
           "fields": {
-            "hero_eyebrow": "3D INŽINERIJA IR TECHNOLOGIJOS",
+            "hero_eyebrow": "3D INŽINERIJA & TECHNOLOGIJOS",
             "hero_title": "Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo",
-            "hero_text": "Skenuojame, projektuojame ir koordinuojame gamybą. Vienas partneris visam procesui — nuo pirmo klausimo iki patikrinto rezultato.",
-            "hero_stages": [
-              "SKENUOTI",
-              "PROJEKTUOTI",
-              "GAMINTI"
-            ],
+            "hero_text": "Vienas partneris visiems gamybos etapams",
             "help_eyebrow": "01 / PRADĖKIME NUO JŪSŲ",
             "help_title": "Kuo galime padėti?",
             "scenarios": [
@@ -77,12 +72,7 @@
           "fields": {
             "hero_eyebrow": "3D ENGINEERING & TECHNOLOGY",
             "hero_title": "From your idea or part to a finished solution",
-            "hero_text": "Scanning, design and coordinated manufacturing. One partner for the whole process, from your first question to a checked result.",
-            "hero_stages": [
-              "SCAN",
-              "DESIGN",
-              "MANUFACTURE"
-            ],
+            "hero_text": "One partner for every stage of production",
             "help_eyebrow": "01 / START WITH YOUR NEED",
             "help_title": "How can we help?",
             "scenarios": [

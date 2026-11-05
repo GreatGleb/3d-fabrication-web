@@ -130,9 +130,9 @@ class PublicMediaTest extends TestCase
         $this->assertFalse($sources->item(1)->hasAttribute('media'));
         $this->assertNotSame($sources->item(0)->getAttribute('src'), $sources->item(1)->getAttribute('src'));
 
-        $toggle = $xpath->query('//button[@id="hero-video-toggle"]')->item(0);
-        $this->assertSame('▶ Play video', Html::text($toggle));
-        $this->assertSame(['hero-video', 'Pause video'], [$toggle->getAttribute('aria-controls'), $toggle->getAttribute('data-pause')]);
+        // Правка 05.11, H-01: кнопки паузы видео нет (было «▶ Play video» / «Pause video»), видео запускает hero-video.js.
+        $this->assertSame(0, $xpath->query('//button[@id="hero-video-toggle"] | //*[@id="hero-video-status"]')->length);
+        $this->assertStringNotContainsString('Pause video', $html);
         $link = $xpath->query('//div[@class="hero-media-controls"]/span/a')->item(0);
         $this->assertSame('https://aiqme.com/video', $link->getAttribute('href'));
         $this->assertSame('AIQME studija ↗', Html::text($link));

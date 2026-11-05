@@ -4884,3 +4884,57 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Кадр капчи в окне обучения до проверки — смещён (см. выше); карточки главной и подвал — нет кадра (только замеры).
 - Вид в Safari/Firefox и на реальных телефонах, сверка с макетами и образцом счёта — ждёт проверки пользователем.
 - На aiqme.com ничего не запускалось (G-10).
+
+## Правки 05.11, H-01: шапка, hero, CTA, подвал (2026-11-05)
+
+Работа прошлой ночи была восстановлена в дереве (причина прерывания не записана); сверена с done, доделано недостающее.
+
+### Сделано
+- **Bosch (c1d5d20).** `D21_REPLACEMENTS`: `('Bosch / The Apic ↗', '', '^/(lt|en)$')`. Порядок «сначала зелёный /lt /en до остальных правок»
+  повторить нельзя — правки уже лежали в дереве; проверено итоговым зелёным прогоном. Попутно найден второй остаток c1d5d20:
+  `DefaultMediaTest::test_upload_to_each_slot_…` (строка 277) ждал ссылку `1Nd_xg8QfXo` после удаления своего видео и падал в bin/check —
+  ожидание заменено на «ссылки и блока `.hero-media-controls` нет» (комментарий «правка 05.11, H-01»).
+- **Логотип и шапка** (`shell.css`): ширина `.header .logo, .footer .logo` 200/164/128/120 (≤1150/≤600/≤360); `.head-main` 90/81/72 px;
+  `--header-height` 131/122/112, у главной без второго ряда 91/82/73; `.nav` выпадающего меню `top` 81/72 px (под выросшим рядом).
+  browser-check: `LOGO_WIDTHS` 200/164/128/120, `expected_styles.head_main` 90/81/72, `check_hero_under_header` 91/82/73; в `check_logo`
+  новая проверка «логотип (и меню на ПК > 1000 px) по центру ряда ±1 px» — на 901 px меню в две строки, как в прототипе (F-01), там только логотип.
+- **Тексты hero** (`prototype-content.json` + миграция `2026_11_05_100000_update_home_hero_h1.php`): `hero_eyebrow` LT
+  «3D INŽINERIJA & TECHNOLOGIJOS», `hero_text` LT/EN по README, поле `hero_stages` удалено. Миграция меняет опубликованную версию и черновик
+  только при прежнем значении; `hero_stages` удаляется (только прежний список прототипа) также из первой версии — по её ключам редактор строит
+  поля; `down` возвращает тексты и `hero_stages` при том же условии (порядок ключей jsonb не хранит — поле добавляется в конец).
+- **Ряд этапов и кнопка паузы** убраны из `home.blade.php` (блок `.hero-bottom` остаётся только для подписи своего видео); `hero-video.js` —
+  без кнопки: играет само, если вкладка видна, hero на экране, нет reduced-motion и saveData. Ключи `public.hero.play/pause/play_label/
+  pause_label/video_error` удалены (grep по app, resources, lang, database, tests — других вхождений нет). CSS кнопки/этапов есть только в
+  `prototype/style.css` (не трогается), в `public.css`/`shell.css` удалять нечего.
+- **CTA и подвал** (lang LT/EN дословно из README): `public.hero.quote`, `shell.quote_cta` (пустая корзина берёт этот же ключ),
+  `public.cta.quote`, `public.service_features.quote`, `shell.footer.slogan`, `shell.footer.calculator` (адрес прежний).
+- **browser-check, сверка текста**: `D21_REPLACEMENTS` с комментарием «правка 05.11, H-01» — LT-надпись hero (`^/lt$`), подзаголовки
+  (`^/lt$`, `^/en$`), слова этапов и «Sustabdyti video»/«Pause video» (`''`), кнопки «Įkelti modelį ir sužinoti kainą»/«Upload a model & get a
+  price» и «Įkelti modelį»/«Upload a model» (`^/lt(/|$)`, `^/en(/|$)`; длинная фраза раньше короткой; в эталонах `<main>` эти фразы — только
+  у изменённых кнопок, проверено по всем dom.html). Номера «01/02/03», стрелки «→» и значок «Ⅱ» — отдельные узлы эталона; замена подстрокой
+  задела бы другие фразы (первый прогон: 191 ошибка сдвига на /en), поэтому блоки `div.stages` и `button.hero-video-toggle` на `^/(lt|en)$`
+  добавлены в `TEXT_EXCLUDED_BLOCKS` (как блок «Vienas kontaktas» 02.11). `check_motion`: на /lt и /en нет `#hero-video-toggle` в обоих случаях
+  (reduced-motion — видео на паузе с постером; без него — играет).
+- **Тесты** (с комментариями «правка 05.11, H-01»): `PublicPagesTest` — нет ряда этапов, новый подзаголовок и кнопка hero (EN), новый тест
+  `test_h01_hero_texts_without_stages_and_upload_files_buttons` (LT/EN: подзаголовок, кнопки hero, синего блока и карточки услуги, нет
+  этапов/кнопки паузы/«Įkelti modelį»), новый `test_h01_hero_migration_changes_only_previous_values` (применена, повтор, откат, пропущена при
+  тексте администратора, нет записи); тест миграции 02.11 учитывает новый eyebrow; `ShellTest` (CTA LT/EN, девиз и ссылка подвала LT/EN),
+  `PublicSeoTest` (описание главной = новый подзаголовок; длина не проверяется — тест сравнивает строку), `PublicMediaTest` (нет кнопки),
+  `AdminContentEditorTest` (поля `hero_stages` нет).
+
+### Проверки поведения (один раз)
+- Тест миграции падает, если `up()` не удаляет `hero_stages` (временно закомментировано `unset`): `failed`, после возврата — `passed` (15 утверждений).
+- `check_motion` ловит запуск видео при reduced-motion: без `!reduced.matches` в `hero-video.js` — `bin/browser-check /lt` FAIL (1)
+  «/lt reduced-motion: видео играет или autoplay»; файл возвращён, Vite пересобран (в сборке `!e.matches` есть).
+
+### Команды и вывод
+- `bin/browser-check /lt /en /lt/paslaugos /en/services /lt/apie-mus /en/about` — `OK (2271 проверок)`; заметки hero: шапка 91/82/73 px,
+  верх содержимого hero − низ шапки = 85/85/56 px (как до правки).
+- `bin/check` — `bin/check: OK`, PHPUnit 746/746 (после исправления DefaultMediaTest; первый прогон — 745/746 из-за него).
+- `bin/php vendor/bin/pint --dirty --format agent` — passed. `git status --porcelain aiqme-site`: новый файл только
+  `database/migrations/2026_11_05_100000_update_home_hero_h1.php`.
+
+### Не проверено
+- Вид глазами (логотип «чуть меньше и ниже», подвал, hero без ряда) — ждёт проверки пользователем; кадры `build/verification/browser-check/shots/header-*`
+  не просматривались.
+- Миграция на копии рабочей БД (переопределения администратора, `ui_texts` для изменённых ключей lang) — при выпуске (H-10).

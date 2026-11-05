@@ -4,19 +4,14 @@
 // t('LT','EN') kvietimų. D-21 demonstracinės žymės neperkeliamos. Turinys — page_text/service/faq_item (W-04).
 return [
     'hero' => [
-        'quote' => 'Įkelti modelį ir sužinoti kainą',
+        'quote' => 'Įkelkite failus ir gaukite pasiūlymą',
         'contact' => 'Susisiekti dėl projekto',
-        'play' => 'Paleisti video',
-        'pause' => 'Sustabdyti video',
-        'play_label' => 'Paleisti foninį video',
-        'pause_label' => 'Sustabdyti foninį video',
-        'video_error' => 'Video nepavyko paleisti. Rodomas statinis kadras.',
     ],
     'find_solution' => 'Rasti sprendimą ↗',
     'service_features' => [
         'explore' => 'Plačiau apie paslaugą',
         'contact' => 'Aptarti projektą ↗',
-        'quote' => 'Įkelti modelį ↗',
+        'quote' => 'Įkelti failus ↗',
         'training' => 'Temos ir registracija ↗',
     ],
     'ticker' => [
@@ -31,7 +26,7 @@ return [
         'read' => 'Skaityti ↗',
     ],
     'cta' => [
-        'quote' => 'Įkelti modelį',
+        'quote' => 'Įkelti failus',
         'contact' => 'Aptarti projektą',
     ],
     'service' => [

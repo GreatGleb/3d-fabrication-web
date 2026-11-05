@@ -94,7 +94,8 @@ class PublicSeoTest extends TestCase
         $content->publish($admin, $page, 'lt', $saved->revision, Channel::Web);
         $html = $this->get('/lt')->getContent();
         $this->assertSame('AIQME Vilniuje | AIQME', $this->title($html));
-        $this->assertStringStartsWith('Skenuojame, projektuojame ir koordinuojame gamybą.', PageHead::meta($html, 'name', 'description'));
+        // Правка 05.11, H-01: описание главной — новый подзаголовок hero (было «Skenuojame, projektuojame ir koordinuojame gamybą. …»).
+        $this->assertSame('Vienas partneris visiems gamybos etapams', PageHead::meta($html, 'name', 'description'));
     }
 
     public function test_heading_with_a_line_break_is_br_in_h1_and_a_space_in_breadcrumbs_and_title_and_about_description_is_its_intro(): void

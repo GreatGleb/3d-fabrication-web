@@ -70,7 +70,10 @@ class PublicPagesTest extends TestCase
         $xpath = Html::xpath($this->get('/en')->assertOk()->getContent());
 
         $this->assertSame('From your idea or part to a finished solution.', Html::text($xpath->query('//section[@class="hero"]//h1')->item(0)));
-        $this->assertSame(['01SCAN', '02DESIGN', '03MANUFACTURE'], Html::texts($xpath, '//div[@class="stages"]/span'));
+        // Правка 05.11, H-01: ряда этапов «01 SCAN → 02 DESIGN → 03 MANUFACTURE» нет (было три этапа), подзаголовок — новый.
+        $this->assertSame(0, $xpath->query('//div[@class="stages"]')->length);
+        $this->assertSame('One partner for every stage of production', Html::text($xpath->query('//section[@class="hero"]//p')->item(0)));
+        $this->assertSame('Upload files and get a quote', Html::text($xpath->query('//section[@class="hero"]//div[@class="buttons"]/a')->item(0)));
         $this->assertSame([route('en.calculator'), route('en.contact')], array_map(fn ($a) => $a->getAttribute('href'),
             iterator_to_array($xpath->query('//section[@class="hero"]//div[@class="buttons"]/a'))));
         $this->assertSame(
@@ -95,7 +98,8 @@ class PublicPagesTest extends TestCase
     /** Правка 02.11, Г1: надпись над заголовком hero на LT литовская, EN прежняя; иконки карточек — SVG заказчика по порядку. */
     public function test_home_hero_eyebrow_is_lithuanian_on_lt_and_scenario_icons_are_the_customer_svgs(): void
     {
-        foreach (['/lt' => '3D INŽINERIJA IR TECHNOLOGIJOS', '/en' => '3D ENGINEERING & TECHNOLOGY'] as $path => $eyebrow) {
+        // Правка 05.11, H-01: LT-надпись «3D INŽINERIJA & TECHNOLOGIJOS» (было «3D INŽINERIJA IR TECHNOLOGIJOS»).
+        foreach (['/lt' => '3D INŽINERIJA & TECHNOLOGIJOS', '/en' => '3D ENGINEERING & TECHNOLOGY'] as $path => $eyebrow) {
             $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
             $this->assertSame($eyebrow, Html::text($xpath->query('//section[@class="hero"]//div[@class="eyebrow"]')->item(0)), $path);
             $this->assertSame(
@@ -130,7 +134,10 @@ class PublicPagesTest extends TestCase
         };
         $old = '3D ENGINEERING & TECHNOLOGY';
         $new = '3D INŽINERIJA IR TECHNOLOGIJOS';
-        $this->assertSame(['lt' => [$new, $new], 'en' => [$old, $old]], $eyebrows(), 'новая установка — из prototype-content.json');
+        // Правка 05.11, H-01: новая установка — уже текст H-01 (миграция 2026_11_05_100000), эта миграция его не трогает.
+        $this->assertSame(['lt' => ['3D INŽINERIJA & TECHNOLOGIJOS', '3D INŽINERIJA & TECHNOLOGIJOS'], 'en' => [$old, $old]], $eyebrows(), 'новая установка — из prototype-content.json');
+        $migration->up();
+        $this->assertSame(['lt' => ['3D INŽINERIJA & TECHNOLOGIJOS', '3D INŽINERIJA & TECHNOLOGIJOS'], 'en' => [$old, $old]], $eyebrows());
 
         // (а) База как до правки: прежний текст в опубликованной версии и черновике LT → новый; EN не меняется; повтор ничего не меняет.
         $translation = $home->translation('lt');
@@ -158,6 +165,99 @@ class PublicPagesTest extends TestCase
         // (в) Записи home нет — без ошибки.
         ContentItem::query()->delete();
         $migration->up();
+        $this->assertSame(0, ContentItem::count());
+    }
+
+    /** Правка 05.11, H-01: тексты hero LT/EN, ряд этапов, кнопки CTA и подвал на LT; ряда этапов нет и на LT. */
+    public function test_h01_hero_texts_without_stages_and_upload_files_buttons(): void
+    {
+        $lt = Html::xpath($this->get('/lt')->assertOk()->getContent());
+        $this->assertSame('Vienas partneris visiems gamybos etapams', Html::text($lt->query('//section[@class="hero"]//p')->item(0)));
+        $this->assertSame(0, $lt->query('//div[@class="stages"] | //button[@id="hero-video-toggle"]')->length);
+        $this->assertSame(['Įkelkite failus ir gaukite pasiūlymą', 'Susisiekti dėl projekto'], Html::texts($lt, '//section[@class="hero"]//div[@class="buttons"]/a'));
+        $this->assertSame('Įkelti failus', Html::text($lt->query('//section[@class="cta-band"]//a')->item(0)));
+        $this->assertContains('Įkelti failus ↗', Html::texts($lt, '//div[@class="service-feature-actions"]/a'));
+        $en = Html::xpath($this->get('/en')->assertOk()->getContent());
+        $this->assertSame('Upload files', Html::text($en->query('//section[@class="cta-band"]//a')->item(0)));
+        $this->assertContains('Upload files ↗', Html::texts($en, '//div[@class="service-feature-actions"]/a'));
+        foreach (['SKENUOTI', 'PROJEKTUOTI', 'Sustabdyti video', 'Įkelti modelį'] as $removed) {
+            $this->get('/lt')->assertDontSee($removed);
+        }
+    }
+
+    /** Правка 05.11, H-01: миграция меняет прежние hero_eyebrow/hero_text и удаляет прежний hero_stages (обе версии), правку администратора не трогает, down возвращает. */
+    public function test_h01_hero_migration_changes_only_previous_values(): void
+    {
+        $migration = require database_path('migrations/2026_11_05_100000_update_home_hero_h1.php');
+        $home = $this->item(ContentType::PageText, 'home');
+        $old = [
+            'lt' => ['hero_eyebrow' => '3D INŽINERIJA IR TECHNOLOGIJOS', 'hero_text' => 'Skenuojame, projektuojame ir koordinuojame gamybą. Vienas partneris visam procesui — nuo pirmo klausimo iki patikrinto rezultato.', 'hero_stages' => ['SKENUOTI', 'PROJEKTUOTI', 'GAMINTI']],
+            'en' => ['hero_eyebrow' => '3D ENGINEERING & TECHNOLOGY', 'hero_text' => 'Scanning, design and coordinated manufacturing. One partner for the whole process, from your first question to a checked result.', 'hero_stages' => ['SCAN', 'DESIGN', 'MANUFACTURE']],
+        ];
+        $new = [
+            'lt' => ['hero_eyebrow' => '3D INŽINERIJA & TECHNOLOGIJOS', 'hero_text' => 'Vienas partneris visiems gamybos etapams', 'hero_stages' => null],
+            'en' => ['hero_eyebrow' => '3D ENGINEERING & TECHNOLOGY', 'hero_text' => 'One partner for every stage of production', 'hero_stages' => null],
+        ];
+        /** Значения трёх полей в опубликованной версии и черновике. */
+        $values = function (string $locale) use ($home): array {
+            $translation = $home->translation($locale)->fresh();
+            $pick = fn (array $fields): array => ['hero_eyebrow' => $fields['hero_eyebrow'] ?? null, 'hero_text' => $fields['hero_text'] ?? null, 'hero_stages' => $fields['hero_stages'] ?? null];
+
+            return [$pick($translation->fields), $pick($translation->latestRevision()->fields)];
+        };
+        /** База как до правки: прежние значения в обеих версиях. */
+        $writeOld = function (string $locale) use ($home, $old): void {
+            $translation = $home->translation($locale);
+            $place = function (array $fields) use ($old, $locale): array {
+                $result = [];
+                foreach ($fields as $name => $value) {
+                    $result[$name] = $old[$locale][$name] ?? $value;
+                    if ($name === 'hero_text') {
+                        $result['hero_stages'] = $old[$locale]['hero_stages'];
+                    }
+                }
+
+                return $result;
+            };
+            $translation->forceFill(['fields' => $place($translation->fields)])->save();
+            $draft = $translation->latestRevision();
+            $draft->forceFill(['fields' => $place($draft->fields)])->save();
+        };
+
+        foreach (['lt', 'en'] as $locale) {
+            $this->assertSame([$new[$locale], $new[$locale]], $values($locale), "новая установка — из prototype-content.json: $locale");
+            $writeOld($locale);
+        }
+        $this->assertArrayHasKey('hero_stages', $home->pageBlocks());
+        $this->get('/lt')->assertSee('Skenuojame, projektuojame ir koordinuojame gamybą.');
+
+        // (а) Применена: новые тексты, hero_stages удалено из обеих версий и из первой (поля редактора); повтор ничего не меняет.
+        $migration->up();
+        $migration->up();
+        foreach (['lt', 'en'] as $locale) {
+            $this->assertSame([$new[$locale], $new[$locale]], $values($locale), "up: $locale");
+        }
+        $this->assertArrayNotHasKey('hero_stages', $home->pageBlocks());
+        $this->get('/lt')->assertSee('Vienas partneris visiems gamybos etapams')->assertDontSee('Skenuojame, projektuojame');
+
+        // Откат: прежние значения в обеих версиях и поле hero_stages в первой версии.
+        $migration->down();
+        foreach (['lt', 'en'] as $locale) {
+            $this->assertSame([$old[$locale], $old[$locale]], $values($locale), "down: $locale");
+        }
+        $this->assertArrayHasKey('hero_stages', $home->pageBlocks());
+
+        // (б) Пропущена: текст и этапы администратора (опубликованы) сохраняются в up() и down(); соседний прежний текст меняется.
+        $this->republish($home, 'lt', ['hero_text' => 'Mūsų tekstas.', 'hero_stages' => ['VIENAS', 'DU']]);
+        $migration->up();
+        $this->assertSame([['hero_eyebrow' => '3D INŽINERIJA & TECHNOLOGIJOS', 'hero_text' => 'Mūsų tekstas.', 'hero_stages' => ['VIENAS', 'DU']]], array_unique($values('lt'), SORT_REGULAR));
+        $migration->down();
+        $this->assertSame([['hero_eyebrow' => '3D INŽINERIJA IR TECHNOLOGIJOS', 'hero_text' => 'Mūsų tekstas.', 'hero_stages' => ['VIENAS', 'DU']]], array_unique($values('lt'), SORT_REGULAR));
+
+        // (в) Записи home нет — без ошибки.
+        ContentItem::query()->delete();
+        $migration->up();
+        $migration->down();
         $this->assertSame(0, ContentItem::count());
     }
 

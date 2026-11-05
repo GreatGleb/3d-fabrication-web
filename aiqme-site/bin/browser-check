@@ -72,7 +72,7 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 на главной hero от верха окна под шапкой на всех ширинах (check_hero_under_header); check_header_cases на /lt/apie-mus — открытие
 прокрученной страницы без анимации, reduced-motion без перехода, без JS шапка тёмная сплошная (и на /en).
 Новый логотип (правка 30.10, Г1): check_logo на /lt и /en при 320/390/600/768/901/1024/1150/1440 — ширина .header .logo
-по LOGO_WIDTHS (220/180/140, на 320 — 132 ±1), не пересекается с .nav (если видна) и .tools, логотип и значки в строке .head-main,
+по LOGO_WIDTHS (200/164/128, на 320 — 120 ±1; правка 05.11, H-01), не пересекается с .nav (если видна) и .tools, логотип и значки в строке .head-main,
 меню не выше, чем с логотипом ширины прототипа, документ не шире окна, белый логотип совпадает с обычным ±1 px.
 Без ярлыка над заголовком (правка 30.10, Г2): check_styles (1440/768/390) — в .page-top нет .eyebrow, отступ крошки → h1
 не меньше 26 px (прежний отступ над ярлыком); сверка текста с эталоном исключает ярлык page-top (TEXT_EXCLUDED_BLOCKS).
@@ -410,7 +410,7 @@ def expected_styles(width):
         'font': 'Arial, Helvetica, sans-serif',
         'body_size': 14 if phone else 15,
         'h1_size': h1,
-        'head_main': 68 if phone else 75 if menu else 82,
+        'head_main': 72 if phone else 81 if menu else 90,  # правка 05.11, H-01: ряд выше на 4/6/8 px (было 68/75/82 прототипа)
         'head_sub': 38 if phone else 39,
         'wrap_padding': 20 if phone else 28 if compact else 48,
     }
@@ -657,12 +657,13 @@ def scroll_to(page, top):
 def check_hero_under_header(report, page, where, width):
     """Главная (правка 28.10, П2): hero от верха окна под шапкой, высота шапки = --header-height, содержимое hero на месте.
     Правка 02.11, Г1: у главной без второго ряда своя --header-height (123/116/108 минус ряд = 83/76/69 px) у шапки и main;
+    правка 05.11, H-01: ряд логотипа выше — 131/122/112 минус ряд = 91/82/73 px;
     верх содержимого hero от низа шапки — прежние 85/56 px."""
     got = page.evaluate(HERO_PROBE)
     if not report.check(got['overlay'] and got['hero'] is not None, f'{where}: на главной нет header--overlay или hero {got}'):
         return
     near = lambda a, b, d: abs(a - b) <= d  # noqa: E731
-    home_height = 69 if width <= 600 else 76 if width <= 900 else 83
+    home_height = 73 if width <= 600 else 82 if width <= 900 else 91  # правка 05.11, H-01 (было 69/76/83)
     report.check(not got['headSub'], f'{where}: на главной есть второй ряд шапки (.head-sub)')
     report.check(got['variable'] == home_height and got['mainVariable'] == home_height,
                  f'{where}: --header-height главной {got["variable"]}/{got["mainVariable"]} ≠ {home_height}')
@@ -740,7 +741,8 @@ def check_header(report, new_page, path, width, state=None):
     context.close()
 
 
-LOGO_WIDTHS = {320: 132, 390: 140, 600: 140, 768: 180, 901: 180, 1024: 180, 1150: 180, 1440: 220}  # .header .logo (правка 30.10, Г1), .footer .logo (02.11)
+# .header .logo (правка 30.10, Г1), .footer .logo (02.11); правка 05.11, H-01: 200/164/128/120 (было 220/180/140/132)
+LOGO_WIDTHS = {320: 120, 390: 128, 600: 128, 768: 164, 901: 164, 1024: 164, 1150: 164, 1440: 200}
 LOGO_PROBE = """() => {
     const rect = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
     const visible = (el) => el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
@@ -771,6 +773,11 @@ def check_logo(report, new_page, path):
         row = got['row']
         report.check(all(box[1] >= row[1] and box[3] <= row[3] for box in (logo, got['tools'])),
                      f'{where}: логотип или значки вне строки шапки {logo} {got["tools"]} {row}')
+        # Правка 05.11, H-01: ряд выше (90/81/72 px), логотип и меню (на ПК) — по центру ряда; на 901 px меню в две строки
+        # (как в прототипе, см. ниже) — там только логотип.
+        middle = lambda box: (box[1] + box[3]) / 2  # noqa: E731
+        report.check(all(abs(middle(box) - middle(row)) <= 1 for box in (logo, *([got['nav']] if width > 1000 and got['nav'] else []))),
+                     f'{where}: логотип или меню не по центру ряда {logo} {got["nav"]} {row}')
         # Меню не переносится из-за логотипа: высота .nav та же, что при ширине логотипа прототипа (150/125/115 px);
         # «Apie mus» на 901 px переносится и в прототипе (см. progress.md, F-01).
         prototype = 150 if width > 1150 else 125 if width > 600 else 115
@@ -1003,7 +1010,8 @@ D21_REPLACEMENTS = [
     (' Manufacturer technical documents and translations are not added until provided.', ''),
     # Правка 02.11, Г1: надпись над заголовком hero главной на LT — литовская (EN прежняя). Второго ряда шапки на главной нет —
     # это шапка, а не main: сверку текста не затрагивает, проверяют check_styles и check_hero_under_header.
-    ('3D ENGINEERING & TECHNOLOGY', '3D INŽINERIJA IR TECHNOLOGIJOS', '^/lt$'),
+    # Правка 05.11, H-01: LT-надпись hero — «&» вместо «IR» (было '3D INŽINERIJA IR TECHNOLOGIJOS' правки 02.11).
+    ('3D ENGINEERING & TECHNOLOGY', '3D INŽINERIJA & TECHNOLOGIJOS', '^/lt$'),
     # Правка 02.11, Г2: тексты главной, 3D spausdinimas и ответ FAQ services-1 (LT от заказчика, EN — перевод плана); блока
     # «Vienas kontaktas visam darbui» с кнопкой «Aptarti panašų projektą» на страницах услуг нет (кнопка на проектах остаётся).
     ('Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite kainą.', 'Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą.'),
@@ -1022,6 +1030,23 @@ D21_REPLACEMENTS = [
     ('If the project needs scanning, modelling and production, AIQME coordinates every step. Suitable manufacturing partners are involved when needed.',
      '', '^/en/services/.'),
     ('Aptarti panašų projektą', '', '^/lt/paslaugos/.'), ('Discuss a similar project', '', '^/en/services/.'),
+    # Правка 05.11, H-01 (c1d5d20): подписи источника видео «Bosch / The Apic» у ролика по умолчанию нет.
+    ('Bosch / The Apic ↗', '', '^/(lt|en)$'),
+    # Правка 05.11, H-01: подзаголовок hero главной; ряда этапов «01 SKENUOTI → 02 PROJEKTUOTI → 03 GAMINTI» и кнопки паузы видео
+    # нет (номера, стрелки и значок кнопки — отдельные узлы эталона: блоки div.stages и button.hero-video-toggle исключены
+    # в TEXT_EXCLUDED_BLOCKS, иначе замена «01»/«→» подстрокой задела бы другие фразы).
+    ('Skenuojame, projektuojame ir koordinuojame gamybą. Vienas partneris visam procesui — nuo pirmo klausimo iki patikrinto rezultato.',
+     'Vienas partneris visiems gamybos etapams', '^/lt$'),
+    ('Scanning, design and coordinated manufacturing. One partner for the whole process, from your first question to a checked result.',
+     'One partner for every stage of production', '^/en$'),
+    ('SKENUOTI', '', '^/lt$'), ('PROJEKTUOTI', '', '^/lt$'), ('GAMINTI', '', '^/lt$'),
+    ('SCAN', '', '^/en$'), ('DESIGN', '', '^/en$'), ('MANUFACTURE', '', '^/en$'),
+    ('Sustabdyti video', '', '^/lt$'), ('Pause video', '', '^/en$'),
+    # Правка 05.11, H-01: кнопки калькулятора — «Įkelkite failus ir gaukite pasiūlymą» (hero), «Įkelti failus» (синий блок,
+    # карточки услуг). Длинная фраза — раньше короткой, которая входит в неё.
+    ('Įkelti modelį ir sužinoti kainą', 'Įkelkite failus ir gaukite pasiūlymą', '^/lt(/|$)'),
+    ('Upload a model & get a price', 'Upload files and get a quote', '^/en(/|$)'),
+    ('Įkelti modelį', 'Įkelti failus', '^/lt(/|$)'), ('Upload a model', 'Upload files', '^/en(/|$)'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),
@@ -1029,7 +1054,9 @@ D21_REPLACEMENTS = [
 # узла: div.wrap есть и у hero главной, его ярлык остаётся.
 TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/apie-mus|en/about)$'), ('div', {'grid', 'two'}, None, ('div', {'gap'})),
                         ('div', {'eyebrow'}, None, ('div', {'service-feature-copy'})),
-                        ('div', {'eyebrow'}, None, ('div', {'wrap'}), ('section', {'page-top'}))]
+                        ('div', {'eyebrow'}, None, ('div', {'wrap'}), ('section', {'page-top'})),
+                        # Правка 05.11, H-01: ряда этапов hero и кнопки паузы видео на главной нет (их слова — '' в D21_REPLACEMENTS).
+                        ('div', {'stages'}, '^/(lt|en)$'), ('button', {'hero-video-toggle'}, '^/(lt|en)$')]
 NO_TEXT = {'script', 'style', 'template', 'noscript', 'svg'}
 
 
@@ -1223,7 +1250,8 @@ def check_defaults(report, page, path, width):
 
 def check_motion(report, browser, new_page, path):
     """Видео hero и ленты (§7.3) на данных фабрик: с reduced-motion — пауза, без autoplay, постер, лента без анимации
-    и дублей; без него — видео играет, лента движется, кнопка паузы её останавливает."""
+    и дублей; без него — видео играет, лента движется, кнопка паузы её останавливает. Правка 05.11, H-01: кнопки паузы
+    видео нет — видео запускается само (без reduced-motion) и не запускается с reduced-motion."""
     context, page, _ = new_page(1440, 1000, reduced_motion='reduce')
     page.goto(BASE + path, wait_until='networkidle')
     page.wait_for_timeout(800)
@@ -1231,6 +1259,7 @@ def check_motion(report, browser, new_page, path):
     video = got['video']
     if report.check(video is not None, f'{path}: нет видео hero'):
         report.check(video['paused'] and not video['autoplay'], f'{path} reduced-motion: видео играет или autoplay {video}')
+        report.check(page.locator('#hero-video-toggle, .hero-video-toggle').count() == 0, f'{path}: есть кнопка паузы видео hero')
         report.check(bool(video['poster']) and video['visible'], f'{path} reduced-motion: нет постера {video}')
         if video['poster']:
             report.check(page.request.get(video['poster']).status == 200, f'{path}: постер не загружается {video["poster"]}')
@@ -1248,6 +1277,7 @@ def check_motion(report, browser, new_page, path):
         report.check(True, '')
     except Exception:  # noqa: BLE001 — таймаут ожидания и есть провал проверки
         report.check(False, f'{path}: без reduced-motion видео hero не играет')
+    report.check(page.locator('#hero-video-toggle, .hero-video-toggle').count() == 0, f'{path}: есть кнопка паузы видео hero')
     for selector in ('.partner-section', '.news-section'):
         track = page.locator(f'{selector} [class$="-marquee-track"]')
         before = track.evaluate('(t) => getComputedStyle(t).transform')

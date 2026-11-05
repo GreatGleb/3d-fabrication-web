@@ -5,10 +5,12 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 
 @media(max-width:900px){
  html.menu-open,html.menu-open body{overflow:hidden}
- .nav.open{max-height:calc(100vh - 75px);max-height:calc(100dvh - 75px);overflow-y:auto;overscroll-behavior:contain}
+ .nav{top:81px} /* под рядом шапки 81 px (правка 05.11, H-01; было 75 px прототипа) */
+ .nav.open{max-height:calc(100vh - 81px);max-height:calc(100dvh - 81px);overflow-y:auto;overscroll-behavior:contain}
 }
 @media(max-width:600px){
- .nav.open{max-height:calc(100vh - 68px);max-height:calc(100dvh - 68px)}
+ .nav{top:72px}
+ .nav.open{max-height:calc(100vh - 72px);max-height:calc(100dvh - 72px)}
 }
 
 /* В подвале три группы, а не четыре прототипа (группа служебных ссылок удалена, D-21): на ≤900 px третья группа
@@ -38,14 +40,19 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
    (resources/js/header.js) — белая шапка прототипа §7.1. Меняются только цвета и прозрачность, высоты рядов те же.
    Цвета тёмного состояния — WCAG AA и над худшим фоном главной (решение №4 плана). Фон полупрозрачной шапки главной
    задан с весом одного класса: noscript-стиль layout (.header--overlay, позже в каскаде) делает её без JS сплошной. */
-:root{--header-height:123px}
+:root{--header-height:131px}
 .header .logo{position:relative}
-/* Новый логотип заказчика крупнее в шапке (правка 30.10, Г1): 220/180/140 px вместо 150/125/115 прототипа; в подвале та же
-   ширина, что в шапке (правка 02.11, Г1; было 160 px). */
-.header .logo,.footer .logo{width:220px}
-@media(max-width:1150px){.header .logo,.footer .logo{width:180px}}
-@media(max-width:600px){.header .logo,.footer .logo{width:140px}}
-@media(max-width:360px){.header .logo,.footer .logo{width:132px}} /* 140 px на 320 px шире окна на 8 px — наибольшая помещающаяся */
+/* Новый логотип заказчика крупнее в шапке (правка 30.10, Г1): вместо 150/125/115 прототипа; в подвале та же ширина, что
+   в шапке (правка 02.11, Г1; было 160 px). Правка 05.11, H-01: чуть меньше — 200/164/128/120 px (было 220/180/140/132). */
+.header .logo,.footer .logo{width:200px}
+@media(max-width:1150px){.header .logo,.footer .logo{width:164px}}
+@media(max-width:600px){.header .logo,.footer .logo{width:128px}}
+@media(max-width:360px){.header .logo,.footer .logo{width:120px}}
+/* Правка 05.11, H-01: логотип ниже — ряд шапки выше на 8/6/4 px (82/75/68 → 90/81/72 px), логотип и меню по центру ряда
+   (align-items:center прототипа); --header-height (123/116/108 → 131/122/112 px) пересчитана на ту же разницу. */
+.head-main{height:90px}
+@media(max-width:900px){.head-main{height:81px}}
+@media(max-width:600px){.head-main{height:72px}}
 /* Логотипы — PNG заказчика с прозрачным фоном (правка 02.11, Г1): белой подложки прототипа (style.css:682-683) нет ни в тёмной,
    ни в белой шапке, ни в подвале, фон не анимируется; белый логотип лежит точно поверх обычного. Подложка остаётся только
    у своего логотипа без белого (header--logo-plate). */
@@ -67,17 +74,17 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
 .header--ready .header-cta{transition:background-color .3s ease,border-color .3s ease}
 .header--ready .cta-link,.header--ready .lang span{transition:color .3s ease}
 .header--ready .logo img{transition:opacity .3s ease}
-/* Главная без второго ряда шапки (правка 02.11, Г1): своя --header-height = 123/116/108 px минус ряд .header-cta (40/40/39 px)
+/* Главная без второго ряда шапки (правка 02.11, Г1): своя --header-height = 131/122/112 px (правка 05.11, H-01) минус ряд .header-cta (40/40/39 px)
    у шапки и main — отступ и высота hero ниже считаются от неё, содержимое hero на прежнем расстоянии от низа шапки. */
-.header--no-cta,.header--no-cta~main{--header-height:83px}
-@media(max-width:900px){.header--no-cta,.header--no-cta~main{--header-height:76px}}
-@media(max-width:600px){.header--no-cta,.header--no-cta~main{--header-height:69px}}
+.header--no-cta,.header--no-cta~main{--header-height:91px}
+@media(max-width:900px){.header--no-cta,.header--no-cta~main{--header-height:82px}}
+@media(max-width:600px){.header--no-cta,.header--no-cta~main{--header-height:73px}}
 /* Главная: hero начинается от верха окна под полупрозрачной шапкой, содержимое hero — на прежних координатах. */
 .header--overlay{margin-bottom:calc(-1*var(--header-height))}
 .header--overlay~main>.hero:first-child{min-height:calc(650px + var(--header-height))}
 .header--overlay~main>.hero:first-child .wrap{padding-top:calc(85px + var(--header-height))}
 @media(max-width:900px){
- :root{--header-height:116px}
+ :root{--header-height:122px}
  .header--overlay~main>.hero:first-child{min-height:calc(620px + var(--header-height))}
  /* Выпадающее меню остаётся белым прототипа с тёмными пунктами и в тёмной шапке. */
  .header--dark .nav{color:var(--ink)}
@@ -85,7 +92,7 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
  .header--dark .nav a.active:after{background:var(--blue)}
 }
 @media(max-width:600px){
- :root{--header-height:108px}
+ :root{--header-height:112px}
  .header--overlay~main>.hero:first-child{min-height:calc(660px + var(--header-height))}
  .header--overlay~main>.hero:first-child .wrap{padding-top:calc(56px + var(--header-height))}
 }

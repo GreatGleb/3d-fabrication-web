@@ -274,7 +274,9 @@ class DefaultMediaTest extends TestCase
         $content->removeMedia($this->admin, $home, $video->id);
         $html = $this->get('/en')->getContent();
         $this->assertStringContainsString(asset('defaults/hero-engineering.mp4'), $html);
-        $this->assertStringContainsString('1Nd_xg8QfXo', $html);
+        // Правка 05.11, H-01 (c1d5d20): у ролика по умолчанию подписи и ссылки «Bosch / The Apic» нет (было — ссылка 1Nd_xg8QfXo).
+        $this->assertStringNotContainsString('1Nd_xg8QfXo', $html);
+        $this->assertSame(0, Html::xpath($html)->query('//div[@class="hero-media-controls"]')->length);
     }
 
     /** Загружает файл в слот, выполняет $read и удаляет файл. */

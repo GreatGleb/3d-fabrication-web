@@ -43,23 +43,14 @@
                 <x-button :href="route($locale.'.calculator')" arrow>{{ __('public.hero.quote') }}</x-button>
                 <x-button :href="route($locale.'.contact')" variant="ghost" arrow>{{ __('public.hero.contact') }}</x-button>
             </div>
-            <div class="hero-bottom">
-                <div class="stages">
-                    @foreach ($home->field('hero_stages', []) as $stage)
-                        @unless ($loop->first)<i aria-hidden="true">→</i>@endunless
-                        <span><b>{{ sprintf('%02d', $loop->iteration) }}</b>{{ $stage }}</span>
-                    @endforeach
-                </div>
-                <div class="hero-media-controls">
-                    @if (filled($source['text'] ?? null))
+            {{-- Правка 05.11, H-01: ряда этапов и кнопки паузы нет — видео играет само (hero-video.js); остаётся подпись источника своего видео. --}}
+            @if (filled($source['text'] ?? null))
+                <div class="hero-bottom">
+                    <div class="hero-media-controls">
                         <span>@if (filled($source['url'] ?? null))<a href="{{ $source['url'] }}" target="_blank" rel="noopener noreferrer">{{ $source['text'] }} ↗</a>@else{{ $source['text'] }}@endif</span>
-                    @endif
-                    <button type="button" id="hero-video-toggle" class="hero-video-toggle" aria-controls="hero-video" aria-label="{{ __('public.hero.play_label') }}"
-                        data-play="{{ __('public.hero.play') }}" data-pause="{{ __('public.hero.pause') }}"
-                        data-play-label="{{ __('public.hero.play_label') }}" data-pause-label="{{ __('public.hero.pause_label') }}"><span aria-hidden="true">▶</span> {{ __('public.hero.play') }}</button>
-                    <span id="hero-video-status" class="sr-only" aria-live="polite" data-error="{{ __('public.hero.video_error') }}"></span>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
     </section>
 

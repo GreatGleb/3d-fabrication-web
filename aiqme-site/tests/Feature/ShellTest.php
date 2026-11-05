@@ -83,7 +83,8 @@ class ShellTest extends TestCase
         $this->assertSame('Atverti meniu', $menu->getAttribute('aria-label'));
 
         $this->assertSame('3D INŽINERIJA IR TECHNOLOGIJOS', trim($xpath->query('//div[contains(@class,"head-sub")]/span')->item(0)->textContent));
-        $this->assertSame([['Įkelti modelį ir sužinoti kainą', route('lt.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
+        // Правка 05.11, H-01: кнопка второго ряда (было «Įkelti modelį ir sužinoti kainą»).
+        $this->assertSame([['Įkelkite failus ir gaukite pasiūlymą', route('lt.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
     }
 
     public function test_english_shell_texts_and_no_active_item_on_404(): void
@@ -93,7 +94,8 @@ class ShellTest extends TestCase
         $this->assertSame(['Home', 'Services', 'Products', 'Projects', 'Resources', 'About', 'Contact'],
             array_column($this->links($xpath, '//nav[@id="main-nav"]/a'), 0));
         $this->assertSame(0, $xpath->query('//nav[@id="main-nav"]/a[@class="active"]')->length);
-        $this->assertSame([['Upload a model & get a price', route('en.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
+        // Правка 05.11, H-01: было «Upload a model & get a price».
+        $this->assertSame([['Upload files and get a quote', route('en.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
         $this->assertSame('3D ENGINEERING & TECHNOLOGY', trim($xpath->query('//div[contains(@class,"head-sub")]/span')->item(0)->textContent));
         $this->assertSame([['Go home', route('en.home')]], $this->links($xpath, '//main//a[contains(@class,"btn")]'));
     }
@@ -104,14 +106,19 @@ class ShellTest extends TestCase
 
         $this->assertSame(['Solutions', 'Get to know us'], array_map(fn ($h) => $h->textContent, iterator_to_array($xpath->query('//footer//h4'))));
         $this->assertSame([
-            ['Services', route('en.services')], ['Products', route('en.products')], ['Manufacturing quote', route('en.calculator')],
+            // Правка 05.11, H-01: ссылка на калькулятор — «Order summary» (было «Manufacturing quote»), адрес прежний.
+            ['Services', route('en.services')], ['Products', route('en.products')], ['Order summary', route('en.calculator')],
             ['Training', route('en.training')], ['About AIQME', route('en.about')], ['Projects', route('en.projects')],
             ['Free library', route('en.library')], ['Contact', route('en.contact')],
         ], $this->links($xpath, '//footer//div[@class="footer-top"]/div/a[not(@class="logo")]'));
         $this->assertSame([
             ['Delivery', route('en.delivery')], ['Returns', route('en.returns')], ['Privacy', route('en.privacy')], ['Cookies', route('en.cookies')],
         ], $this->links($xpath, '//footer//div[@class="footer-bottom"]//a'));
-        $this->assertSame('One partner — from your challenge to a finished product.', $xpath->query('//footer//p')->item(0)->textContent);
+        // Правка 05.11, H-01: новый девиз (было «One partner — from your challenge to a finished product.»).
+        $this->assertSame('One partner for every stage of production.', $xpath->query('//footer//p')->item(0)->textContent);
+        $lt = $this->xpath($this->get('/lt')->getContent());
+        $this->assertSame('Vienas partneris visiems gamybos etapams.', $lt->query('//footer//p')->item(0)->textContent);
+        $this->assertSame([['Užsakymo suvestinė', route('lt.calculator')]], $this->links($lt, '//footer//div[@class="footer-top"]/div/a[@href="'.route('lt.calculator').'"]'));
         $this->assertSame('© '.now()->year.' AIQME', $xpath->query('//div[@class="footer-bottom"]/span')->item(0)->textContent);
     }
 

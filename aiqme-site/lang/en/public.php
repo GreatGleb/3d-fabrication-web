@@ -4,19 +4,14 @@
 // calls in app.js. D-21 demo labels are not carried over. Page content itself is in page_text/service/faq_item (W-04).
 return [
     'hero' => [
-        'quote' => 'Upload a model & get a price',
+        'quote' => 'Upload files and get a quote',
         'contact' => 'Discuss your project',
-        'play' => 'Play video',
-        'pause' => 'Pause video',
-        'play_label' => 'Play background video',
-        'pause_label' => 'Pause background video',
-        'video_error' => 'The video could not be played. A still image is shown.',
     ],
     'find_solution' => 'Find a solution ↗',
     'service_features' => [
         'explore' => 'Explore this service',
         'contact' => 'Discuss a project ↗',
-        'quote' => 'Upload a model ↗',
+        'quote' => 'Upload files ↗',
         'training' => 'Topics & registration ↗',
     ],
     'ticker' => [
@@ -31,7 +26,7 @@ return [
         'read' => 'Read ↗',
     ],
     'cta' => [
-        'quote' => 'Upload a model',
+        'quote' => 'Upload files',
         'contact' => 'Discuss a project',
     ],
     'service' => [

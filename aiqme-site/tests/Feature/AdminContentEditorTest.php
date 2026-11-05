@@ -187,20 +187,19 @@ class AdminContentEditorTest extends TestCase
         $editor = $this->editor($home)
             ->assertSee('hero_title EN')
             ->assertSee('scenarios 1 · title EN')
-            ->assertSet('form.en.fields.hero_stages', "SCAN\nDESIGN\nMANUFACTURE")
+            ->assertSet('form.en.fields.hero_text', 'One partner for every stage of production') // правка 05.11, H-01: hero_stages удалено
             ->assertDontSee('Adresas LT');
         $this->assertArrayNotHasKey('slug', $editor->get('form.en'));
 
         $editor->set('form.en.fields.hero_title', 'Parts made to measure')
             ->set('form.en.fields.scenarios.0.title', 'I only have a broken part.')
-            ->set('form.en.fields.hero_stages', "SCAN\nMODEL\nMAKE")
             ->call('publish', 'en')->assertHasNoErrors();
 
         $html = $this->get('/en')->assertOk()->getContent();
         $this->assertStringContainsString('Parts made to measure', $html);
         $this->assertStringContainsString('I only have a broken part.', $html);
         $fields = $home->translation('en')->fresh()->fields;
-        $this->assertSame(['SCAN', 'MODEL', 'MAKE'], $fields['hero_stages']);
+        $this->assertArrayNotHasKey('hero_stages', $fields);
         $this->assertSame(array_keys($home->pageBlocks()), array_keys($fields), 'набор блоков не меняется');
         $this->assertCount(3, $fields['scenarios']);
         $this->get('/lt')->assertDontSee('Parts made to measure');
@@ -267,7 +266,9 @@ class AdminContentEditorTest extends TestCase
         $this->assertContains('required', $rules['slug']);
         $this->assertContains('max:255', $rules['fields.short']);
         $home = ContentTypes::fields($this->item(ContentType::PageText, 'home'));
-        $this->assertSame(['kind' => 'lines'], $home['hero_stages']);
+        // Правка 05.11, H-01: ряда этапов hero (hero_stages, строки) нет; строки — у вводных абзацев «Apie mus».
+        $this->assertArrayNotHasKey('hero_stages', $home);
+        $this->assertSame(['kind' => 'lines'], ContentTypes::fields($this->item(ContentType::PageText, 'about'))['intro_paragraphs']);
         $this->assertSame(['kind' => 'pairs', 'parts' => ['title', 'text'], 'count' => 3], $home['scenarios']);
         $this->assertSame(['kind' => 'text'], $home['hero_title']);
 
