@@ -23,6 +23,7 @@ use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
+use Tests\Support\Html;
 use Tests\TestCase;
 
 /**
@@ -129,7 +130,9 @@ class OrderPositionsDisplayTest extends TestCase
         $this->assertStringNotContainsString('Needed by', $dwg);
         $this->assertStringNotContainsString('<b>Matinis</b>', $html);
 
-        // Оценка: у STL — сумма, у остальных — «Price to be assessed by a specialist», размеров нет.
+        // Оценка: у STL — сумма, у остальных — «Price to be assessed by a specialist», размеров нет. Правка 05.11, H-04: покупатель
+        // сумм не видит, а карточка админки показывает оценку по-прежнему.
+        $this->assertStringContainsString('<td>'.e(Number::currency(StlPart::orderBy('id')->first()->estimate / 100, in: 'EUR', locale: 'en')).'</td>', $html);
         $this->assertSame(3, substr_count($html, '<td>Price to be assessed by a specialist</td>'));
         $this->assertSame(3, preg_match_all('#<td>\s*(<!--\[if BLOCK\]><!\[endif\]-->)?\s*—\s*(<!--\[if ENDBLOCK\]><!\[endif\]-->)?\s*</td>#', $html));
 
@@ -210,46 +213,56 @@ class OrderPositionsDisplayTest extends TestCase
         $page->assertDontSeeHtml('data-part-label')->assertSee('bracket.stl');
     }
 
-    public function test_account_page_shows_method_line_and_specialist_mark_until_price_is_confirmed(): void
+    /**
+     * Правка 05.11, H-04: до подтверждения цены — строка способа без пометки «Price to be assessed by a specialist» (пометка
+     * подразумевала бы суммы у остальных), суммы нет — заметка; после подтверждения — сумма, как прежде.
+     */
+    public function test_account_page_shows_method_line_without_sums_until_price_is_confirmed(): void
     {
         $order = $this->submit();
         $number = OrderMeta::sole()->number;
         $page = $this->actingAs($this->client)->get('/en/account/orders/'.$number)->assertOk()->getContent();
         preg_match_all('#<p data-part-label><small>(.*?)</small></p>#', $page, $labels);
-        $this->assertSame(['3D printing / ABS', '3D printing / PLA · Price to be assessed by a specialist', 'Milling / Aluminium, 6 mm · Price to be assessed by a specialist',
-            'Engraving / Wood, 0.1 mm · Price to be assessed by a specialist'], $labels[1]);
-        // Сумма — по известным позициям и сборам.
-        $this->assertStringContainsString('data-total>'.e(Number::currency($order->total->value / 100, in: 'EUR', locale: 'en')).'</b>', $page);
+        $this->assertSame(['3D printing / ABS', '3D printing / PLA', 'Milling / Aluminium, 6 mm', 'Engraving / Wood, 0.1 mm'], $labels[1]);
+        $this->assertStringNotContainsString('data-total', $page);
+        $this->assertStringNotContainsString('€', Html::text(Html::xpath($page)->query('//main')->item(0)));
+        $this->assertStringContainsString('We will confirm the final price and production time after reviewing your request.', $page);
 
-        $this->actingAs($this->client)->get('/lt/paskyra/orders/'.$number)->assertOk()->assertSee('Frezavimas / Aliuminis, 6 mm · Kainą įvertins specialistas');
+        $this->actingAs($this->client)->get('/lt/paskyra/orders/'.$number)->assertOk()->assertSee('Frezavimas / Aliuminis, 6 mm')
+            ->assertDontSee('Kainą įvertins specialistas')->assertSee('Galutinę kainą ir gamybos terminą patvirtinsime peržiūrėję jūsų užklausą.');
 
         $ids = $order->lines()->orderBy('id')->pluck('id')->all();
         app(OrderWorkflow::class)->confirmPrice($this->admin, $order, array_fill_keys($ids, 1000), null);
-        $this->actingAs($this->client)->get('/en/account/orders/'.$number)->assertOk()
+        $page = $this->actingAs($this->client)->get('/en/account/orders/'.$number)->assertOk()
             ->assertSee('Milling / Aluminium, 6 mm')->assertDontSee('Price to be assessed by a specialist');
+        $this->assertSame(e(Number::currency($order->fresh()->total->value / 100, in: 'EUR', locale: 'en')),
+            trim(Html::xpath($page->getContent())->query('//*[@data-total]')->item(0)->textContent));
     }
 
-    public function test_confirmation_page_lists_positions_with_known_total_and_specialist_marks(): void
+    /**
+     * Правка 05.11, H-04: страница после отправки — главный текст README, номер заказа и ссылка гостя или кабинета; ни сумм, ни
+     * позиций с оценкой (прежде — суммы позиций, итог и «+ parts assessed by a specialist»).
+     */
+    public function test_confirmation_page_shows_request_received_number_and_no_sums(): void
     {
-        $order = $this->submit();
-        $page = $this->actingAs($this->client)->get('/en/quote/submitted')->assertOk()->getContent();
-        preg_match_all('#<div class="summary-row gap" data-part><span>(.*?)</span><b>(.*?)</b></div>#', $page, $rows, PREG_SET_ORDER);
-        $estimate = StlPart::orderBy('id')->first()->estimate;
-        $this->assertSame([
-            ['bracket.stl × 2<br><small>3D printing / ABS</small>', e(Number::currency($estimate / 100, in: 'EUR', locale: 'en'))],
-            ['housing.step × 1<br><small>3D printing / PLA</small>', 'Price to be assessed by a specialist'],
-            ['plate.dxf × 3<br><small>Milling / Aluminium, 6 mm</small>', 'Price to be assessed by a specialist'],
-            ['sign.dwg × 1<br><small>Engraving / Wood, 0.1 mm</small>', 'Price to be assessed by a specialist'],
-        ], array_map(fn (array $row): array => [$row[1], $row[2]], $rows));
-        $this->assertStringContainsString('data-cents="'.$order->total->value.'"', $page);
-        $this->assertSame($estimate + 500, $order->total->value);
-        $this->assertStringContainsString('+ parts assessed by a specialist', $page);
+        $this->submit();
+        $number = OrderMeta::sole()->number;
+        $page = Html::xpath($this->actingAs($this->client)->get('/en/quote/submitted')->assertOk()->getContent());
+        $this->assertSame('Your request has been received. We will contact you shortly.', Html::text($page->query('//div[contains(@class, "notice success")]')->item(0)));
+        $this->assertSame("Order No. {$number}", Html::text($page->query('//*[@data-number]')->item(0)));
+        $this->assertSame(1, $page->query('//main//a[@href="'.route('en.account').'"]')->length, 'переход в кабинет');
+        $main = Html::text($page->query('//main')->item(0));
+        foreach (['€', 'EUR', 'Estimated total', 'assessed by a specialist', 'bracket.stl'] as $phrase) {
+            $this->assertStringNotContainsString($phrase, $main, $phrase);
+        }
 
-        // Только STL — без пометки.
         $this->submit(mixed: false, locale: 'lt');
-        $page = $this->actingAs($this->client)->get('/lt/kalkuliatorius/pateikta')->assertOk()->getContent();
-        $this->assertStringContainsString('<small>3D spausdinimas / ABS</small>', $page);
-        $this->assertStringNotContainsString('specialisto vertinamos', $page);
+        $page = Html::xpath($this->actingAs($this->client)->get('/lt/kalkuliatorius/pateikta')->assertOk()->getContent());
+        $this->assertSame('Jūsų užklausa gauta. Susisieksime su jumis artimiausiu metu.', Html::text($page->query('//div[contains(@class, "notice success")]')->item(0)));
+        $main = Html::text($page->query('//main')->item(0));
+        foreach (['€', 'Preliminari suma', 'specialisto vertinamos', 'Kainą įvertins'] as $phrase) {
+            $this->assertStringNotContainsString($phrase, $main, $phrase);
+        }
     }
 
     public function test_mail_names_the_method_of_every_file_and_marks_specialist_positions(): void

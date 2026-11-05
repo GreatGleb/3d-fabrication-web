@@ -9,7 +9,7 @@ use Tests\Support\Html;
 use Tests\TestCase;
 
 /**
- * Калькулятор W-27 (§1.2; правка 02.11, Г8 — карточки шага 2 и проверку шага 3 строит JS): разметка 5 шагов, значения D-09/D-24 (настройки W-11) и §6.4 (конфигурация) в data-атрибутах, шаг 2 без
+ * Калькулятор W-27 (§1.2; правка 02.11, Г8 — карточки шага 2 строит JS; правка 05.11, H-04 — три шага без цены): разметка шагов, значения D-09/D-24 (настройки W-11) и §6.4 (конфигурация) в data-атрибутах, шаг 2 без
  * технологии (D-37), шаг 4 и сводка без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей (D-21),
  * ссылка специалиста по контракту предзаполнения. Поведение шагов в браузере — bin/browser-check, логика — tests/js/.
  */
@@ -26,10 +26,10 @@ class CalculatorPageTest extends TestCase
     {
         $root = $this->page('/en/quote')->query('//*[@id="quote"]')->item(0);
 
-        // Чистая БД после migrate: начальные настройки W-11 (D-09, D-24) и лимиты config (§6.4).
+        // Чистая БД после migrate: начальные настройки W-11 (D-09, D-24) и лимиты config (§6.4). Правка 05.11, H-04: тарифов
+        // (цена за грамм, платы) и плотностей материалов нет — только названия материалов и данные проверки файла.
         $this->assertSame([
-            'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000,
+            'materials' => ['PLA', 'PETG', 'ABS'], 'default_infill' => 20, 'max_dimension_mm' => 1000,
             // Правка 02.11, Г6: заглушки фрезеровки и гравировки из миграции данных.
             ...(require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES,
             'max_file_bytes' => 52428800, 'max_files' => 10,
@@ -42,43 +42,75 @@ class CalculatorPageTest extends TestCase
         // значки icons/ui — data-icons.
         $this->assertSame(['printing' => '3D printing', 'milling' => 'Milling', 'engraving' => 'Engraving'], $texts['methods']);
         $this->assertSame(['standard' => 'Standard', 'priority' => 'Urgent'], $texts['settings']['terms']);
-        $this->assertSame('Price to be assessed by a specialist', $texts['price']['specialist']);
+        $this->assertSame(['specialist' => 'Price to be assessed by a specialist'], $texts['price']);
         $this->assertSame(asset('icons/ui'), $root->getAttribute('data-icons'));
         $this->assertArrayNotHasKey('specialist_format', $texts);
     }
 
+    /** Правка 05.11, H-04: тарифы не уходят в браузер — ни ключей, ни значений тарифов и плотностей в HTML страницы. */
+    public function test_tariffs_are_not_in_the_page_html(): void
+    {
+        foreach (['/en/quote', '/lt/kalkuliatorius'] as $path) {
+            $html = $this->get($path)->assertOk()->getContent();
+            foreach (['rate_per_gram', 'order_fee_cents', 'file_fee_cents', 'ratePerGram', '"PLA":1.24', '1.27', '1.04'] as $secret) {
+                $this->assertStringNotContainsString($secret, $html, "$path: «{$secret}»");
+            }
+        }
+    }
+
     /**
-     * Шаг 3 по файлам (правка 02.11, Г8): блоки строит JS по data-texts — строка FDM (П7: 1000 мм из настроек), строка предела
-     * фрезеровки и гравировки и «Failą peržiūrės specialistas.» для файлов без разбора; общей строки FDM в разметке нет.
+     * Проверка по файлам (правка 02.11, Г8; правка 05.11, H-04 — в карточке шага 2): блоки строит JS по data-texts — строка FDM
+     * (П7: 1000 мм из настроек), строка предела фрезеровки и гравировки, «Failą peržiūrės specialistas.» для файлов без разбора,
+     * подпись масштаба; отдельной панели проверки нет, предупреждения — под карточками шага 2.
      */
     public function test_review_step_texts_of_both_locales(): void
     {
         foreach ([
-            '/lt/kalkuliatorius' => ['Įrangos dydžio ribos', 'FDM: :mm × :mm × :mm mm.', 'Frezavimo ir graviravimo matmenys :w × :h mm.', 'Failą peržiūrės specialistas.'],
-            '/en/quote' => ['Build size limits', 'FDM: :mm × :mm × :mm mm.', 'Milling and engraving dimensions: :w × :h mm.', 'A specialist will review the file.'],
+            '/lt/kalkuliatorius' => ['Įrangos dydžio ribos', 'FDM: :mm × :mm × :mm mm.', 'Frezavimo ir graviravimo matmenys :w × :h mm.', 'Failą peržiūrės specialistas.', 'Mastelis, %'],
+            '/en/quote' => ['Build size limits', 'FDM: :mm × :mm × :mm mm.', 'Milling and engraving dimensions: :w × :h mm.', 'A specialist will review the file.', 'Scale, %'],
         ] as $path => $expected) {
             $page = $this->page($path);
-            $review = json_decode($page->query('//*[@id="quote"]')->item(0)->getAttribute('data-texts'), true)['review'];
-            $this->assertSame($expected, [$review['build'], $review['build_text'], $review['cnc'], $review['specialist_file']], $path);
-            $this->assertSame(0, $page->query('//*[@data-step-panel="2"]//*[contains(@class, "check-row")]')->length, $path);
-            $this->assertSame(1, $page->query('//*[@data-step-panel="2"]//*[@data-review]')->length, $path);
+            $texts = json_decode($page->query('//*[@id="quote"]')->item(0)->getAttribute('data-texts'), true);
+            $review = $texts['review'];
+            $this->assertSame($expected, [$review['build'], $review['build_text'], $review['cnc'], $review['specialist_file'], $texts['scale']], $path);
+            $this->assertArrayNotHasKey('title', $review, $path);
+            $this->assertSame(0, $page->query('//*[contains(@class, "check-row")] | //*[@data-review]')->length, $path);
+            $this->assertSame(1, $page->query('//*[@data-step-panel="1"]//*[@data-warnings]')->length, $path);
         }
     }
 
-    public function test_five_steps_and_texts_of_both_locales(): void
+    /** Правка 05.11, H-04: три шага, заголовки панелей без «01. Įkelkite savo modelius», «03. …», «04. …». */
+    public function test_three_steps_and_texts_of_both_locales(): void
     {
         $lt = $this->page('/lt/kalkuliatorius');
-        $this->assertSame(['1Failai', '2Gamyba', '3Patikra', '4Kaina', '5Užsakymas'], Html::texts($lt, '//div[@class="steps"]/button'));
+        $this->assertSame(['1Failai', '2Gamybos parametrai', '3Užklausos pateikimas'], Html::texts($lt, '//div[@class="steps"]/button'));
         $this->assertCount(0, $lt->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
+        $this->assertSame(['02. Gamybos pasirinkimai', 'Pirkėjas ir pristatymas'], Html::texts($lt, '//*[@data-step-panel]/h2'));
 
         $en = $this->page('/en/quote');
-        $this->assertSame(['1Files', '2Production', '3Review', '4Price', '5Checkout'], Html::texts($en, '//div[@class="steps"]/button'));
-        $this->assertSame(['01. Upload your models', '02. Production settings', '03. Model review', '04. Part pricing', 'Buyer & delivery'],
-            Html::texts($en, '//*[@data-step-panel]/h2'));
+        $this->assertSame(['1Files', '2Manufacturing parameters', '3Submit request'], Html::texts($en, '//div[@class="steps"]/button'));
+        $this->assertSame(['0', '1', '2'], array_map(fn ($node) => $node->value, iterator_to_array($en->query('//*[@data-step-panel]/@data-step-panel'))));
+        $this->assertSame(['02. Production settings', 'Buyer & delivery'], Html::texts($en, '//*[@data-step-panel]/h2'));
+        $this->assertSame('2', $en->query('//form[@id="checkout-form"]')->item(0)->getAttribute('data-step-panel'));
         $this->assertSame(1, $en->query('//*[@data-step-panel and not(@hidden)]')->length, 'видим только шаг 1');
         // Правка 02.11, Г8: принимаются DXF и DWG.
         $this->assertSame('.stl,.step,.stp,.obj,.dxf,.dwg', $en->query('//input[@id="model-upload"]')->item(0)->getAttribute('accept'));
         $this->assertSame(1, $en->query('//*[@data-viewer and contains(@class, "viewer")]')->length, 'место просмотра W-31');
+    }
+
+    /** Правка 05.11, H-04: заголовок и крошки, вступление и мета-описание — дословно из README плана. */
+    public function test_heading_intro_and_meta_description_of_the_plan(): void
+    {
+        foreach ([
+            '/lt/kalkuliatorius' => ['Jūsų failai. Mūsų kitas žingsnis.', 'Įkelkite failus, pasirinkite gamybos parametrus ir gaukite pasiūlymą.'],
+            '/en/quote' => ['Your files. Our next step.', 'Upload files, choose the manufacturing parameters and get a quote.'],
+        ] as $path => [$title, $intro]) {
+            $page = $this->page($path);
+            $this->assertSame($title, Html::text($page->query('//section[@class="page-top"]//h1')->item(0)), $path);
+            $this->assertSame($title, Html::text($page->query('//div[@class="breadcrumbs"]/span[last()]')->item(0)), $path);
+            $this->assertSame($intro, Html::text($page->query('//section[@class="page-top"]//p')->item(0)), $path);
+            $this->assertSame($intro, $page->query('//meta[@name="description"]')->item(0)->getAttribute('content'), $path);
+        }
     }
 
     public function test_viewer_canvas_and_controls_of_prototype_in_both_locales(): void
@@ -108,9 +140,12 @@ class CalculatorPageTest extends TestCase
         $lt = $this->page('/lt/kalkuliatorius');
         $this->assertSame('STL, STEP, OBJ, DXF, DWG. Galite pasirinkti kelis failus.', Html::text($lt->query('//*[@data-step-panel="0"]/p')->item(0)));
         $this->assertSame('Iki 10 MB vienam failui.', Html::text($lt->query('//*[@id="drop-zone"]/p')->item(0)));
-        // Надпись области и кнопка не меняются (17.17).
-        $this->assertSame(['Nutempkite failus čia arba pasirinkite', 'Pasirinkti 3D modelius'],
+        // Надпись области (17.17); кнопка — «Pasirinkti failus» (правка 05.11, H-04). Шаг 1: строка форматов, затем зона, без заголовка.
+        $this->assertSame(['Nutempkite failus čia arba pasirinkite', 'Pasirinkti failus'],
             [Html::text($lt->query('//*[@id="drop-zone"]/strong')->item(0)), Html::text($lt->query('//*[@id="drop-zone"]/span[contains(@class, "btn")]')->item(0))]);
+        $this->assertSame('Choose files', Html::text($en->query('//*[@id="drop-zone"]/span[contains(@class, "btn")]')->item(0)));
+        $this->assertSame(0, $lt->query('//*[@data-step-panel="0"]/h2')->length);
+        $this->assertSame(['p', 'label'], array_map(fn ($node) => $node->nodeName, array_slice(iterator_to_array($lt->query('//*[@data-step-panel="0"]/*')), 0, 2)));
     }
 
     public function test_step_two_has_no_technology_choice_of_prototype(): void
@@ -118,7 +153,8 @@ class CalculatorPageTest extends TestCase
         $en = $this->page('/en/quote');
         $this->assertSame(0, $en->query('//*[contains(@class, "tech-choices")]')->length);
         // Правка 02.11, Г8: материалы печати — из настроек в data-settings (списки карточки строит JS).
-        $this->assertSame(['PLA', 'PETG', 'ABS'], array_keys(json_decode($en->query('//*[@id="quote"]')->item(0)->getAttribute('data-settings'), true)['materials']));
+        // Правка 05.11, H-04: названия материалов списком, без плотностей.
+        $this->assertSame(['PLA', 'PETG', 'ABS'], json_decode($en->query('//*[@id="quote"]')->item(0)->getAttribute('data-settings'), true)['materials']);
     }
 
     /**
@@ -171,26 +207,35 @@ class CalculatorPageTest extends TestCase
         }
     }
 
-    public function test_price_table_summary_and_checkout_have_no_vat_delivery_discount_or_unit_price(): void
+    /**
+     * Правка 05.11, H-04: шага «Kaina» нет; панель «Užsakymo suvestinė» без надписи «PRELIMINARI SĄMATA», сумм и итога — строки
+     * «имя × количество» строит JS, заметка и «Reikia pagalbos?» — по README. Форма без VAT, доставки, скидки (D-38).
+     */
+    public function test_no_price_step_summary_without_sums_and_checkout_without_vat_or_discount(): void
     {
+        foreach ([
+            '/en/quote' => ['Order summary', 'We will confirm the final price and production time after reviewing your request.', 'Need help?'],
+            '/lt/kalkuliatorius' => ['Užsakymo suvestinė', 'Galutinę kainą ir gamybos terminą patvirtinsime peržiūrėję jūsų užklausą.', 'Reikia pagalbos?'],
+        ] as $path => [$title, $note, $help]) {
+            $page = $this->page($path);
+            $this->assertSame([$title, $help], Html::texts($page, '//aside//h3'), $path);
+            $this->assertSame($note, Html::text($page->query('//aside/div[contains(@class, "summary-note")]')->item(0)), $path);
+            $this->assertSame(0, $page->query('//aside//*[contains(@class, "eyebrow")] | //aside//*[contains(@class, "total")] | //*[@data-total] | //*[@data-price-rows] | //table')->length, $path);
+            $main = Html::text($page->query('//main')->item(0));
+            foreach (['PRELIMINARI', 'PRELIMINARY', 'Sąmata', 'Estimate', 'Preliminari suma', 'Estimated total', '€'] as $phrase) {
+                $this->assertStringNotContainsString($phrase, $main, "$path: «{$phrase}»");
+            }
+        }
         $en = $this->page('/en/quote');
-        $this->assertSame(['Part', 'Quantity', 'Estimate'], Html::texts($en, '//*[@data-step-panel="3"]//th'));
-        $this->assertSame(['Estimated total'], Html::texts($en, '//aside//div[contains(@class, "total")]/span[1]'));
-        // Правка 02.11, Г2: новый текст заметки панели (LT дословно от заказчика, EN — перевод плана).
-        $this->assertSame('The administrator will confirm the final price and delivery date after reviewing the order.',
-            Html::text($en->query('//aside/div[contains(@class, "summary-note")]')->item(0)));
-        $this->assertSame('Galutinę kainą ir pristatymo terminą administratorius patvirtins, peržiūrėjęs užsakymą.',
-            Html::text($this->page('/lt/kalkuliatorius')->query('//aside/div[contains(@class, "summary-note")]')->item(0)));
         $this->assertSame(1, $en->query('//form[@id="checkout-form"]//input[@name="vat_code"]')->length);
         $this->assertSame(['Delivery throughout the EU', 'Collection'], Html::texts($en, '//select[@name="delivery"]/option'));
         // Отправка заявки включена (W-12): кнопка доступна, надписи «недоступно» нет.
         $submit = $en->query('//form[@id="checkout-form"]//button[@type="submit"]')->item(0);
         $this->assertSame(['Submit order', false], [Html::text($submit), $submit->hasAttribute('disabled')]);
         $this->assertSame(0, $en->query('//*[@id="quote-unavailable"]')->length);
-
         $lt = $this->page('/lt/kalkuliatorius');
-        $this->assertSame(['Detalė', 'Kiekis', 'Sąmata'], Html::texts($lt, '//*[@data-step-panel="3"]//th'));
         $this->assertSame('PVM kodas (neprivaloma)', Html::text($lt->query('//label[@for="field-vat_code"]')->item(0)));
+        $this->assertSame('Pateikti užsakymą', Html::text($lt->query('//form[@id="checkout-form"]//button[@type="submit"]')->item(0)));
     }
 
     public function test_no_demo_phrases_technologies_or_vat_labels(): void

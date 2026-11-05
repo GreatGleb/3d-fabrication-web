@@ -167,13 +167,26 @@ class CustomerAccountTest extends TestCase
         $this->get('/en/account/orders/DEMO-1047')->assertNotFound();
     }
 
+    /** Правка 05.11, H-04: в списке заказов сумма — только у заказов с подтверждённой ценой, у остальных прочерк. */
+    public function test_order_list_shows_the_total_only_after_price_confirmation(): void
+    {
+        $a = $this->submit($this->clientA, ['bracket.stl']);
+        $row = fn (): string => Html::text(Html::xpath($this->actingAs($this->clientA)->get('/en/account/orders')->assertOk()->getContent())
+            ->query('//tr[@data-order="'.$a->meta->number.'"]/td[4]')->item(0));
+        $this->assertSame('—', $row());
+
+        $this->confirm($a);
+        $this->assertSame('€65.00', $row()); // 30 EUR детали, 5 EUR плата за заказ, 30 EUR доставка
+    }
+
     public function test_card_shows_stages_payment_open_requests_transactions_tracking_and_reorder(): void
     {
         $a = $this->submit($this->clientA, ['bracket.stl', 'cover.stl']);
         $card = '/en/account/orders/'.$a->meta->number;
 
-        // До подтверждения: предварительная сумма и стадия review.
-        $this->actingAs($this->clientA)->get($card)->assertSee('Estimated total')->assertSee('Technical review')
+        // До подтверждения: стадия review; суммы нет — заметка о подтверждении цены (правка 05.11, H-04; была «Estimated total»).
+        $this->actingAs($this->clientA)->get($card)->assertDontSee('Estimated total')->assertDontSee('€')->assertSee('data-price-pending', false)
+            ->assertSee('We will confirm the final price and production time after reviewing your request.')->assertSee('Technical review')
             ->assertSee('Current status')->assertSee('Tracking information appears after shipment preparation.')
             ->assertDontSee('Outstanding');
 

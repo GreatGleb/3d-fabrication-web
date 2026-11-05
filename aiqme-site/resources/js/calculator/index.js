@@ -1,9 +1,11 @@
-// Интерфейс калькулятора (W-27): 5 шагов прототипа поверх Quote (quote.js) и ядра W-10. Разбор STL — в Web Worker;
-// без Worker — в основном потоке. Просмотр модели (Canvas 2D, W-31) — в .viewer; расчёт от него не зависит.
-// Правка 02.11, Г8 (макет 17.09): шаг 1 принимает STL/STEP/OBJ/DXF/DWG и без сумм; шаг 2 — карточка на каждый файл со своими
-// способом и параметрами; шаг 3 — проверка по файлам; шаг 4 и панель — суммы оценённых позиций и «Kainą įvertins specialistas».
+// Интерфейс калькулятора (W-27) поверх Quote (quote.js) и ядра W-10. Разбор STL — в Web Worker; без Worker — в основном
+// потоке. Просмотр модели (Canvas 2D, W-31) — в .viewer; проверка файла от него не зависит.
+// Правка 02.11, Г8 (макет 17.09): шаг 1 принимает STL/STEP/OBJ/DXF/DWG; шаг 2 — карточка на каждый файл со своими способом
+// и параметрами.
+// Правка 05.11, H-04: три шага — файлы, параметры (в карточке и проверка файла: размеры, масштаб, предел оборудования,
+// «Kainą įvertins specialistas»), отправка заявки. Сумм нет: панель — «имя × количество».
 import { StlError } from './core/index.js';
-import { Quote, formatDimensions, formatMoney } from './quote.js';
+import { Quote, formatDimensions } from './quote.js';
 import { mountViewer } from './viewer/index.js';
 import { loadSavedModels, modelIds } from './saved-models.js';
 
@@ -25,6 +27,8 @@ function parseInWorker(buffer) {
 
 const html = (text) => String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
+const LAST_STEP = 2; // шаг формы заявки (правка 05.11, H-04)
+
 const METHOD_ICONS = { printing: 'print_layers', milling: 'milling_cutter_surface', engraving: 'engraving_cutter_surface' };
 
 function start(root) {
@@ -34,7 +38,6 @@ function start(root) {
   const $ = (selector) => root.querySelector(selector);
   const t = (key, values = {}) => Object.entries({ mb: texts.mb, ...values })
     .reduce((text, [name, value]) => text.replaceAll(`:${name}`, value), texts[key]);
-  const money = (cents) => formatMoney(cents, locale);
   const number = (value, digits = 1) => new Intl.NumberFormat(locale === 'lt' ? 'lt-LT' : 'en-IE', { maximumFractionDigits: digits }).format(value);
   // Значки заказчика (icons/ui/, правка 02.11) — <img> без изменения рисунка.
   const icon = (name, alt = '') => `<img class="ui-icon" src="${root.dataset.icons}/${name}.svg" alt="${html(alt)}" width="20" height="20">`;
@@ -42,7 +45,7 @@ function start(root) {
   // Пункты списков: значение → подпись.
   const lists = (entry) => ({
     material: entry.method === 'printing'
-      ? Object.fromEntries(Object.keys(settings.materials).map((name) => [name, name]))
+      ? Object.fromEntries(settings.materials.map((name) => [name, name]))
       : Object.fromEntries(settings[`${entry.method}_materials`].map((item) => [item.lt, item[locale === 'lt' ? 'lt' : 'en']])),
     color: texts.settings.colors,
     purpose: texts.settings.purposes,
@@ -93,7 +96,7 @@ function start(root) {
     return url.toString();
   }
 
-  // Заявка (W-12, §3.1): один multipart-запрос — контакты и получение из формы шага 5 (с CSRF, токеном отправки и
+  // Заявка (W-12, §3.1): один multipart-запрос — контакты и получение из формы последнего шага (с CSRF, токеном отправки и
   // honeypot) и по каждой позиции файл и её поля (правка 02.11, Г8). Сумму сервер считает сам. Ошибки проверки — под полями
   // формы, остальные — списком; успех — страница подтверждения.
   const form = $('#checkout-form');
@@ -159,7 +162,8 @@ function start(root) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
-  // Карточка позиции шага 2 (макет 17.09): заголовок, способ, поля способа, приоритет и дата, заметка; свёрнутая — сводка.
+  // Карточка позиции шага 2 (макет 17.09): заголовок, проверка файла, способ, поля способа, приоритет и дата, заметка;
+  // свёрнутая — сводка.
   function card(entry) {
     const options = entry.options[entry.method];
     const list = lists(entry);
@@ -180,6 +184,7 @@ function start(root) {
           <button type="button" class="icon-btn" data-step-quantity="1" data-part="${entry.id}">${icon('plus', '+')}</button></span>
         <button type="button" class="text-link part-toggle" id="${id}-toggle" data-toggle="${entry.id}" aria-expanded="${!entry.collapsed}">${html(texts.part.change)} ${icon(entry.collapsed ? 'chevron_down' : 'chevron_up')}</button>
       </header>
+      <div class="check-row" data-check="${entry.id}">${icon(entry.model ? 'check' : 'file')}<div>${check(entry).lines.map((line) => `<p>${html(line)}</p>`).join('')}</div></div>
       ${entry.collapsed ? `<p class="part-summary" data-summary>${html(summary)}</p>` : `
       <fieldset class="part-methods"><legend>${html(texts.part.method)}</legend>
         ${quote.methods(entry).map((method) => `<label class="part-method${method === entry.method ? ' active' : ''}">
@@ -200,14 +205,18 @@ function start(root) {
     </article>`;
   }
 
-  // Шаг 3 (макет 18.49): блок на файл — размеры и количество, предел оборудования по способу, предупреждения.
-  function review(entry, warnings) {
+  // Проверка файла (бывший шаг 3, макет 18.49; правка 05.11, H-04 — в карточке шага 2): размеры и масштаб STL, предел
+  // оборудования по способу, «Geometrija nuskaityta.» или «Failą peržiūrės specialistas.», без оценки — «Kainą įvertins
+  // specialistas»; предупреждения — списком под карточками, переход не блокируют.
+  function check(entry) {
     const lines = [];
+    const warnings = [];
     const fdm = settings.max_dimension_mm;
     const [width, length] = settings.milling_max_mm;
     let measured = null;
     if (entry.model) {
       measured = quote.measure(entry);
+      lines.push(`${formatDimensions(measured.dimensionsMm)} · ${texts.scale}: ${entry.scale} (${entry.unit})`);
       if (measured.warnings.includes('open_mesh')) warnings.push(t('open_mesh', { name: entry.name }));
     }
     if (entry.method === 'printing') {
@@ -220,14 +229,12 @@ function start(root) {
       if (measured && quote.exceedsMilling(entry)) warnings.push(t('exceeds', { name: entry.name, mm: `${width} × ${length}` }));
     }
     lines.push(entry.model ? texts.geometry_read : texts.review.specialist_file);
-    return `<div class="check-row" data-review-file="${entry.id}">${icon(entry.model ? 'check' : 'file')}<div><h3>${html(entry.name)}</h3>
-      <p>${measured ? `${html(formatDimensions(measured.dimensionsMm))} · ` : ''}${html(texts.quantity)}: ${entry.quantity}</p>
-      ${lines.map((line) => `<p>${html(line)}</p>`).join('')}</div></div>`;
+    if (!quote.priced(entry)) lines.push(texts.price.specialist);
+    return { lines, warnings };
   }
 
   function render() {
     const active = quote.models[quote.active];
-    const result = quote.estimate();
 
     // Шаги
     root.querySelectorAll('[data-step]').forEach((button, i) => {
@@ -236,11 +243,11 @@ function start(root) {
       button.querySelector('b').textContent = i < step ? '✓' : i + 1;
     });
     root.querySelectorAll('[data-step-panel]').forEach((panel) => { panel.hidden = Number(panel.dataset.stepPanel) !== step; });
-    $('[data-actions]').hidden = step === 4;
+    $('[data-actions]').hidden = step === LAST_STEP;
     $('[data-actions] [data-back]').disabled = step === 0;
     const next = $('[data-next] span');
     next.dataset.label ??= next.textContent;
-    next.textContent = step === 3 ? $('[data-next]').dataset.labelLast : next.dataset.label;
+    next.textContent = step === LAST_STEP - 1 ? $('[data-next]').dataset.labelLast : next.dataset.label;
 
     // Шаг 1: файлы; STL — выбор модели для просмотра, остальные — строка со значком без просмотра.
     $('#upload-progress').innerHTML = quote.busy ? `<label class="field gap">${html(texts.reading)}<progress></progress></label>` : '';
@@ -272,25 +279,14 @@ function start(root) {
       if (focused) document.getElementById(focused)?.focus();
     }
 
-    // Шаг 3: по файлам; предупреждения не блокируют.
-    const warnings = [];
-    $('[data-review]').innerHTML = quote.ready.map((entry) => review(entry, warnings)).join('');
+    // Предупреждения проверки файлов — под карточками шага 2.
+    const warnings = quote.ready.flatMap((entry) => check(entry).warnings);
     $('[data-warnings]').hidden = !warnings.length;
     $('[data-warning-list]').innerHTML = warnings.map(html).join('<br>');
 
-    // Шаг 4 и панель: строки — центы ядра или «Kainą įvertins specialistas»; итог = сумма известных строк и сборов. На шаге 1
-    // сумм нет — прочерк.
-    const price = (cents) => (cents === null ? texts.price.specialist : money(cents));
-    $('[data-price-rows]').innerHTML = result ? result.lines.map((line) => `<tr><td>${html(line.entry.name)}<br><small>${html(label(line.entry))}</small></td>
-      <td>${line.entry.quantity}</td><td>${html(price(line.cents))}</td></tr>`).join('') : '';
-    const summary = quote.summary(step > 0);
-    $('[data-summary-rows]').innerHTML = summary.rows.map((row) => `<div class="summary-row"><span>${html(row.entry ? `${row.entry.name} × ${row.entry.quantity}` : texts[row.fee])}</span>${
-      row.cents === undefined ? '<b>—</b>' : `<b${row.cents === null ? ' data-specialist-price' : ` data-cents="${row.cents}"`}>${html(price(row.cents))}</b>`}</div>`).join('');
-    const total = $('[data-total]');
-    total.textContent = summary.totalCents === undefined ? '—' : money(summary.totalCents);
-    if (summary.totalCents === undefined) delete total.dataset.cents;
-    else total.dataset.cents = summary.totalCents;
-    $('[data-specialist-total]').hidden = !summary.specialist;
+    // Панель «Užsakymo suvestinė» (правка 05.11, H-04): «имя × количество», сумм нет.
+    $('[data-summary-rows]').innerHTML = quote.ready.map((entry) =>
+      `<div class="summary-row" data-summary-file="${entry.id}"><span>${html(`${entry.name} × ${entry.quantity}`)}</span></div>`).join('');
 
     const url = specialistUrl();
     root.querySelectorAll('[data-specialist]').forEach((link) => { link.href = url; });
@@ -336,7 +332,7 @@ function start(root) {
         if (!quote.busy) showErrors([texts.no_model]);
         return;
       }
-      goTo(Math.min(4, step + 1));
+      goTo(Math.min(LAST_STEP, step + 1));
     }
   });
 
@@ -379,7 +375,7 @@ function start(root) {
     } else if (entry && field.dataset.neededBy !== undefined) {
       entry.neededBy = field.value;
     } else if (entry && field.dataset.notes !== undefined) {
-      // Заметка в сумме и сводке не участвует: без перерисовки, иначе кнопка, нажатая сразу после ввода, была бы заменена
+      // Заметка в карточке и сводке не участвует: без перерисовки, иначе кнопка, нажатая сразу после ввода, была бы заменена
       // посреди щелчка.
       entry.notes = field.value;
       return;

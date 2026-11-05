@@ -99,16 +99,24 @@ class OrderSubmissionTest extends TestCase
         return $this->post($locale === 'lt' ? '/lt/kalkuliatorius' : '/en/quote', $payload, ['Accept' => 'application/json']);
     }
 
-    /** Отправка и страница подтверждения: номер и гостевая ссылка (если есть). */
+    /**
+     * Отправка и страница подтверждения: номер и гостевая ссылка (если есть); total — серверная оценка заказа (правка 05.11,
+     * H-04: на странице подтверждения сумм нет — проверяется здесь при каждой отправке).
+     */
     private function submitAndConfirm(array $payload, string $locale = 'en'): array
     {
         $redirect = $this->submit($payload, $locale)->assertCreated()->json('redirect');
-        $page = Html::xpath($this->get($redirect)->assertOk()->assertHeader('Cache-Control', 'no-store, private')->getContent());
+        $content = $this->get($redirect)->assertOk()->assertHeader('Cache-Control', 'no-store, private')->getContent();
+        $page = Html::xpath($content);
         $link = $page->query('//a[@data-guest-link]')->item(0);
+        $number = (int) $page->query('//*[@data-order-number]')->item(0)->getAttribute('data-order-number');
+        $main = Html::text($page->query('//main')->item(0));
+        $this->assertStringNotContainsString('€', $main);
+        $this->assertSame(0, $page->query('//*[@data-total] | //*[@data-cents] | //*[@data-part]')->length);
 
         return [
-            'number' => (int) $page->query('//*[@data-order-number]')->item(0)->getAttribute('data-order-number'),
-            'total' => (int) $page->query('//*[@data-total]')->item(0)->getAttribute('data-cents'),
+            'number' => $number,
+            'total' => Order::findOrFail(OrderMeta::where('number', $number)->value('order_id'))->total->value,
             'guest_url' => $link?->getAttribute('href'),
         ];
     }
@@ -249,7 +257,9 @@ class OrderSubmissionTest extends TestCase
         $this->assertStringStartsWith(config('app.url').'/en/order/1/', $confirmed['guest_url']);
 
         $page = $this->get($confirmed['guest_url'])->assertOk()->assertHeader('Cache-Control', 'no-store, private');
-        $page->assertSee('Order No. 1')->assertSee('bracket.stl')->assertSee('× 3')->assertSee('€5.49');
+        // Правка 05.11, H-04: до подтверждения цены суммы нет (была предварительная €5.49) — заметка о подтверждении цены.
+        $page->assertSee('Order No. 1')->assertSee('bracket.stl')->assertSee('× 3')->assertDontSee('€')
+            ->assertSee('We will confirm the final price and production time after reviewing your request.');
         $this->assertStringContainsString('noindex', $page->getContent());
         $token = basename($confirmed['guest_url']);
         $this->get('/lt/uzsakymas/1/'.$token)->assertOk()->assertSee('Užsakymas Nr. 1');

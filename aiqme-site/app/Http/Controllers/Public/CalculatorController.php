@@ -11,11 +11,12 @@ use App\Models\CustomerProfile;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 /**
- * Калькулятор (§1.2, W-27): 5 шагов в браузере на ядре W-10. Тарифы, заполнение по умолчанию и габарит — настройки
- * админки (CalculatorSettings, W-11), лимиты файлов — config('aiqme.calculator') (§6.4); всё передаётся в JS
- * data-атрибутами. Профиль вошедшего клиента подставляется в форму заявки (W-12). Ветка специалиста — ссылка на контактную форму по контракту предзаполнения §1.2: service — slug опубликованной услуги печати, message добавляет JS.
+ * Калькулятор (§1.2, W-27): шаги в браузере на ядре W-10 (правка 05.11, H-04: три шага, без цены). Названия материалов,
+ * заполнение по умолчанию, габарит и списки фрезеровки — настройки админки (CalculatorSettings, W-11), лимиты файлов —
+ * config('aiqme.calculator') (§6.4); всё передаётся в JS data-атрибутами, тарифы — нет. Профиль вошедшего клиента подставляется в форму заявки (W-12). Ветка специалиста — ссылка на контактную форму по контракту предзаполнения §1.2: service — slug опубликованной услуги печати, message добавляет JS.
  */
 class CalculatorController extends Controller
 {
@@ -29,10 +30,15 @@ class CalculatorController extends Controller
         $printing = $this->content->list(ContentType::Service, $locale)
             ->first(fn (ContentTranslation $service): bool => $service->item->key === 'printing');
 
+        $values = $this->settings->values();
+
         return view('public.calculator', [
             ...$this->seo('calculator', null, null, __('calculator.intro')),
+            // Правка 05.11, H-04: тарифы (цена за грамм, платы) и плотности материалов в браузер не уходят — только названия
+            // материалов и данные проверки файла; оценку считает сервер (EstimateService).
             'settings' => [
-                ...$this->settings->values(),
+                ...Arr::except($values, ['rate_per_gram', 'order_fee_cents', 'file_fee_cents']),
+                'materials' => array_keys($values['materials']),
                 'max_file_bytes' => config('aiqme.calculator.max_file_bytes'),
                 'max_files' => config('aiqme.calculator.max_files'),
             ],

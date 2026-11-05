@@ -60,9 +60,10 @@
                     @foreach ($parts as $line)
                         @php($part = $line->purchasable)
                         <div class="summary-row"><a class="text-link" href="{{ route('stl.download', $part->file->id) }}">{{ $part->file->original_name }}</a><b>× {{ $part->parameters['quantity'] }}</b></div>
-                        {{-- Правка 02.11, Г7: способ и параметры одной строкой; без оценки до подтверждения — «Kainą įvertins specialistas». --}}
+                        {{-- Правка 02.11, Г7: способ и параметры одной строкой. Правка 05.11, H-04: пометки «Kainą įvertins specialistas»
+                             нет — до подтверждения цены покупатель не видит ни одной суммы. --}}
                         @isset($part->parameters['method'])
-                            <p data-part-label><small>{{ $part->label($locale) }}@if ($part->estimate === null && ! $state->confirmed_at) · {{ __('calculator.price.specialist') }}@endif</small></p>
+                            <p data-part-label><small>{{ $part->label($locale) }}</small></p>
                         @endisset
                     @endforeach
                 </div>
@@ -73,8 +74,8 @@
                         <div class="summary-row"><span>{{ __('admin.orders.paid') }}</span><b data-paid>{{ $money($balance['paid']) }}</b></div>
                         <div class="summary-row"><span>{{ __('admin.orders.due') }}</span><b data-due>{{ $money($balance['due']) }}</b></div>
                     @else
-                        <div class="summary-row"><span>{{ __('calculator.summary.total') }}</span><b data-total>{{ $money($balance['total']) }}</b></div>
-                        <p class="legal-note">{{ __('calculator.summary.note') }}</p>
+                        {{-- Правка 05.11, H-04: до подтверждения цены суммы нет — заметка панели калькулятора. --}}
+                        <p class="legal-note" data-price-pending>{{ __('calculator.summary.note') }}</p>
                     @endif
                     <p><span class="tag">{{ __('admin.orders.payment_states.'.$balance['payment_state']) }}</span></p>
                     @if ($requests->isNotEmpty())

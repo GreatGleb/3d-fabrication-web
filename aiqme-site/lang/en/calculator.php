@@ -5,16 +5,16 @@
 // (D-21, D-38); neutral replacements for missing texts are listed in aiqme-site/docs/progress.md (W-27).
 return [
     'eyebrow' => 'AIQME / MANUFACTURING ORDER',
-    'intro' => 'Upload a file, choose production settings and review a preliminary price.',
-    'steps' => ['Files', 'Production', 'Review', 'Price', 'Checkout'],
+    // Edit 05.11, H-04: intro and three steps (plan README).
+    'intro' => 'Upload files, choose the manufacturing parameters and get a quote.',
+    'steps' => ['Files', 'Manufacturing parameters', 'Submit request'],
     'back' => 'Back',
     'next' => 'Continue',
     'to_checkout' => 'Proceed to checkout',
     'files' => [
-        'title' => '01. Upload your models',
         'intro' => 'STL, STEP, OBJ, DXF, DWG. You can select several files.',
         'drop' => 'Drop files here or select files',
-        'select' => 'Select 3D models',
+        'select' => 'Choose files',
         'limit' => 'Up to :mb MB per file.',
         'units' => 'File measurement units',
         'inches' => 'inches',
@@ -31,7 +31,7 @@ return [
     ],
     'scale_modal' => [
         'title' => 'Confirm the new size',
-        'note' => 'This changes the physical size and price.',
+        'note' => 'This changes the physical size.',
         'confirm' => 'Confirm & recalculate',
     ],
     'settings' => [
@@ -72,18 +72,14 @@ return [
         'notes_placeholder' => 'E.g. additional requirements, remarks or other important instructions…',
     ],
     'review' => [
-        'title' => '03. Model review',
         'build' => 'Build size limits',
         'build_text' => 'FDM: :mm × :mm × :mm mm.',
         'cnc' => 'Milling and engraving dimensions: :w × :h mm.',
         'specialist_file' => 'A specialist will review the file.',
         'specialist' => 'Get specialist help',
     ],
+    // Edit 05.11, H-04: no price step; shown to the buyer only in the step 2 card, to the administrator in the order card.
     'price' => [
-        'title' => '04. Part pricing',
-        'part' => 'Part',
-        'estimate' => 'Estimate',
-        'note' => 'The price recalculates with scale, material, quantity and settings.',
         'specialist' => 'Price to be assessed by a specialist',
     ],
     'checkout' => [
@@ -104,10 +100,8 @@ return [
         'submit' => 'Submit order',
     ],
     'summary' => [
-        'eyebrow' => 'PRELIMINARY ESTIMATE',
         'title' => 'Order summary',
-        'total' => 'Estimated total',
-        'note' => 'The administrator will confirm the final price and delivery date after reviewing the order.',
+        'note' => 'We will confirm the final price and production time after reviewing your request.',
         'specialist' => '+ parts assessed by a specialist',
     ],
     // Order submission (W-12): neutral texts (no prototype equivalent), listed in aiqme-site/docs/progress.md.
@@ -118,7 +112,7 @@ return [
     ],
     'order' => [
         'submitted_title' => 'Order submitted',
-        'submitted_text' => 'AIQME has received your order No. :number. The administrator will review the files and confirm the price.',
+        'submitted_text' => 'Your request has been received. We will contact you shortly.',
         'guest_link' => 'Your order link. Save it: it is shown only once.',
         'account_text' => 'The order is saved in your account.',
         'title' => 'Order No. :number',

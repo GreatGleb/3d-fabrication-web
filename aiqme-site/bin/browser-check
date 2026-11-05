@@ -104,6 +104,7 @@ W-33: медиа прототипа по умолчанию (D-43) на данн
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
 и отрисованы; ответы 4xx на ресурсы ловит общая проверка страницы.
 
+Правка 05.11, H-04: check_calculator — три шага без цены (подробно — в его docstring); описание W-27/Г8/W-12 ниже — прежнее.
 W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 — check_calculator (CALCULATOR_PAGES): 5 шагов на кубе 10 мм
 из tests/fixtures/stl/ (PLA, 100 %, qty 1 → итог 5,12 = сумма строк сводки) при отключённом canvas, ошибки OBJ/STEP, формата,
 размера (25 МиБ + 1 байт) и разбора, масштаб с окном подтверждения, шаг 2 по макету заказчика (правка 28.10, E-05:
@@ -196,7 +197,7 @@ ADMIN_PAGES = ['/lt/administravimas', '/en/admin'] + [f'/{prefix}/{tab}' for pre
 MAILPIT = 'http://127.0.0.1:58025'
 # Формы W-09: контактная форма и модалка обучения (обучение cad-basics фабрики tests/browser/) — страница => ширина окна.
 FORM_PAGES = {'/en/contact': 1440, '/en/training': 1440, '/en/services/3d-modelling-training': 390}
-# Калькулятор W-27: 5 шагов, ошибки и лимиты на 390 и 1440 (check_calculator); просмотр W-31 (check_viewer).
+# Калькулятор W-27: 3 шага (правка 05.11, H-04), ошибки и лимиты на 390 и 1440 (check_calculator); просмотр W-31 (check_viewer).
 CALCULATOR_PAGES = ['/lt/kalkuliatorius', '/en/quote']
 # Места медиа по умолчанию D-43 (W-33): страница => селекторы (все совпадения берут файл из /defaults/).
 DEFAULT_MEDIA = {
@@ -1177,6 +1178,14 @@ D21_REPLACEMENTS = [
     ('If review reveals an issue, we explain it and present the options.', 'We carry out every order according to the agreed requirements.', '^/en/about$'),
     # Правка 05.11, H-03: подпись поля телефона без «(neprivaloma)» / «(optional)» (поле обязательно).
     ('Telefonas (neprivaloma)', 'Telefonas', '^/lt/kontaktai$'), ('Phone (optional)', 'Phone', '^/en/contact$'),
+    # Правка 05.11, H-04: калькулятор — заголовок, три шага, без заголовка «01. …» шага 1. Калькулятора нет в prototype-blocks.json
+    # (сверка текста его не обходит; поведение — check_calculator), записи — для полноты соответствия эталону.
+    ('Jūsų modelis. Mūsų kitas žingsnis.', 'Jūsų failai. Mūsų kitas žingsnis.', '^/lt/kalkuliatorius$'),
+    ('Your model. Our next step.', 'Your files. Our next step.', '^/en/quote$'),
+    ('01. Įkelkite savo modelius', '', '^/lt/kalkuliatorius$'), ('01. Upload your models', '', '^/en/quote$'),
+    ('Patikra', '', '^/lt/kalkuliatorius$'), ('Kaina', '', '^/lt/kalkuliatorius$'), ('Užsakymas', 'Užklausos pateikimas', '^/lt/kalkuliatorius$'),
+    ('Review', '', '^/en/quote$'), ('Price', '', '^/en/quote$'), ('Checkout', 'Submit request', '^/en/quote$'),
+    ('Production', 'Manufacturing parameters', '^/en/quote$'), ('Gamyba', 'Gamybos parametrai', '^/lt/kalkuliatorius$'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),
@@ -1711,7 +1720,7 @@ def check_admin_editors_w26(report, new_page, state):
 def check_calculator_settings(report, new_page, state):
     """Вкладка настроек калькулятора (W-11) в браузере: форма на 390 и 1440 без расползания и ошибок консоли/CSP; на 1440
     у габарита нет пометки «Not confirmed» (П7: 1000 мм подтверждён), сохранение 300 и затем 1000 через Livewire видно
-    в data-settings /en/quote и в тексте шага 3; в конце габарит — 1000. Правка 02.11, Г7: списки фрезеровки видны, предел
+    в data-settings /en/quote и в проверке файла шага 2 (правка 05.11, H-04); в конце габарит — 1000. Правка 02.11, Г7: списки фрезеровки видны, предел
     1500 и затем 2000 мм доходит до data-settings."""
     for width, height in ((390, 844), (1440, 1000)):
         where = f'/en/admin/calculator @{width}'
@@ -1733,14 +1742,13 @@ def check_calculator_settings(report, new_page, state):
                 public.goto(BASE + '/en/quote', wait_until='networkidle')
                 shown = json.loads(public.get_attribute('#quote', 'data-settings'))['max_dimension_mm']
                 report.check(shown == int(value), f'{where}: на /en/quote габарит {shown}, сохранено {value}')
-                # Правка 02.11, Г8: строку FDM шаг 3 выводит у каждого STL — куб доводится до шага 3.
+                # Правка 02.11, Г8: строку FDM выводит проверка у каждого STL; правка 05.11, H-04 — в карточке шага 2.
                 public.locator('#model-upload').set_input_files(str(STL_FIXTURES / 'cube-10mm-binary.stl'))
                 public.wait_for_selector('[data-model]:not([hidden])')
-                for _ in range(2):
-                    public.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
-                    public.click('[data-next]')
+                public.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+                public.click('[data-next]')
                 text = f'FDM: {value} × {value} × {value} mm.'
-                report.check(text in public.locator('[data-step-panel="2"]').text_content(), f'{where}: на /en/quote нет «{text}»')
+                report.check(text in public.locator('[data-step-panel="1"] [data-check]').first.text_content(), f'{where}: на /en/quote нет «{text}»')
                 public.close()
             report.check('Not confirmed' not in page.locator('#field-maxDimension').locator('xpath=..').inner_text(),
                          f'{where}: у габарита пометка после сохранения')
@@ -1824,8 +1832,9 @@ def check_admin_order(report, new_page, state, allowlist):
 
 
 def quote_from_saved_model(report, page, where, en):
-    """Калькулятор, открытый из кабинета с ?models=: модель скачана защищённой выдачей и разобрана; PLA, 100 %, qty 1 →
-    на шаге 4 итог 5,12 (D-09)."""
+    """Калькулятор, открытый из кабинета с ?models=: модель скачана защищённой выдачей и разобрана; PLA, 100 %, qty 1.
+    Правка 05.11, H-04 (прежде — итог 5,12 на шаге 4): на шаге 2 в карточке — размеры куба 10 мм, в панели «имя × 1» без сумм;
+    затем шаг 3 — форма заявки."""
     try:
         page.wait_for_selector('[data-model]:not([hidden])', timeout=15000)
     except Exception:
@@ -1834,24 +1843,27 @@ def quote_from_saved_model(report, page, where, en):
     row = page.locator('[data-files] .file-row').all_inner_texts()
     report.check(len(row) == 1 and 'cube-10mm-binary.stl' in row[0], f'{where}: строки файлов {row}')
     report.check(page.locator('#quote-error .notice').count() == 0, f'{where}: ошибка «{page.locator("#quote-error").inner_text()}»')
-    for step in range(3):
-        page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
-        page.click('[data-next]')
-        if step == 0:
-            print_settings(page, 'PLA', '100')  # правка 02.11, Г8: параметры — в карточке файла
-            report.check(page.locator('[data-quantity]').input_value() == '1', f'{where}: количество не 1')
-    total = page.locator('[data-total]').inner_text().replace('\xa0', ' ')
-    expected = '€5.12' if en else '5,12 €'
-    report.check(total == expected, f'{where}: итог шага 4 «{total}» вместо «{expected}»')
+    page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+    page.click('[data-next]')
+    print_settings(page, 'PLA', '100')  # правка 02.11, Г8: параметры — в карточке файла
+    report.check(page.locator('[data-quantity]').input_value() == '1', f'{where}: количество не 1')
+    checked = page.locator('[data-check]').first.inner_text() if page.locator('[data-check]').count() else ''
+    ok = '10.0 × 10.0 × 10.0 mm' in checked
+    report.check(ok, f'{where}: проверка файла в карточке «{checked}»')
+    summary = page.locator('.quote-summary').inner_text()
+    report.check('cube-10mm-binary.stl × 1' in summary and '€' not in summary, f'{where}: панель «{summary}»')
+    page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
+    page.click('[data-next]')
+    ok = report.check(page.locator('#checkout-form').is_visible(), f'{where}: форма заявки не открылась') and ok
     scroll, client = document_fits(page)
-    report.check(scroll <= client, f'{where}: шаг 4 шире окна ({scroll} > {client})')
-    return total == expected
+    report.check(scroll <= client, f'{where}: шаг 3 шире окна ({scroll} > {client})')
+    return ok
 
 
 def check_customer_orders(report, new_page, state, guest_url, allowlist):
     """W-15 на фабричных заказах (tests/browser/OrderFactory): карточка заказа клиента (стадия, аванс, сообщение и ответ),
-    «пересчитать» в Saved models (390, LT) и повторный заказ из карточки (1440, EN) — модель загружена в калькулятор, итог
-    5,12, отправка создаёт новый заказ с новой моделью; гостевая страница по ссылке — карточка и скачивание STL по праву
+    «пересчитать» в Saved models (390, LT) и повторный заказ из карточки (1440, EN) — модель загружена в калькулятор (правка 05.11,
+    H-04: размеры в карточке шага 2, без итога), отправка создаёт новый заказ с новой моделью; гостевая страница по ссылке — карточка и скачивание STL по праву
     в сессии, чистый браузер без ссылки — 404 на STL; кнопка оплаты гостевой страницы — страница оплаты W-16 (чистый
     браузер — 404). Ширина, маркеры D-21, консоль на 390 и 1440."""
     def fits(page, where, path):
@@ -1901,7 +1913,7 @@ def check_customer_orders(report, new_page, state, guest_url, allowlist):
         report.check(False, f'{where}: {problem}')
     context.close()
 
-    # Повторный заказ из карточки (1440, EN): итог 5,12 и отправка — новый заказ и новая модель в кабинете.
+    # Повторный заказ из карточки (1440, EN): модель в карточке шага 2 (правка 05.11, H-04 — без итога) и отправка — новый заказ и новая модель в кабинете.
     where = '/en/account повторный заказ @1440'
     context, page, problems = new_page(1440, 1000, storage_state=state)
     page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
@@ -1912,15 +1924,16 @@ def check_customer_orders(report, new_page, state, guest_url, allowlist):
     with page.expect_navigation(wait_until='networkidle'):
         page.click('[data-reorder]')
     if quote_from_saved_model(report, page, where, en=True):
-        page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
-        page.click('[data-next]')
         page.select_option('select[name=delivery]', 'pickup')
         page.fill('#checkout-form [name=phone]', '+370 600 00003')
         page.locator('#checkout-form button[type=submit]').evaluate('(node) => node.scrollIntoView({block: "center"})')
         page.click('#checkout-form button[type=submit]')
         page.wait_for_url('**/quote/submitted', timeout=30000)
         page.wait_for_load_state('networkidle')
-        report.check(int(page.locator('[data-total]').get_attribute('data-cents') or -1) == 512, f'{where}: сумма новой заявки не 5,12')
+        # Правка 05.11, H-04: после отправки — «Your request has been received…», номер, сумм нет (прежде — сумма 5,12).
+        main = page.locator('main').inner_text()
+        report.check('Your request has been received. We will contact you shortly.' in main and '€' not in main
+                     and page.locator('[data-total]').count() == 0, f'{where}: страница после отправки «{main[:300]}»')
         page.goto(BASE + '/en/account', wait_until='networkidle')
         after = {name: page.inner_text(f'[data-count={name}]') for name in ('orders', 'models')}
         report.check(all(int(after[name]) == int(counts[name]) + 1 for name in counts), f'{where}: счётчики до {counts}, после {after}')
@@ -2251,15 +2264,17 @@ def print_settings(page, material, infill):
 
 
 def check_calculator(report, new_page, path, width, allowlist, files):
-    """Калькулятор W-27 по макету 17.09 (правка 02.11, Г8): ошибки формата и лимитов; куб 10 мм + DXF + DWG (синтетические
-    фикстуры tests/fixtures/cad/): строка не-STL со значком без просмотра, масштаб куба с подтверждением, на шаге 1 в панели
-    сумм нет (прочерк); шаг 2 — карточка на каждый файл (все развёрнуты, способы по формату, «Reikia konsultacijos» = 20 %,
-    пожелания и заметка итог не меняют, −/+ количества, у DXF и DWG разные способы и параметры, «Skubu» и дата не раньше
-    завтра, сворачивание — строка-сводка); шаг 3 — блок на файл (FDM у STL, предел фрезеровки и «Failą peržiūrės
-    specialistas.» у DXF/DWG); шаг 4 и панель — 0,12 у куба, «Kainą įvertins specialistas» у DXF/DWG, итог 5,12 и пометка
-    «+ specialisto…», без VAT/доставки/скидки; заявка 201 в формате позиций → подтверждение; кадры
-    shots/calculator-step1..4-<ширина>.png; ссылка специалиста. Затем открытый тетраэдр и поздний результат крупного файла.
-    canvas отключён: расчёт не зависит от просмотра (W-31)."""
+    """Калькулятор W-27 по макету 17.09 (правка 02.11, Г8), три шага без цены (правка 05.11, H-04): шаги «Failai» /
+    «Gamybos parametrai» / «Užklausos pateikimas»; ошибки формата и лимитов; куб 10 мм + DXF + DWG (синтетические фикстуры
+    tests/fixtures/cad/): строка не-STL со значком без просмотра, масштаб куба с подтверждением (окно без обещания цены);
+    панель — «имя × количество» и заметка README, ни на одном шаге нет сумм, итога, «PRELIMINARI SĄMATA»; шаг 2 — карточка на
+    каждый файл (все развёрнуты, способы по формату, проверка файла: размеры, масштаб, FDM у STL, предел фрезеровки,
+    «Failą peržiūrės specialistas.» и «Kainą įvertins specialistas» у DXF/DWG; −/+ количества меняют строку панели, у DXF
+    и DWG разные способы и параметры, «Skubu» и дата не раньше завтра, сворачивание — строка-сводка); шаг 3 — форма с полем
+    VAT-кода; заявка 201 в формате позиций → страница «Jūsų užklausa gauta…» с номером и гостевой ссылкой, без сумм;
+    гостевая страница без сумм; кадры shots/calculator-step1..3-<ширина>.png и calculator-submitted-<ширина>.png; ссылка
+    специалиста. Затем открытый тетраэдр (предупреждение на шаге 2) и поздний результат крупного файла.
+    canvas отключён: проверка не зависит от просмотра (W-31)."""
     en = path.startswith('/en')
     where = f'{path} @{width} калькулятор'
     context, page, problems = new_page(width, 1000)
@@ -2294,9 +2309,24 @@ def check_calculator(report, new_page, path, width, allowlist, files):
         page.locator(f'[data-step-panel="{step - 1}"]').screenshot(path=str(OUT / 'shots' / f'calculator-step{step}-{width}.png'))
         page.evaluate("document.querySelector('header.header').style.visibility = ''")
 
-    cents = lambda: int(page.locator('[data-total]').get_attribute('data-cents') or -1)
-    summary_values = lambda: page.locator('[data-summary-rows] .summary-row b').all_inner_texts()
+    # Правка 05.11, H-04: сумм нигде нет — ни в панели, ни в шагах; панель — «имя × количество» без значений.
+    summary_rows = lambda: page.locator('[data-summary-rows] .summary-row').all_inner_texts()
+
+    def no_sums(step):
+        aside = page.locator('.quote-summary').inner_text()
+        shown = panel().inner_text() + '\n' + aside
+        report.check(page.locator('[data-total], [data-cents], [data-price-rows], .quote-summary .summary-row b').count() == 0
+                     and '€' not in shown and 'EUR' not in shown, f'{where}: шаг {step}: суммы «{aside}»')
+        for phrase in ('PRELIMINAR', 'Sąmata', 'Estimate', 'Iš viso', 'Total'):
+            report.check(phrase.lower() not in shown.lower(), f'{where}: шаг {step}: «{phrase}»')
+        note = page.locator('.quote-summary .summary-note').inner_text()
+        report.check(note == ('We will confirm the final price and production time after reviewing your request.' if en
+                              else 'Galutinę kainą ir gamybos terminą patvirtinsime peržiūrėję jūsų užklausą.'), f'{where}: шаг {step}: заметка «{note}»')
+
     specialist = 'Price to be assessed by a specialist' if en else 'Kainą įvertins specialistas'
+    steps = page.locator('.steps .step').all_inner_texts()
+    report.check([' '.join(text.split()) for text in steps] == (['1 Files', '2 Manufacturing parameters', '3 Submit request'] if en
+                 else ['1 Failai', '2 Gamybos parametrai', '3 Užklausos pateikimas']), f'{where}: шаги {steps}')
 
     click('[data-next]')
     report.check(error.inner_text().strip() == ('Upload a model.' if en else 'Įkelkite modelį.'), f'{where}: без файла — «{error.inner_text()}»')
@@ -2341,6 +2371,7 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     report.check(modal.is_visible(), f'{where}: окно подтверждения масштаба не открылось')
     modal_text = modal.inner_text()
     report.check('10.0 × 10.0 × 10.0 mm' in modal_text and '20.0 × 20.0 × 20.0 mm' in modal_text, f'{where}: окно масштаба «{modal_text}»')
+    report.check(('price' if en else 'kain') not in modal_text.lower(), f'{where}: окно масштаба обещает цену «{modal_text}»')
     click('[data-scale-confirm]')
     report.check(modal.is_hidden() and dims.inner_text() == '20.0 × 20.0 × 20.0 mm', f'{where}: масштаб не применён «{dims.inner_text()}»')
     page.select_option('#model-unit', 'mm')
@@ -2349,12 +2380,9 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     click('[data-scale-confirm]')
     report.check(dims.inner_text() == '10.0 × 10.0 × 10.0 mm', f'{where}: масштаб 100 % не вернулся')
 
-    # Шаг 1 без сумм (правка 02.11, Г8): «имя × количество», плата за заказ и итог — прочерк, data-cents у итога нет.
-    labels = page.locator('[data-summary-rows] .summary-row span').all_inner_texts()
-    report.check(labels == ['cube-10mm-binary.stl × 1', 'plate.dxf × 1', 'plate.dwg × 1', 'Order fee' if en else 'Užsakymo mokestis'], f'{where}: строки панели шага 1 {labels}')
-    report.check(summary_values() == ['—'] * 4 and page.locator('[data-total]').inner_text() == '—'
-                 and page.locator('[data-total]').get_attribute('data-cents') is None, f'{where}: на шаге 1 суммы {summary_values()}')
-    report.check(page.locator('[data-specialist-total]').is_hidden(), f'{where}: на шаге 1 пометка специалиста')
+    # Шаг 1: панель — «имя × количество» без сумм (правка 05.11, H-04).
+    report.check(summary_rows() == ['cube-10mm-binary.stl × 1', 'plate.dxf × 1', 'plate.dwg × 1'], f'{where}: строки панели шага 1 {summary_rows()}')
+    no_sums(1)
     page.locator('[data-cookie-accept]').click()
     shot(1)
     fits(1)
@@ -2368,37 +2396,44 @@ def check_calculator(report, new_page, path, width, allowlist, files):
         report.check(not re.search(rf'\b{technology}\b', panel().inner_text()), f'{where}: на шаге 2 есть «{technology}»')
     report.check(page.locator('[data-step-panel="1"] [name=material], [data-step-panel="1"] [name=term], [data-step-panel="1"] [name=notes]').count() == 0,
                  f'{where}: на шаге 2 общие поля')
+    report.check(page.locator('#simulate-risk, [data-step-panel="1"] input[type=checkbox]').count() == 0, f'{where}: на шаге 2 есть флажок')
+    report.check(page.locator('[data-warnings]').is_hidden(), f'{where}: есть предупреждения')
     methods = [cards.nth(i).locator('[data-method]').evaluate_all('(nodes) => nodes.map((n) => n.value + (n.checked ? "*" : ""))') for i in range(3)]
     report.check(methods == [['printing*', 'milling', 'engraving'], ['milling*', 'engraving'], ['milling*', 'engraving']], f'{where}: способы карточек {methods}')
     icons = [(cards.nth(i).locator('.part-head img').first.get_attribute('src') or '').rsplit('/', 1)[-1] for i in range(3)]
     report.check(icons == ['order_cube.svg', 'file.svg', 'file.svg'], f'{where}: значки карточек {icons}')
     head = cards.nth(1).locator('.part-name').inner_text()
     report.check('plate.dxf' in head and 'DXF •' in head, f'{where}: заголовок карточки DXF «{head}»')
+    # Проверка файла в карточке (бывший шаг 3; правка 05.11, H-04): у куба — размеры, масштаб, FDM, «геометрия прочитана», без
+    # «оценит специалист»; у DXF/DWG — предел фрезеровки и гравировки, «Failą peržiūrės specialistas.» и «Kainą įvertins specialistas».
+    checks = [cards.nth(i).locator('[data-check]').inner_text() for i in range(3)]
+    scale = 'Scale, %: 100 (mm)' if en else 'Mastelis, %: 100 (mm)'
+    report.check('10.0 × 10.0 × 10.0 mm' in checks[0] and scale in checks[0] and 'FDM: 1000 × 1000 × 1000 mm.' in checks[0]
+                 and ('Geometry read.' if en else 'Geometrija nuskaityta.') in checks[0] and specialist not in checks[0], f'{where}: проверка куба «{checks[0]}»')
+    cnc = 'Milling and engraving dimensions: 2000 × 4000 mm.' if en else 'Frezavimo ir graviravimo matmenys 2000 × 4000 mm.'
+    review = 'A specialist will review the file.' if en else 'Failą peržiūrės specialistas.'
+    for name, block in (('plate.dxf', checks[1]), ('plate.dwg', checks[2])):
+        report.check(cnc in block and review in block and specialist in block and 'FDM' not in block, f'{where}: проверка {name} «{block}»')
     cube = cards.nth(0)
     # Правка 30.10 (Г3, F-03): подпись «… (neprivaloma)», по умолчанию выбран none — «Nepasirinkta» / «Not selected».
     service_label = cube.locator('label:has(select[data-option=service])').evaluate('(label) => label.firstChild.textContent.trim()')
     report.check(service_label == ('Additional services (optional)' if en else 'Papildomos paslaugos (neprivaloma)'), f'{where}: подпись услуг «{service_label}»')
     service_default = cube.locator('select[data-option=service]').evaluate('(select) => [select.value, select.selectedOptions[0].textContent.trim()]')
     report.check(service_default == ['none', 'Not selected' if en else 'Nepasirinkta'], f'{where}: услуга по умолчанию {service_default}')
-    report.check(summary_values()[1:3] == [specialist] * 2 and page.locator('[data-specialist-total]').is_visible(), f'{where}: панель шага 2 {summary_values()}')
-    # Сумму меняют только материал и заполнение куба: «Reikia konsultacijos» = 20 %, пожелания итог не меняют.
+    # Материал, заполнение и пожелания куба; сумм нет ни при каком выборе.
     cube.locator('select[data-option=material]').select_option('PLA')
-    cube.locator('select[data-option=infill]').select_option('20')
-    at20 = cents()
     cube.locator('select[data-option=infill]').select_option('consult')
-    report.check(cents() == at20 > 0, f'{where}: итог при консультации {cents()} ≠ итогу при 20 % {at20}')
     for name, value in (('purpose', 'practical'), ('service', 'inserts'), ('surface', 'high')):
         cube.locator(f'select[data-option={name}]').select_option(value)
-        report.check(cents() == at20, f'{where}: {name}={value} изменил итог ({cents()} ≠ {at20})')
     cube.locator('select[data-option=infill]').select_option('100')
-    report.check(cents() == 512, f'{where}: итог при 100 % {cents()}, а не 512')
-    # Количество −/+ (1–100): + — 2 шт. (2,48 г → 0,25), − возвращает; ниже 1 не опускается.
+    no_sums(2)
+    # Количество −/+ (1–100): + — 2 шт. и строка панели «× 2», − возвращает; ниже 1 не опускается.
     quantity = cube.locator('[data-quantity]')
     click_in(cube.locator('[data-step-quantity="1"]'))
-    report.check(quantity.input_value() == '2' and cents() == 525, f'{where}: + количество {quantity.input_value()}, итог {cents()}')
+    report.check(quantity.input_value() == '2' and summary_rows()[0] == 'cube-10mm-binary.stl × 2', f'{where}: + количество {quantity.input_value()}, панель {summary_rows()}')
     click_in(cube.locator('[data-step-quantity="-1"]'))
     click_in(cube.locator('[data-step-quantity="-1"]'))
-    report.check(quantity.input_value() == '1' and cents() == 512, f'{where}: − количество {quantity.input_value()}, итог {cents()}')
+    report.check(quantity.input_value() == '1' and summary_rows()[0] == 'cube-10mm-binary.stl × 1', f'{where}: − количество {quantity.input_value()}, панель {summary_rows()}')
 
     # Разные параметры у двух файлов: DXF — фрезеровка, сталь, 6 мм; DWG — гравировка, глубина 0,2 мм.
     plate, sign = cards.nth(1), cards.nth(2)
@@ -2425,11 +2460,11 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     plate_notes = 'Kraštai be šerpetų.\nDvi skylės.'
     plate.locator('textarea[data-notes]').fill(plate_notes)
     plate.locator('textarea[data-notes]').dispatch_event('change')
-    report.check(cents() == 512, f'{where}: параметры DXF/DWG изменили итог ({cents()})')
-    # Сворачивание: строка-сводка выбранных параметров вместо полей; повторное нажатие возвращает поля с прежними значениями.
+    # Сворачивание: строка-сводка выбранных параметров вместо полей; проверка файла остаётся; повторное нажатие возвращает поля.
     click_in(sign.locator('[data-toggle]'))
     summary = sign.locator('[data-summary]')
     report.check(sign.get_attribute('class').split().count('collapsed') == 1 and sign.locator('select').count() == 0, f'{where}: карточка DWG не свернулась')
+    report.check(sign.locator('[data-check]').count() == 1, f'{where}: у свёрнутой карточки нет проверки файла')
     depth = '0.2 mm' if en else '0,2 mm'
     report.check(summary.count() == 1 and ('Engraving' if en else 'Graviravimas') in summary.inner_text() and depth in summary.inner_text(),
                  f'{where}: сводка свёрнутой карточки «{summary.inner_text() if summary.count() else ""}»')
@@ -2439,69 +2474,27 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     report.check(sign.locator('[data-toggle]').get_attribute('aria-expanded') == 'false', f'{where}: aria-expanded свёрнутой карточки')
     hint = 'A separate production deadline can be chosen for each part.' if en else 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.'
     report.check(hint in panel().inner_text(), f'{where}: нет подсказки под карточками')
+    label = next_button.inner_text().strip()
+    report.check(label == ('Proceed to checkout' if en else 'Pereiti prie užsakymo'), f'{where}: кнопка шага 2 «{label}»')
+    no_sums(2)
     shot(2)
     fits(2)
 
-    # Шаг 3 — блок на файл: FDM у STL, предел фрезеровки и гравировки у DXF/DWG, «Failą peržiūrės specialistas.».
+    # Шаг 3 — форма заявки: поле VAT-кода есть, кнопок шагов нет; адрес скрыт при самовывозе; сумм нет.
     click('[data-next]')
-    report.check(page.locator('#simulate-risk, [data-step-panel="2"] input[type=checkbox]').count() == 0, f'{where}: на шаге 3 есть флажок')
-    report.check(page.locator('[data-warnings]').is_hidden(), f'{where}: есть предупреждения')
-    blocks = page.locator('[data-review-file]').all_inner_texts()
-    report.check(len(blocks) == 3, f'{where}: блоков шага 3 {len(blocks)}')
-    if len(blocks) == 3:
-        report.check('cube-10mm-binary.stl' in blocks[0] and '10.0 × 10.0 × 10.0 mm' in blocks[0] and 'FDM: 1000 × 1000 × 1000 mm.' in blocks[0],
-                     f'{where}: блок куба «{blocks[0]}»')
-        cnc = 'Milling and engraving dimensions: 2000 × 4000 mm.' if en else 'Frezavimo ir graviravimo matmenys 2000 × 4000 mm.'
-        review = 'A specialist will review the file.' if en else 'Failą peržiūrės specialistas.'
-        for name, block in (('plate.dxf', blocks[1]), ('plate.dwg', blocks[2])):
-            report.check(name in block and cnc in block and review in block and 'FDM' not in block and ('Quantity: 1' if en else 'Kiekis: 1') in block,
-                         f'{where}: блок {name} «{block}»')
-    label = next_button.inner_text().strip()
-    report.check(label == ('Continue' if en else 'Tęsti'), f'{where}: кнопка шага 3 «{label}»')
-    shot(3)
-    fits(3)
-
-    # Шаг 4: столбцы, куб 0,12, DXF/DWG — «оценит специалист», итог 5,12 = сумма строк с суммой, без VAT/доставки/скидки.
-    click('[data-next]')
-    headers = page.locator('[data-step-panel="3"] th').all_inner_texts()
-    report.check(headers == (['Part', 'Quantity', 'Estimate'] if en else ['Detalė', 'Kiekis', 'Sąmata']), f'{where}: столбцы {headers}')
-    table = [row.locator('td').all_inner_texts() for row in page.locator('[data-price-rows] tr').all()]
-    line = '€0.12' if en else '0,12 €'
-    expected_rows = [
-        ['cube-10mm-binary.stl\n' + ('3D printing / PLA' if en else '3D spausdinimas / PLA'), '1', line],
-        ['plate.dxf\n' + ('Milling / Steel, 6 mm' if en else 'Frezavimas / Plienas, 6 mm'), '1', specialist],
-        ['plate.dwg\n' + ('Engraving / Aluminium, 0.2 mm' if en else 'Graviravimas / Aliuminis, 0,2 mm'), '1', specialist],
-    ]
-    report.check([[cell.replace('\xa0', ' ') for cell in row] for row in table] == [[cell.replace('\xa0', ' ') for cell in row] for row in expected_rows], f'{where}: строки шага 4 {table}')
-    total = page.locator('[data-total]')
-    expected_total = '€5.12' if en else '5,12 €'
-    report.check(total.inner_text().replace('\xa0', ' ') == expected_total, f'{where}: итог «{total.inner_text()}» вместо «{expected_total}»')
-    rows = [int(c) for c in page.locator('[data-summary-rows] [data-cents]').evaluate_all('(nodes) => nodes.map((n) => n.dataset.cents)')]
-    report.check(sum(rows) == int(total.get_attribute('data-cents')) == 512, f'{where}: строки сводки {rows} ≠ итог')
-    report.check(summary_values()[1:3] == [specialist] * 2, f'{where}: панель шага 4 {summary_values()}')
-    note = page.locator('[data-specialist-total]')
-    report.check(note.is_visible() and note.inner_text() == ('+ parts assessed by a specialist' if en else '+ specialisto vertinamos detalės'), f'{where}: нет пометки под итогом')
-    label = next_button.inner_text().strip()
-    report.check(label == ('Proceed to checkout' if en else 'Pereiti prie užsakymo'), f'{where}: кнопка шага 4 «{label}»')
-    shown = (page.locator('[data-step-panel="3"]').inner_text() + '\n' + page.locator('.quote-summary').inner_text()).lower()
-    for phrase in ('vat', 'pvm', 'delivery (', 'pristatymas (', 'shipping', 'discount', 'nuolaida', 'unit', 'vnt.'):
-        report.check(phrase not in shown, f'{where}: в шаге 4 или сводке есть «{phrase}»')
-    shot(4)
-    fits(4)
-
-    # Шаг 5: поле VAT-кода есть, кнопок шагов нет; адрес скрыт при самовывозе.
-    click('[data-next]')
-    report.check(page.locator('#checkout-form').is_visible(), f'{where}: шаг 5 не открылся')
+    report.check(page.locator('#checkout-form').is_visible(), f'{where}: шаг 3 не открылся')
     report.check(page.locator('#checkout-form input[name=vat_code]').is_visible(), f'{where}: нет поля VAT-кода')
-    report.check(page.locator('[data-actions]').is_hidden(), f'{where}: на шаге 5 видны кнопки шагов')
+    report.check(page.locator('[data-actions]').is_hidden(), f'{where}: на шаге 3 видны кнопки шагов')
     page.select_option('select[name=delivery]', 'pickup')
     report.check(page.locator('[data-address]').is_hidden(), f'{where}: адрес виден при самовывозе')
-    fits(5)
+    no_sums(3)
+    shot(3)
+    fits(3)
     href = page.locator('.help-box a[data-specialist]').get_attribute('href')
 
     # Заявка W-12 (canvas отключён): пустая форма — ошибки сервера под полями, заказа нет; заполненная — подтверждение.
     submit = page.locator('#checkout-form button[type=submit]')
-    report.check(submit.is_enabled(), f'{where}: отправка недоступна')
+    report.check(submit.is_enabled() and submit.inner_text().strip() == ('Submit order' if en else 'Pateikti užsakymą'), f'{where}: отправка недоступна')
     with page.expect_response(lambda response: response.request.method == 'POST') as answer:
         click('#checkout-form button[type=submit]')
     report.check(answer.value.status == 422, f'{where}: пустая форма — ответ {answer.value.status}, а не 422')
@@ -2514,7 +2507,6 @@ def check_calculator(report, new_page, path, width, allowlist, files):
         report.check(field.get_attribute('aria-invalid') == 'true' and error.count() == 1 and error.inner_text() == required,
                      f'{where}: нет ошибки под полем {name}')
     report.check(page.locator('#checkout-form small[data-error]').count() == 3, f'{where}: лишние ошибки полей при самовывозе')
-    shown_cents = int(page.locator('[data-total]').get_attribute('data-cents'))
     page.fill('#checkout-form [name=name]', 'Ona Petraitė')
     page.fill('#checkout-form [name=email]', 'ona@example.test')
     page.fill('#checkout-form [name=phone]', '+370 600 00000')
@@ -2539,17 +2531,22 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     report.check(answer.value.status == 201 and sent_fields == expected_fields, f'{where}: заявка {answer.value.status} с полями {sent_fields}')
     page.wait_for_url('**/' + ('quote/submitted' if en else 'kalkuliatorius/pateikta'), timeout=30000)
     page.wait_for_load_state('networkidle')
+    # Страница после отправки (правка 05.11, H-04): главный текст README, номер заказа, гостевая ссылка; сумм и позиций нет.
     number = page.locator('[data-order-number]').get_attribute('data-order-number') or ''
-    confirmed_cents = int(page.locator('[data-total]').get_attribute('data-cents') or -1)
     report.check(number.isdigit(), f'{where}: на подтверждении нет номера заказа')
-    report.check(confirmed_cents == shown_cents == 512, f'{where}: сумма подтверждения {confirmed_cents}, на экране калькулятора {shown_cents}')
-    sent_text = 'AIQME has received your order No. ' if en else 'AIQME gavo jūsų užsakymą Nr. '
-    report.check(sent_text + number in page.locator('.notice.success').inner_text(), f'{where}: нет текста подтверждения с номером')
+    received = page.locator('.notice.success').inner_text().strip()
+    report.check(received == ('Your request has been received. We will contact you shortly.' if en
+                              else 'Jūsų užklausa gauta. Susisieksime su jumis artimiausiu metu.'), f'{where}: главный текст «{received}»')
+    report.check(page.locator('[data-number]').inner_text().strip() == (f'Order No. {number}' if en else f'Užsakymas Nr. {number}'),
+                 f'{where}: номер на подтверждении «{page.locator("[data-number]").inner_text()}»')
     confirmation = page.locator('main').inner_text()
-    report.check(('+ parts assessed by a specialist' if en else '+ specialisto vertinamos detalės') in confirmation and 'plate.dwg' in confirmation,
-                 f'{where}: на подтверждении нет позиций специалиста')
+    report.check('€' not in confirmation and 'EUR' not in confirmation and page.locator('[data-total], [data-part]').count() == 0
+                 and specialist not in confirmation and 'plate.dwg' not in confirmation, f'{where}: на подтверждении суммы или позиции «{confirmation[:400]}»')
     guest = page.locator('a[data-guest-link]').get_attribute('href') or ''
     report.check(guest.startswith(BASE + ('/en/order/' if en else '/lt/uzsakymas/') + number + '/'), f'{where}: гостевая ссылка «{guest}»')
+    page.evaluate("document.querySelector('header.header').style.visibility = 'hidden'")
+    page.locator('main').screenshot(path=str(OUT / 'shots' / f'calculator-submitted-{width}.png'))
+    page.evaluate("document.querySelector('header.header').style.visibility = ''")
     fits('подтверждение')
     page.goto(guest, wait_until='networkidle')
     title = page.locator('h1').inner_text()
@@ -2557,6 +2554,10 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     heading = page.locator('#customer-order h2').inner_text()
     report.check(heading == (f'Order No. {number}' if en else f'Užsakymas Nr. {number}'), f'{where}: номер на гостевой странице «{heading}»')
     report.check('cube-10mm-binary.stl' in page.locator('[data-order-number]').inner_text(), f'{where}: на гостевой странице нет файла')
+    # Гостевая страница до подтверждения цены (правка 05.11, H-04): без сумм, заметка о подтверждении.
+    guest_text = page.locator('#customer-order').inner_text()
+    report.check('€' not in guest_text and page.locator('[data-total]').count() == 0 and page.locator('[data-price-pending]').count() == 1
+                 and specialist not in guest_text, f'{where}: на гостевой странице суммы «{guest_text[:400]}»')
     fits('гостевая страница')
     wrong = page.goto(guest[:-4] + 'AAAA', wait_until='networkidle')
     report.check(wrong.status == 404, f'{where}: гостевая ссылка с чужим токеном — {wrong.status}')
@@ -2574,17 +2575,16 @@ def check_calculator(report, new_page, path, width, allowlist, files):
         report.check(False, f'{where}: {problem}')
     context.close()
 
-    # Открытый тетраэдр: предупреждение «незамкнутая сетка» на шаге 3, переход дальше доступен.
+    # Открытый тетраэдр: предупреждение «незамкнутая сетка» под карточками шага 2 (правка 05.11, H-04), переход дальше доступен.
     context, page, problems = new_page(width, 1000)
     page.goto(BASE + path, wait_until='networkidle')
     page.locator('#model-upload').set_input_files(str(STL_FIXTURES / 'tetrahedron-open-ascii.stl'))
     page.wait_for_selector('[data-model]:not([hidden])')
     click('[data-next]')
-    click('[data-next]')
     warning = page.locator('[data-warning-list]')
     report.check(warning.is_visible() and ('not closed' if en else 'neuždaras') in warning.inner_text(), f'{where}: нет предупреждения об открытой сетке')
     click('[data-next]')
-    report.check(page.locator('[data-step-panel="3"]').is_visible(), f'{where}: предупреждение заблокировало переход')
+    report.check(page.locator('[data-step-panel="2"]').is_visible(), f'{where}: предупреждение заблокировало переход')
     for problem in problems:
         report.check(False, f'{where} (тетраэдр): {problem}')
     context.close()
@@ -2943,7 +2943,7 @@ def check_prod_runtime(report, values):
 
 
 def submit_quote(report, new_page, files, where, ship):
-    """Калькулятор /en/quote (canvas отключён): файлы → PLA, 100 % → шаг 5 → заявка. Возвращает (номер, гостевая ссылка,
+    """Калькулятор /en/quote (canvas отключён): файлы → PLA, 100 % → форма (шаг 3, правка 05.11, H-04) → заявка. Возвращает (номер, гостевая ссылка,
     секунды от отправки до страницы подтверждения)."""
     context, page, problems = new_page(1440, 1000, intercept=False)
     page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
@@ -2952,7 +2952,7 @@ def submit_quote(report, new_page, files, where, ship):
     page.wait_for_function(f"document.querySelectorAll('[data-files] .file-row').length === {len(files)}"
                            " && !document.querySelector('#upload-progress progress')", timeout=300000)
     report.check(page.locator('#quote-error .notice').count() == 0, f'{where}: ошибка калькулятора «{page.locator("#quote-error").inner_text()}»')
-    for step in range(4):
+    for step in range(2):  # правка 05.11, H-04: три шага — форма на третьем
         page.locator('[data-next]').evaluate('(node) => node.scrollIntoView({block: "center"})')
         page.click('[data-next]')
         if step == 0:

@@ -36,7 +36,7 @@ return [
         'title' => 'Tell us what you want to create.',
         'description' => 'An idea, photo or file is enough to begin. We will help you understand the next step.',
     ],
-    'calculator' => ['title' => 'Your model. Our next step.'],
+    'calculator' => ['title' => 'Your files. Our next step.'], // edit 05.11, H-04
     'cart' => [
         'title' => 'Your basket',
         'description' => 'Product purchases. Manufacturing orders use the separate quote workspace.',

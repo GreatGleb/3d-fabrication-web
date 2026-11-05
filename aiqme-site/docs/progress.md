@@ -5073,3 +5073,92 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   `check_contact_lt` форму не отправляет. Ветка prod-compose проверена только чтением кода (rules: запуск — у пользователя при выпуске).
 - `ServiceController`: docstring больше не упоминает удалённый блок процесса — «Блока процесса нет (правка 05.11, H-03)».
 - После доработки: `bin/check` — OK; `bin/browser-check` по восьми страницам из checks задачи — OK.
+
+## Правки 05.11, H-04: калькулятор без цены — три шага, панель без сумм, тарифы не в браузере, сообщение после отправки, кабинет без оценки
+
+### Сделано
+- **Три шага** (`calculator.steps` LT/EN по README): `Failai` / `Gamybos parametrai` / `Užklausos pateikimas`, EN `Files` /
+  `Manufacturing parameters` / `Submit request`. Панели «03. Modelių patikra» и «04. Detalių kaina» (таблица «Detalė / Kiekis /
+  Sąmata») удалены; форма заявки — `data-step-panel="2"`. `index.js`: `LAST_STEP = 2`, кнопка «Pereiti prie užsakymo» — на шаге 2.
+- **Проверка файла — в карточке шага 2** (`[data-check]`, разметка `check-row` прототипа, у развёрнутой и свёрнутой карточки):
+  STL — размеры и `Mastelis, %: N (единица)`, строка FDM, «Geometrija nuskaityta.»; фрезеровка/гравировка и не-STL — предел
+  2000 × 4000 мм, «Failą peržiūrės specialistas.»; не «STL + печать» — «Kainą įvertins specialistas» (без суммы). Предупреждения
+  (открытая сетка, превышение предела) и кнопка «Reikia specialisto pagalbos» — под карточками шага 2, переход не блокируют.
+  CSS: `public.css` — отступы `check-row` в карточке; неиспользуемое `.summary-specialist` удалено.
+- **Тексты страницы**: заголовок и крошки `Jūsų failai. Mūsų kitas žingsnis.` / `Your files. Our next step.` (`pages.calculator.title`);
+  вступление и мета-описание (`calculator.intro`) по README; кнопка `Pasirinkti failus` / `Choose files`; заголовок
+  «01. Įkelkite savo modelius» не выводится (ключ удалён). Шаг 1: строка форматов, зона, кнопка, «Iki 50 MB vienam failui.».
+- **Панель «Užsakymo suvestinė»**: без «PRELIMINARI SĄMATA», сумм, «Preliminari suma» и пометки специалиста — строки «имя × количество»
+  (JS, `[data-summary-file]`), заметка README (`calculator.summary.note`, LT/EN), блок «Reikia pagalbos?» остался.
+- **Тарифы не в браузере**: `CalculatorController` передаёт `Arr::except(…, rate_per_gram, order_fee_cents, file_fee_cents)` и
+  `materials` — список названий (плотности тоже не уходят). `quote.js`: удалены `estimate()`, `summary()`, `formatMoney`; ядро
+  `core/` не менялось — `estimate` ядра остаётся для `tests/js/stl-parity.mjs` (сверка PHP-разбора и оценки с ядром,
+  `StlParityTest`), в сборку страницы не попадает (в `public/build` нет `ratePerGram`/`orderFeeCents`). Серверная оценка
+  (`EstimateService`, `OrderSubmission`) не менялась.
+- **После отправки** (`order-confirmation`): главный текст `Jūsų užklausa gauta. Susisieksime su jumis artimiausiu metu.` /
+  `Your request has been received. We will contact you shortly.` (`calculator.order.submitted_text`), ниже «Užsakymas Nr. N»
+  (`calculator.order.title`), заметка о подтверждении цены, гостевая ссылка или кнопка кабинета. Сумм и позиций нет;
+  `OrderRequestController` больше не кладёт в flash `total_cents` и `parts`.
+- **Кабинет и гостевая страница заказа** (`account/order`): до подтверждения цены — без «Preliminari suma» и без пометки
+  «Kainą įvertins specialistas» у строк (пометка у части позиций подразумевала бы суммы у остальных) — заметка `[data-price-pending]`;
+  после подтверждения — как прежде. **Список заказов** (`order-list`): сумма только при `confirmed_at`, иначе «—»
+  (`AccountController::rows` — поле `confirmed`).
+- **Нейтральные тексты** (поиск `kain`, `Sąmata`, `preliminar`, `price`, `estimate` в `lang/*/calculator.php`, `lang/*/orders.php`,
+  шаблонах калькулятора, подтверждения, кабинета и `index.js`):
+  - удалены: `price.title|part|estimate|note` («Detalių kaina», «Sąmata», «Kaina perskaičiuojama…»), `summary.eyebrow`
+    («PRELIMINARI SĄMATA»), `summary.total` («Preliminari suma»), `files.title`, `review.title`;
+  - заменены: `scale_modal.note` «Pasikeis fizinis gaminio dydis ir kaina.» → «Pasikeis fizinis gaminio dydis.» (EN «…size and
+    price.» → «…size.»); `summary.note` и `submitted_text` — тексты README;
+  - остаются: `price.specialist` «Kainą įvertins specialistas» (карточка шага 2 по done; карточка админки); `summary.note` — обещание
+    подтвердить цену (текст README); `summary.specialist` «+ specialisto vertinamos detalės» — только письмо администратору;
+    `lang/*/orders.php` — ошибки админки при подтверждении цены (не покупателю); `js.order_fee`/`file_fees` — подписи строк счёта
+    и админки, сумм в калькуляторе не выводят.
+- **Админка и письмо администратору не менялись**: оценка в карточке заказа и «N EUR + specialisto vertinamos detalės» в письме —
+  тесты `OrderPositionsDisplayTest` (добавлена проверка суммы STL в карточке админки).
+- **bin/browser-check**: `check_calculator` переписан под три шага — шаги и их подписи, `no_sums()` на шагах 1–3 (нет `[data-total]`,
+  `[data-cents]`, `€`, «PRELIMINAR», «Sąmata», заметка README), проверка файла в каждой карточке, −/+ меняют строку панели, окно
+  масштаба без «kain/price», заявка 201 до конца, страница после отправки (главный текст, номер, гостевая ссылка, нет сумм и
+  позиций, кадр `calculator-submitted-<ширина>.png`), гостевая страница без сумм с `[data-price-pending]`, тетраэдр — предупреждение
+  на шаге 2. `quote_from_saved_model` и повторный заказ — проверка файла в карточке и панель «× 1» без сумм, затем форма; после
+  отправки — главный текст без сумм (прежде итог 5,12). `check_calculator_settings` — строка FDM в карточке шага 2. `submit_quote`
+  (ветка `--base-url`/`--compose-file`) — два «Tęsti» до формы. D21_REPLACEMENTS «правка 05.11, H-04» для заголовка и шагов
+  калькулятора (страниц калькулятора нет в `prototype-blocks.json`, сверка текста их не обходит — записи для соответствия правилу).
+- **Тесты** (комментарии «правка 05.11, H-04»): `CalculatorPageTest` — три шага, заголовок/крошки/вступление/мета-описание,
+  `test_tariffs_are_not_in_the_page_html` (ни ключей, ни значений тарифов и плотностей), панель без сумм и надписей, кнопка
+  «Pasirinkti failus», шаг 1 без заголовка; `CalculatorSettingsTest` — data-settings без тарифов, тарифы получает серверная
+  оценка; `OrderSubmissionTest` — при каждой отправке страница подтверждения без `€`/`data-total`/позиций, сумма для сверок —
+  из заказа (серверная оценка), гостевая страница до подтверждения — без `€`, с заметкой; `OrderPositionsDisplayTest` —
+  подтверждение («Your request has been received…», номер, ссылка в кабинет, без сумм и позиций), кабинет до/после подтверждения;
+  `CustomerAccountTest` — новый `test_order_list_shows_the_total_only_after_price_confirmation`, ожидание «Estimated total» до
+  подтверждения заменено (после подтверждения ожидания не менялись); `tests/js/calculator-quote.test.js` — без оценки и сводки,
+  материалы — список названий, `priced()`.
+
+### Толкования (простейший вариант)
+- Шаг 1, «прочие строки под зоной убираются»: в пустом состоянии под зоной строк нет; список файлов, просмотр модели и поля
+  единиц/масштаба с пояснением остаются на шаге 1 (это ввод, без него масштаб не задать). Если на макете п. 10 их нет — вопрос
+  пользователю: перенести ли ввод масштаба в карточку шага 2.
+- Заголовок шага 2 «02. Gamybos pasirinkimai» и формы «Pirkėjas ir pristatymas» README не трогает — оставлены.
+- Заголовок страницы подтверждения «Užsakymas pateiktas» / «Order submitted» оставлен; кнопка «Pateikti užsakymą» — по README.
+- `account.php` «Pakartoti su aktualia kaina» (кнопка повторного заказа в кабинете) — вне перечня поиска README, не менялся.
+
+### Проверки поведения (один раз)
+- На прежних файлах (по одному, с возвратом): `CalculatorController` → `test_tariffs_are_not_in_the_page_html` failed;
+  `order-confirmation.blade.php` → `test_confirmation_page_shows_request_received_number_and_no_sums` failed; `order-list.blade.php` →
+  `test_order_list_shows_the_total_only_after_price_confirmation` failed; `account/order.blade.php` →
+  `test_account_page_shows_method_line_without_sums_until_price_is_confirmed` failed. Возвращены — passed.
+
+### Команды и вывод
+- `node --test 'tests/js/**/*.test.js'` — 43/43 pass.
+- `bin/browser-check /lt/kalkuliatorius /en/quote` — `bin/browser-check: OK (844 проверок)` (включает поиск маркеров).
+- `bin/browser-check --signed-in /lt/kalkuliatorius /en/quote` — `OK (6683 проверок)`: кабинет (пересчитать, повторный заказ до
+  отправки), настройки калькулятора (FDM в карточке шага 2), карточка заказа админки.
+- `bin/check` — `bin/check: OK`, PHPUnit 754/754. `pint --dirty` — passed. `git status --porcelain aiqme-site` — только изменённые
+  файлы, новых нет.
+
+### Не проверено
+- Вид глазами (шаги 1–3, страница после отправки, кабинет) — ждёт проверки пользователем; кадры `calculator-step1..3-*.png` и
+  `calculator-submitted-*.png` просмотрены автором бегло (1440 и 390).
+- `submit_quote` (ветки `--base-url`/`--compose-file`) — проверено чтением кода; выполнение — ждёт пользователя.
+- `bin/demo-check` не менялся: он проверяет старую демо-сборку `demo/` (пять шагов, итог 5,12), которая не пересобирается; после
+  пересборки демо его сценарий калькулятора нужно привести к трём шагам — ждёт пользователя.
+- H-10: проверить, что в `ui_texts` нет переопределений изменённых ключей `calculator.*` и `pages.calculator.title`.

@@ -1,16 +1,19 @@
-{{-- Калькулятор (§1.2, W-27): 5 шагов прототипа (quote()) на ядре W-10, расчёт — в браузере, resources/js/calculator/.
+{{-- Калькулятор (§1.2, W-27) на ядре W-10, resources/js/calculator/.
+     Правка 05.11, H-04 (поверх Г8 ниже): три шага — «Failai», «Gamybos parametrai» (карточки и в каждой проверка файла: размеры,
+     масштаб, предел оборудования, «Kainą įvertins specialistas»), «Užklausos pateikimas» (форма); шагов «Patikra» и «Kaina»
+     нет. Сумм покупатель не видит: панель — «имя × количество» и заметка; тарифов в data-settings нет (оценку считает сервер).
+     Заголовка «01. Įkelkite savo modelius» нет (макет).
      Без VAT, доставки, скидки и цены за единицу (D-38), без демо-надписей, файлов-примеров и флажка сценария риска (D-21).
-     Просмотр модели — .viewer, Canvas 2D (W-31). Шаг 5 отправляет заявку fetch-запросом multipart (W-12): токен отправки —
-     UUID формы, профиль вошедшего клиента ($buyer) подставлен в поля.
+     Просмотр модели — .viewer, Canvas 2D (W-31). Последний шаг отправляет заявку fetch-запросом multipart (W-12): токен
+     отправки — UUID формы, профиль вошедшего клиента ($buyer) подставлен в поля.
      Правка 02.11, Г8 (макет 17.09): шаг 1 принимает STL/STEP/OBJ/DXF/DWG; шаг 2 — карточка на каждый файл (её строит JS
-     в [data-cards]: способ, параметры, количество, приоритет, дата, заметка); шаг 3 — проверка по файлам; шаг 4 и панель —
-     суммы оценённых позиций и «Kainą įvertins specialistas»; на шаге 1 в панели сумм нет.
-     data-settings — тарифы, заполнение по умолчанию, габарит, списки фрезеровки и гравировки и их предел из настроек админки
+     в [data-cards]: способ, параметры, количество, приоритет, дата, заметка).
+     data-settings — названия материалов печати, заполнение по умолчанию, габарит, списки фрезеровки и гравировки и их предел из настроек админки
      (W-11, Г6) и лимиты файлов из config('aiqme.calculator'); тексты для JS — data-texts, значки icons/ui — data-icons. --}}
 @php
     $locale = app()->getLocale();
     $maxMb = intdiv($settings['max_file_bytes'], 1024 * 1024);
-    $texts = __('calculator.js') + ['mb' => $maxMb] + collect(__('calculator'))->only(['settings', 'methods', 'part', 'review', 'price'])->all();
+    $texts = __('calculator.js') + ['mb' => $maxMb, 'scale' => __('calculator.files.scale')] + collect(__('calculator'))->only(['settings', 'methods', 'part', 'review', 'price'])->all();
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.calculator')" :languages="$languages" :noindex="$locale === 'ru'">
     <x-page-top :title="$heading" :intro="__('calculator.intro')" />
@@ -25,7 +28,6 @@
         <div class="quote-layout">
             <div>
                 <section class="panel" data-step-panel="0">
-                    <h2>{{ __('calculator.files.title') }}</h2>
                     <p>{{ __('calculator.files.intro') }}</p>
                     {{-- Вся зона — label поля выбора: системная кнопка «Browse… No files selected» скрыта, вместо неё .btn сайта. --}}
                     <label class="upload" id="drop-zone">
@@ -57,29 +59,13 @@
                     <p>{{ __('calculator.part.intro') }}</p>
                     <div data-cards></div>
                     <p class="part-note gap"><img class="ui-icon" src="{{ asset('icons/ui/info.svg') }}" alt="" width="20" height="20">{{ __('calculator.part.hint') }}</p>
-                </section>
-
-                <section class="panel" data-step-panel="2" hidden>
-                    <h2>{{ __('calculator.review.title') }}</h2>
-                    <div data-review></div>
                     <div data-warnings hidden>
                         <div class="notice warning gap" data-warning-list></div>
                         <a class="btn gap" href="{{ $contactUrl }}" data-specialist>{{ __('calculator.review.specialist') }} <x-line-icon name="arrow" /></a>
                     </div>
                 </section>
 
-                <section class="panel" data-step-panel="3" hidden>
-                    <h2>{{ __('calculator.price.title') }}</h2>
-                    <div class="data-table">
-                        <table>
-                            <thead><tr><th>{{ __('calculator.price.part') }}</th><th>{{ __('calculator.js.quantity') }}</th><th>{{ __('calculator.price.estimate') }}</th></tr></thead>
-                            <tbody data-price-rows></tbody>
-                        </table>
-                    </div>
-                    <div class="notice gap">{{ __('calculator.price.note') }}</div>
-                </section>
-
-                <form class="panel" id="checkout-form" data-step-panel="4" hidden novalidate method="post" action="{{ Route::has($locale.'.calculator.store') ? route($locale.'.calculator.store') : '' }}">
+                <form class="panel" id="checkout-form" data-step-panel="2" hidden novalidate method="post" action="{{ Route::has($locale.'.calculator.store') ? route($locale.'.calculator.store') : '' }}">
                     @csrf
                     <input type="hidden" name="submission_token" value="{{ \Illuminate\Support\Str::uuid() }}">
                     @include('public.partials.honeypot')
@@ -114,11 +100,8 @@
             </div>
 
             <aside class="panel quote-summary">
-                <div class="eyebrow">{{ __('calculator.summary.eyebrow') }}</div>
                 <h3>{{ __('calculator.summary.title') }}</h3>
                 <div data-summary-rows></div>
-                <div class="summary-row total"><span>{{ __('calculator.summary.total') }}</span><span data-total></span></div>
-                <p class="summary-specialist" data-specialist-total hidden>{{ __('calculator.summary.specialist') }}</p>
                 <div class="notice summary-note">{{ __('calculator.summary.note') }}</div>
                 <div class="help-box">
                     <h3>{{ __('calculator.help.title') }}</h3>

@@ -1,8 +1,9 @@
-// Состояние заявки калькулятора (W-27) без DOM: файлы, разбор STL, параметры у каждой позиции (правка 02.11, Г8), оценка
+// Состояние заявки калькулятора (W-27) без DOM: файлы, разбор STL, параметры у каждой позиции (правка 02.11, Г8), измерение
 // ядра W-10 и сообщение для специалиста. Разбор передаётся параметром (в браузере — Web Worker, в тестах — parseStl напрямую).
-import { MAX_TRIANGLES, StlError, estimate, measure, parseStl } from './core/index.js';
+// Правка 05.11, H-04: оценки в браузере нет — цену называет администратор (серверную оценку считает EstimateService).
+import { MAX_TRIANGLES, StlError, measure, parseStl } from './core/index.js';
 
-// Принимаемые форматы (правка 02.11, Г6): STL разбирается и оценивается, остальные — без разбора, цену назначит специалист.
+// Принимаемые форматы (правка 02.11, Г6): STL разбирается и измеряется, остальные — без разбора, цену назначит специалист.
 export const THREE_D_FORMATS = ['stl', 'step', 'stp', 'obj'];
 export const FORMATS = [...THREE_D_FORMATS, 'dxf', 'dwg'];
 export const METHODS = ['printing', 'milling', 'engraving'];
@@ -23,11 +24,8 @@ function errorCode(error, buffer) {
 
 export const formatDimensions = (dimensionsMm) => `${dimensionsMm.map((size) => size.toFixed(1)).join(' × ')} mm`;
 
-export const formatMoney = (cents, locale) =>
-  new Intl.NumberFormat(locale === 'lt' ? 'lt-LT' : 'en-IE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-
 export class Quote {
-  // settings: { materials, rate_per_gram, order_fee_cents, file_fee_cents, default_infill, max_dimension_mm, milling_materials,
+  // settings: { materials (названия), default_infill, max_dimension_mm, milling_materials,
   // engraving_materials, milling_thicknesses_mm, engraving_depths_mm, milling_max_mm, max_file_bytes, max_files } из
   // data-settings страницы (настройки админки W-11, Г6 и лимиты config); onChange — после любого изменения файлов (в том числе
   // позднего разбора).
@@ -61,7 +59,7 @@ export class Quote {
       unit: 'mm', scale: 100, quantity: 1,
       method: THREE_D_FORMATS.includes(format) ? 'printing' : 'milling',
       options: {
-        printing: { material: Object.keys(settings.materials)[0], infill: String(settings.default_infill), ...PRINTING_DEFAULTS },
+        printing: { material: settings.materials[0], infill: String(settings.default_infill), ...PRINTING_DEFAULTS },
         milling: { material: settings.milling_materials[0].lt, thickness: String(settings.milling_thicknesses_mm[0]) },
         engraving: { material: settings.engraving_materials[0].lt, depth: String(settings.engraving_depths_mm[0]) },
       },
@@ -117,63 +115,17 @@ export class Quote {
     return measure(entry.model, { unit: entry.unit, scale: entry.scale, maxDimensionMm: this.settings.max_dimension_mm });
   }
 
-  // Автоматическая цена — только у STL + печать (Г6): материал и заполнение позиции («Reikia konsultacijos» — по заполнению
-  // по умолчанию); у остальных строка null — «Kainą įvertins specialistas».
+  // Серверная оценка — только у STL + печать (Г6); у остальных карточка шага 2 пишет «Kainą įvertins specialistas»
+  // (правка 05.11, H-04: суммы покупателю не показываются).
   priced(entry) {
     return entry.format === 'stl' && entry.method === 'printing';
   }
 
-  // STL фрезеровки и гравировки: две наибольшие стороны больше предела milling_max_mm (Г8, шаг 3) — предупреждение.
+  // STL фрезеровки и гравировки: две наибольшие стороны больше предела milling_max_mm (Г8; проверка в карточке шага 2) — предупреждение.
   exceedsMilling(entry) {
     const sides = [...this.measure(entry).dimensionsMm].sort((a, b) => b - a).slice(0, 2);
     const limit = [...this.settings.milling_max_mm].sort((a, b) => b - a);
     return sides[0] > limit[0] || sides[1] > limit[1];
-  }
-
-  // Предварительная оценка по §3.1 в центах ядра; без готовых файлов — null. lines[i].cents null — цену назначит специалист.
-  estimate() {
-    const ready = this.ready;
-    if (!ready.length) return null;
-    const result = estimate({
-      parts: ready.map((entry) => {
-        if (!this.priced(entry)) return null;
-        const { material, infill } = entry.options.printing;
-        return {
-          volumeCm3: this.measure(entry).volumeCm3,
-          quantity: entry.quantity,
-          material,
-          infill: infill === 'consult' ? this.settings.default_infill : Number(infill),
-        };
-      }),
-    }, {
-      densities: this.settings.materials,
-      ratePerGram: this.settings.rate_per_gram,
-      orderFeeCents: this.settings.order_fee_cents,
-      fileFeeCents: this.settings.file_fee_cents,
-    });
-    return {
-      ...result,
-      lines: ready.map((entry, i) => ({ entry, cents: result.lines[i] ? result.lines[i].cents : null })),
-      specialist: result.lines.includes(null),
-    };
-  }
-
-  // Строки боковой панели: позиции «имя × количество», плата за заказ и за файлы (только если > 0), итог. withPrices false
-  // (шаг 1, правка 02.11, Г8) — суммы undefined (прочерк); cents null — «Kainą įvertins specialistas»; specialist — под
-  // итогом пометка о неоценённых позициях.
-  summary(withPrices) {
-    const result = this.estimate();
-    if (!result) return { rows: [], totalCents: undefined, specialist: false };
-    const shown = (cents) => (withPrices ? cents : undefined);
-    return {
-      rows: [
-        ...result.lines.map((line) => ({ entry: line.entry, cents: shown(line.cents) })),
-        { fee: 'order_fee', cents: shown(result.orderFeeCents) },
-        ...(result.fileFeesCents > 0 ? [{ fee: 'file_fees', cents: shown(result.fileFeesCents) }] : []),
-      ],
-      totalCents: shown(result.totalCents),
-      specialist: withPrices && result.specialist,
-    };
   }
 
   // Поля позиции для заявки (Г6): способ, его параметры, количество, срок, дата при скорой очереди, заметка; у STL — единицы

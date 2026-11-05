@@ -52,9 +52,9 @@ class CalculatorSettingsTest extends TestCase
 
     public function test_clean_database_after_migrate_has_d09_d24_values_on_the_calculator_pages(): void
     {
+        // Правка 05.11, H-04: на страницу — названия материалов, без плотностей и тарифов.
         $expected = [
-            'materials' => ['PLA' => 1.24, 'PETG' => 1.27, 'ABS' => 1.04], 'rate_per_gram' => '0.10', 'order_fee_cents' => 500,
-            'file_fee_cents' => 0, 'default_infill' => 20, 'max_dimension_mm' => 1000,
+            'materials' => ['PLA', 'PETG', 'ABS'], 'default_infill' => 20, 'max_dimension_mm' => 1000,
             // Правка 02.11, Г6: заглушки фрезеровки и гравировки из миграции данных.
             ...self::millingDefaults(), 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
@@ -152,9 +152,9 @@ class CalculatorSettingsTest extends TestCase
 
         // Конфигурация тарифов больше не читается: посторонние значения в config не попадают на страницу.
         config(['aiqme.calculator.rate_per_gram' => '9.99', 'aiqme.calculator.default_infill' => 77, 'aiqme.calculator.max_dimension_mm' => 5]);
+        // Правка 05.11, H-04: тарифы и плотности на страницу не уходят — их получает только серверная оценка (ниже).
         $expected = [
-            'materials' => ['PLA' => 1.3, 'PETG' => 1.27, 'TPU' => 1.21], 'rate_per_gram' => '0.125', 'order_fee_cents' => 750,
-            'file_fee_cents' => 105, 'default_infill' => 30, 'max_dimension_mm' => 300,
+            'materials' => ['PLA', 'PETG', 'TPU'], 'default_infill' => 30, 'max_dimension_mm' => 300,
             // Правка 02.11, Г6: списков фрезеровки и гравировки нет в форме — сохранение их не теряет.
             ...self::millingDefaults(), 'max_file_bytes' => 52428800, 'max_files' => 10,
         ];
@@ -162,13 +162,15 @@ class CalculatorSettingsTest extends TestCase
         $lt = $this->pageSettings('/lt/kalkuliatorius');
         $this->assertSame($expected, $lt);
         // Правка 02.11, Г8: список материалов карточки строит JS из data-settings.
-        $this->assertSame(['PLA', 'PETG', 'TPU'], array_keys(json_decode(Html::xpath($this->get('/en/quote')->getContent())->query('//*[@id="quote"]')->item(0)->getAttribute('data-settings'), true)['materials']));
+        $this->assertSame(['PLA', 'PETG', 'TPU'], json_decode(Html::xpath($this->get('/en/quote')->getContent())->query('//*[@id="quote"]')->item(0)->getAttribute('data-settings'), true)['materials']);
 
         // EstimateService — по тем же значениям: 1 см³ PLA 1,3 г × 0,125 €/г = 16,25 → 16 центов; 750 + 2 × 105.
         $estimate = app(EstimateService::class)->estimate([['volume_cm3' => 1.0, 'quantity' => 1, 'material' => 'PLA', 'infill' => 100], ['volume_cm3' => 2.0, 'quantity' => 1, 'material' => 'PLA', 'infill' => 100]]);
         $this->assertSame([16, 33], array_column($estimate['lines'], 'cents'));
         $this->assertSame(16 + 33 + 750 + 210, $estimate['total_cents']);
-        $this->assertSame(array_diff_key($lt, ['max_file_bytes' => 0, 'max_files' => 0]), $estimate['settings']);
+        $tariffs = ['materials' => ['PLA' => 1.3, 'PETG' => 1.27, 'TPU' => 1.21], 'rate_per_gram' => '0.125', 'order_fee_cents' => 750, 'file_fee_cents' => 105];
+        $this->assertSame([...$tariffs, ...array_diff_key($lt, ['materials' => 0, 'max_file_bytes' => 0, 'max_files' => 0])],
+            [...array_intersect_key($estimate['settings'], $tariffs), ...array_diff_key($estimate['settings'], $tariffs)]);
     }
 
     public function test_unconfirmed_mark_is_removed_only_from_changed_values(): void

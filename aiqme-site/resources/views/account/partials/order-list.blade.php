@@ -1,4 +1,4 @@
-{{-- Таблица заказов клиента (orderList() прототипа): номер и дата, тип, стадия и оплата, сумма, «View». --}}
+{{-- Таблица заказов клиента (orderList() прототипа): номер и дата, тип, стадия и оплата, сумма (правка 05.11, H-04: только у заказов с подтверждённой ценой, иначе прочерк), «View». --}}
 @if ($orders->isEmpty())
     <p>{{ __('account.orders.empty') }}</p>
 @else
@@ -10,7 +10,7 @@
                     <td><strong>{{ $row['number'] }}</strong><br><small>{{ $row['date'] }}</small></td>
                     <td>{{ __('admin.orders.type') }}</td>
                     <td><span class="tag blue">{{ __('admin.orders.stages.'.$row['stage']) }}</span><br><small>{{ __('admin.orders.payment_states.'.$row['payment_state']) }}</small></td>
-                    <td>{{ \Illuminate\Support\Number::currency($row['total'] / 100, in: 'EUR', locale: $locale) }}</td>
+                    <td>@if ($row['confirmed']){{ \Illuminate\Support\Number::currency($row['total'] / 100, in: 'EUR', locale: $locale) }}@else — @endif</td>
                     <td><a class="btn small secondary" href="{{ route($locale.'.account.orders.show', $row['number']) }}">{{ __('account.orders.view') }}</a></td>
                 </tr>
             @endforeach

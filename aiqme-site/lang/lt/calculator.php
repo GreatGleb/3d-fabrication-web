@@ -5,16 +5,16 @@
 // neperkeliami (D-21, D-38); neutralūs trūkstamų tekstų pakaitalai — aiqme-site/docs/progress.md (W-27).
 return [
     'eyebrow' => 'AIQME / GAMYBOS UŽSAKYMAS',
-    'intro' => 'Įkelkite failą, pasirinkite gamybos parametrus ir peržiūrėkite preliminarią kainą.',
-    'steps' => ['Failai', 'Gamyba', 'Patikra', 'Kaina', 'Užsakymas'],
+    // Pataisa 05.11, H-04: įžanga ir trys žingsniai (plano README).
+    'intro' => 'Įkelkite failus, pasirinkite gamybos parametrus ir gaukite pasiūlymą.',
+    'steps' => ['Failai', 'Gamybos parametrai', 'Užklausos pateikimas'],
     'back' => 'Atgal',
     'next' => 'Tęsti',
     'to_checkout' => 'Pereiti prie užsakymo',
     'files' => [
-        'title' => '01. Įkelkite savo modelius',
         'intro' => 'STL, STEP, OBJ, DXF, DWG. Galite pasirinkti kelis failus.',
         'drop' => 'Nutempkite failus čia arba pasirinkite',
-        'select' => 'Pasirinkti 3D modelius',
+        'select' => 'Pasirinkti failus',
         'limit' => 'Iki :mb MB vienam failui.',
         'units' => 'Failo matavimo vienetai',
         'inches' => 'coliai',
@@ -31,7 +31,7 @@ return [
     ],
     'scale_modal' => [
         'title' => 'Patvirtinkite naują dydį',
-        'note' => 'Pasikeis fizinis gaminio dydis ir kaina.',
+        'note' => 'Pasikeis fizinis gaminio dydis.',
         'confirm' => 'Patvirtinti ir perskaičiuoti',
     ],
     'settings' => [
@@ -72,18 +72,14 @@ return [
         'notes_placeholder' => 'Pvz. papildomi reikalavimai, pastabos ar kiti svarbūs nurodymai…',
     ],
     'review' => [
-        'title' => '03. Modelių patikra',
         'build' => 'Įrangos dydžio ribos',
         'build_text' => 'FDM: :mm × :mm × :mm mm.',
         'cnc' => 'Frezavimo ir graviravimo matmenys :w × :h mm.',
         'specialist_file' => 'Failą peržiūrės specialistas.',
         'specialist' => 'Reikia specialisto pagalbos',
     ],
+    // Pataisa 05.11, H-04: kainos žingsnio nėra; pirkėjui — tik žingsnio 2 kortelėje, administratoriui — užsakymo kortelėje.
     'price' => [
-        'title' => '04. Detalių kaina',
-        'part' => 'Detalė',
-        'estimate' => 'Sąmata',
-        'note' => 'Kaina perskaičiuojama keičiant mastelį, medžiagą, kiekį ir parametrus.',
         'specialist' => 'Kainą įvertins specialistas',
     ],
     'checkout' => [
@@ -104,10 +100,8 @@ return [
         'submit' => 'Pateikti užsakymą',
     ],
     'summary' => [
-        'eyebrow' => 'PRELIMINARI SĄMATA',
         'title' => 'Užsakymo suvestinė',
-        'total' => 'Preliminari suma',
-        'note' => 'Galutinę kainą ir pristatymo terminą administratorius patvirtins, peržiūrėjęs užsakymą.',
+        'note' => 'Galutinę kainą ir gamybos terminą patvirtinsime peržiūrėję jūsų užklausą.',
         'specialist' => '+ specialisto vertinamos detalės',
     ],
     // Užsakymo pateikimas (W-12): neutralūs tekstai (prototipe jų nėra), išvardyti aiqme-site/docs/progress.md.
@@ -118,7 +112,7 @@ return [
     ],
     'order' => [
         'submitted_title' => 'Užsakymas pateiktas',
-        'submitted_text' => 'AIQME gavo jūsų užsakymą Nr. :number. Administratorius peržiūrės failus ir patvirtins kainą.',
+        'submitted_text' => 'Jūsų užklausa gauta. Susisieksime su jumis artimiausiu metu.',
         'guest_link' => 'Jūsų užsakymo nuoroda. Išsaugokite ją: ji rodoma tik vieną kartą.',
         'account_text' => 'Užsakymas išsaugotas jūsų paskyroje.',
         'title' => 'Užsakymas Nr. :number',

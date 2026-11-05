@@ -105,22 +105,24 @@ class AccountController extends Controller
     }
 
     /**
-     * Строки истории заказов (§1.3): номер, дата, стадия производства, состояние оплаты, сумма.
+     * Строки истории заказов (§1.3): номер, дата, стадия производства, состояние оплаты, сумма и подтверждена ли цена
+     * (правка 05.11, H-04: сумма показывается только у подтверждённых).
      *
      * @param  Collection<int, Order>  $orders
-     * @return Collection<int, array{number: int, date: string, stage: string, payment_state: string, total: int}>
+     * @return Collection<int, array{number: int, date: string, stage: string, payment_state: string, total: int, confirmed: bool}>
      */
     private function rows(Collection $orders): Collection
     {
         $numbers = OrderMeta::whereIn('order_id', $orders->modelKeys())->pluck('number', 'order_id');
-        $stages = ProductionState::whereIn('order_id', $orders->modelKeys())->pluck('stage', 'order_id');
+        $states = ProductionState::whereIn('order_id', $orders->modelKeys())->get()->keyBy('order_id');
 
         return $orders->map(fn (Order $order): array => [
             'number' => $numbers[$order->id],
             'date' => $order->placed_at->timezone(config('app.timezone'))->format('Y-m-d'),
-            'stage' => $stages[$order->id]->value,
+            'stage' => $states[$order->id]->stage->value,
             'payment_state' => $this->workflow->balance($order)['payment_state'],
             'total' => $order->total->value,
+            'confirmed' => $states[$order->id]->confirmed_at !== null,
         ]);
     }
 }
