@@ -158,12 +158,13 @@ final class ContentService
     /**
      * Медиа элемента (spatie/medialibrary): размер и тип файла — MediaFile (по сигнатуре: JPEG, PNG, WebP, MP4; SVG не
      * принимается, §6.4), имя — UUID с расширением по сигнатуре; alt/подпись — на локаль, необязательный источник
-     * (текст и http(s)-ссылка). $replace — новый файл заменяет прежние файлы этой коллекции элемента.
+     * (текст и http(s)-ссылка). $replace — новый файл заменяет прежние файлы этой коллекции элемента. $title — имя для
+     * показа (name медиа; документы товара — исходное имя файла, правка 05.11, H-07), иначе name = UUID.
      *
      * @param  array<string, string>  $alt
      * @param  array{text?: string, url?: string}|null  $source
      */
-    public function addMedia(User $actor, ContentItem $item, string $path, string $collection, array $alt = [], ?array $source = null, bool $replace = false): Media
+    public function addMedia(User $actor, ContentItem $item, string $path, string $collection, array $alt = [], ?array $source = null, bool $replace = false, ?string $title = null): Media
     {
         $this->authorize($actor);
         $extension = MediaFile::check($path, $collection);
@@ -181,9 +182,11 @@ final class ContentService
         }
 
         $name = (string) Str::uuid();
+        // Имя документа товара для показа (правка 05.11, H-07) — исходное имя файла; имя на диске всё равно UUID.
+        $title = $title === null ? '' : Str::limit(trim((string) preg_replace('/[\x00-\x1F\x7F]/u', '', basename(str_replace('\\', '/', $title)))), 200, '');
         $media = $item->addMedia($path)
             ->preservingOriginal()
-            ->usingName($name)
+            ->usingName($title !== '' ? $title : $name)
             ->usingFileName($name.'.'.$extension)
             ->withCustomProperties(['alt' => $alt, 'source' => $source])
             ->toMediaCollection($collection);

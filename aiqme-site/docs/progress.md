@@ -5271,3 +5271,63 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   пересекается с `AIQ6`).
 - Путь `browser_check` в tasks.json (`/lt/admin`) точнее было бы указать как `/lt/administravimas/settings`; browser-check теперь понимает оба.
 - Часовой пояс года — UTC (как дата в PDF): счёт 01.01 00:30 по Вильнюсу ещё получит номер прошлого года и дату 31.12.
+
+## Правки 05.11, H-07: товар «Pirkti» / «Gauti pasiūlymą», цена, комплектация и документы
+
+### Сделано
+- **Редактор товара** (`ContentTypes`, общий редактор и Telegram-бот — один источник):
+  - атрибут `sale` «Pardavimo būdas» · «Sales mode»: «Gauti pasiūlymą» · «Request a quote» (по умолчанию, без пустого
+    варианта) или «Pirkti» · «Buy». Значение по умолчанию не хранится в meta: прежние товары и новые «Gauti pasiūlymą»
+    одинаковы, существующие записи не меняются (миграции нет);
+  - атрибут `price` «Kaina, EUR su PVM» · «Price, EUR incl. VAT»: поле-число, хранится в центах; обязательна при «Pirkti»
+    (`required_if`), 0,01–999 999,99, не больше двух знаков. Атрибуты, как прежние, применяются сразу при сохранении;
+  - поле перевода `included` «Komplektacija ir palaikymas» · «Included items & support» (текст LT/EN, черновик/публикация);
+  - коллекция медиа `documents` «Dokumentai (PDF)» · «Documents (PDF)»: несколько файлов, только PDF по сигнатуре `%PDF-`
+    (`MediaFile`), предел — общий `aiqme.media_max_kb` = 20 МБ; имя на диске — UUID.pdf, показываемое имя (`name` медиа) —
+    исходное имя файла (`ContentService::addMedia(..., title:)`; Telegram — `file_name` документа).
+- **Страница товара**: «Pirkti» — цена (`Number::currency`, LT `24,00 €`, EN `€24.00`), «Kiekis» · «Quantity» (1–100, как
+  в калькуляторе) и «Į krepšelį» · «Add to cart» с иконкой корзины (разметка как в прототипе: `.price`, `label.field`,
+  `.btn`); «Individualus pasiūlymas», «Gauti pasiūlymą» и подсказки запроса нет. «Gauti pasiūlymą» — как прежде.
+  «Komplektacija ir palaikymas» — текст товара (Markup, как характеристики) или прежняя общая фраза. «Dokumentai» — список
+  ссылок на PDF по имени; без документов заголовка и «Informacija ruošiama» нет (у всех товаров).
+- **Список товаров** у «Pirkti»: цена и кнопка «Pirkti» · «Buy» (ведёт на страницу товара — там количество и «Į krepšelį»;
+  форма в карточке невозможна: карточки внутри GET-формы фильтров). **Сравнение**: строка «Kaina» у «Pirkti» — цена.
+  Подпись кнопки карточки README не задаёт — простейший вариант: название режима.
+- **«Į krepšelį»**: POST на адрес корзины (`lt.cart.add` `/lt/krepselis`, `en.cart.add` `/en/cart`; маршрут сделан здесь,
+  как допускает done). Опубликованный на локали товар «Pirkti» добавляется в сессию `cart` (id товара => количество,
+  складывается, не больше 100), гостю тоже; затем переход на корзину. Товар «Gauti pasiūlymą», чужой slug, неизвестный —
+  404; количество вне 1–100 — ошибка. **Страница корзины пока прежняя (пустая) — её показ, значок и оформление — H-08.**
+  `routes/web.php` нет в `touches` H-07, но done разрешает сделать маршрут здесь.
+- Запись D-12 (стр. ~1116, «цена и режим продажи не редактируются») этой правкой заменена; старая запись не переписана.
+- Данные browser-check: `ContentFactory::saleProduct()` — «PLA gija» · «PLA filament» за 24,00 €, своя комплектация,
+  документ `tests/fixtures/product-document.pdf` (синтетический PDF, 588 байт) с именем `pla-gija-duomenys.pdf`;
+  `BrowserDataSeeder` его вызывает. `bin/browser-check`: новая `check_buy` на `/lt/produktai`, `/en/products` (390 и 1440):
+  цена в карточке, страница товара (цена, количество, нет «Gauti pasiūlymą», ссылка PDF, ширина), «Į krepšelį» → корзина 200.
+  D21_REPLACEMENTS не нужны: у страниц товаров фабрики эталона прототипа нет, тексты списка не менялись.
+
+### Тесты
+- Новый `tests/Feature/ProductSaleTest.php` (6): редактор (подписи LT/EN, варианты без «—», «Pirkti» без цены / 12.345 / 0 —
+  ошибка и meta не меняется, 1234.5 → 123450 центов, возврат в «Gauti pasiūlymą» снимает продажу); прежний товар после
+  сохранения текста — meta как была, комплектация — после публикации; документы (два PDF с исходными именами, UUID.pdf, PNG под
+  .pdf, PDF в фото, 20 МБ + 1 байт — отказ; ссылки на странице; без документов блока нет); страница «Pirkti» LT/EN и та же с
+  ценой, но «Gauti pasiūlymą»; список и сравнение; POST в корзину (сложение, предел, 404 у «Gauti pasiūlymą», чужого slug,
+  неизвестного, после перевода в «Gauti pasiūlymą»; ошибки количества).
+- `CatalogTest::test_product_page_by_own_locale_slug_with_quote_link_and_without_purchase` — ожидание «Documents» +
+  «Information is being prepared» заменено отсутствием блока и общей фразой комплектации (комментарий «правка 05.11, H-07»).
+- Проверено откатом (один раз): без `required_if` цены — падает тест редактора; без проверки `isForSale()` в добавлении — падает
+  тест корзины (302 вместо 404); без пропуска значения по умолчанию в meta — падал `AdminEditorsTest` (новый товар получал
+  `sale`). browser-check с неверной ожидаемой ценой `€25.00` — FAIL «в карточке товара «Pirkti» нет цены». Код возвращён.
+
+### Команды и вывод
+- `bin/php artisan test --compact` ProductSaleTest, CatalogTest, AdminEditorsTest, AdminContentEditorTest, AdminMediaTest,
+  TelegramBotTest, ContentServiceTest, ContentMediaTest, PrototypeRoutesTest, LocaleRoutesTest, PublicTextsTest — зелёные.
+- `bin/php vendor/bin/pint --dirty --format agent` — passed.
+- `bin/browser-check /lt/produktai /en/products` — **OK (348 проверок)**.
+- `bin/check` — `bin/check: OK`, PHPUnit 764/764, Vite build OK.
+- `git status --porcelain aiqme-site` — новые файлы: `tests/Feature/ProductSaleTest.php`, `tests/fixtures/product-document.pdf`.
+
+### Не проверено / вопросы
+- Вид блока цены, поля количества и списка документов на 390/1440 — ждёт проверки пользователем (browser-check: ширина,
+  консоль, маркеры — ok).
+- Загрузка PDF через Telegram-бота (имя из `file_name`) проверена чтением кода; тестом не покрыта.
+- Цена в списке и на странице — без пометки «su PVM» (README называет только «цена»; в редакторе — «Kaina, EUR su PVM»).

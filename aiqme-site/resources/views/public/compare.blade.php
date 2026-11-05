@@ -37,7 +37,8 @@
                     <tr>
                         <td>{{ __('public.compare.price') }}</td>
                         @foreach ($products as $product)
-                            <td>{{ __('public.products.on_request') }}</td>
+                            {{-- Правка 05.11, H-07: у товара «Pirkti» — цена. --}}
+                            <td>{{ ($price = $product->item->salePrice()) !== null ? \Illuminate\Support\Number::currency($price / 100, in: 'EUR', locale: app()->getLocale()) : __('public.products.on_request') }}</td>
                         @endforeach
                     </tr>
                     <tr>

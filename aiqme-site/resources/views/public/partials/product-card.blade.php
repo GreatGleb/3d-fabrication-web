@@ -1,6 +1,7 @@
 {{-- Карточка товара каталога (productCard прототипа): фото или своя заглушка, бренд, категория, название, «Pagal užklausą» ·
      «On request», «Gauti pasiūlymą» · «Request a quote» (страница товара) и отметка сравнения (resources/js/compare.js).
-     Без ярлыков «PLANUOJAMA» · «PLANNED RANGE» и «Tiekimas tikslinamas» · «Supply to be confirmed» (D-21); покупки нет (D-12). --}}
+     Без ярлыков «PLANUOJAMA» · «PLANNED RANGE» и «Tiekimas tikslinamas» · «Supply to be confirmed» (D-21). Правка 05.11, H-07:
+     у товара «Pirkti» — цена с PVM и «Pirkti» · «Buy» (страница товара, где количество и «Į krepšelį»). --}}
 @php($url = route(app()->getLocale().'.products.show', ['slug' => $product->slug]))
 <div class="card product-card">
     <a href="{{ $url }}" class="visual">
@@ -14,8 +15,13 @@
             <small class="muted">{{ $category->title }}</small>
         @endif
         <a href="{{ $url }}"><h3>{{ $product->title }}</h3></a>
-        <div class="price">{{ __('public.products.on_request') }}</div>
-        <x-button :href="$url" variant="secondary" small arrow>{{ __('public.products.request_quote') }}</x-button>
+        @if (($price = $product->item->salePrice()) !== null)
+            <div class="price">{{ \Illuminate\Support\Number::currency($price / 100, in: 'EUR', locale: app()->getLocale()) }}</div>
+            <x-button :href="$url" variant="secondary" small arrow>{{ __('public.products.buy') }}</x-button>
+        @else
+            <div class="price">{{ __('public.products.on_request') }}</div>
+            <x-button :href="$url" variant="secondary" small arrow>{{ __('public.products.request_quote') }}</x-button>
+        @endif
         <label class="compare-check"><input type="checkbox" data-compare="{{ $product->slug }}">{{ __('public.products.compare') }}</label>
     </div>
 </div>

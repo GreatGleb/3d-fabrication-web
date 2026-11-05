@@ -153,6 +153,7 @@ return [
         ],
         'count' => 'Rasta produktų: :count',
         'on_request' => 'Pagal užklausą',
+        'buy' => 'Pirkti', // правка 05.11, H-07
         'request_quote' => 'Gauti pasiūlymą',
         'compare' => 'Palyginti',
         'none' => 'Nieko neradome',
@@ -173,6 +174,9 @@ return [
         'documents' => 'Dokumentai',
         'compatible' => 'Suderinami priedai',
         'compatible_notice' => 'Suderinamumą turi patvirtinti administratorius pagal tikslų įrangos modelį. Nepatvirtinti priedai nesiūlomi kaip tinkami.',
+        // Товар «Pirkti» (правка 05.11, H-07).
+        'quantity' => 'Kiekis',
+        'add_to_cart' => 'Į krepšelį',
         'back' => 'Grįžti į katalogą',
     ],
     'compare' => [

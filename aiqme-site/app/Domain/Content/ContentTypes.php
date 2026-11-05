@@ -17,7 +17,11 @@ use Illuminate\Validation\Rule;
  * поля — строка (у pairs/records — строка каждой части); toForm()/fromForm() переводят его в хранимый вид и обратно.
  *
  * Атрибуты элемента (meta) общие для всех языков и применяются сразу при сохранении (без версий, как медиа):
- * select — одно значение из options, choices — несколько, date — дата Y-m-d, url — https-ссылка.
+ * select — одно значение из options (с default — без пустого варианта, отсутствующее значение = default), choices —
+ * несколько, date — дата Y-m-d, url — https-ссылка, price — цена EUR с PVM (в форме — евро, в meta — центы).
+ *
+ * Товар (правка 05.11, H-07): sale — режим продажи (quote «Gauti pasiūlymą» по умолчанию, buy «Pirkti»), price —
+ * обязательна при buy; документы — коллекция documents (PDF, несколько файлов).
  */
 final class ContentTypes
 {
@@ -37,7 +41,8 @@ final class ContentTypes
         'project' => ['task' => 'text', 'solution' => 'text', 'result' => 'text'],
         'article' => ['intro' => 'text', 'sections' => 'records'],
         'training' => ['description' => 'text'],
-        'product' => ['description' => 'text', 'specifications' => 'text', 'compatibility' => 'line'],
+        // included — «Komplektacija ir palaikymas» (правка 05.11, H-07).
+        'product' => ['description' => 'text', 'specifications' => 'text', 'compatibility' => 'line', 'included' => 'text'],
         'brand' => [],
         'category' => [],
         'faq_item' => ['answer' => 'text'],
@@ -56,7 +61,7 @@ final class ContentTypes
     private const MEDIA = [
         'service' => ['images' => true],
         'project' => ['images' => false],
-        'product' => ['images' => false],
+        'product' => ['images' => false, 'documents' => false],
         'brand' => ['images' => true],
         'page_text' => [
             'home' => ['video' => true, 'video_mobile' => true, 'video_poster' => true, 'logo' => true, 'logo_white' => true, 'favicon' => true],
@@ -65,6 +70,12 @@ final class ContentTypes
     ];
 
     private const LINE_MAX = 255;
+
+    /** Режимы продажи товара (правка 05.11, H-07): первый — по умолчанию, так остаются все прежние товары. */
+    public const SALE_MODES = ['quote', 'buy'];
+
+    /** Наибольшая цена товара, EUR. */
+    private const PRICE_MAX = 999999.99;
 
     public static function isRegistered(ContentType $type): bool
     {
@@ -123,7 +134,7 @@ final class ContentTypes
      * Атрибуты элемента (meta), общие для языков: имя => ['kind' => select|choices|date|url, 'options' => значение => подпись].
      * Подписи вариантов — на языке интерфейса админки; ключи услуг, категорий и id брендов читаются из БД.
      *
-     * @return array<string, array{kind: string, options?: array<string, string>}>
+     * @return array<string, array{kind: string, options?: array<string, string>, default?: string}>
      */
     public static function meta(ContentItem $item): array
     {
@@ -148,6 +159,8 @@ final class ContentTypes
             ContentType::Product => [
                 'category' => ['kind' => 'select', 'options' => self::titles(ContentType::Category)],
                 'brand' => ['kind' => 'select', 'options' => self::titles(ContentType::Brand, byId: true)],
+                'sale' => ['kind' => 'select', 'options' => $choices('admin.meta.sales.', self::SALE_MODES), 'default' => self::SALE_MODES[0]],
+                'price' => ['kind' => 'price'],
             ],
             default => [],
         };
@@ -185,6 +198,8 @@ final class ContentTypes
                 'choices' => ['array'],
                 'date' => ['nullable', 'date_format:Y-m-d'],
                 'url' => ['nullable', 'string', 'max:500', 'url:https'],
+                // Цена обязательна у товара «Pirkti» (правка 05.11, H-07).
+                'price' => ['nullable', 'required_if:meta.sale,buy', 'numeric', 'decimal:0,2', 'min:0.01', 'max:'.self::PRICE_MAX],
             };
             if ($field['kind'] === 'choices') {
                 $rules['meta.'.$name.'.*'] = ['string', Rule::in(array_map('strval', array_keys($field['options'])))];
@@ -203,15 +218,19 @@ final class ContentTypes
     {
         $form = [];
         foreach (self::meta($item) as $name => $field) {
-            $value = $item->meta($name);
-            $form[$name] = $field['kind'] === 'choices' ? array_map('strval', (array) $value) : (string) $value;
+            $value = $item->meta($name, $field['default'] ?? null);
+            $form[$name] = match ($field['kind']) {
+                'choices' => array_map('strval', (array) $value),
+                'price' => $value === null ? '' : number_format($value / 100, 2, '.', ''),
+                default => (string) $value,
+            };
         }
 
         return $form;
     }
 
     /**
-     * Форма → meta элемента: прочие атрибуты сохраняются, пустое значение удаляет атрибут, id бренда — число.
+     * Форма → meta элемента: прочие атрибуты сохраняются, пустое значение и значение по умолчанию удаляют атрибут, id бренда — число, цена — центы.
      *
      * @param  array<string, mixed>  $form
      * @return array<string, mixed>
@@ -224,10 +243,15 @@ final class ContentTypes
             $value = $field['kind'] === 'choices'
                 ? array_values(array_filter(array_map('strval', (array) $value), fn (string $choice): bool => array_key_exists($choice, $field['options'])))
                 : (trim((string) $value) === '' ? null : trim((string) $value));
-            if ($value === null || $value === []) {
+            // Значение по умолчанию (sale = quote) не хранится: прежние и новые товары «Gauti pasiūlymą» одинаковы.
+            if ($value === null || $value === [] || $value === ($field['default'] ?? null)) {
                 unset($meta[$name]);
             } else {
-                $meta[$name] = $item->type === ContentType::Product && $name === 'brand' ? (int) $value : $value;
+                $meta[$name] = match (true) {
+                    $field['kind'] === 'price' => (int) round((float) $value * 100),
+                    $item->type === ContentType::Product && $name === 'brand' => (int) $value,
+                    default => $value,
+                };
             }
         }
 

@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Проверка медиафайла контента (§6.4) — одна для веб-админки (W-08) и Telegram-бота (W-19): размер не больше
- * aiqme.media_max_kb, формат — только по сигнатуре (JPEG, PNG, WebP, MP4; SVG и прочее не принимаются) и подходит
+ * aiqme.media_max_kb, формат — только по сигнатуре (JPEG, PNG, WebP, MP4, PDF — только документы товара; SVG и прочее не принимаются) и подходит
  * коллекции. Возвращает расширение по сигнатуре: имя файла назначает сервер (UUID + это расширение), исходные имя и
  * расширение не используются.
  */
@@ -38,6 +38,7 @@ final class MediaFile
             str_starts_with($head, "\xFF\xD8\xFF") => 'jpg',
             str_starts_with($head, "\x89PNG\r\n\x1A\n") => 'png',
             str_starts_with($head, 'RIFF') && substr($head, 8, 4) === 'WEBP' => 'webp',
+            str_starts_with($head, '%PDF-') => 'pdf', // документы товара (правка 05.11, H-07)
             // ftyp с основным брендом видео; HEIC/AVIF-картинки (heic, mif1, avif…) — тоже ftyp, но не MP4.
             substr($head, 4, 4) === 'ftyp' && ! in_array(substr($head, 8, 4), self::IMAGE_BRANDS, true) => 'mp4',
             default => null,

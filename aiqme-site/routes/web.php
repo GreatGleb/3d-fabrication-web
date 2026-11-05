@@ -47,6 +47,8 @@ foreach (StaticPages::LOCALES as $locale) {
             // Формы W-09: отправка на адрес своей страницы; частота по IP — общий лимит обеих форм (throttle:forms).
             Route::post(StaticPages::segment('contact', $locale), [FormController::class, 'contact'])->middleware('throttle:forms')->name('contact.store');
             Route::post(StaticPages::segment('training', $locale), [FormController::class, 'training'])->middleware('throttle:forms')->name('training.store');
+            // «Į krepšelį» товара «Pirkti» — POST на адрес корзины (правка 05.11, H-07).
+            Route::post(StaticPages::segment('cart', $locale), [ProductController::class, 'addToCart'])->name('cart.add');
             Route::get(StaticPages::segment('services', $locale).'/{slug}', [ServiceController::class, 'show'])->name('services.show');
             Route::get(StaticPages::segment('projects', $locale).'/{slug}', [ProjectController::class, 'show'])->name('projects.show');
             Route::get(StaticPages::segment('products', $locale).'/{slug}', [ProductController::class, 'show'])->name('products.show');

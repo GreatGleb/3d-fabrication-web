@@ -144,7 +144,8 @@ class ContentEditor extends Component
 
         try {
             $content->addMedia(auth()->user(), $item, $this->upload->getRealPath(), $this->collection,
-                array_filter(array_map('trim', $this->alt)), $source, replace: $media[$this->collection]);
+                array_filter(array_map('trim', $this->alt)), $source, replace: $media[$this->collection],
+                title: $this->collection === 'documents' ? $this->upload->getClientOriginalName() : null);
         } catch (ValidationException $exception) {
             $this->addError('upload', collect($exception->errors())->flatten()->first());
 
@@ -366,6 +367,12 @@ class ContentEditor extends Component
             'in' => __('content.invalid', ['field' => ':attribute']),
             'array' => __('content.invalid', ['field' => ':attribute']),
             'date_format' => __('content.invalid', ['field' => ':attribute']),
+            // Цена товара (правка 05.11, H-07): обязательна при «Pirkti», число до двух знаков после точки.
+            'required_if' => __('account.messages.required'),
+            'numeric' => __('content.invalid', ['field' => ':attribute']),
+            'decimal' => __('content.invalid', ['field' => ':attribute']),
+            'min' => __('content.invalid', ['field' => ':attribute']),
+            'meta.price.max' => __('content.invalid', ['field' => ':attribute']),
         ];
     }
 

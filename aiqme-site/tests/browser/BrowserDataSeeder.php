@@ -32,6 +32,7 @@ class BrowserDataSeeder extends Seeder
         $content->homeTickers();
         $content->publicSections();
         $content->catalog();
+        $content->saleProduct(); // правка 05.11, H-07
         $guest = OrderFactory::confirmedWithRequestAndTracking($admin);
         // W-15: гостевая ссылка заказа выше (открытый токен выдаётся один раз — перевыпуск) и заказ клиента для кабинета.
         $meta = OrderMeta::where('order_id', $guest->id)->sole();

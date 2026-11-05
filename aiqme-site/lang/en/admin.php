@@ -246,6 +246,7 @@ return [
         'text' => 'Text',
         'specifications' => 'Features & specifications',
         'compatibility' => 'Compatibility',
+        'included' => 'Included items & support', // правка 05.11, H-07
         'answer' => 'Answer',
         'value' => 'Text',
     ],
@@ -265,6 +266,10 @@ return [
         'date' => 'Date',
         'format' => 'Training format',
         'brand' => 'Manufacturer',
+        // Product: sales mode and price (правка 05.11, H-07).
+        'sale' => 'Sales mode',
+        'price' => 'Price, EUR incl. VAT',
+        'sales' => ['quote' => 'Request a quote', 'buy' => 'Buy'],
         'groups' => ['services' => 'All services', 'general' => 'General questions'],
         'sections' => ['news' => 'News', 'library' => 'Library'],
         'formats' => ['online' => 'Online', 'aiqme' => 'At AIQME', 'company' => 'At the customer site'],
@@ -287,6 +292,7 @@ return [
             'logo' => 'Logo',
             'logo_white' => 'White logo (for the dark header; PNG or WebP)',
             'favicon' => 'Favicon (PNG)',
+            'documents' => 'Documents (PDF)', // правка 05.11, H-07
         ],
         'file' => 'File (JPEG, PNG, WebP or MP4, up to :max MB)',
         'alt' => 'Alt text',

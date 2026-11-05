@@ -128,6 +128,24 @@ final class ContentFactory
         ];
     }
 
+    /**
+     * Товар «Pirkti» (правка 05.11, H-07): PLA gija за 24,00 € с PVM, своя комплектация и PDF-документ
+     * tests/fixtures/product-document.pdf с именем «pla-gija-duomenys.pdf». Бренд VEKTA — из catalog().
+     */
+    public function saleProduct(): ContentItem
+    {
+        $vekta = ContentItem::where('type', ContentType::Brand)->where('key', 'vekta')->first();
+        $item = $this->published(ContentType::Product, 'vekta-pla', [
+            'lt' => ['title' => 'PLA gija', 'slug' => 'pla-gija', 'fields' => ['description' => 'Gija prototipams.',
+                'specifications' => 'Skersmuo 1,75 mm.', 'compatibility' => 'FDM spausdintuvai.', 'included' => 'Ritė 1 kg.']],
+            'en' => ['title' => 'PLA filament', 'slug' => 'pla-filament', 'fields' => ['description' => 'A filament for prototypes.',
+                'specifications' => 'Diameter 1.75 mm.', 'compatibility' => 'FDM printers.', 'included' => 'One 1 kg spool.']],
+        ], ['category' => 'materials', 'brand' => $vekta?->id, 'sale' => 'buy', 'price' => 2400], 5);
+        $this->content->addMedia($this->admin, $item, dirname(__DIR__).'/fixtures/product-document.pdf', 'documents', title: 'pla-gija-duomenys.pdf');
+
+        return $item;
+    }
+
     /** Проекты, обучение и новость browser-check (W-06 checks; W-33 — опубликованный черновик prototype): новости — из homeTickers. */
     public function publicSections(): void
     {

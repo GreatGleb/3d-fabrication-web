@@ -42,7 +42,11 @@
                         </div>
                     @elseif ($field['kind'] === 'select')
                         <x-field :name="'meta.'.$name" type="select" :label="__('admin.meta.'.$name)" :value="$meta[$name]" wire:model="meta.{{ $name }}"
-                            :options="['' => '—'] + $field['options']" />
+                            :options="(isset($field['default']) ? [] : ['' => '—']) + $field['options']" />
+                    @elseif ($field['kind'] === 'price')
+                        {{-- Цена товара, EUR с PVM (правка 05.11, H-07). --}}
+                        <x-field :name="'meta.'.$name" type="number" :label="__('admin.meta.'.$name)" :value="$meta[$name]" wire:model="meta.{{ $name }}"
+                            step="0.01" min="0.01" inputmode="decimal" />
                     @else
                         <x-field :name="'meta.'.$name" :type="$field['kind']" :label="__('admin.meta.'.$name)" :value="$meta[$name]" wire:model="meta.{{ $name }}" />
                     @endif
@@ -75,7 +79,7 @@
                     @if (str_starts_with((string) $file->mime_type, 'image/'))
                         <img @class(['admin-media-preview', 'admin-media-preview--dark' => $file->collection_name === 'logo_white']) src="{{ $file->getUrl() }}" height="48" alt="" loading="lazy">
                     @endif
-                    <a class="text-link" href="{{ $file->getUrl() }}" target="_blank" rel="noopener">{{ $file->file_name }} ↗</a>
+                    <a class="text-link" href="{{ $file->getUrl() }}" target="_blank" rel="noopener">{{ $file->collection_name === 'documents' ? $file->name : $file->file_name }} ↗</a>
                     {{ collect($file->getCustomProperty('alt', []))->map(fn ($text, $locale) => strtoupper($locale).': '.$text)->join(' · ') }}
                     <button type="button" class="btn small secondary" wire:click="removeMedia({{ $file->id }})">{{ __('admin.media.remove') }}</button>
                 </p>
@@ -98,7 +102,7 @@
                     <x-field name="collection" type="select" :label="__('admin.media.collection')" :value="$collection" wire:model="collection"
                         :options="collect($media)->keys()->mapWithKeys(fn ($name) => [$name => __('admin.media.collections.'.$name)])->all()" />
                     <x-field name="upload" type="file" :label="__('admin.media.file', ['max' => intdiv(\App\Domain\Content\MediaFile::maxKilobytes(), 1024)])"
-                        wire:model="upload" accept="image/jpeg,image/png,image/webp,video/mp4" />
+                        wire:model="upload" accept="image/jpeg,image/png,image/webp,video/mp4{{ array_key_exists('documents', $media) ? ',application/pdf' : '' }}" />
                     <x-field name="alt.lt" :label="\App\Livewire\Admin\ContentEditor::label('alt', 'lt')" wire:model="alt.lt" maxlength="500" />
                     <x-field name="alt.en" :label="\App\Livewire\Admin\ContentEditor::label('alt', 'en')" wire:model="alt.en" maxlength="500" />
                     <x-field name="sourceText" :label="__('admin.media.source')" wire:model="sourceText" maxlength="255" />

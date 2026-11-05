@@ -29,6 +29,7 @@ class ContentItem extends Model implements HasMedia
         'logo' => ['jpg', 'png', 'webp'],
         'logo_white' => ['png', 'webp'],
         'favicon' => ['png'],
+        'documents' => ['pdf'], // документы товара (правка 05.11, H-07)
     ];
 
     /** Ширины WebP-вариантов изображений (§4.4). */
@@ -56,6 +57,18 @@ class ContentItem extends Model implements HasMedia
     public function meta(string $name, mixed $default = null): mixed
     {
         return $this->meta[$name] ?? $default;
+    }
+
+    /** Товар «Pirkti» (правка 05.11, H-07): режим buy и цена задана; иначе — «Gauti pasiūlymą», как прежние товары. */
+    public function isForSale(): bool
+    {
+        return $this->type === ContentType::Product && $this->meta('sale') === 'buy' && is_int($this->meta('price'));
+    }
+
+    /** Цена товара «Pirkti» в центах с PVM; у товара «Gauti pasiūlymą» — null. */
+    public function salePrice(): ?int
+    {
+        return $this->isForSale() ? $this->meta('price') : null;
     }
 
     /**

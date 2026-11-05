@@ -230,6 +230,7 @@ return [
         'text' => 'Tekstas',
         'specifications' => 'Savybės ir specifikacijos',
         'compatibility' => 'Suderinamumas',
+        'included' => 'Komplektacija ir palaikymas', // правка 05.11, H-07
         'answer' => 'Atsakymas',
         'value' => 'Tekstas',
     ],
@@ -249,6 +250,10 @@ return [
         'date' => 'Data',
         'format' => 'Mokymų vieta',
         'brand' => 'Gamintojas',
+        // Товар: режим продажи и цена (правка 05.11, H-07).
+        'sale' => 'Pardavimo būdas',
+        'price' => 'Kaina, EUR su PVM',
+        'sales' => ['quote' => 'Gauti pasiūlymą', 'buy' => 'Pirkti'],
         'groups' => ['services' => 'Visos paslaugos', 'general' => 'Bendri klausimai'],
         'sections' => ['news' => 'Naujienos', 'library' => 'Biblioteka'],
         'formats' => ['online' => 'Nuotoliniai', 'aiqme' => 'AIQME patalpose', 'company' => 'Kliento įmonėje'],
@@ -271,6 +276,7 @@ return [
             'logo' => 'Logotipas',
             'logo_white' => 'Baltas logotipas (tamsiai antraštei; PNG arba WebP)',
             'favicon' => 'Svetainės ikona (PNG)',
+            'documents' => 'Dokumentai (PDF)', // правка 05.11, H-07
         ],
         'file' => 'Failas (JPEG, PNG, WebP arba MP4, iki :max MB)',
         'alt' => 'Alt tekstas',

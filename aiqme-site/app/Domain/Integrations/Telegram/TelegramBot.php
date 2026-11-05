@@ -452,7 +452,8 @@ final class TelegramBot
         $path = tempnam(sys_get_temp_dir(), 'tg-media-');
         try {
             $this->client->download($info['file_path'], $path);
-            $this->content->addMedia($admin, $item, $path, $state['collection'], replace: ContentTypes::media($item)[$state['collection']]);
+            $this->content->addMedia($admin, $item, $path, $state['collection'], replace: ContentTypes::media($item)[$state['collection']],
+                title: $state['collection'] === 'documents' && is_string($file['file_name'] ?? null) ? $file['file_name'] : null);
         } finally {
             @unlink($path);
         }

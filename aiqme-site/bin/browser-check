@@ -954,6 +954,40 @@ def check_search_modal(report, new_page, path, width, height):
     context.close()
 
 
+def check_buy(report, new_page, path, width, height):
+    """Правка 05.11, H-07: товар «Pirkti» фабрики (ContentFactory::saleProduct) — в списке цена 24,00 €; на странице товара
+    цена, «Kiekis» и «Į krepšelį» без «Gauti pasiūlymą», документ PDF по имени; «Į krepšelį» (POST) ведёт на корзину."""
+    lt = path.startswith('/lt')
+    where = f'{path} @{width} покупка'
+    context, page, problems = new_page(width, height)
+    page.goto(BASE + path, wait_until='networkidle')
+    card = page.locator('#product-results .product-card', has_text='PLA gija' if lt else 'PLA filament')
+    price = '24,00\u00a0€' if lt else '€24.00'
+    report.check(card.count() == 1 and card.locator('.price').inner_text() == price,
+                 f'{where}: в карточке товара «Pirkti» нет цены {price}')
+    if card.count() == 1:
+        card.locator('a.btn').click()
+        page.wait_for_load_state('networkidle')
+        main = page.locator('main')
+        report.check(main.locator('.price').first.inner_text() == price, f'{where}: на странице товара нет цены')
+        report.check(main.locator('input[name="quantity"]').is_visible(), f'{where}: нет поля количества')
+        report.check(not main.get_by_text('Gauti pasiūlymą' if lt else 'Request a quote', exact=True).count(),
+                     f'{where}: у товара «Pirkti» есть «Gauti pasiūlymą»')
+        report.check(main.locator('a', has_text='pla-gija-duomenys.pdf').count() == 1, f'{where}: нет ссылки на PDF-документ')
+        scroll, client = document_fits(page)
+        report.check(scroll <= client, f'{where}: страница товара шире окна ({scroll} > {client})')
+        main.locator('input[name="quantity"]').fill('2')
+        with page.expect_navigation(wait_until='networkidle') as navigation:
+            main.get_by_role('button', name='Į krepšelį' if lt else 'Add to cart').click()
+        response = navigation.value
+        cart = '/lt/krepselis' if lt else '/en/cart'
+        report.check(page.url.endswith(cart) and response is not None and response.status == 200,
+                     f'{where}: «Į krepšelį» не привела на {cart}: {page.url}')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def check_compare(report, new_page, path, width, height):
     """Выбор для сравнения (F-04, resources/js/compare.js): 4 отметки — панель «4/4», пятая не ставится и выводится сообщение
     о пределе; выбор сохраняется после перезагрузки; «Compare» открывает сравнение с таблицей из 4 товаров."""
@@ -3390,6 +3424,7 @@ def main():
                 if path in ('/lt/produktai', '/en/products'):
                     for width, height in ((390, 844), (1440, 1000)):
                         check_compare(report, new_page, path, width, height)
+                        check_buy(report, new_page, path, width, height)  # правка 05.11, H-07
                 if path in CALCULATOR_PAGES:
                     with tempfile.TemporaryDirectory() as directory:
                         files = calculator_files(directory)

@@ -153,6 +153,7 @@ return [
         ],
         'count' => ':count products found',
         'on_request' => 'On request',
+        'buy' => 'Buy', // правка 05.11, H-07
         'request_quote' => 'Request a quote',
         'compare' => 'Compare',
         'none' => 'No results',
@@ -173,6 +174,9 @@ return [
         'documents' => 'Documents',
         'compatible' => 'Compatible accessories',
         'compatible_notice' => 'An administrator must confirm compatibility against the exact equipment model. Unconfirmed accessories are not presented as compatible.',
+        // Товар «Pirkti» (правка 05.11, H-07).
+        'quantity' => 'Quantity',
+        'add_to_cart' => 'Add to cart',
         'back' => 'Back to the catalogue',
     ],
     'compare' => [

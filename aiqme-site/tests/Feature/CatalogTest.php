@@ -191,8 +191,11 @@ class CatalogTest extends TestCase
         $this->assertSame(['Delivery estimate: confirmed in the proposal', 'PLA, PETG and ABS filament.'], Html::texts($xpath, '//ul[@class="list-clean"]/li'));
         $this->assertStringContainsString('Build volume 250 × 250 × 250 mm.', Html::text($xpath->query('//div[@class="panel"]')->item(0)));
         $this->assertSame(['Category', '3D printers'], Html::texts($xpath, '//div[@class="summary-row"]/*'));
-        $this->assertSame(['Documents'], Html::texts($xpath, '//div[@class="panel"][2]/h3[2]'));
-        $this->assertSame(['Information is being prepared'], Html::texts($xpath, '//div[@class="panel"][2]//div[@class="empty"]/h3'));
+        // правка 05.11, H-07: без документов блока «Documents» и «Information is being prepared» нет; комплектация — общая фраза.
+        $this->assertSame(['Included items & support'], Html::texts($xpath, '//div[@class="panel"][2]/h3'));
+        $this->assertSame(['Included items, warranty terms, installation and technical support will be clarified in the specific proposal.'],
+            Html::texts($xpath, '//div[@class="panel"][2]/p'));
+        $this->assertCount(0, $xpath->query('//div[@class="panel"][2]//div[@class="empty"]'));
         $this->assertSame(['An administrator must confirm compatibility against the exact equipment model. Unconfirmed accessories are not presented as compatible.'],
             Html::texts($xpath, '//div[@class="notice gap"]'));
         $this->assertCount(0, $xpath->query('//button[@data-action="add-cart"] | //input[@name="quantity"] | //select[@name="variant"]'));
