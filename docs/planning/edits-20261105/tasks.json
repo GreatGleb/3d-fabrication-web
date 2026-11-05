@@ -12,7 +12,7 @@
   "Запуск — ночной оркестратор docs/planning/edition-2/run/night.py с этой очередью (README плана, «Подготовка прогона»): автор не делает git commit, push, stash, reset, checkout и не меняет ветку — коммит после проверки делает оркестратор.",
   "Меняются только aiqme-site/ (кроме aiqme-site/experiments/ — эталонный эксперимент, не изменять) и, только в задаче H-09, новый раздел «Правки заказчика 03.11 (рев. 4)» в docs/requirements.md. Не изменять legacy-landing/ (instance/ не читать), baseline/, docs/customer/ (не читать и не цитировать), docs/planning/ (в том числе этот план), корневой AGENTS.md. Chrome пользователя, CDP и docs/customer-prototype/tools/ не используются; браузерные проверки — bundled Chromium Playwright через aiqme-site/bin/browser-check.",
   "Рабочий сервер aiqme.com, его .env и БД не трогаются, миграции на чужой БД не запускаются; внешние сервисы не вызываются. Сеть — только загрузки пакетов для версий плана (D-20: Packagist, api.github.com/codeload.github.com только чтение, npm). Google, Stripe, Telegram, SMTP — запрещены; карта Google Maps в проверках подменяется локальной заглушкой (E-04), тесты исходящих HTTP-запросов не делают (Http::preventStrayRequests).",
-  "Источник требований — README плана docs/planning/edits-20261105/README.md (раздел задачи и «Как устроено хранение текстов»). Тексты LT/EN — дословно из README; не придумывать. Перечисленные в README отступления от прототипа (тексты, удалённые блоки и номера, логотип, hero без ряда этапов и без кнопки паузы, калькулятор из трёх шагов без цены, ввод толщины/глубины, нумерация счетов, продажа товаров) — требование, а не расхождение, как и отступления правок 28.10, 30.10 и 02.11 (docs/planning/edits-20261029/, edits-20261031/, edits-20261102/ README); в остальном вид и тексты сайта не меняются. «Шрифт и стиль сохранить как было» — меняются только тексты.",
+  "Источник требований — README плана docs/planning/edits-20261105/README.md (раздел задачи и «Как устроено хранение текстов»). Тексты LT/EN — дословно из README; не придумывать. Перечисленные в README отступления от прототипа (тексты, удалённые блоки и номера, логотип, hero без ряда этапов и без кнопки паузы, калькулятор из трёх шагов без цены, ввод толщины/глубины, нумерация счетов, продажа товаров, белая шапка вне главной — H-11) — требование, а не расхождение, как и отступления правок 28.10, 30.10 и 02.11 (docs/planning/edits-20261029/, edits-20261031/, edits-20261102/ README); в остальном вид и тексты сайта не меняются. «Шрифт и стиль сохранить как было» — меняются только тексты.",
   "CSS прототипа aiqme-site/resources/css/prototype/style.css не изменяется (§7.2): исправления оболочки — resources/css/shell.css, правки публичных страниц — resources/css/public.css.",
   "Репозиторий публичный: секретов, .env, клиентских файлов (снимков, переписки, PDF заказчика) в отслеживаемых файлах нет. Новые бинарные файлы — только маленькие синтетические PDF-фикстуры в aiqme-site/tests/fixtures/. Перед завершением: git status --porcelain aiqme-site — новые файлы только в ожидаемых каталогах.",
   "Новых зависимостей и обновлений версий нет; проверка версий в bin/check остаётся зелёной. Корзина — своим кодом на сессии или на уже установленном Lunar. Все команды PHP — через aiqme-site/bin/php (bin/php artisan …, bin/php vendor/bin/pint --dirty --format agent). Boost search-docs не используется (D-20) — документация читается из vendor/.",
@@ -89,6 +89,62 @@
     "/en/services",
     "/lt/apie-mus",
     "/en/about"
+   ]
+  },
+  {
+   "id": "H-11",
+   "title": "Белая шапка на всех страницах, кроме главной (тёмная вверху только над видео hero)",
+   "track": "L",
+   "slice": "S1",
+   "depends": [
+    "H-01"
+   ],
+   "inputs": [
+    "docs/planning/edits-20261105/README.md (H-11)",
+    "aiqme-site/resources/views/components/header.blade.php",
+    "aiqme-site/resources/views/components/layout.blade.php",
+    "aiqme-site/resources/js/header.js",
+    "aiqme-site/resources/css/shell.css",
+    "aiqme-site/resources/css/prototype/style.css (только читать)",
+    "aiqme-site/tests/Feature/ShellTest.php",
+    "aiqme-site/tests/Feature/DefaultMediaTest.php",
+    "aiqme-site/bin/browser-check (check_styles, шторка ~600–860)"
+   ],
+   "result": "Тёмная вверху шапка (с переходом в белую при прокрутке) осталась только на главной; на всех остальных страницах шапка белая сразу и без перехода, с обычным логотипом; без JS — так же.",
+   "touches": [
+    "aiqme-site/resources/views/components/",
+    "aiqme-site/resources/js/header.js",
+    "aiqme-site/resources/css/shell.css",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "Сервер рисует header--dark только при тёмном верхе страницы (параметр layout, как headerOverlay; сейчас только главная); header.js не включает тёмное состояние на остальных страницах; noscript-стиль не делает их тёмными",
+    "Главная: поведение шторки прежнее (тёмная вверху, белая после прокрутки)",
+    "ShellTest/DefaultMediaTest: классы шапки на главной LT/EN, внутренних страницах, в кабинете и админке; тест «без JS» обновлён",
+    "bin/browser-check: тёмная шапка на прокрутке 0 ожидается только на /lt и /en; на остальных — белая вверху и после прокрутки, анимаций перехода нет; docstring дополнен «правка 05.11, H-11»",
+    "Кадры 390/1440 вверху (главная, услуга, калькулятор) просмотрены; итог в progress.md",
+    "progress.md: запись «Правки 05.11, H-11: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "aiqme-site/bin/browser-check /lt /en /lt/paslaugos /lt/paslaugos/3d-spausdinimas /lt/kalkuliatorius /en/quote /lt/apie-mus /lt/kontaktai зелёный (точечный прогон; полный — в H-09)"
+   ],
+   "constraints": [
+    "Высоты рядов, размеры логотипа и отступы H-01 не менять — только цвета",
+    "Новых настроек не вводить"
+   ],
+   "unknowns": [],
+   "browser_check": [
+    "/lt",
+    "/en",
+    "/lt/paslaugos",
+    "/lt/paslaugos/3d-spausdinimas",
+    "/lt/kalkuliatorius",
+    "/en/quote",
+    "/lt/apie-mus",
+    "/lt/kontaktai"
    ]
   },
   {
@@ -474,7 +530,8 @@
     "H-05",
     "H-06",
     "H-07",
-    "H-08"
+    "H-08",
+    "H-11"
    ],
    "inputs": [
     "docs/planning/edits-20261105/README.md",
@@ -489,7 +546,7 @@
    ],
    "done": [
     "aiqme-site/bin/check и полный aiqme-site/bin/browser-check (без путей) зелёные; итоги и число проверок в progress.md",
-    "Каждый пункт H-01…H-08 сверен с кодом и выводом проверок; строка «H-0n: проверено …/не проверено …»; регрессии исправлены (крупные — status blocked)",
+    "Каждый пункт H-01…H-08 и H-11 сверен с кодом и выводом проверок; строка «H-0n: проверено …/не проверено …»; регрессии исправлены (крупные — status blocked)",
     "Просмотрены (Read) кадры по списку README H-09 и PNG счёта; дефекты описаны; сверка с PDF заказчика — «ждёт проверки пользователем»",
     "git diff --name-status main...HEAD -- aiqme-site docs (плюс незакоммиченное) — файлы только из touches H-01…H-09",
     "docs/requirements.md: раздел «Правки заказчика 03.11 (рев. 4)» — сделанное со статусом «сделано в коде и проверено локально; на aiqme.com — после выпуска», толкования и вопросы к заказчику из README; остальные разделы не изменены",
