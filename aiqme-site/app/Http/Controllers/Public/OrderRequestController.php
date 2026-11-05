@@ -73,6 +73,15 @@ class OrderRequestController extends Controller
             'parts.*.quantity.max' => __('calculator.submit.quantity'),
             'parts.*.scale.min' => __('calculator.js.scale_range'),
             'parts.*.scale.max' => __('calculator.js.scale_range'),
+            // Правка 05.11, H-05: толщина и глубина — числом в пределах.
+            'parts.*.thickness.required' => __('calculator.submit.thickness'),
+            'parts.*.thickness.numeric' => __('calculator.submit.thickness'),
+            'parts.*.thickness.min' => __('calculator.submit.thickness'),
+            'parts.*.thickness.max' => __('calculator.submit.thickness'),
+            'parts.*.depth.required' => __('calculator.submit.depth'),
+            'parts.*.depth.numeric' => __('calculator.submit.depth'),
+            'parts.*.depth.min' => __('calculator.submit.depth'),
+            'parts.*.depth.max' => __('calculator.submit.depth'),
         ]);
 
         $user = $request->user();
@@ -132,7 +141,8 @@ class OrderRequestController extends Controller
 
     /**
      * Правила позиции по формату файла и способу (правка 02.11, Г6): расширение из белого списка, печать — только для
-     * 3D-форматов, единицы и масштаб — у STL, материалы, толщины и глубины — из настроек калькулятора.
+     * 3D-форматов, единицы и масштаб — у STL, материалы — из настроек калькулятора. Толщина фрезеровки и глубина гравировки
+     * — числом в пределах CalculatorSettings (правка 05.11, H-05); при материале «Reikia konsultacijos» толщина необязательна.
      *
      * @param  array<string, mixed>  $settings
      * @param  array<string, int>  $limits
@@ -162,12 +172,20 @@ class OrderRequestController extends Controller
             $prefix.'.notes' => ['nullable', 'string', 'max:2000'],
         ];
         $names = fn (string $key): array => array_column($settings[$key], 'lt');
-        $sizes = fn (string $key): array => array_map('strval', $settings[$key]);
+        [$thinnest, $thickest] = CalculatorSettings::THICKNESS_MM;
+        [$shallowest, $deepest] = CalculatorSettings::DEPTH_MM;
+        $consult = $request->input($prefix.'.material') === CalculatorSettings::MILLING_CONSULT;
 
         return $rules + match ($request->input($prefix.'.method')) {
             'printing' => $this->printingRules($prefix.'.', $settings),
-            'milling' => [$prefix.'.material' => ['required', Rule::in($names('milling_materials'))], $prefix.'.thickness' => ['required', Rule::in($sizes('milling_thicknesses_mm'))]],
-            'engraving' => [$prefix.'.material' => ['required', Rule::in($names('engraving_materials'))], $prefix.'.depth' => ['required', Rule::in($sizes('engraving_depths_mm'))]],
+            'milling' => [
+                $prefix.'.material' => ['required', Rule::in($names('milling_materials'))],
+                $prefix.'.thickness' => [$consult ? 'nullable' : 'required', 'numeric', 'min:'.$thinnest, 'max:'.$thickest],
+            ],
+            'engraving' => [
+                $prefix.'.material' => ['required', Rule::in($names('engraving_materials'))],
+                $prefix.'.depth' => ['required', 'numeric', 'min:'.$shallowest, 'max:'.$deepest],
+            ],
             default => [],
         };
     }
@@ -197,7 +215,7 @@ class OrderRequestController extends Controller
             $parameters += [
                 'material' => $part['material'],
                 'material_en' => $list[array_search($part['material'], array_column($list, 'lt'), true)]['en'],
-                $key => $part[$key] + 0,
+                $key => isset($part[$key]) ? $part[$key] + 0 : null,
             ];
         }
         if (array_key_exists('unit', $part)) {

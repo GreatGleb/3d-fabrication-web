@@ -26,7 +26,7 @@ export const formatDimensions = (dimensionsMm) => `${dimensionsMm.map((size) => 
 
 export class Quote {
   // settings: { materials (названия), default_infill, max_dimension_mm, milling_materials,
-  // engraving_materials, milling_thicknesses_mm, engraving_depths_mm, milling_max_mm, max_file_bytes, max_files } из
+  // engraving_materials, milling_max_mm, max_file_bytes, max_files } из
   // data-settings страницы (настройки админки W-11, Г6 и лимиты config); onChange — после любого изменения файлов (в том числе
   // позднего разбора).
   constructor(settings, { parse = async (buffer) => parseStl(buffer), onChange = () => {} } = {}) {
@@ -60,8 +60,9 @@ export class Quote {
       method: THREE_D_FORMATS.includes(format) ? 'printing' : 'milling',
       options: {
         printing: { material: settings.materials[0], infill: String(settings.default_infill), ...PRINTING_DEFAULTS },
-        milling: { material: settings.milling_materials[0].lt, thickness: String(settings.milling_thicknesses_mm[0]) },
-        engraving: { material: settings.engraving_materials[0].lt, depth: String(settings.engraving_depths_mm[0]) },
+        // Толщина и глубина вводятся числом (правка 05.11, H-05): по умолчанию пусто.
+        milling: { material: settings.milling_materials[0].lt, thickness: '' },
+        engraving: { material: settings.engraving_materials[0].lt, depth: '' },
       },
       priority: 'standard', neededBy: '', notes: '', collapsed: false,
     };

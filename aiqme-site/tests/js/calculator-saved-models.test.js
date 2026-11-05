@@ -12,7 +12,7 @@ const settings = {
   default_infill: 20, max_dimension_mm: 250, max_file_bytes: 50 * 1024 * 1024, max_files: 10,
   // Правка 02.11, Г8: data-settings несёт списки фрезеровки и гравировки — из них параметры позиции по умолчанию.
   milling_materials: [{ lt: 'Aliuminis', en: 'Aluminium' }], engraving_materials: [{ lt: 'Mediena', en: 'Wood' }],
-  milling_thicknesses_mm: [6], engraving_depths_mm: [0.1], milling_max_mm: [2000, 4000],
+  milling_max_mm: [2000, 4000],
 };
 
 const response = (status, name) => new Response(status === 200 ? cube : 'Not Found', {

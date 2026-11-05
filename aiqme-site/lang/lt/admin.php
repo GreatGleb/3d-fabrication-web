@@ -369,11 +369,8 @@ return [
         'engraving_materials' => 'Graviravimo medžiagos',
         'name_lt' => 'Pavadinimas LT',
         'name_en' => 'Pavadinimas EN',
-        'milling_thicknesses' => 'Frezavimo storiai, mm',
-        'engraving_depths' => 'Graviravimo gyliai, mm',
         'milling_width' => 'Frezavimo ir graviravimo plotis, mm',
         'milling_length' => 'Frezavimo ir graviravimo ilgis, mm',
-        'sizes_hint' => 'Po vieną skaičių eilutėje, pvz. 6 arba 0,1.',
     ],
     // W-17: вкладки Settings в прототипе нет — нейтральные надписи, перечислены в docs/progress.md.
     'settings' => [

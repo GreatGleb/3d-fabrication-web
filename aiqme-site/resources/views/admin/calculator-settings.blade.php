@@ -1,6 +1,6 @@
 {{-- Форма настроек калькулятора (W-11) в разметке #pricing-form прототипа; у тарифов и габарита, которые администратор
      ещё не менял, к подписи добавлено «Nepatvirtinta» · «Not confirmed» (D-09, D-24). Ниже — фрезеровка и гравировка (правка 02.11,
-     Г7): материалы LT / EN строками, толщины и глубины по одной в строке, предел двумя сторонами. --}}
+     Г7): материалы LT / EN строками, предел двумя сторонами (списков толщин и глубин нет — правка 05.11, H-05). --}}
 @php($mark = fn (string $key): string => in_array($key, $unconfirmed, true) ? ' · '.__('admin.calculator.unconfirmed') : '')
 <form class="panel" id="pricing-form" wire:submit="save">
     <h2>{{ __('admin.calculator.heading') }}</h2>
@@ -31,11 +31,8 @@
     @endforeach
     <p>{{ __('admin.calculator.materials_hint') }}</p>
     <div class="grid two form-grid gap">
-        <x-field name="millingThicknesses" type="textarea" :label="__('admin.calculator.milling_thicknesses')" :value="$millingThicknesses" wire:model="millingThicknesses" />
-        <x-field name="engravingDepths" type="textarea" :label="__('admin.calculator.engraving_depths')" :value="$engravingDepths" wire:model="engravingDepths" />
         <x-field name="millingWidth" type="number" :label="__('admin.calculator.milling_width')" :value="$millingWidth" min="1" wire:model="millingWidth" />
         <x-field name="millingLength" type="number" :label="__('admin.calculator.milling_length')" :value="$millingLength" min="1" wire:model="millingLength" />
     </div>
-    <p>{{ __('admin.calculator.sizes_hint') }}</p>
     <x-button type="submit" class="gap">{{ __('admin.calculator.save') }}</x-button>
 </form>

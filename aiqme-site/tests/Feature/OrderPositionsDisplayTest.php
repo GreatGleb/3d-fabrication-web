@@ -79,7 +79,8 @@ class OrderPositionsDisplayTest extends TestCase
         if ($mixed) {
             $parts[] = ['file' => UploadedFile::fake()->createWithContent('housing.step', "ISO-10303-21;\nHEADER;\nENDSEC;\nEND-ISO-10303-21;\n"), 'method' => 'printing',
                 'material' => 'PLA', 'infill' => '100', 'color' => 'black', 'purpose' => 'visual', 'service' => 'none', 'surface' => 'standard', 'quantity' => '1', 'priority' => 'standard'];
-            $parts[] = ['file' => $this->upload('cad/plate.dxf', 'plate.dxf'), 'method' => 'milling', 'material' => 'Aliuminis', 'thickness' => '6', 'quantity' => '3',
+            // Правка 05.11, H-05: материал фрезеровки из нового списка, толщина — дробное число (в LT показ с запятой).
+            $parts[] = ['file' => $this->upload('cad/plate.dxf', 'plate.dxf'), 'method' => 'milling', 'material' => 'Spalvotieji metalai', 'thickness' => '6.5', 'quantity' => '3',
                 'priority' => 'priority', 'needed_by' => $this->neededBy, 'notes' => "Kraštai be šerpetų.\n<b>Matinis</b>"];
             $parts[] = ['file' => $this->upload('cad/plate.dwg', 'sign.dwg'), 'method' => 'engraving', 'material' => 'Mediena', 'depth' => '0.1', 'quantity' => '1', 'priority' => 'standard'];
         }
@@ -123,7 +124,7 @@ class OrderPositionsDisplayTest extends TestCase
         $this->assertStringNotContainsString('data-urgent', $bracket);
         $this->assertStringStartsWith('Quantity: 1<br><b>3D printing</b><br>PLA / Infill 100%', $step);
         $this->assertStringNotContainsString('Units', $step);
-        $this->assertStringStartsWith('Quantity: 3<br><b>Milling</b><br>Aluminium / Thickness: 6 mm / Production lead time: Urgent', $dxf);
+        $this->assertStringStartsWith('Quantity: 3<br><b>Milling</b><br>Non-ferrous metals / Thickness: 6.5 mm / Production lead time: Urgent', $dxf);
         $this->assertStringContainsString('<span class="tag blue" data-urgent>Urgent</span>Needed by: '.$this->neededBy, $dxf);
         $this->assertStringContainsString('Additional information:<span style="white-space:pre-line">Kraštai be šerpetų. &lt;b&gt;Matinis&lt;/b&gt;</span>', $dxf);
         $this->assertStringStartsWith('Quantity: 1<br><b>Engraving</b><br>Wood / Engraving depth: 0.1 mm / Production lead time: Standard', $dwg);
@@ -144,7 +145,7 @@ class OrderPositionsDisplayTest extends TestCase
 
         app()->setLocale('lt');
         [, , $dxf, $dwg] = self::cells($this->card($order)->html());
-        $this->assertStringStartsWith('Kiekis: 3<br><b>Frezavimas</b><br>Aliuminis / Storis: 6 mm / Gamybos terminas: Skubos tvarka', $dxf);
+        $this->assertStringStartsWith('Kiekis: 3<br><b>Frezavimas</b><br>Spalvotieji metalai / Storis: 6,5 mm / Gamybos terminas: Skubos tvarka', $dxf);
         $this->assertStringContainsString('data-urgent>Skubu</span>Reikalinga iki: '.$this->neededBy, $dxf);
         $this->assertStringStartsWith('Kiekis: 1<br><b>Graviravimas</b><br>Mediena / Graviravimo gylis: 0,1 mm', $dwg);
         $this->assertStringContainsString('Kainą įvertins specialistas', $this->card($order)->html());
@@ -173,7 +174,7 @@ class OrderPositionsDisplayTest extends TestCase
         $job = substr($html, strpos($html, 'id="bambu-job"'));
         $job = substr($job, 0, strpos($job, '</table>'));
         $this->assertStringContainsString('bracket.stl', $job);
-        foreach (['housing.step', 'plate.dxf', 'sign.dwg', 'Aluminium'] as $absent) {
+        foreach (['housing.step', 'plate.dxf', 'sign.dwg', 'Non-ferrous metals'] as $absent) {
             $this->assertStringNotContainsString($absent, $job, $absent);
         }
 
@@ -223,18 +224,18 @@ class OrderPositionsDisplayTest extends TestCase
         $number = OrderMeta::sole()->number;
         $page = $this->actingAs($this->client)->get('/en/account/orders/'.$number)->assertOk()->getContent();
         preg_match_all('#<p data-part-label><small>(.*?)</small></p>#', $page, $labels);
-        $this->assertSame(['3D printing / ABS', '3D printing / PLA', 'Milling / Aluminium, 6 mm', 'Engraving / Wood, 0.1 mm'], $labels[1]);
+        $this->assertSame(['3D printing / ABS', '3D printing / PLA', 'Milling / Non-ferrous metals, 6.5 mm', 'Engraving / Wood, 0.1 mm'], $labels[1]);
         $this->assertStringNotContainsString('data-total', $page);
         $this->assertStringNotContainsString('€', Html::text(Html::xpath($page)->query('//main')->item(0)));
         $this->assertStringContainsString('We will confirm the final price and production time after reviewing your request.', $page);
 
-        $this->actingAs($this->client)->get('/lt/paskyra/orders/'.$number)->assertOk()->assertSee('Frezavimas / Aliuminis, 6 mm')
+        $this->actingAs($this->client)->get('/lt/paskyra/orders/'.$number)->assertOk()->assertSee('Frezavimas / Spalvotieji metalai, 6,5 mm')
             ->assertDontSee('Kainą įvertins specialistas')->assertSee('Galutinę kainą ir gamybos terminą patvirtinsime peržiūrėję jūsų užklausą.');
 
         $ids = $order->lines()->orderBy('id')->pluck('id')->all();
         app(OrderWorkflow::class)->confirmPrice($this->admin, $order, array_fill_keys($ids, 1000), null);
         $page = $this->actingAs($this->client)->get('/en/account/orders/'.$number)->assertOk()
-            ->assertSee('Milling / Aluminium, 6 mm')->assertDontSee('Price to be assessed by a specialist');
+            ->assertSee('Milling / Non-ferrous metals, 6.5 mm')->assertDontSee('Price to be assessed by a specialist');
         $this->assertSame(e(Number::currency($order->fresh()->total->value / 100, in: 'EUR', locale: 'en')),
             trim(Html::xpath($page->getContent())->query('//*[@data-total]')->item(0)->textContent));
     }
@@ -268,12 +269,12 @@ class OrderPositionsDisplayTest extends TestCase
     public function test_mail_names_the_method_of_every_file_and_marks_specialist_positions(): void
     {
         $this->submit();
-        $this->assertSame(['bracket.stl — 3D spausdinimas / ABS', 'housing.step — 3D spausdinimas / PLA', 'plate.dxf — Frezavimas / Aliuminis, 6 mm', 'sign.dwg — Graviravimas / Mediena, 0,1 mm'],
+        $this->assertSame(['bracket.stl — 3D spausdinimas / ABS', 'housing.step — 3D spausdinimas / PLA', 'plate.dxf — Frezavimas / Spalvotieji metalai, 6,5 mm', 'sign.dwg — Graviravimas / Mediena, 0,1 mm'],
             IntegrationEvent::sole()->data['files']);
         Mail::assertSent(FormSubmitted::class, function (FormSubmitted $mail): bool {
             $html = $mail->render();
 
-            return str_contains($html, 'bracket.stl — 3D spausdinimas / ABS, housing.step — 3D spausdinimas / PLA, plate.dxf — Frezavimas / Aliuminis, 6 mm, sign.dwg — Graviravimas / Mediena, 0,1 mm')
+            return str_contains($html, 'bracket.stl — 3D spausdinimas / ABS, housing.step — 3D spausdinimas / PLA, plate.dxf — Frezavimas / Spalvotieji metalai, 6,5 mm, sign.dwg — Graviravimas / Mediena, 0,1 mm')
                 && str_contains($html, IntegrationEvent::sole()->data['amount'].' EUR + specialisto vertinamos detalės');
         });
 
@@ -289,8 +290,8 @@ class OrderPositionsDisplayTest extends TestCase
     {
         $order = $this->submit();
         $lines = fn (string $locale) => (fn () => $this->lines($order, $locale, 0))->call(app(InvoiceService::class))->pluck('description')->all();
-        $this->assertSame(['bracket.stl — 3D spausdinimas, ABS', 'housing.step — 3D spausdinimas, PLA', 'plate.dxf — Frezavimas, Aliuminis, 6 mm', 'sign.dwg — Graviravimas, Mediena, 0,1 mm', 'Užsakymo mokestis'], $lines('lt'));
-        $this->assertSame('plate.dxf — Milling, Aluminium, 6 mm', $lines('en')[2]);
+        $this->assertSame(['bracket.stl — 3D spausdinimas, ABS', 'housing.step — 3D spausdinimas, PLA', 'plate.dxf — Frezavimas, Spalvotieji metalai, 6,5 mm', 'sign.dwg — Graviravimas, Mediena, 0,1 mm', 'Užsakymo mokestis'], $lines('lt'));
+        $this->assertSame('plate.dxf — Milling, Non-ferrous metals, 6.5 mm', $lines('en')[2]);
 
         // Позиция до правки (без method) — только имя файла.
         StlPart::orderBy('id')->first()->update(['parameters' => array_diff_key(StlPart::orderBy('id')->first()->parameters, ['method' => 1])]);

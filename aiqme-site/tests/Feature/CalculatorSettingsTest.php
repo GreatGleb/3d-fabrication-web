@@ -39,10 +39,18 @@ class CalculatorSettingsTest extends TestCase
         return json_decode($root->getAttribute('data-settings'), true);
     }
 
-    /** @return array<string, mixed> заглушки фрезеровки и гравировки (правка 02.11, Г6) */
+    /**
+     * Настройки фрезеровки и гравировки: заглушки правки 02.11, Г6, после правки 05.11, H-05 — новые материалы фрезеровки,
+     * без списков толщин и глубин.
+     *
+     * @return array<string, mixed>
+     */
     private static function millingDefaults(): array
     {
-        return (require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES;
+        $h5 = require database_path('migrations/2026_11_05_400000_update_milling_calculator_settings_h5.php');
+        $g6 = (require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES;
+
+        return array_diff_key(['milling_materials' => $h5::MILLING_MATERIALS] + $g6, $h5::LISTS);
     }
 
     private function valid(): Testable
@@ -201,34 +209,37 @@ class CalculatorSettingsTest extends TestCase
         $this->assertSame('Check the value.', $this->valid()->set('maxDimension', '1')->call('save')->errors()->first('maxDimension'));
     }
 
-    /** Правка 02.11, Г7: списки фрезеровки и гравировки и предел редактируются в той же форме. */
+    /**
+     * Правка 02.11, Г7: списки материалов фрезеровки и гравировки и предел редактируются в той же форме. Правка 05.11, H-05:
+     * материалы фрезеровки — новый список, полей толщин и глубин нет (их вводит покупатель числом).
+     */
     public function test_milling_and_engraving_lists_and_limit_are_edited_and_reach_the_calculator(): void
     {
-        $this->valid()
+        $component = $this->valid()
             ->assertSet('millingMaterials', [...self::millingDefaults()['milling_materials'], ['lt' => '', 'en' => '']])
-            ->assertSet('millingThicknesses', "1\n2\n3\n4\n5\n6\n8\n10")
-            ->assertSet('engravingDepths', "0.1\n0.2\n0.3\n0.5")
             ->assertSet('millingWidth', '2000')->assertSet('millingLength', '4000')
-            ->assertSee('Milling materials')->assertSee('Engraving depths, mm')
+            ->assertSee('Milling materials')->assertDontSee('Milling thicknesses')->assertDontSee('Engraving depths')
+            ->assertDontSeeHtml('millingThicknesses')->assertDontSeeHtml('engravingDepths');
+        $this->assertSame(['Spalvotieji metalai', 'Mediena', 'Plastikas', 'Reikia konsultacijos', ''], array_column($component->get('millingMaterials'), 'lt'));
+        $component
             ->set('millingMaterials.1', ['lt' => '', 'en' => ''])
-            ->set('millingMaterials.5', ['lt' => ' Titanas ', 'en' => 'Titanium'])
+            ->set('millingMaterials.4', ['lt' => ' Titanas ', 'en' => 'Titanium'])
             ->set('engravingMaterials.3', ['lt' => '', 'en' => ''])
-            ->set('millingThicknesses', "1,5\n 12 \n\n")
-            ->set('engravingDepths', '0,25')
             ->set('millingWidth', '1500')->set('millingLength', '3000')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertSee('Saved.')
-            ->assertSet('millingThicknesses', "1.5\n12");
+            ->assertSee('Saved.');
 
         $values = app(Settings::class)->values();
-        $this->assertSame([['lt' => 'Aliuminis', 'en' => 'Aluminium'], ['lt' => 'Nerūdijantis plienas', 'en' => 'Stainless steel'], ['lt' => 'Žalvaris', 'en' => 'Brass'],
-            ['lt' => 'Plastikas', 'en' => 'Plastic'], ['lt' => 'Titanas', 'en' => 'Titanium']], $values['milling_materials']);
+        $this->assertSame([['lt' => 'Spalvotieji metalai', 'en' => 'Non-ferrous metals'], ['lt' => 'Plastikas', 'en' => 'Plastic'],
+            ['lt' => 'Reikia konsultacijos', 'en' => 'Consultation needed'], ['lt' => 'Titanas', 'en' => 'Titanium']], $values['milling_materials']);
         $this->assertSame(['Aliuminis', 'Nerūdijantis plienas', 'Plastikas'], array_column($values['engraving_materials'], 'lt'));
-        $this->assertSame([[1.5, 12], [0.25], [1500, 3000]], [$values['milling_thicknesses_mm'], $values['engraving_depths_mm'], $values['milling_max_mm']]);
+        $this->assertSame([1500, 3000], $values['milling_max_mm']);
+        $this->assertArrayNotHasKey('milling_thicknesses_mm', $values);
+        $this->assertArrayNotHasKey('engraving_depths_mm', $values);
         // Прежние тарифы и пометки не меняются.
         $this->assertSame(['materials', 'rate_per_gram', 'order_fee_cents', 'file_fee_cents'], app(Settings::class)->unconfirmed());
-        $this->assertSame([1.5, 12], $this->pageSettings('/en/quote')['milling_thicknesses_mm']);
+        $this->assertArrayNotHasKey('milling_thicknesses_mm', $this->pageSettings('/en/quote'));
         $this->assertSame([1500, 3000], $this->pageSettings('/lt/kalkuliatorius')['milling_max_mm']);
     }
 
@@ -236,10 +247,8 @@ class CalculatorSettingsTest extends TestCase
     {
         $before = app(Settings::class)->values();
         foreach ([
-            ['millingMaterials.0.en', ''], ['millingMaterials.5', ['lt' => '', 'en' => 'Titanium']], ['millingMaterials.1.lt', 'Aliuminis'],
+            ['millingMaterials.0.en', ''], ['millingMaterials.4', ['lt' => '', 'en' => 'Titanium']], ['millingMaterials.1.lt', 'Spalvotieji metalai'],
             ['engravingMaterials.0.lt', '123'], ['engravingMaterials.4', ['lt' => 'x', 'en' => str_repeat('a', 61)]],
-            ['millingThicknesses', ''], ['millingThicknesses', '0'], ['millingThicknesses', '-1'], ['millingThicknesses', '1 2'], ['millingThicknesses', 'abc'],
-            ['engravingDepths', '0,0'], ['engravingDepths', '0.1.2'], ['engravingDepths', '0.123'],
             ['millingWidth', '0'], ['millingWidth', ''], ['millingLength', '2.5'], ['millingLength', 'x'],
         ] as [$field, $value]) {
             $component = $this->valid()->set($field, $value)->call('save');
@@ -250,6 +259,6 @@ class CalculatorSettingsTest extends TestCase
         $this->valid()->set('millingMaterials', $empty)->call('save')->assertHasErrors('millingMaterials.0.lt');
         $this->valid()->set('engravingMaterials', $empty)->call('save')->assertHasErrors('engravingMaterials.0.lt');
         $this->assertSame($before, app(Settings::class)->values());
-        $this->assertSame('Check the value.', $this->valid()->set('millingThicknesses', '0')->call('save')->errors()->first('millingThicknesses'));
+        $this->assertSame('Check the value.', $this->valid()->set('millingWidth', '0')->call('save')->errors()->first('millingWidth'));
     }
 }

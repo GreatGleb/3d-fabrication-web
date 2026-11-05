@@ -109,6 +109,8 @@ return [
         'conflict' => 'This order has already been submitted with other details. Reload the page and try again.',
         'too_large_request' => 'The files are too large to send: up to :mb MB per file.',
         'quantity' => 'Quantity: from 1 to 100.',
+        'thickness' => 'Thickness: from 0.1 to 200 mm.',
+        'depth' => 'Engraving depth: from 0.01 to 20 mm.',
     ],
     'order' => [
         'submitted_title' => 'Order submitted',

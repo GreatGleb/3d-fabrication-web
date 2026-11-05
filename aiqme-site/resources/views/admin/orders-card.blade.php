@@ -28,7 +28,9 @@
         $method = $p['method'] ?? 'printing';
         if ($method !== 'printing') {
             $material = $locale === 'lt' ? $p['material'] : ($p['material_en'] ?? $p['material']);
-            $values = [$material, $method === 'milling' ? __('calculator.part.thickness').': '.$size($p['thickness']) : __('calculator.part.depth').': '.$size($p['depth'])];
+            // Правка 05.11, H-05: толщина — как ввели (при «Reikia konsultacijos» её может не быть).
+            $key = $method === 'milling' ? 'thickness' : 'depth';
+            $values = [$material, ...(isset($p[$key]) ? [__('calculator.part.'.$key).': '.$size($p[$key])] : [])];
 
             return implode(' / ', [...$values, __('calculator.settings.term').': '.__('calculator.settings.terms')[$p['term']]]);
         }

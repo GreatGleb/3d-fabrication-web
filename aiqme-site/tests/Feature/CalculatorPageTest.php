@@ -30,8 +30,11 @@ class CalculatorPageTest extends TestCase
         // (цена за грамм, платы) и плотностей материалов нет — только названия материалов и данные проверки файла.
         $this->assertSame([
             'materials' => ['PLA', 'PETG', 'ABS'], 'default_infill' => 20, 'max_dimension_mm' => 1000,
-            // Правка 02.11, Г6: заглушки фрезеровки и гравировки из миграции данных.
-            ...(require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES,
+            // Правка 02.11, Г6: заглушки фрезеровки и гравировки из миграции данных; правка 05.11, H-05: новые материалы фрезеровки,
+            // списков толщин и глубин нет.
+            ...array_diff_key(['milling_materials' => (require database_path('migrations/2026_11_05_400000_update_milling_calculator_settings_h5.php'))::MILLING_MATERIALS]
+                + (require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php'))::VALUES,
+                ['milling_thicknesses_mm' => 1, 'engraving_depths_mm' => 1]),
             'max_file_bytes' => 52428800, 'max_files' => 10,
         ], json_decode($root->getAttribute('data-settings'), true));
         $texts = json_decode($root->getAttribute('data-texts'), true);

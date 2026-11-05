@@ -5162,3 +5162,49 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - `bin/demo-check` не менялся: он проверяет старую демо-сборку `demo/` (пять шагов, итог 5,12), которая не пересобирается; после
   пересборки демо его сценарий калькулятора нужно привести к трём шагам — ждёт пользователя.
 - H-10: проверить, что в `ui_texts` нет переопределений изменённых ключей `calculator.*` и `pages.calculator.title`.
+
+## Правки 05.11, H-05: фрезеровка — новые материалы; толщина и глубина гравировки — числом
+
+- **Миграция настроек** `2026_11_05_400000_update_milling_calculator_settings_h5.php`: `milling_materials` → Spalvotieji metalai /
+  Mediena / Plastikas / Reikia konsultacijos (EN Non-ferrous metals / Wood / Plastic / Consultation needed) — только если список
+  прежний (5 материалов Г6); `milling_thicknesses_mm` и `engraving_depths_mm` удаляются из записи. `down` возвращает прежние
+  материалы (только если список остался списком H-05) и списки на прежние места. Материалы гравировки не менялись (README).
+  Миграция Г6 (`2026_11_03_100000`) как «источник для новых БД» не правилась — по образцу `2026_10_29_000000` новая миграция
+  идёт после неё и на новой БД, результат тот же (проверяет `CalculatorPageTest`/`CalculatorSettingsTest` на чистой БД).
+- **Сервер** (`OrderRequestController`): толщина `numeric|min:0.1|max:200`, обязательна, кроме материала «Reikia konsultacijos»
+  (тогда `nullable`, хранится `null`); глубина `required|numeric|min:0.01|max:20`. Пределы — константы
+  `CalculatorSettings::THICKNESS_MM`, `DEPTH_MM`, `MILLING_CONSULT`. Сообщения (`calculator.submit.thickness|depth`):
+  LT «Storis: nuo 0,1 iki 200 mm.», «Graviravimo gylis: nuo 0,01 iki 20 mm.»; EN «Thickness: from 0.1 to 200 mm.»,
+  «Engraving depth: from 0.01 to 20 mm.» (тексты README не даёт — нейтральные, по образцу «Kiekis: nuo 1 iki 100.»).
+  Хранение — JSON `parameters`, число как ввели (`'6.5'` → 6.5).
+- **Браузер**: в карточке шага 2 `<input type="number">` (толщина: min 0.1, max 200, step 0.1; глубина: 0.01/20/0.01), подпись
+  «Storis, mm» / «Graviravimo gylis, mm»; по умолчанию пусто. Свёрнутая строка карточки показывает «Graviravimo gylis: 0,25 mm»
+  (в LT — запятая), подпись для специалиста — «Frezavimas / Mediena, 6,5 mm». Клиентской проверки пределов нет — их проверяет
+  сервер (ошибка списком над формой шага 3), браузеру — атрибуты min/max/step.
+- **Админка**: полей «Frezavimo storiai» / «Graviravimo gyliai» и подсказки `sizes_hint` нет (ключи lang удалены); карточка заказа
+  показывает толщину/глубину с запятой в LT, без толщины при консультации. `StlPart::label` — без размера, если его нет.
+- **bin/browser-check**: `check_calculator_settings` — материалы фрезеровки нового списка, полей толщин/глубин нет;
+  `check_calculator` — список материалов фрезеровки, числовые поля (пусто, min/max/step), ввод 6.5 и 0.25, сводка свёрнутой
+  карточки, поля заявки (`thickness` 6.5, `depth` 0.25), подпись в контактной форме «Milling / Wood, 6.5 mm».
+- **Тесты** (комментарии «правка 05.11, H-05»): `OrderPositionsTest` — новый `test_thickness_and_depth_are_numbers_within_limits`
+  (границы 0,09/0/−1/200,01/текст/пусто/нет; 0,009/20,001/текст; LT и EN сообщения; 0,1/200/0,01/20/12,5/0,25 принимаются; подпись
+  с запятой; «Reikia konsultacijos» без толщины и с толщиной 3,5; 300 при консультации — ошибка) и
+  `test_h5_settings_migration_replaces_old_materials_and_removes_lists` (применена, откат, повтор, изменённый администратором
+  список не трогается, нет записи); прежние кейсы «thickness 7 / depth 0.4 — из списка» заменены пределами; материал фрезеровки
+  в фикстурах — «Spalvotieji metalai»; тест миграции Г6 сначала откатывает H-05. `OrderPositionsDisplayTest` — толщина 6.5:
+  карточка админки «Spalvotieji metalai / Storis: 6,5 mm», письмо и счёт «…, 6,5 mm», EN «6.5 mm». `CalculatorSettingsTest` —
+  форма без полей толщин/глубин, новый список материалов. JS-тесты — пустые толщина/глубина по умолчанию, ввод числа.
+
+### Команды и вывод
+- `node --test 'tests/js/**/*.test.js'` (Node 22) — 43/43 pass.
+- `bin/php artisan test --compact` по OrderPositionsTest, OrderPositionsDisplayTest, CalculatorSettingsTest, CalculatorPageTest — 42/42.
+- `bin/browser-check /lt/kalkuliatorius /en/quote` — `OK (852 проверок)`; `--signed-in` — `OK (6692 проверок)`.
+- `bin/check` — `bin/check: OK`, PHPUnit 756/756. `pint --dirty` — passed. `git status --porcelain aiqme-site` — новая только миграция.
+
+### Не проверено / вопросы
+- Отдельный прогон новых тестов на коде до правки не делался (до правки списка `milling_thicknesses_mm` и правил пределов нет —
+  тест границ на прежнем коде заведомо падает: прежние правила `Rule::in` приняли бы только значения списка).
+- Вид карточки на 390/1440 (кадр `calculator-step2-1440.png` просмотрен автором) — ждёт проверки пользователем.
+- Вопросы к заказчику (README): пределы 0,1–200 мм и 0,01–20 мм; материалы гравировки — прежний список.
+- H-10: на рабочей БД администратор мог менять список материалов фрезеровки — тогда миграция его не заменит (только удалит списки).
+- `bin/demo-check` и демо-сборка не менялись (в них нет фрезеровки).

@@ -109,6 +109,8 @@ return [
         'conflict' => 'Šis užsakymas jau pateiktas su kitais duomenimis. Atnaujinkite puslapį ir bandykite dar kartą.',
         'too_large_request' => 'Failai per dideli išsiųsti: iki :mb MB vienam failui.',
         'quantity' => 'Kiekis: nuo 1 iki 100.',
+        'thickness' => 'Storis: nuo 0,1 iki 200 mm.',
+        'depth' => 'Graviravimo gylis: nuo 0,01 iki 20 mm.',
     ],
     'order' => [
         'submitted_title' => 'Užsakymas pateiktas',

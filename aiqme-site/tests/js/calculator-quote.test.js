@@ -21,7 +21,7 @@ const settings = {
   default_infill: 20, max_dimension_mm: 250, max_file_bytes: 50 * 1024 * 1024, max_files: 10,
   milling_materials: [{ lt: 'Aliuminis', en: 'Aluminium' }, { lt: 'Plienas', en: 'Steel' }],
   engraving_materials: [{ lt: 'Mediena', en: 'Wood' }],
-  milling_thicknesses_mm: [1, 6], engraving_depths_mm: [0.1, 0.5], milling_max_mm: [2000, 4000],
+  milling_max_mm: [2000, 4000], // правка 05.11, H-05: списков толщин и глубин нет
 };
 const texts = { quantity: 'Quantity', message_intro: 'Please help review these files:', message_more: 'Models not listed: :count.' };
 
@@ -167,10 +167,14 @@ describe('позиции без оценки (правка 05.11, H-04)', () => 
     Object.assign(plate, { quantity: 3, neededBy: '2030-01-02', notes: 'Be šerpetų' });
     assert.equal(quote.fields(plate).needed_by, '', 'дата без скорой очереди не отправляется');
     plate.priority = 'priority';
+    // Правка 05.11, H-05: толщина и глубина вводятся числом, по умолчанию пусто.
+    assert.equal(quote.fields(plate).thickness, '');
     plate.options.milling.thickness = '6';
     assert.deepEqual(quote.fields(plate), { method: 'milling', material: 'Aliuminis', thickness: '6', quantity: 3, priority: 'priority', needed_by: '2030-01-02', notes: 'Be šerpetų' });
     sign.method = 'engraving';
-    assert.deepEqual(quote.fields(sign), { method: 'engraving', material: 'Mediena', depth: '0.1', quantity: 1, priority: 'standard', needed_by: '', notes: '' });
+    assert.equal(quote.fields(sign).depth, '');
+    sign.options.engraving.depth = '0.15';
+    assert.deepEqual(quote.fields(sign), { method: 'engraving', material: 'Mediena', depth: '0.15', quantity: 1, priority: 'standard', needed_by: '', notes: '' });
     // Параметры способа хранятся отдельно: возврат к фрезеровке возвращает её выбор.
     plate.method = 'engraving';
     plate.method = 'milling';

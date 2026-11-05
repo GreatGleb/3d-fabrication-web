@@ -66,7 +66,7 @@ class OrderPositionsTest extends TestCase
     /** @param  array<string, mixed>  $override */
     private function milled(string $fixture = 'cad/plate.dxf', string $name = 'plate.dxf', array $override = []): array
     {
-        return ['file' => $this->upload($fixture, $name), 'method' => 'milling', 'material' => 'Aliuminis', 'thickness' => '6', 'quantity' => '1', 'priority' => 'standard', ...$override];
+        return ['file' => $this->upload($fixture, $name), 'method' => 'milling', 'material' => 'Spalvotieji metalai', 'thickness' => '6', 'quantity' => '1', 'priority' => 'standard', ...$override];
     }
 
     /**
@@ -130,7 +130,7 @@ class OrderPositionsTest extends TestCase
         $this->assertSame(['PETG', 100, 'high'], [$cover->parameters['material'], $cover->parameters['infill'], $cover->parameters['surface']]);
         $this->assertSame(['method' => 'printing', 'material' => 'PLA', 'infill' => 20, 'infill_consult' => true, 'quantity' => 1, 'color' => 'black',
             'purpose' => 'practical', 'service' => 'none', 'surface' => 'standard', 'term' => 'standard', 'needed_by' => null, 'notes' => null], $step->parameters);
-        $this->assertSame(['method' => 'milling', 'material' => 'Aliuminis', 'material_en' => 'Aluminium', 'thickness' => 6, 'quantity' => 3, 'term' => 'priority',
+        $this->assertSame(['method' => 'milling', 'material' => 'Spalvotieji metalai', 'material_en' => 'Non-ferrous metals', 'thickness' => 6, 'quantity' => 3, 'term' => 'priority',
             'needed_by' => now()->addDays(2)->format('Y-m-d'), 'notes' => 'Kraštai be šerpetų.'], $dxf->parameters);
         // Дата при обычной очереди не хранится.
         $this->assertSame(['method' => 'engraving', 'material' => 'Mediena', 'material_en' => 'Wood', 'depth' => 0.1, 'quantity' => 1, 'term' => 'standard',
@@ -145,10 +145,10 @@ class OrderPositionsTest extends TestCase
         $this->assertSame([null, null, null], [$step->measurement, $dxf->measurement, $dwg->measurement]);
         $this->assertEqualsWithDelta(0.7488, $bracket->measurement['mass_grams'], 1e-9);
 
-        // Подписи строк — по способу, на языке заказа (EN) и по запросу на LT.
-        $this->assertSame(['3D printing / ABS', '3D printing / PETG', '3D printing / PLA', 'Milling / Aluminium, 6 mm', 'Engraving / Wood, 0.1 mm'],
+        // Подписи строк — по способу, на языке заказа (EN) и по запросу на LT (материал фрезеровки — правка 05.11, H-05).
+        $this->assertSame(['3D printing / ABS', '3D printing / PETG', '3D printing / PLA', 'Milling / Non-ferrous metals, 6 mm', 'Engraving / Wood, 0.1 mm'],
             $lines->map(fn (OrderLine $line): string => $line->option)->all());
-        $this->assertSame(['3D spausdinimas / ABS', 'Frezavimas / Aliuminis, 6 mm', 'Graviravimas / Mediena, 0,1 mm'],
+        $this->assertSame(['3D spausdinimas / ABS', 'Frezavimas / Spalvotieji metalai, 6 mm', 'Graviravimas / Mediena, 0,1 mm'],
             [$bracket->label('lt'), $dxf->label('lt'), $dwg->label('lt')]);
     }
 
@@ -206,10 +206,14 @@ class OrderPositionsTest extends TestCase
             'exe as OBJ' => [[['file' => UploadedFile::fake()->createWithContent('part.obj', $exe)] + $this->printed('x.stl')], 'parts.0.file', 'part.obj: unsupported format — contact a specialist.'],
             'exe as STL' => [[['file' => UploadedFile::fake()->createWithContent('part.stl', $exe)] + $this->printed('x.stl')], 'parts.0.file', 'part.stl: Could not read geometry'],
             'milling material' => [[$this->milled(override: ['material' => 'Titanas'])], 'parts.0.material', 'Choose a value from the list.'],
-            'engraving list for milling' => [[$this->milled(override: ['material' => 'Mediena'])], 'parts.0.material', 'Choose a value from the list.'],
-            'thickness' => [[$this->milled(override: ['thickness' => '7'])], 'parts.0.thickness', 'Choose a value from the list.'],
-            'depth' => [[$this->milled(override: ['method' => 'engraving', 'material' => 'Mediena', 'depth' => '0.4'])], 'parts.0.depth', 'Choose a value from the list.'],
-            'no depth' => [[$this->milled(override: ['method' => 'engraving', 'material' => 'Mediena'])], 'parts.0.depth', 'Fill in this field.'],
+            // Правка 05.11, H-05: прежние материалы фрезеровки больше не принимаются.
+            'old milling material' => [[$this->milled(override: ['material' => 'Aliuminis'])], 'parts.0.material', 'Choose a value from the list.'],
+            // Правка 05.11, H-05: «Mediena» теперь есть и у фрезеровки — материал только гравировки.
+            'engraving list for milling' => [[$this->milled(override: ['material' => 'Nerūdijantis plienas'])], 'parts.0.material', 'Choose a value from the list.'],
+            // Правка 05.11, H-05: толщина и глубина — числом в пределах (границы — test_thickness_and_depth_are_numbers_within_limits).
+            'thickness' => [[$this->milled(override: ['thickness' => '200.1'])], 'parts.0.thickness', 'Thickness: from 0.1 to 200 mm.'],
+            'depth' => [[$this->milled(override: ['method' => 'engraving', 'material' => 'Mediena', 'depth' => '20.01'])], 'parts.0.depth', 'Engraving depth: from 0.01 to 20 mm.'],
+            'no depth' => [[$this->milled(override: ['method' => 'engraving', 'material' => 'Mediena'])], 'parts.0.depth', 'Engraving depth: from 0.01 to 20 mm.'],
             'printing material' => [[$this->printed('a.stl', ['material' => 'Aliuminis'])], 'parts.0.material', 'Choose a value from the list.'],
             'STL without unit' => [[array_diff_key($this->printed('a.stl'), ['unit' => 1])], 'parts.0.unit', 'Fill in this field.'],
             'priority' => [[$this->milled(override: ['priority' => 'express'])], 'parts.0.priority', 'Choose a value from the list.'],
@@ -342,6 +346,8 @@ class OrderPositionsTest extends TestCase
     {
         $migration = require database_path('migrations/2026_11_03_100000_add_milling_engraving_calculator_settings.php');
         $settings = app(CalculatorSettings::class);
+        // Правка 05.11, H-05: следующая миграция меняет эти настройки — откат к состоянию после Г6.
+        (require database_path('migrations/2026_11_05_400000_update_milling_calculator_settings_h5.php'))->down();
         $this->assertSame($migration::VALUES, array_intersect_key($settings->values(), $migration::VALUES));
         $this->assertSame([2000, 4000], $settings->values()['milling_max_mm']);
 
@@ -364,6 +370,99 @@ class OrderPositionsTest extends TestCase
         $this->assertSame([6, 12], $settings->values()['milling_thicknesses_mm']);
         $migration->down();
         $this->assertSame([...$before, 'milling_thicknesses_mm' => [6, 12]], $settings->values());
+
+        // Записи нет — без ошибки и без вставки.
+        Setting::query()->delete();
+        $migration->up();
+        $migration->down();
+        $this->assertSame(0, DB::table('settings')->count());
+    }
+
+    /** Правка 05.11, H-05: пределы толщины (0,1–200 мм) и глубины (0,01–20 мм), сообщения LT/EN, «Reikia konsultacijos». */
+    public function test_thickness_and_depth_are_numbers_within_limits(): void
+    {
+        $engraved = fn (array $override): array => $this->milled('cad/plate.dwg', 'sign.dwg', ['method' => 'engraving', 'material' => 'Mediena', ...$override]);
+        $cases = [
+            'thickness 0.09' => [$this->milled(override: ['thickness' => '0.09']), 'thickness'],
+            'thickness 0' => [$this->milled(override: ['thickness' => '0']), 'thickness'],
+            'thickness -1' => [$this->milled(override: ['thickness' => '-1']), 'thickness'],
+            'thickness 200.01' => [$this->milled(override: ['thickness' => '200.01']), 'thickness'],
+            'thickness text' => [$this->milled(override: ['thickness' => 'šeši']), 'thickness'],
+            'thickness empty' => [$this->milled(override: ['thickness' => '']), 'thickness'],
+            'no thickness' => [array_diff_key($this->milled(), ['thickness' => 1]), 'thickness'],
+            'depth 0.009' => [$engraved(['depth' => '0.009']), 'depth'],
+            'depth 20.001' => [$engraved(['depth' => '20.001']), 'depth'],
+            'depth text' => [$engraved(['depth' => 'abc']), 'depth'],
+        ];
+        $messages = [
+            'en' => ['thickness' => 'Thickness: from 0.1 to 200 mm.', 'depth' => 'Engraving depth: from 0.01 to 20 mm.'],
+            'lt' => ['thickness' => 'Storis: nuo 0,1 iki 200 mm.', 'depth' => 'Graviravimo gylis: nuo 0,01 iki 20 mm.'],
+        ];
+        foreach ($cases as $label => [$part, $field]) {
+            foreach ($messages as $locale => $texts) {
+                $response = $this->submit([$part], $locale);
+                $this->assertSame([422, $texts[$field]], [$response->status(), $response->json('errors')['parts.0.'.$field][0] ?? null], $label.' '.$locale);
+            }
+        }
+        $this->assertSame(0, Order::count());
+
+        // Границы и дробные значения принимаются; число хранится как ввели.
+        $this->submit([
+            $this->milled(override: ['thickness' => '0.1']),
+            $this->milled('cad/plate.dxf', 'b.dxf', ['thickness' => '200']),
+            $this->milled('cad/plate.dxf', 'c.dxf', ['thickness' => '12.5', 'material' => 'Mediena']),
+            $engraved(['depth' => '0.01']),
+            $engraved(['depth' => '20']),
+            $engraved(['depth' => '0.25']),
+        ])->assertCreated();
+        $this->assertSame([0.1, 200, 12.5, 0.01, 20, 0.25], array_map(fn (StlPart $part): int|float => $part->parameters['thickness'] ?? $part->parameters['depth'], $this->positions()));
+        $this->assertSame(['Frezavimas / Mediena, 12,5 mm', 'Milling / Wood, 12.5 mm', 'Graviravimas / Mediena, 0,25 mm'],
+            [$this->positions()[2]->label('lt'), $this->positions()[2]->label('en'), $this->positions()[5]->label('lt')]);
+
+        // «Reikia konsultacijos»: толщина необязательна; если указана — проверяется.
+        $this->token = (string) Str::uuid();
+        $this->submit([$this->milled(override: ['material' => 'Reikia konsultacijos', 'thickness' => '']), $this->milled('cad/plate.dxf', 'd.dxf', ['material' => 'Reikia konsultacijos', 'thickness' => '3.5'])])->assertCreated();
+        [$consult, $given] = array_slice($this->positions(), -2);
+        $this->assertNull($consult->parameters['thickness']);
+        $this->assertSame(['Frezavimas / Reikia konsultacijos', 'Milling / Consultation needed', 'Frezavimas / Reikia konsultacijos, 3,5 mm'],
+            [$consult->label('lt'), $consult->label('en'), $given->label('lt')]);
+        $this->token = (string) Str::uuid();
+        $this->submit([$this->milled(override: ['material' => 'Reikia konsultacijos', 'thickness' => '300'])])
+            ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.thickness' => ['Thickness: from 0.1 to 200 mm.']]);
+        // Без консультации пустая толщина — ошибка (проверено выше), глубина гравировки обязательна всегда.
+        $errors = $this->submit([$engraved(['material' => 'Reikia konsultacijos', 'depth' => ''])])->assertUnprocessable()->json('errors');
+        $this->assertSame([['Choose a value from the list.'], ['Engraving depth: from 0.01 to 20 mm.']], [$errors['parts.0.material'], $errors['parts.0.depth']]);
+    }
+
+    /** Правка 05.11, H-05: миграция настроек — материалы фрезеровки (только прежний список), без списков толщин и глубин. */
+    public function test_h5_settings_migration_replaces_old_materials_and_removes_lists(): void
+    {
+        $migration = require database_path('migrations/2026_11_05_400000_update_milling_calculator_settings_h5.php');
+        $settings = app(CalculatorSettings::class);
+        $applied = $settings->values();
+        $this->assertSame($migration::MILLING_MATERIALS, $applied['milling_materials']);
+        $this->assertArrayNotHasKey('milling_thicknesses_mm', $applied);
+        $this->assertArrayNotHasKey('engraving_depths_mm', $applied);
+        $this->assertSame(['Spalvotieji metalai', 'Mediena', 'Plastikas', 'Reikia konsultacijos'], array_column($applied['milling_materials'], 'lt'));
+        $this->assertSame(['Non-ferrous metals', 'Wood', 'Plastic', 'Consultation needed'], array_column($applied['milling_materials'], 'en'));
+
+        // Откат: прежние материалы и списки; повтор up — снова как после применения.
+        $migration->down();
+        $before = $settings->values();
+        $this->assertSame([$migration::OLD_MILLING_MATERIALS, [1, 2, 3, 4, 5, 6, 8, 10], [0.1, 0.2, 0.3, 0.5]],
+            [$before['milling_materials'], $before['milling_thicknesses_mm'], $before['engraving_depths_mm']]);
+        $migration->up();
+        $this->assertSame($applied, $settings->values());
+
+        // Список, изменённый администратором: up его не трогает (списки толщин и глубин всё равно удаляются), down не меняет.
+        $migration->down();
+        $custom = [['lt' => 'Titanas', 'en' => 'Titanium']];
+        $settings->save(['milling_materials' => $custom] + $settings->values());
+        $migration->up();
+        $this->assertSame($custom, $settings->values()['milling_materials']);
+        $this->assertArrayNotHasKey('milling_thicknesses_mm', $settings->values());
+        $migration->down();
+        $this->assertSame($custom, $settings->values()['milling_materials']);
 
         // Записи нет — без ошибки и без вставки.
         Setting::query()->delete();

@@ -56,19 +56,22 @@ function start(root) {
         .map((value) => [value, texts.settings.infill_option.replace(':value', value) + (value === settings.default_infill ? texts.settings.recommended : '')])),
       consult: texts.settings.infill_consult,
     },
-    thickness: Object.fromEntries(settings.milling_thicknesses_mm.map((value) => [value, `${number(value, 2)} mm`])),
-    depth: Object.fromEntries(settings.engraving_depths_mm.map((value) => [value, `${number(value, 2)} mm`])),
   });
   const fieldLabels = {
     material: texts.settings.material, color: texts.settings.color, purpose: texts.settings.purpose, service: texts.settings.service,
     surface: texts.settings.surface, infill: texts.settings.infill, thickness: texts.part.thickness, depth: texts.part.depth,
   };
+  // Толщина фрезеровки или глубина гравировки (правка 05.11, H-05): число, как ввели, в LT — с запятой; пустое — ''.
+  const sizeKey = (entry) => (entry.method === 'milling' ? 'thickness' : 'depth');
+  const sizeText = (entry) => {
+    const value = String(entry.options[entry.method][sizeKey(entry)] ?? '').trim();
+    return value === '' ? '' : `${locale === 'lt' ? value.replace('.', ',') : value} mm`;
+  };
   // Подпись позиции, как StlPart::label на сервере: «3D spausdinimas / PLA», «Frezavimas / Aliuminis, 6 mm».
   const label = (entry) => {
     const options = entry.options[entry.method];
-    const list = lists(entry);
     const detail = entry.method === 'printing' ? options.material
-      : `${list.material[options.material]}, ${list[entry.method === 'milling' ? 'thickness' : 'depth'][options[entry.method === 'milling' ? 'thickness' : 'depth']]}`;
+      : [lists(entry).material[options.material], sizeText(entry)].filter(Boolean).join(', ');
     return `${texts.methods[entry.method]} / ${detail}`;
   };
 
@@ -156,6 +159,16 @@ function start(root) {
     <select id="part-${entry.id}-${name}" data-part="${entry.id}" data-option="${name}">${Object.entries(options).map(([key, text]) =>
       `<option value="${html(key)}"${String(key) === String(value) ? ' selected' : ''}>${html(text)}</option>`).join('')}</select></label>`;
 
+  // Толщина фрезеровки (0,1–200 мм, шаг 0,1) и глубина гравировки (0,01–20 мм, шаг 0,01) — числом (правка 05.11, H-05);
+  // пределы проверяет сервер.
+  const sizeInput = (entry) => {
+    const name = sizeKey(entry);
+    const [min, max, step] = name === 'thickness' ? [0.1, 200, 0.1] : [0.01, 20, 0.01];
+    return `<label class="field" for="part-${entry.id}-${name}">${html(fieldLabels[name])}, mm
+      <input type="number" id="part-${entry.id}-${name}" min="${min}" max="${max}" step="${step}" inputmode="decimal"
+        value="${html(entry.options[entry.method][name])}" data-part="${entry.id}" data-option="${name}"></label>`;
+  };
+
   const tomorrow = () => {
     const date = new Date();
     date.setDate(date.getDate() + 1);
@@ -167,10 +180,10 @@ function start(root) {
   function card(entry) {
     const options = entry.options[entry.method];
     const list = lists(entry);
-    const names = entry.method === 'printing' ? ['material', 'color', 'purpose', 'service', 'surface', 'infill']
-      : ['material', entry.method === 'milling' ? 'thickness' : 'depth'];
+    const names = entry.method === 'printing' ? ['material', 'color', 'purpose', 'service', 'surface', 'infill'] : ['material'];
     const urgent = entry.priority === 'priority';
-    const summary = [texts.methods[entry.method], ...names.map((name) => list[name][options[name]]), texts.settings.terms[entry.priority],
+    const summary = [texts.methods[entry.method], ...names.map((name) => list[name][options[name]]),
+      ...(entry.method === 'printing' || !sizeText(entry) ? [] : [`${fieldLabels[sizeKey(entry)]}: ${sizeText(entry)}`]), texts.settings.terms[entry.priority],
       ...(urgent && entry.neededBy ? [`${texts.part.needed_by}: ${entry.neededBy}`] : [])].join(' · ');
     const id = `part-${entry.id}`;
     return `<article class="part-card${entry.collapsed ? ' collapsed' : ''}" data-card="${entry.id}">
@@ -193,6 +206,7 @@ function start(root) {
       </fieldset>
       <div class="part-fields ${entry.method === 'printing' ? 'four' : 'three'}">
         ${names.map((name) => select(entry, name, list[name], options[name])).join('')}
+        ${entry.method === 'printing' ? '' : sizeInput(entry)}
         <label class="field" for="${id}-priority"><span class="field-icon">${icon('clock')}${html(texts.part.priority)}</span>
           <select id="${id}-priority" data-part="${entry.id}" data-priority>${Object.entries(texts.settings.terms).map(([key, text]) =>
             `<option value="${key}"${key === entry.priority ? ' selected' : ''}>${html(text)}</option>`).join('')}</select></label>

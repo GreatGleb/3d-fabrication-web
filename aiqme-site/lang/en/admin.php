@@ -385,11 +385,8 @@ return [
         'engraving_materials' => 'Engraving materials',
         'name_lt' => 'Name LT',
         'name_en' => 'Name EN',
-        'milling_thicknesses' => 'Milling thicknesses, mm',
-        'engraving_depths' => 'Engraving depths, mm',
         'milling_width' => 'Milling and engraving width, mm',
         'milling_length' => 'Milling and engraving length, mm',
-        'sizes_hint' => 'One number per line, e.g. 6 or 0.1.',
     ],
     // W-17: вкладки Settings в прототипе нет — нейтральные надписи, перечислены в docs/progress.md.
     'settings' => [

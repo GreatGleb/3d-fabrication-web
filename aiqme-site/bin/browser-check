@@ -1753,9 +1753,12 @@ def check_calculator_settings(report, new_page, state):
             report.check('Not confirmed' not in page.locator('#field-maxDimension').locator('xpath=..').inner_text(),
                          f'{where}: у габарита пометка после сохранения')
             # Правка 02.11, Г7: списки фрезеровки и гравировки и предел — в той же форме; сохранение доходит до /en/quote.
-            report.check(page.input_value('#field-millingThicknesses') == '1\n2\n3\n4\n5\n6\n8\n10'
-                         and page.input_value('#field-millingMaterials-0-en') == 'Aluminium',
-                         f'{where}: нет списков фрезеровки')
+            # Правка 05.11, H-05: материалы фрезеровки — новый список; полей толщин и глубин нет.
+            milling = [page.input_value(f'#field-millingMaterials-{i}-en') for i in range(4)]
+            report.check(milling == ['Non-ferrous metals', 'Wood', 'Plastic', 'Consultation needed'], f'{where}: материалы фрезеровки {milling}')
+            report.check(page.locator('#field-millingThicknesses, #field-engravingDepths').count() == 0
+                         and 'thicknesses' not in page.inner_text('#pricing-form') and 'depths' not in page.inner_text('#pricing-form'),
+                         f'{where}: в форме остались списки толщин или глубин')
             for value in ('1500', '2000'):
                 page.fill('#field-millingWidth', value)
                 with page.expect_response(lambda r: r.request.method == 'POST' and 'livewire' in r.url):
@@ -2435,15 +2438,28 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     click_in(cube.locator('[data-step-quantity="-1"]'))
     report.check(quantity.input_value() == '1' and summary_rows()[0] == 'cube-10mm-binary.stl × 1', f'{where}: − количество {quantity.input_value()}, панель {summary_rows()}')
 
-    # Разные параметры у двух файлов: DXF — фрезеровка, сталь, 6 мм; DWG — гравировка, глубина 0,2 мм.
+    # Разные параметры у двух файлов: DXF — фрезеровка, дерево, 6,5 мм; DWG — гравировка, глубина 0,25 мм. Правка 05.11, H-05:
+    # материалы фрезеровки — новый список; толщина и глубина — числовые поля (пусто по умолчанию, пределы и шаг README).
     plate, sign = cards.nth(1), cards.nth(2)
-    plate.locator('select[data-option=material]').select_option('Plienas')
-    plate.locator('select[data-option=thickness]').select_option('6')
+    materials = plate.locator('select[data-option=material] option').evaluate_all('(nodes) => nodes.map((n) => n.value + "=" + n.textContent.trim())')
+    names = ['Non-ferrous metals', 'Wood', 'Plastic', 'Consultation needed'] if en else ['Spalvotieji metalai', 'Mediena', 'Plastikas', 'Reikia konsultacijos']
+    report.check(materials == [f'{lt}={name}' for lt, name in zip(['Spalvotieji metalai', 'Mediena', 'Plastikas', 'Reikia konsultacijos'], names)],
+                 f'{where}: материалы фрезеровки {materials}')
+    thickness = plate.locator('input[type=number][data-option=thickness]')
+    report.check(thickness.count() == 1 and plate.locator('select[data-option=thickness]').count() == 0 and thickness.input_value() == ''
+                 and [thickness.get_attribute(name) for name in ('min', 'max', 'step')] == ['0.1', '200', '0.1'],
+                 f'{where}: поле толщины не числовое или не по README')
+    plate.locator('select[data-option=material]').select_option('Mediena')
+    thickness.fill('6.5')
+    thickness.dispatch_event('change')
     click_in(sign.locator('label.part-method:has(input[value=engraving])'))
-    report.check(sign.locator('select[data-option=depth]').count() == 1 and sign.locator('select[data-option=thickness]').count() == 0,
-                 f'{where}: у гравировки нет поля глубины')
-    sign.locator('select[data-option=depth]').select_option('0.2')
-    report.check(plate.locator('select[data-option=thickness]').input_value() == '6' and plate.locator('select[data-option=material]').input_value() == 'Plienas',
+    depth_field = sign.locator('input[type=number][data-option=depth]')
+    report.check(depth_field.count() == 1 and sign.locator('[data-option=thickness], select[data-option=depth]').count() == 0 and depth_field.input_value() == ''
+                 and [depth_field.get_attribute(name) for name in ('min', 'max', 'step')] == ['0.01', '20', '0.01'],
+                 f'{where}: поле глубины не числовое или не по README')
+    depth_field.fill('0.25')
+    depth_field.dispatch_event('change')
+    report.check(plate.locator('input[data-option=thickness]').input_value() == '6.5' and plate.locator('select[data-option=material]').input_value() == 'Mediena',
                  f'{where}: параметры DXF изменились вместе с DWG')
     # «Skubu» и дата: при скорой очереди — метка в заголовке, поле даты не раньше завтра, пояснение; дата уходит в заявку.
     report.check(plate.locator('[data-urgent]').count() == 0 and plate.locator('[data-needed-by]').count() == 0, f'{where}: дата без скорой очереди')
@@ -2465,11 +2481,12 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     summary = sign.locator('[data-summary]')
     report.check(sign.get_attribute('class').split().count('collapsed') == 1 and sign.locator('select').count() == 0, f'{where}: карточка DWG не свернулась')
     report.check(sign.locator('[data-check]').count() == 1, f'{where}: у свёрнутой карточки нет проверки файла')
-    depth = '0.2 mm' if en else '0,2 mm'
-    report.check(summary.count() == 1 and ('Engraving' if en else 'Graviravimas') in summary.inner_text() and depth in summary.inner_text(),
+    depth = 'Engraving depth: 0.25 mm' if en else 'Graviravimo gylis: 0,25 mm'
+    report.check(summary.count() == 1 and ('Engraving' if en else 'Graviravimas') in summary.inner_text() and depth in summary.inner_text()
+                 and sign.locator('input[data-option=depth]').count() == 0,
                  f'{where}: сводка свёрнутой карточки «{summary.inner_text() if summary.count() else ""}»')
     click_in(sign.locator('[data-toggle]'))
-    report.check(sign.locator('select[data-option=depth]').input_value() == '0.2', f'{where}: после разворачивания глубина не 0,2')
+    report.check(sign.locator('input[data-option=depth]').input_value() == '0.25', f'{where}: после разворачивания глубина не 0,25')
     click_in(sign.locator('[data-toggle]'))
     report.check(sign.locator('[data-toggle]').get_attribute('aria-expanded') == 'false', f'{where}: aria-expanded свёрнутой карточки')
     hint = 'A separate production deadline can be chosen for each part.' if en else 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.'
@@ -2522,9 +2539,9 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     expected_fields = {
         'parts[0][method]': 'printing', 'parts[0][material]': 'PLA', 'parts[0][infill]': '100', 'parts[0][purpose]': 'practical',
         'parts[0][service]': 'inserts', 'parts[0][surface]': 'high', 'parts[0][unit]': 'mm', 'parts[0][scale]': '100', 'parts[0][priority]': 'standard',
-        'parts[1][method]': 'milling', 'parts[1][material]': 'Plienas', 'parts[1][thickness]': '6', 'parts[1][priority]': 'priority',
+        'parts[1][method]': 'milling', 'parts[1][material]': 'Mediena', 'parts[1][thickness]': '6.5', 'parts[1][priority]': 'priority',
         'parts[1][needed_by]': needed_by, 'parts[1][notes]': plate_notes, 'parts[1][unit]': None,
-        'parts[2][method]': 'engraving', 'parts[2][material]': 'Aliuminis', 'parts[2][depth]': '0.2', 'parts[2][priority]': 'standard',
+        'parts[2][method]': 'engraving', 'parts[2][material]': 'Aliuminis', 'parts[2][depth]': '0.25', 'parts[2][priority]': 'standard',
         'material': None, 'infill': None, 'term': None, 'notes': None,
     }
     sent_fields = {name: sent(name) for name in expected_fields}
@@ -2567,7 +2584,7 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     description = page.locator('textarea[name=description]').input_value()
     report.check(description.startswith('Please help review these files:' if en else 'Prašau padėti įvertinti failus:')
                  and 'cube-10mm-binary.stl: 10.0 × 10.0 × 10.0 mm · ' + ('3D printing / PLA' if en else '3D spausdinimas / PLA') in description
-                 and 'plate.dxf · ' + ('Milling / Steel, 6 mm' if en else 'Frezavimas / Plienas, 6 mm') in description,
+                 and 'plate.dxf · ' + ('Milling / Wood, 6.5 mm' if en else 'Frezavimas / Mediena, 6,5 mm') in description,
                  f'{where}: описание в контактной форме «{description[:300]}»')
     report.check(page.locator('select[name=service]').input_value() == ('3d-printing' if en else '3d-spausdinimas'), f'{where}: услуга не печать')
 
