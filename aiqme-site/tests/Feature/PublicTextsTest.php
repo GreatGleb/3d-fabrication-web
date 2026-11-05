@@ -90,6 +90,12 @@ class PublicTextsTest extends TestCase
 
                     continue;
                 }
+                // Правка 05.11, H-02: этап 4 «Darbo eiga» заменён текстом заказчика.
+                if (in_array($phrase, PrototypeContentSeederTest::REPLACED_BY_H2, true)) {
+                    $this->assertStringNotContainsString($phrase, $all, 'этап 4 заменён (H-02)');
+
+                    continue;
+                }
                 $this->assertStringContainsString($phrase, $all, 'фраза в новом виде выводится');
             }
         }

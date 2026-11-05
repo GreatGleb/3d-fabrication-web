@@ -4980,3 +4980,42 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 ### Не проверено
 - Кадры услуги 390 и калькулятора 1440 отдельно не открывались (вид тот же по проверкам browser-check); окончательный
   взгляд — ждёт проверки пользователем. /en/admin в браузере — в полном прогоне H-09.
+
+## Правки 05.11, H-02: главная — надписи разделов без номеров, карточка 2, «Darbo eiga», раздел услуг без номеров на фото
+
+### Что сделано
+- `database/seeders/data/prototype-content.json` (page_text home LT/EN): шесть `*_eyebrow` без «0n / »; `scenarios[1].text`,
+  `process_title`, `process_text`, `process_steps[0..3]` (title, text), `services_title`, `services_text`; service scanning
+  `benefits[0]` — LT/EN дословно по README плана (EN с прямым апострофом, как в README: «don't», «object's»).
+- Миграция `2026_11_05_200000_update_texts_h2.php` по образцу Г2: опубликованная версия и черновик, только если значение прежнее.
+  У карточки 2 прежних вариантов два — текст Г2 (02.11) и текст до него; `down()` возвращает первый (вариант Г2, как был в JSON).
+- `process_text` выводится без `nl2br` — текст одной строкой (README: перенос только если поле выводит `\n`). Заголовки
+  `process_title`/`services_title` — с `\n` (→ `<br>`), как в README.
+- `partials/service-features.blade.php`: `span.service-feature-number` удалён (главная, /paslaugos, /en/services). Шаблон
+  `partials/process.blade.php` (номера 01–04 этапов, стрелки), CSS и шрифт не менялись; CSS не правился.
+- `bin/browser-check`: записи D21_REPLACEMENTS «правка 05.11, H-02» — надписи (только `^/lt$`, `^/en$`), остальные тексты
+  `^/lt(/|$)` / `^/en(/|$)` (этапы есть и на страницах услуг; заголовки с `<br>` — по строкам, т. к. в эталоне два узла);
+  `span.service-feature-number` эталона — в TEXT_EXCLUDED_BLOCKS (номера в эталонном DOM есть); docstring дополнен.
+- Тесты (комментарии «правка 05.11, H-02»): `PublicPagesTest` — новый `test_h2_home_texts_and_service_photos_without_numbers`
+  (надписи, карточка 2, заголовки с `<br>`, тексты, этапы с номерами 01–04, первый пункт 3D skenavimas на /lt, /en, /lt/paslaugos,
+  /en/services, этапы на /lt/paslaugos/3d-skenavimas); `test_h2_text_migration_changes_only_the_previous_texts` (применена,
+  повтор, откат, текст до Г2, правка администратора пропускается, записей нет); тест бейджей заменён на «номеров на фото нет»
+  (/en, /lt, /lt/paslaugos, /en/services); ожидания этапов в тесте главной и карточки 2 в тестах Г2 изменены.
+  `PrototypeContentSeederTest`/`PublicTextsTest`: новый вид D-21 этапа 4 («…atsiimti.» / «…delivery or collection.») больше не
+  выводится — он целиком заменён текстом заказчика (`REPLACED_BY_H2`; исходные фразы D-21 по-прежнему запрещены).
+
+### Проверки поведения (один раз)
+- Шаблон service-features из HEAD + новый тест → `test_service_cards_start…` failed; возвращён — passed.
+- Миграция только с первым прежним вариантом (`!== $from[0]`) → `test_h2_text_migration…` failed (ветка «текст до Г2»); возвращена — passed.
+- Первый `bin/browser-check` без исключения `span.service-feature-number` — красный (/lt/paslaugos, /en/services, главная: «нет фразы
+  эталона «01»…»): проверка текста ловит удалённые номера; после записи в TEXT_EXCLUDED_BLOCKS — зелёный.
+
+### Команды и вывод
+- `bin/browser-check /lt /en /lt/paslaugos /en/services` — `bin/browser-check: OK (1844 проверок)` (включает поиск маркеров).
+- `bin/check` — `bin/check: OK`, PHPUnit 748/748 (первый прогон 746/748 — два теста D-21 этапа 4, исправлены, см. выше).
+- `bin/php vendor/bin/pint --dirty --format agent` — passed. `git status --porcelain aiqme-site`: новый файл только
+  `database/migrations/2026_11_05_200000_update_texts_h2.php`.
+
+### Не проверено
+- Вид глазами (фото услуг без номеров, переносы заголовков) — ждёт проверки пользователем; кадры не просматривались.
+- Миграция на копии рабочей БД (правки администратора в этих полях) — при выпуске (H-10).

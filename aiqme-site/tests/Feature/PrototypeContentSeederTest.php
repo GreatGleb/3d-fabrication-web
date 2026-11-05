@@ -26,6 +26,9 @@ class PrototypeContentSeederTest extends TestCase
      *
      * @var list<array{0: list<string>, 1: list<string>, 2: list<string>}>
      */
+    /** Правка 05.11, H-02: этап 4 «Darbo eiga» заменён текстом заказчика — новый вид D-21 этого этапа больше не выводится. */
+    public const REPLACED_BY_H2 = ['Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.', 'We check the result and prepare it for delivery or collection.'];
+
     public const D21_TABLE_1 = [
         [['Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti iš anksto apmokėjus.', 'We check the result and prepare it for delivery or prepaid collection.'],
             ['Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.', 'We check the result and prepare it for delivery or collection.'], []],
@@ -106,6 +109,9 @@ class PrototypeContentSeederTest extends TestCase
                 $this->assertStringNotContainsString($phrase, $all);
             }
             foreach (array_merge($to, $kept) as $phrase) {
+                if (in_array($phrase, self::REPLACED_BY_H2, true)) {
+                    continue;
+                }
                 $this->assertStringContainsString($phrase, $all, 'Нет фразы в новом виде: '.$phrase);
             }
         }

@@ -15,7 +15,7 @@
             "hero_eyebrow": "3D INŽINERIJA & TECHNOLOGIJOS",
             "hero_title": "Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo",
             "hero_text": "Vienas partneris visiems gamybos etapams",
-            "help_eyebrow": "01 / PRADĖKIME NUO JŪSŲ",
+            "help_eyebrow": "PRADĖKIME NUO JŪSŲ",
             "help_title": "Kuo galime padėti?",
             "scenarios": [
               {
@@ -24,43 +24,43 @@
               },
               {
                 "title": "Turiu failą. Reikia pagaminti.",
-                "text": "Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą."
+                "text": "Įkelkite failą, pasirinkite gamybos parametrus ir gaukite preliminarų pasiūlymą."
               },
               {
                 "title": "Noriu gaminti pats.",
                 "text": "Padėsime pasirinkti įrangą, medžiagas ir reikalingus mokymus."
               }
             ],
-            "process_eyebrow": "02 / DARBO EIGA",
-            "process_title": "Viena užduotis.\nAiškus kelias iki rezultato.",
-            "process_text": "AIQME koordinuoja visą procesą, prireikus įtraukdama gamybos partnerius. Jums nereikia patiems derinti skirtingų tiekėjų.",
+            "process_eyebrow": "DARBO EIGA",
+            "process_title": "Aiškus ir nuoseklus gamybos\nprocesas.",
+            "process_text": "AIQME koordinuoja visą procesą. Jums nereikia patiems derinti skirtingų tiekėjų.",
             "process_steps": [
               {
-                "title": "Jūsų užduotis",
-                "text": "Atsiųskite failą, eskizą, detalės nuotrauką ar pačią detalę. Pakonsultuosime, kaip geriausia ją pagaminti, ir suderinsime kainą bei terminą."
+                "title": "Užklausos įvertinimas",
+                "text": "Pagal jūsų pateiktą failą, eskizą, nuotrauką, idėją ar pačią detalę įvertiname ir suderiname gamybos procesą, medžiagą, kainą bei terminą."
               },
               {
-                "title": "Suderintas sprendimas",
-                "text": "Nuskenuosime arba išmatuosime detalę ir paruošime skaitmeninį failą gamybai."
+                "title": "Gamyba",
+                "text": "Paruošiame skaitmeninį modelį ir pagal suderintus reikalavimus pagaminame detalę."
               },
               {
-                "title": "Patikrinta gamyba",
-                "text": "Prieš gamybą darbuotojas patikrina modelį ir parametrus. Koordinuojame sutartų darbų vykdymą."
+                "title": "Kokybės kontrolė",
+                "text": "Patikriname pagamintos detalės kokybę, matmenis ir atitiktį suderintiems techniniams reikalavimams."
               },
               {
-                "title": "Rezultatas jums",
-                "text": "Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti."
+                "title": "Perdavimas",
+                "text": "Pagaminta detalė perduodama užsakovui arba pristatoma nurodytu adresu."
               }
             ],
-            "services_eyebrow": "03 / PASLAUGOS",
-            "services_title": "Tinkamas procesas.\nJūsų užduočiai.",
-            "services_text": "Sujungiame skaitmeninį modelį ir fizinę gamybą. Pasirinkite vieną paslaugą arba patikėkite mums visą darbų seką.",
-            "partners_eyebrow": "04 / PARTNERIAI IR TECHNOLOGIJOS",
+            "services_eyebrow": "PASLAUGOS",
+            "services_title": "Skirtingos technologijos\njūsų užduočiai.",
+            "services_text": "Sujungiame skaitmeninį modeliavimą ir fizinę gamybą. Pasirinkite reikiamą paslaugą arba patikėkite mums visą procesą.",
+            "partners_eyebrow": "PARTNERIAI IR TECHNOLOGIJOS",
             "partners_title": "Partneriai ir prekių ženklai.",
-            "equipment_eyebrow": "05 / ĮRANGA IR MEDŽIAGOS",
+            "equipment_eyebrow": "ĮRANGA IR MEDŽIAGOS",
             "equipment_title": "Technologijos, kurios\ndirba jums.",
             "equipment_text": "Rinkitės įrangą, medžiagas ir programinę įrangą pagal tai, ką norite sukurti. Padėsime suprasti skirtumus ir suderinamumą.",
-            "news_eyebrow": "06 / NAUJIENOS IR ĮŽVALGOS",
+            "news_eyebrow": "NAUJIENOS IR ĮŽVALGOS",
             "news_title": "Naujausi straipsniai.",
             "cta_title": "Jūsų kitas žingsnis — paprastas.",
             "cta_text": "Turite failą? Įkelkite. Turite idėją? Pasikalbėkime."
@@ -73,7 +73,7 @@
             "hero_eyebrow": "3D ENGINEERING & TECHNOLOGY",
             "hero_title": "From your idea or part to a finished solution",
             "hero_text": "One partner for every stage of production",
-            "help_eyebrow": "01 / START WITH YOUR NEED",
+            "help_eyebrow": "START WITH YOUR NEED",
             "help_title": "How can we help?",
             "scenarios": [
               {
@@ -82,43 +82,43 @@
               },
               {
                 "title": "I have a file. I need it made.",
-                "text": "Upload your model, choose settings and review a preliminary price."
+                "text": "Upload a file, choose the manufacturing parameters and get a preliminary quote."
               },
               {
                 "title": "I want to make it myself.",
                 "text": "We help select equipment, materials and the training you need."
               }
             ],
-            "process_eyebrow": "02 / OUR PROCESS",
-            "process_title": "One challenge.\nA clear path to the result.",
-            "process_text": "AIQME coordinates the whole process, involving manufacturing partners when needed. You do not have to coordinate separate suppliers.",
+            "process_eyebrow": "OUR PROCESS",
+            "process_title": "A clear and consistent\nmanufacturing process.",
+            "process_text": "AIQME coordinates the whole process. You don't need to coordinate different suppliers yourself.",
             "process_steps": [
               {
-                "title": "Your challenge",
-                "text": "Send a file, sketch, photo or the part itself. We will advise on a suitable way to make it and agree the price and timing."
+                "title": "Request assessment",
+                "text": "Based on the file, sketch, photo, idea or the part itself, we assess and agree on the manufacturing process, material, price and lead time."
               },
               {
-                "title": "Agreed solution",
-                "text": "We will scan or measure the part and prepare a digital file for manufacturing."
+                "title": "Manufacturing",
+                "text": "We prepare the digital model and manufacture the part to the agreed requirements."
               },
               {
-                "title": "Reviewed production",
-                "text": "Before production, a team member checks the model and settings. We coordinate the agreed work."
+                "title": "Quality control",
+                "text": "We check the quality, dimensions and compliance of the finished part with the agreed technical requirements."
               },
               {
-                "title": "The result for you",
-                "text": "We check the result and prepare it for delivery or collection."
+                "title": "Handover",
+                "text": "The finished part is handed over to the customer or delivered to the specified address."
               }
             ],
-            "services_eyebrow": "03 / SERVICES",
-            "services_title": "The right process.\nFor your challenge.",
-            "services_text": "We connect digital models and physical production. Choose a service or let us coordinate the complete workflow.",
-            "partners_eyebrow": "04 / PARTNERS & TECHNOLOGY",
+            "services_eyebrow": "SERVICES",
+            "services_title": "Different technologies\nfor your task.",
+            "services_text": "We combine digital modelling and physical manufacturing. Choose the service you need or entrust us with the whole process.",
+            "partners_eyebrow": "PARTNERS & TECHNOLOGY",
             "partners_title": "Partners & technology brands.",
-            "equipment_eyebrow": "05 / EQUIPMENT & MATERIALS",
+            "equipment_eyebrow": "EQUIPMENT & MATERIALS",
             "equipment_title": "Technology that\nworks for you.",
             "equipment_text": "Choose equipment, materials and software for what you want to create. We help clarify the differences and compatibility.",
-            "news_eyebrow": "06 / NEWS & INSIGHTS",
+            "news_eyebrow": "NEWS & INSIGHTS",
             "news_title": "Latest articles.",
             "cta_title": "Your next step is simple.",
             "cta_text": "Have a file? Upload it. Have an idea? Let’s talk."
@@ -467,7 +467,7 @@
             "short": "Tikra detalė tampa skaitmeniniu 3D modeliu.",
             "label": "AIQME",
             "benefits": [
-              "Objekto forma ir paviršius perkeliami į 3D modelį.",
+              "Objekto geometrija perkeliama į skaitmeninį 3D modelį.",
               "Duomenys paruošiami atkūrimui ar tolimesniam projektavimui.",
               "Galima pristatyti detalę arba suderinti skenavimą vietoje."
             ],
@@ -488,7 +488,7 @@
             "short": "Turn a physical part into a digital 3D model.",
             "label": "AIQME",
             "benefits": [
-              "Capture an object’s shape and surface as a 3D model.",
+              "The object's geometry is transferred into a digital 3D model.",
               "Prepare scan data for reconstruction or further design.",
               "Send us the part or arrange on-site scanning."
             ],

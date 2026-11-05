@@ -92,6 +92,9 @@ LT-надпись hero — замена D21_REPLACEMENTS только для /lt
 Тексты и блок услуги (правка 02.11, Г2): новые тексты главной, 3D spausdinimas и ответа FAQ services-1 — замены D21_REPLACEMENTS;
 блока «Vienas kontaktas visam darbui» на страницах услуг нет (его фразы — '' в D21_REPLACEMENTS, без примера в check_blocks нет
 и div.grid.two).
+Тексты главной (правка 05.11, H-02): надписи разделов без «0n / », карточка 2, «Darbo eiga» (этапы — и на страницах услуг),
+раздел услуг, первый пункт 3D skenavimas — замены D21_REPLACEMENTS; номеров 01–06 на фото услуг нет (span.service-feature-number эталона —
+в TEXT_EXCLUDED_BLOCKS).
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -1088,6 +1091,53 @@ D21_REPLACEMENTS = [
     ('Įkelti modelį ir sužinoti kainą', 'Įkelkite failus ir gaukite pasiūlymą', '^/lt(/|$)'),
     ('Upload a model & get a price', 'Upload files and get a quote', '^/en(/|$)'),
     ('Įkelti modelį', 'Įkelti failus', '^/lt(/|$)'), ('Upload a model', 'Upload files', '^/en(/|$)'),
+    # Правка 05.11, H-02: надписи разделов главной без «0n / »; карточка 2 (после текста Г2 выше); «Darbo eiga» (заголовок с <br> —
+    # два узла эталона, поэтому по строкам); этапы — и на страницах услуг; раздел услуг; первый пункт 3D skenavimas. Номеров
+    # 01–06 на фото услуг нет: span.service-feature-number исключён в TEXT_EXCLUDED_BLOCKS.
+    ('01 / PRADĖKIME NUO JŪSŲ', 'PRADĖKIME NUO JŪSŲ', '^/lt$'),
+    ('01 / START WITH YOUR NEED', 'START WITH YOUR NEED', '^/en$'),
+    ('02 / DARBO EIGA', 'DARBO EIGA', '^/lt$'),
+    ('02 / OUR PROCESS', 'OUR PROCESS', '^/en$'),
+    ('03 / PASLAUGOS', 'PASLAUGOS', '^/lt$'),
+    ('03 / SERVICES', 'SERVICES', '^/en$'),
+    ('04 / PARTNERIAI IR TECHNOLOGIJOS', 'PARTNERIAI IR TECHNOLOGIJOS', '^/lt$'),
+    ('04 / PARTNERS & TECHNOLOGY', 'PARTNERS & TECHNOLOGY', '^/en$'),
+    ('05 / ĮRANGA IR MEDŽIAGOS', 'ĮRANGA IR MEDŽIAGOS', '^/lt$'),
+    ('05 / EQUIPMENT & MATERIALS', 'EQUIPMENT & MATERIALS', '^/en$'),
+    ('06 / NAUJIENOS IR ĮŽVALGOS', 'NAUJIENOS IR ĮŽVALGOS', '^/lt$'),
+    ('06 / NEWS & INSIGHTS', 'NEWS & INSIGHTS', '^/en$'),
+    ('Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą.', 'Įkelkite failą, pasirinkite gamybos parametrus ir gaukite preliminarų pasiūlymą.', '^/lt(/|$)'),
+    ('Upload your model, choose settings and review a preliminary price.', 'Upload a file, choose the manufacturing parameters and get a preliminary quote.', '^/en(/|$)'),
+    ('Viena užduotis.', 'Aiškus ir nuoseklus gamybos', '^/lt(/|$)'),
+    ('Aiškus kelias iki rezultato.', 'procesas.', '^/lt(/|$)'),
+    ('One challenge.', 'A clear and consistent', '^/en(/|$)'),
+    ('A clear path to the result.', 'manufacturing process.', '^/en(/|$)'),
+    ('AIQME koordinuoja visą procesą, prireikus įtraukdama gamybos partnerius. Jums nereikia patiems derinti skirtingų tiekėjų.', 'AIQME koordinuoja visą procesą. Jums nereikia patiems derinti skirtingų tiekėjų.', '^/lt(/|$)'),
+    ('AIQME coordinates the whole process, involving manufacturing partners when needed. You do not have to coordinate separate suppliers.', "AIQME coordinates the whole process. You don't need to coordinate different suppliers yourself.", '^/en(/|$)'),
+    ('Jūsų užduotis', 'Užklausos įvertinimas', '^/lt(/|$)'),
+    ('Atsiųskite failą, eskizą, detalės nuotrauką ar pačią detalę. Pakonsultuosime, kaip geriausia ją pagaminti, ir suderinsime kainą bei terminą.', 'Pagal jūsų pateiktą failą, eskizą, nuotrauką, idėją ar pačią detalę įvertiname ir suderiname gamybos procesą, medžiagą, kainą bei terminą.', '^/lt(/|$)'),
+    ('Suderintas sprendimas', 'Gamyba', '^/lt(/|$)'),
+    ('Nuskenuosime arba išmatuosime detalę ir paruošime skaitmeninį failą gamybai.', 'Paruošiame skaitmeninį modelį ir pagal suderintus reikalavimus pagaminame detalę.', '^/lt(/|$)'),
+    ('Patikrinta gamyba', 'Kokybės kontrolė', '^/lt(/|$)'),
+    ('Prieš gamybą darbuotojas patikrina modelį ir parametrus. Koordinuojame sutartų darbų vykdymą.', 'Patikriname pagamintos detalės kokybę, matmenis ir atitiktį suderintiems techniniams reikalavimams.', '^/lt(/|$)'),
+    ('Rezultatas jums', 'Perdavimas', '^/lt(/|$)'),
+    ('Patikriname rezultatą ir paruošiame jį pristatyti arba atsiimti.', 'Pagaminta detalė perduodama užsakovui arba pristatoma nurodytu adresu.', '^/lt(/|$)'),
+    ('Your challenge', 'Request assessment', '^/en(/|$)'),
+    ('Send a file, sketch, photo or the part itself. We will advise on a suitable way to make it and agree the price and timing.', 'Based on the file, sketch, photo, idea or the part itself, we assess and agree on the manufacturing process, material, price and lead time.', '^/en(/|$)'),
+    ('Agreed solution', 'Manufacturing', '^/en(/|$)'),
+    ('We will scan or measure the part and prepare a digital file for manufacturing.', 'We prepare the digital model and manufacture the part to the agreed requirements.', '^/en(/|$)'),
+    ('Reviewed production', 'Quality control', '^/en(/|$)'),
+    ('Before production, a team member checks the model and settings. We coordinate the agreed work.', 'We check the quality, dimensions and compliance of the finished part with the agreed technical requirements.', '^/en(/|$)'),
+    ('The result for you', 'Handover', '^/en(/|$)'),
+    ('We check the result and prepare it for delivery or collection.', 'The finished part is handed over to the customer or delivered to the specified address.', '^/en(/|$)'),
+    ('Tinkamas procesas.', 'Skirtingos technologijos', '^/lt(/|$)'),
+    ('Jūsų užduočiai.', 'jūsų užduočiai.', '^/lt(/|$)'),
+    ('The right process.', 'Different technologies', '^/en(/|$)'),
+    ('For your challenge.', 'for your task.', '^/en(/|$)'),
+    ('Sujungiame skaitmeninį modelį ir fizinę gamybą. Pasirinkite vieną paslaugą arba patikėkite mums visą darbų seką.', 'Sujungiame skaitmeninį modeliavimą ir fizinę gamybą. Pasirinkite reikiamą paslaugą arba patikėkite mums visą procesą.', '^/lt(/|$)'),
+    ('We connect digital models and physical production. Choose a service or let us coordinate the complete workflow.', 'We combine digital modelling and physical manufacturing. Choose the service you need or entrust us with the whole process.', '^/en(/|$)'),
+    ('Objekto forma ir paviršius perkeliami į 3D modelį.', 'Objekto geometrija perkeliama į skaitmeninį 3D modelį.', '^/lt(/|$)'),
+    ('Capture an object’s shape and surface as a 3D model.', "The object's geometry is transferred into a digital 3D model.", '^/en(/|$)'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),
@@ -1097,7 +1147,9 @@ TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/api
                         ('div', {'eyebrow'}, None, ('div', {'service-feature-copy'})),
                         ('div', {'eyebrow'}, None, ('div', {'wrap'}), ('section', {'page-top'})),
                         # Правка 05.11, H-01: ряда этапов hero и кнопки паузы видео на главной нет (их слова — '' в D21_REPLACEMENTS).
-                        ('div', {'stages'}, '^/(lt|en)$'), ('button', {'hero-video-toggle'}, '^/(lt|en)$')]
+                        ('div', {'stages'}, '^/(lt|en)$'), ('button', {'hero-video-toggle'}, '^/(lt|en)$'),
+                        # Правка 05.11, H-02: номеров 01–06 в углу фото услуг (главная, список услуг) нет.
+                        ('span', {'service-feature-number'})]
 NO_TEXT = {'script', 'style', 'template', 'noscript', 'svg'}
 
 

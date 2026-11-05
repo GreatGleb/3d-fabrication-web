@@ -1,12 +1,11 @@
-{{-- Блоки услуг главной и списка услуг (serviceFeatureRows прототипа): номер в углу медиа, название, описание, три пункта
-     и действия; подпись «● NN / label» над названием убрана по правке 28.10 (П4). Иллюстрация — медиа услуги, иначе фрагмент прототипа по умолчанию (D-43, alt — название услуги), иначе своя заглушка; подписи «Illustrative image» нет (D-21). --}}
+{{-- Блоки услуг главной и списка услуг (serviceFeatureRows прототипа): название, описание, три пункта и действия; номера
+     01–06 в углу медиа убраны по правке 05.11, H-02; подпись «● NN / label» над названием убрана по правке 28.10 (П4). Иллюстрация — медиа услуги, иначе фрагмент прототипа по умолчанию (D-43, alt — название услуги), иначе своя заглушка; подписи «Illustrative image» нет (D-21). --}}
 @php($locale = app()->getLocale())
 <div class="service-features">
     @foreach ($services as $service)
         @php($key = $service->item->key)
         <article class="service-feature" aria-labelledby="service-heading-{{ $key }}">
             <div @class(['service-feature-media', 'service-feature-media--light' => in_array($key, ['engraving', 'training'], true)])>
-                <span class="service-feature-number" aria-hidden="true">{{ sprintf('%02d', $loop->iteration) }}</span>
                 @include('public.partials.media', ['mediaImage' => $service->item->getFirstMedia('images'), 'mediaDefault' => $service->item->defaultMedia('images'),
                     'mediaAlt' => $service->title, 'mediaSizes' => '(max-width: 760px) 100vw, 50vw'])
             </div>

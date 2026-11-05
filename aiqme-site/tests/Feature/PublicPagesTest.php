@@ -80,7 +80,8 @@ class PublicPagesTest extends TestCase
             [route('en.services.show', ['slug' => '3d-modelling']), route('en.calculator'), route('en.products')],
             array_map(fn ($a) => $a->getAttribute('href'), iterator_to_array($xpath->query('//div[@class="scenario"]/a'))),
         );
-        $this->assertSame(['Your challenge', 'Agreed solution', 'Reviewed production', 'The result for you'],
+        // Правка 05.11, H-02: новые этапы «Darbo eiga» (было Your challenge, Agreed solution, Reviewed production, The result for you).
+        $this->assertSame(['Request assessment', 'Manufacturing', 'Quality control', 'Handover'],
             Html::texts($xpath, '//section[@class="section dark"]//div[@class="process"]/div/h3'));
         $this->assertSame(array_map(fn (array $slugs) => route('en.services.show', ['slug' => $slugs[1]]), array_values(self::SERVICES)),
             array_map(fn ($a) => $a->getAttribute('href'), iterator_to_array($xpath->query('//div[@class="service-feature-actions"]/a[contains(@class, "btn")]'))));
@@ -261,13 +262,145 @@ class PublicPagesTest extends TestCase
         $this->assertSame(0, ContentItem::count());
     }
 
+    /** Правка 05.11, H-02: надписи разделов главной без «0n / », карточка 2, «Darbo eiga», раздел услуг и первый пункт 3D skenavimas. */
+    public function test_h2_home_texts_and_service_photos_without_numbers(): void
+    {
+        $expected = [
+            '/lt' => [
+                'eyebrows' => ['PRADĖKIME NUO JŪSŲ', 'DARBO EIGA', 'PASLAUGOS', 'PARTNERIAI IR TECHNOLOGIJOS', 'ĮRANGA IR MEDŽIAGOS', 'NAUJIENOS IR ĮŽVALGOS'],
+                'card' => 'Įkelkite failą, pasirinkite gamybos parametrus ir gaukite preliminarų pasiūlymą.',
+                'process' => ['Aiškus ir nuoseklus gamybos<br>procesas.', 'AIQME koordinuoja visą procesą. Jums nereikia patiems derinti skirtingų tiekėjų.'],
+                'steps' => [
+                    ['Užklausos įvertinimas', 'Pagal jūsų pateiktą failą, eskizą, nuotrauką, idėją ar pačią detalę įvertiname ir suderiname gamybos procesą, medžiagą, kainą bei terminą.'],
+                    ['Gamyba', 'Paruošiame skaitmeninį modelį ir pagal suderintus reikalavimus pagaminame detalę.'],
+                    ['Kokybės kontrolė', 'Patikriname pagamintos detalės kokybę, matmenis ir atitiktį suderintiems techniniams reikalavimams.'],
+                    ['Perdavimas', 'Pagaminta detalė perduodama užsakovui arba pristatoma nurodytu adresu.'],
+                ],
+                'services' => ['Skirtingos technologijos<br>jūsų užduočiai.', 'Sujungiame skaitmeninį modeliavimą ir fizinę gamybą. Pasirinkite reikiamą paslaugą arba patikėkite mums visą procesą.'],
+                'scanning' => 'Objekto geometrija perkeliama į skaitmeninį 3D modelį.',
+            ],
+            '/en' => [
+                'eyebrows' => ['START WITH YOUR NEED', 'OUR PROCESS', 'SERVICES', 'PARTNERS & TECHNOLOGY', 'EQUIPMENT & MATERIALS', 'NEWS & INSIGHTS'],
+                'card' => 'Upload a file, choose the manufacturing parameters and get a preliminary quote.',
+                'process' => ['A clear and consistent<br>manufacturing process.', 'AIQME coordinates the whole process. You don\'t need to coordinate different suppliers yourself.'],
+                'steps' => [
+                    ['Request assessment', 'Based on the file, sketch, photo, idea or the part itself, we assess and agree on the manufacturing process, material, price and lead time.'],
+                    ['Manufacturing', 'We prepare the digital model and manufacture the part to the agreed requirements.'],
+                    ['Quality control', 'We check the quality, dimensions and compliance of the finished part with the agreed technical requirements.'],
+                    ['Handover', 'The finished part is handed over to the customer or delivered to the specified address.'],
+                ],
+                'services' => ['Different technologies<br>for your task.', 'We combine digital modelling and physical manufacturing. Choose the service you need or entrust us with the whole process.'],
+                'scanning' => 'The object\'s geometry is transferred into a digital 3D model.',
+            ],
+        ];
+        foreach ($expected as $path => $texts) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $this->assertSame($texts['eyebrows'], Html::texts($xpath, '//main//section[not(@class="hero")]//div[@class="eyebrow"]'), $path);
+            $this->assertSame($texts['card'], Html::text($xpath->query('//div[@class="scenario"][2]/p')->item(0)), $path);
+            foreach (['process' => '//section[@class="section dark"]', 'services' => '//section[.//div[@class="service-features"]]'] as $block => $section) {
+                $h2 = $xpath->query($section.'//div[@class="section-head"]//h2')->item(0);
+                $this->assertSame($texts[$block][0], str_replace("\n", '', implode('', array_map(fn ($node) => $node->ownerDocument->saveHTML($node), iterator_to_array($h2->childNodes)))), "$path $block");
+                $this->assertSame($texts[$block][1], Html::text($xpath->query($section.'//div[@class="section-head"]/p')->item(0)), "$path $block");
+            }
+            // Номера 01–04 этапов остаются.
+            $this->assertSame(['01', '02', '03', '04'], Html::texts($xpath, '//div[@class="process"]/div/strong'), $path);
+            $this->assertSame(array_column($texts['steps'], 0), Html::texts($xpath, '//div[@class="process"]/div/h3'), $path);
+            $this->assertSame(array_column($texts['steps'], 1), Html::texts($xpath, '//div[@class="process"]/div/p'), $path);
+            $this->assertSame($texts['scanning'], Html::text($xpath->query('//article[@aria-labelledby="service-heading-scanning"]//ul/li[1]/span')->item(0)), $path);
+        }
+        // Список услуг и страница услуги: тот же первый пункт 3D skenavimas и те же этапы.
+        $services = Html::xpath($this->get('/lt/paslaugos')->assertOk()->getContent());
+        $this->assertSame($expected['/lt']['scanning'], Html::text($services->query('//article[@aria-labelledby="service-heading-scanning"]//ul/li[1]/span')->item(0)));
+        $services = Html::xpath($this->get('/en/services')->assertOk()->getContent());
+        $this->assertSame($expected['/en']['scanning'], Html::text($services->query('//article[@aria-labelledby="service-heading-scanning"]//ul/li[1]/span')->item(0)));
+        $service = Html::xpath($this->get('/lt/paslaugos/3d-skenavimas')->assertOk()->getContent());
+        $this->assertSame(array_column($expected['/lt']['steps'], 0), Html::texts($service, '//div[@class="process"]/div/h3'));
+    }
+
+    /** Правка 05.11, H-02: миграция данных меняет прежние тексты (оба прежних варианта карточки 2), правку администратора не трогает, down возвращает. */
+    public function test_h2_text_migration_changes_only_the_previous_texts(): void
+    {
+        $migration = require database_path('migrations/2026_11_05_200000_update_texts_h2.php');
+        $fields = [
+            [ContentType::PageText, 'home', 'lt', 'help_eyebrow', '01 / PRADĖKIME NUO JŪSŲ', 'PRADĖKIME NUO JŪSŲ'],
+            [ContentType::PageText, 'home', 'en', 'news_eyebrow', '06 / NEWS & INSIGHTS', 'NEWS & INSIGHTS'],
+            [ContentType::PageText, 'home', 'lt', 'scenarios.1.text', 'Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą.', 'Įkelkite failą, pasirinkite gamybos parametrus ir gaukite preliminarų pasiūlymą.'],
+            [ContentType::PageText, 'home', 'en', 'process_title', "One challenge.\nA clear path to the result.", "A clear and consistent\nmanufacturing process."],
+            [ContentType::PageText, 'home', 'lt', 'process_steps.3.title', 'Rezultatas jums', 'Perdavimas'],
+            [ContentType::PageText, 'home', 'en', 'process_steps.0.text', 'Send a file, sketch, photo or the part itself. We will advise on a suitable way to make it and agree the price and timing.', 'Based on the file, sketch, photo, idea or the part itself, we assess and agree on the manufacturing process, material, price and lead time.'],
+            [ContentType::PageText, 'home', 'lt', 'services_text', 'Sujungiame skaitmeninį modelį ir fizinę gamybą. Pasirinkite vieną paslaugą arba patikėkite mums visą darbų seką.', 'Sujungiame skaitmeninį modeliavimą ir fizinę gamybą. Pasirinkite reikiamą paslaugą arba patikėkite mums visą procesą.'],
+            [ContentType::Service, 'scanning', 'en', 'benefits.0', 'Capture an object’s shape and surface as a 3D model.', 'The object\'s geometry is transferred into a digital 3D model.'],
+            [ContentType::Service, 'scanning', 'lt', 'benefits.0', 'Objekto forma ir paviršius perkeliami į 3D modelį.', 'Objekto geometrija perkeliama į skaitmeninį 3D modelį.'],
+        ];
+        /** Значения поля в опубликованной версии и черновике. */
+        $values = function (ContentType $type, string $key, string $locale, string $path): array {
+            $translation = $this->item($type, $key)->translation($locale)->fresh();
+
+            return [data_get($translation->fields, $path), data_get($translation->latestRevision()->fields, $path)];
+        };
+        /** Записывает значение поля в обе версии напрямую (база как до правки). */
+        $write = function (ContentType $type, string $key, string $locale, string $path, string $value): void {
+            $translation = $this->item($type, $key)->translation($locale);
+            $published = $translation->fields;
+            data_set($published, $path, $value);
+            $translation->forceFill(['fields' => $published])->save();
+            $draft = $translation->latestRevision();
+            $draftFields = $draft->fields;
+            data_set($draftFields, $path, $value);
+            $draft->forceFill(['fields' => $draftFields])->save();
+        };
+
+        foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
+            $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "новая установка — из prototype-content.json: $key $locale $path");
+            $write($type, $key, $locale, $path, $old);
+        }
+
+        // (а) База как до правки: прежний текст → новый в обеих версиях; повтор ничего не меняет; down возвращает прежний.
+        $migration->up();
+        $migration->up();
+        foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
+            $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "up: $key $locale $path");
+        }
+        $this->get('/lt')->assertSee('PRADĖKIME NUO JŪSŲ')->assertDontSee('01 / PRADĖKIME NUO JŪSŲ');
+        $migration->down();
+        foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
+            $this->assertSame([$old, $old], $values($type, $key, $locale, $path), "down: $key $locale $path");
+        }
+
+        // (б) Текст карточки 2 до правки 02.11 (Г2) тоже заменяется; down возвращает вариант 02.11.
+        $write(ContentType::PageText, 'home', 'en', 'scenarios.1.text', 'Upload your model, choose settings and review the price.');
+        $migration->up();
+        $this->assertSame(array_fill(0, 2, 'Upload a file, choose the manufacturing parameters and get a preliminary quote.'),
+            $values(ContentType::PageText, 'home', 'en', 'scenarios.1.text'));
+        $migration->down();
+        $this->assertSame(array_fill(0, 2, 'Upload your model, choose settings and review a preliminary price.'),
+            $values(ContentType::PageText, 'home', 'en', 'scenarios.1.text'));
+
+        // (в) Текст администратора (опубликован через админку) сохраняется в up() и down(); соседние поля меняются.
+        $this->republish($this->item(ContentType::PageText, 'home'), 'lt', ['process_eyebrow' => 'MŪSŲ EIGA']);
+        $this->republish($this->item(ContentType::Service, 'scanning'), 'en', ['benefits' => ['Our benefit.', 'Two.', 'Three.']]);
+        $migration->up();
+        $this->assertSame(['MŪSŲ EIGA', 'MŪSŲ EIGA'], $values(ContentType::PageText, 'home', 'lt', 'process_eyebrow'));
+        $this->assertSame(['Our benefit.', 'Our benefit.'], $values(ContentType::Service, 'scanning', 'en', 'benefits.0'));
+        $this->assertSame(['PRADĖKIME NUO JŪSŲ', 'PRADĖKIME NUO JŪSŲ'], $values(ContentType::PageText, 'home', 'lt', 'help_eyebrow'));
+        $migration->down();
+        $this->assertSame(['MŪSŲ EIGA', 'MŪSŲ EIGA'], $values(ContentType::PageText, 'home', 'lt', 'process_eyebrow'));
+        $this->assertSame(['Our benefit.', 'Our benefit.'], $values(ContentType::Service, 'scanning', 'en', 'benefits.0'));
+        $this->assertSame(['01 / PRADĖKIME NUO JŪSŲ', '01 / PRADĖKIME NUO JŪSŲ'], $values(ContentType::PageText, 'home', 'lt', 'help_eyebrow'));
+
+        // (г) Записей нет — без ошибки.
+        ContentItem::query()->delete();
+        $migration->up();
+        $migration->down();
+        $this->assertSame(0, ContentItem::count());
+    }
+
     /** Правка 02.11, Г2: новые тексты главной, 3D spausdinimas и FAQ services-1 (LT и EN); блока «Vienas kontaktas» нет ни на одной услуге. */
     public function test_g2_texts_are_shown_and_service_pages_have_no_one_contact_block(): void
     {
-        $this->get('/lt')->assertOk()->assertSee('Įkelkite modelį, pasirinkite parametrus ir peržiūrėkite preliminarią kainą.')
-            ->assertDontSee('peržiūrėkite kainą.');
-        $this->get('/en')->assertOk()->assertSee('Upload your model, choose settings and review a preliminary price.')
-            ->assertDontSee('review the price.');
+        // Правка 05.11, H-02: текст карточки 2 главной заменён снова — проверка в test_h2_home_texts_and_service_photos_without_numbers.
+        $this->get('/lt')->assertOk()->assertDontSee('peržiūrėkite kainą.');
+        $this->get('/en')->assertOk()->assertDontSee('review the price.');
 
         $lt = Html::xpath($this->get('/lt/paslaugos/3d-spausdinimas')->assertOk()->getContent());
         $this->assertSame('Prototipai, funkcinės detalės ir detalių serijos.', Html::text($lt->query('//section[@class="page-top"]//p')->item(0)));
@@ -325,7 +458,9 @@ class PublicPagesTest extends TestCase
         };
 
         foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
-            $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "новая установка — из prototype-content.json: $key $locale $path");
+            if ($path !== 'scenarios.1.text') { // правка 05.11, H-02: в prototype-content.json у карточки 2 уже текст H-02
+                $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "новая установка — из prototype-content.json: $key $locale $path");
+            }
             $write($type, $key, $locale, $path, $old);
         }
 
@@ -369,14 +504,17 @@ class PublicPagesTest extends TestCase
         $this->assertSame(0, ContentItem::count());
     }
 
-    public function test_service_cards_start_with_the_title_and_keep_the_number_in_the_media_corner(): void
+    public function test_service_cards_start_with_the_title_and_have_no_number_on_the_photo(): void
     {
         // Правка 28.10 (П4): подписи «● NN / label» над названием нет; поле label в данных остаётся.
-        foreach (['/en', '/lt', '/lt/paslaugos'] as $path) {
+        // Правка 05.11, H-02: номеров 01–06 в углу фото нет (было: шесть span.service-feature-number); фото на месте.
+        foreach (['/en', '/lt', '/lt/paslaugos', '/en/services'] as $path) {
             $html = $this->get($path)->assertOk()->getContent();
             $xpath = Html::xpath($html);
             $this->assertCount(0, $xpath->query('//div[@class="service-feature-copy"]/div[@class="eyebrow"]'), $path);
-            $this->assertSame(['01', '02', '03', '04', '05', '06'], Html::texts($xpath, '//span[@class="service-feature-number"]'), $path);
+            $this->assertCount(0, $xpath->query('//*['.Html::hasClass('service-feature-number').']'), $path);
+            $this->assertCount(6, $xpath->query('//div['.Html::hasClass('service-feature-media').']'), $path);
+            $this->assertCount(0, $xpath->query('//div['.Html::hasClass('service-feature-media').']/span'), $path);
             $first = array_map(fn ($node) => $node->nodeName, iterator_to_array($xpath->query('//div[@class="service-feature-copy"]/*[1]')));
             $this->assertSame(array_fill(0, 6, 'h3'), $first, $path);
             if (str_starts_with($path, '/lt')) {
