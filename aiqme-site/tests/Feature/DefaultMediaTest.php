@@ -151,8 +151,8 @@ class DefaultMediaTest extends TestCase
             array_map(fn ($source) => $source->getAttribute('src'), iterator_to_array($xpath->query('.//source', $video))));
         $this->assertSame('(max-width: 700px)', $xpath->query('.//source', $video)->item(0)->getAttribute('media'));
         $link = $xpath->query('//div[@class="hero-media-controls"]/span/a')->item(0);
-        $this->assertSame(['https://www.youtube.com/watch?v=1Nd_xg8QfXo', 'Bosch / The Apic ↗'], [$link->getAttribute('href'), Html::text($link)]);
-        foreach (['Manufacturing illustration', 'Gamybos iliustracija', 'Illustrative', 'Demonstracinė iliustracija', 'DEMONSTRACINĖ ILIUSTRACIJA'] as $absent) {
+        $this->assertNull($link, 'default hero source must not render a prototype attribution link');
+        foreach (['Bosch / The Apic', 'Manufacturing illustration', 'Gamybos iliustracija', 'Illustrative', 'Demonstracinė iliustracija', 'DEMONSTRACINĖ ILIUSTRACIJA'] as $absent) {
             $this->assertStringNotContainsString($absent, $html);
         }
         $this->assertSame(asset('defaults/logo.png'), $this->src($html, '//header//a[@class="logo"]/img'));

@@ -110,6 +110,6 @@ return [
     */
     'trusted_proxies' => env('TRUSTED_PROXIES', ''),
 
-    'hero_video_source' => ['text' => 'Bosch / The Apic', 'url' => 'https://www.youtube.com/watch?v=1Nd_xg8QfXo'],
+    'hero_video_source' => ['text' => '', 'url' => ''],
 
 ];
