@@ -63,10 +63,10 @@ class FormLabelsTest extends TestCase
     public function test_contact_form_has_no_asterisks_or_form_note_and_marks_optional_fields(): void
     {
         $labels = [
-            'lt' => ['/lt/kontaktai', ['name' => 'Vardas', 'company' => 'Įmonė (neprivaloma)', 'email' => 'El. paštas', 'phone' => 'Telefonas (neprivaloma)',
+            'lt' => ['/lt/kontaktai', ['name' => 'Vardas', 'company' => 'Įmonė (neprivaloma)', 'email' => 'El. paštas', 'phone' => 'Telefonas', // правка 05.11, H-03: без «(neprivaloma)»
                 'service' => 'Paslauga', 'description' => 'Užduoties aprašymas', 'attachments[]' => 'Failai ir nuotraukos (neprivaloma)',
                 'deadline' => 'Pageidaujamas terminas (neprivaloma)'], '* — būtini laukai.'],
-            'en' => ['/en/contact', ['name' => 'Name', 'company' => 'Company (optional)', 'email' => 'Email', 'phone' => 'Phone (optional)',
+            'en' => ['/en/contact', ['name' => 'Name', 'company' => 'Company (optional)', 'email' => 'Email', 'phone' => 'Phone',
                 'service' => 'Service', 'description' => 'Describe your task', 'attachments[]' => 'Files & photos (optional)',
                 'deadline' => 'Target date (optional)'], '* — required fields.'],
         ];
@@ -75,8 +75,9 @@ class FormLabelsTest extends TestCase
             $this->assertLabels($locale, $html, '//form[@id="contact-form"]', $expected);
             $this->assertStringNotContainsString($note, $html, $path);
             $this->assertCount(0, Html::xpath($html)->query('//form[@id="contact-form"]/p'), "$path: строка под заголовком формы");
-            $this->assertSame(['name', 'email', 'service', 'description'], array_keys(array_filter($this->fields($html, '//form[@id="contact-form"]'),
-                fn (array $field): bool => $field['required'])), "$path: required не изменён");
+            // Правка 05.11, H-03: телефон обязателен (было name, email, service, description).
+            $this->assertSame(['name', 'email', 'phone', 'service', 'description'], array_keys(array_filter($this->fields($html, '//form[@id="contact-form"]'),
+                fn (array $field): bool => $field['required'])), "$path: required");
         }
     }
 

@@ -5019,3 +5019,57 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 ### Не проверено
 - Вид глазами (фото услуг без номеров, переносы заголовков) — ждёт проверки пользователем; кадры не просматривались.
 - Миграция на копии рабочей БД (правки администратора в этих полях) — при выпуске (H-10).
+
+## Правки 05.11, H-03: страницы услуг без «01/02» и «Aiški darbų eiga»; 3D spausdinimas; Apie mus; телефон в контактах обязателен
+
+### Что сделано
+- `resources/views/public/service.blade.php`: в карточках «Ką pateikti?» / «Ką gausite?» нет надписей `01 / PRADŽIA`, `02 / REZULTATAS`
+  (EN `01 / INPUT`, `02 / OUTPUT`); блока «Aiški darbų eiga.» с этапами нет — за карточками пример (если есть), затем FAQ. Ключи
+  `public.service.input|output|workflow` удалены из `lang/lt|en/public.php` (grep — других использований нет). Переменная `$home`
+  в `ServiceController` осталась: её использует синий блок `partials/cta` (проверено — без неё 500). Шаблон `partials/process` теперь
+  только на главной; CSS не менялся.
+- 3D spausdinimas `problems[1]`: LT `Reikia vienos detalės arba serijos`, EN `Need a single part or a series` (README).
+- «Apie mus»: подзаголовок под h1 не выводится (`about.blade.php`, `x-page-top` без intro); неиспользуемый ключ `pages.about.description`
+  удалён (LT/EN). `intro_paragraphs`: прежний [1] удалён, бывший [2] — новый текст README; три карточки `panels` LT/EN по README.
+  Мета-описание — по-прежнему `intro_paragraphs[0]`, не менялось.
+- Контакты: подпись `Telefonas` / `Phone`, `required` в разметке, правило `required` в `FormController`; колонка БД не менялась (nullable).
+- `prototype-content.json` и миграция `2026_11_05_300000_update_texts_h3.php` по образцу Г2/H-02: опубликованная версия и черновик,
+  только при прежнем значении. У `problems[1]` прежних вариантов два (Г2 и до Г2), down возвращает вариант Г2. `intro_paragraphs`
+  меняется целиком, только если все три абзаца прежние (простейший способ удалить элемент; если администратор правил любой абзац —
+  поле не трогается). Карточки — по полям.
+- `bin/browser-check`: D21_REPLACEMENTS «правка 05.11, H-03» — надписи и заголовок блока ('' на `^/lt/paslaugos/.`, `^/en/services/.`),
+  пункт печати, «Apie mus» (подзаголовок и второй абзац — '', третий абзац и карточки — замены; `^/lt/apie-mus$`, `^/en/about$`),
+  подпись телефона; этапы блока (`div.section.dark.panel` эталона) — в TEXT_EXCLUDED_BLOCKS для страниц услуг; `check_blocks`
+  не ждёт `section.section` на услугах; `check_contact_form` заполняет телефон; docstring дополнен.
+- `bin/demo-check`: заполнение формы контактов — телефон (проверено чтением кода; выполнение — ждёт пользователя, демо-сборка не пересобиралась).
+- Тесты (комментарии «правка 05.11, H-03»): `PublicPagesTest` — новые `test_h3_service_pages_have_no_input_output_labels_or_workflow_block`
+  (все шесть услуг LT и EN), `test_h3_about_has_no_subtitle_two_paragraphs_and_new_panels` (включая мета-описание),
+  `test_h3_text_migration_changes_only_the_previous_texts` (применена, повтор, откат, вариант до Г2, правка администратора
+  пропускается, записей нет); тест порядка блоков услуги (без `section.section`, переименован), ожидания этапов на странице
+  услуги в тесте H-02 и пункта печати в тестах Г2 изменены. `FormsTest` — «без телефона — ошибка»; `FormLabelsTest` — подпись и
+  required; `AltchaTest` — данные формы с телефоном.
+
+### Проверки поведения (один раз)
+- FormController с прежним `nullable` → `test_invalid_contact_form_stores_nothing…` failed; возвращено — passed.
+- service.blade.php из HEAD → `test_h3_service_pages…` failed; about.blade.php из HEAD → `test_h3_about…` failed; возвращены — passed.
+- Первый `bin/browser-check` (до правки check_blocks) — красный на четырёх страницах услуг: «порядок блоков … section.section»;
+  после правки — зелёный. Сверка текста с эталоном прошла с новыми записями D21.
+
+### Команды и вывод
+- `bin/browser-check /lt/paslaugos/3d-spausdinimas /en/services/3d-printing /lt/paslaugos/frezavimas /lt/paslaugos/3d-skenavimas
+  /lt/apie-mus /en/about /lt/kontaktai /en/contact` — `bin/browser-check: OK (1458 проверок)` (включает поиск маркеров).
+- `bin/check` — `bin/check: OK`, PHPUnit 751/751. `pint --dirty` — passed. `git status --porcelain aiqme-site`: новый файл только
+  `database/migrations/2026_11_05_300000_update_texts_h3.php`.
+
+### Не проверено
+- Вид глазами (страницы услуг без блока, «Apie mus», форма) — ждёт проверки пользователем; кадры не просматривались.
+- Толкование макета «Apie mus» (два абзаца: первый прежний, второй — новый текст) — README просит подтверждения пользователя.
+- `bin/demo-check` — проверено чтением кода; выполнение — ждёт пользователя. Миграция на копии рабочей БД — при выпуске (H-10).
+
+### Доработка по замечаниям приёмщика
+- `bin/browser-check`, `prod_contact` (ветка `--compose-file`, ночью не выполняется): форма не заполняла `[name=phone]` — после
+  `required` браузер заблокировал бы отправку и ожидание навигации упало бы. Добавлено заполнение телефона («правка 05.11, H-03»).
+  Остальные отправки контактной формы просмотрены чтением кода: `check_contact_form` и `bin/demo-check` телефон заполняют,
+  `check_contact_lt` форму не отправляет. Ветка prod-compose проверена только чтением кода (rules: запуск — у пользователя при выпуске).
+- `ServiceController`: docstring больше не упоминает удалённый блок процесса — «Блока процесса нет (правка 05.11, H-03)».
+- После доработки: `bin/check` — OK; `bin/browser-check` по восьми страницам из checks задачи — OK.

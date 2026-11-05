@@ -54,7 +54,7 @@ class FormController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'company' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['required', 'string', 'max:50'], // правка 05.11, H-03: телефон обязателен
             'service' => ['required', 'string', Rule::in([...$services->keys(), 'equipment'])],
             'description' => ['required', 'string', 'min:10', 'max:5000'],
             'deadline' => ['nullable', 'date'],

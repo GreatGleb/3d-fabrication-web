@@ -253,6 +253,7 @@ def main():
         check(page.locator('[data-demo-message]').count() == 0, '/en/contact: пустая форма прошла проверку полей браузера')
         page.fill('#contact-form [name=name]', 'Jonas Petraitis')
         page.fill('#contact-form [name=email]', 'klientas@aiqme.test')
+        page.fill('#contact-form [name=phone]', '+370 600 00003')  # правка 05.11, H-03: телефон обязателен
         page.select_option('#contact-form [name=service]', index=1)
         page.fill('#contact-form [name=description]', 'Reikia nuskenuoti detalę.')
         page.click('#contact-form button[type=submit]')

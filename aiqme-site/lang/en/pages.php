@@ -31,7 +31,6 @@ return [
     ],
     'about' => [
         'title' => 'Engineering starts with understanding.',
-        'description' => 'One partner — from your challenge to a finished product.',
     ],
     'contact' => [
         'title' => 'Tell us what you want to create.',

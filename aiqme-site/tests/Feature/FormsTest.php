@@ -159,6 +159,7 @@ class FormsTest extends TestCase
         Mail::fake();
         foreach ([
             'name' => $this->contact(['name' => '']),
+            'phone' => $this->contact(['phone' => '']), // правка 05.11, H-03: без телефона — ошибка
             'email' => $this->contact(['email' => 'not-an-email']),
             'service' => $this->contact(['service' => 'unknown-service']),
             'description' => $this->contact(['description' => 'short']),

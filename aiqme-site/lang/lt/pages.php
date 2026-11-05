@@ -31,7 +31,6 @@ return [
     ],
     'about' => [
         'title' => 'Inžinerija prasideda nuo supratimo.',
-        'description' => 'Vienas partneris – nuo jūsų užduoties iki pagaminto produkto.',
     ],
     'contact' => [
         'title' => 'Papasakokite, ką norite sukurti.',

@@ -351,7 +351,7 @@ class AltchaTest extends TestCase
     private function formData(string $form, string $locale): Closure
     {
         return match ($form) {
-            'contact' => fn (string $email): array => ['name' => 'Ona Petraitė', 'email' => $email,
+            'contact' => fn (string $email): array => ['name' => 'Ona Petraitė', 'email' => $email, 'phone' => '+370 600 00000', // правка 05.11, H-03
                 'service' => $locale === 'lt' ? '3d-spausdinimas' : '3d-printing', 'description' => 'Need ten brackets printed in PETG.'],
             'training' => fn (string $email): array => ['training' => ContentItem::where('key', 'cad-basics')->value('id'),
                 'name' => 'Jonas', 'email' => $email, 'format' => $locale === 'lt' ? 'aiqme' : 'online', 'participants' => 2],

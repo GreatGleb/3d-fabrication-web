@@ -24,13 +24,12 @@
             </div>
         </div>
         <div class="grid two gap">
+            {{-- Надписей «01 / PRADŽIA» и «02 / REZULTATAS» нет (правка 05.11, H-03). --}}
             <div class="panel">
-                <div class="eyebrow">{{ __('public.service.input') }}</div>
                 <h3>{{ __('public.service.provide') }}</h3>
                 <p>{{ $service->field('provide') }}</p>
             </div>
             <div class="panel">
-                <div class="eyebrow">{{ __('public.service.output') }}</div>
                 <h3>{{ __('public.service.receive') }}</h3>
                 <p>{{ $service->field('receive') }}</p>
             </div>
@@ -38,13 +37,8 @@
         @if ($key === 'training')
             @include('public.partials.training-topics', ['trainingSlug' => $service->slug])
         @endif
-        @if ($home)
-            <section class="section">
-                <div class="section-head"><h2>{{ __('public.service.workflow') }}</h2></div>
-                <div class="section dark panel">@include('public.partials.process')</div>
-            </section>
-        @endif
-        {{-- Блока «Vienas kontaktas visam darbui» нет (правка 02.11, Г2): за примером (если есть) сразу FAQ. --}}
+        {{-- Блоков «Aiški darbų eiga» (правка 05.11, H-03) и «Vienas kontaktas visam darbui» (правка 02.11, Г2) нет: за карточками —
+             пример (если есть), затем FAQ. --}}
         @if ($project)
             <div class="section-head"><h2>{{ __('public.service.example') }}</h2></div>
             <div class="grid two">

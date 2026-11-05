@@ -45,7 +45,7 @@
                     </div>
                     <div class="grid two form-grid">
                         <x-field name="email" type="email" :label="__('public.contact.email')" required autocomplete="email" />
-                        <x-field name="phone" type="tel" :label="__('public.contact.phone')" autocomplete="tel" />
+                        <x-field name="phone" type="tel" :label="__('public.contact.phone')" required autocomplete="tel" />
                     </div>
                     <x-field name="service" type="select" :label="__('public.contact.service')" :options="$serviceOptions" :value="$prefill['service']" required />
                     <x-field name="description" type="textarea" :label="__('public.contact.description')" :value="$prefill['description']" required minlength="10" />

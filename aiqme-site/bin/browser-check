@@ -95,6 +95,10 @@ LT-надпись hero — замена D21_REPLACEMENTS только для /lt
 Тексты главной (правка 05.11, H-02): надписи разделов без «0n / », карточка 2, «Darbo eiga» (этапы — и на страницах услуг),
 раздел услуг, первый пункт 3D skenavimas — замены D21_REPLACEMENTS; номеров 01–06 на фото услуг нет (span.service-feature-number эталона —
 в TEXT_EXCLUDED_BLOCKS).
+Страницы услуг, «Apie mus», контакты (правка 05.11, H-03): на страницах услуг нет «01 / PRADŽIA», «02 / REZULTATAS» и блока
+«Aiški darbų eiga» (заголовок — '' в D21_REPLACEMENTS, этапы div.section.dark.panel — в TEXT_EXCLUDED_BLOCKS); второй пункт
+3D spausdinimas; «Apie mus» без подзаголовка, два абзаца, новые карточки; подпись «Telefonas» / «Phone» без пометки, телефон
+обязателен — check_contact_form заполняет его.
 
 W-33: медиа прототипа по умолчанию (D-43) на данных без загруженных медиа — check_defaults (DEFAULT_MEDIA, 390 и 1440):
 логотип, видео hero с постером, иллюстрации услуг, фото «О нас» и опубликованного проекта prototype берут файл из /defaults/
@@ -1005,9 +1009,15 @@ BLOCKS_PROBE = """() => {
 def check_blocks(report, page, path, fixture):
     """Порядок прямых детей main (и div.wrap.page-content) — как в prototype-blocks.json (§7.1). Заголовок примера
     div.section-head на услугах сверяется, только если пример есть (опубликованный проект услуги, §4.1); без примера нет и
-    div.grid.two (правка 02.11, Г2: блок «Vienas kontaktas» убран, в div.grid.two — только пример)."""
+    div.grid.two (правка 02.11, Г2: блок «Vienas kontaktas» убран, в div.grid.two — только пример). Раздела section.section
+    («Aiški darbų eiga») на услугах нет (правка 05.11, H-03)."""
     expected = json.loads(json.dumps(fixture[path]))
     has_project = page.locator('main .project-card').count() > 0
+    if re.match(r'^/(lt/paslaugos|en/services)/.', path):
+        for entry in expected:
+            if isinstance(entry, dict):
+                for children in entry.values():
+                    children[:] = [child for child in children if child != 'section.section']  # правка 05.11, H-03
     for entry in expected:
         if isinstance(entry, dict) and not has_project and re.match(r'^/(lt/paslaugos|en/services)/.', path):
             for children in entry.values():
@@ -1138,6 +1148,35 @@ D21_REPLACEMENTS = [
     ('We connect digital models and physical production. Choose a service or let us coordinate the complete workflow.', 'We combine digital modelling and physical manufacturing. Choose the service you need or entrust us with the whole process.', '^/en(/|$)'),
     ('Objekto forma ir paviršius perkeliami į 3D modelį.', 'Objekto geometrija perkeliama į skaitmeninį 3D modelį.', '^/lt(/|$)'),
     ('Capture an object’s shape and surface as a 3D model.', "The object's geometry is transferred into a digital 3D model.", '^/en(/|$)'),
+    # Правка 05.11, H-03: на страницах услуг нет надписей «01 / PRADŽIA», «02 / REZULTATAS» и заголовка блока «Aiški darbų eiga.»
+    # (этапы блока — div.section.dark.panel — исключены в TEXT_EXCLUDED_BLOCKS: номера «01»… подстрокой не заменить); второй пункт
+    # 3D spausdinimas (после текста Г2 выше); «Apie mus» — без подзаголовка под h1, без второго абзаца, третий абзац и карточки новые.
+    ('01 / PRADŽIA', '', '^/lt/paslaugos/.'), ('02 / REZULTATAS', '', '^/lt/paslaugos/.'), ('Aiški darbų eiga.', '', '^/lt/paslaugos/.'),
+    ('01 / INPUT', '', '^/en/services/.'), ('02 / OUTPUT', '', '^/en/services/.'), ('A clear workflow.', '', '^/en/services/.'),
+    ('Reikia vienos detalės ar detalių serijos', 'Reikia vienos detalės arba serijos', '^/lt(/|$)'),
+    ('A one-off component or a series of parts', 'Need a single part or a series', '^/en(/|$)'),
+    ('Vienas partneris – nuo jūsų užduoties iki pagaminto produkto.', '', '^/lt/apie-mus$'),
+    ('One partner — from your challenge to a finished product.', '', '^/en/about$'),
+    ('Pradedame nuo paskirties: ką detalė turi atlikti, kokiomis sąlygomis ji dirbs ir kaip patikrinsime rezultatą. Tuomet deriname skenavimą, projektavimą, gamybą ir pristatymą.', '', '^/lt/apie-mus$'),
+    ('We start with purpose: what the part must do, its operating conditions and how to verify the result. We then coordinate scanning, design, manufacturing and delivery.', '', '^/en/about$'),
+    ('Visą procesą koordinuoja AIQME, prireikus įtraukdama gamybos partnerius. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami.',
+     'Visą procesą koordinuoja AIQME. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami.', '^/lt/apie-mus$'),
+    ('AIQME coordinates the whole process, involving manufacturing partners when needed. We agree the scope clearly and seek approval before making changes.',
+     'AIQME coordinates the whole process. We clearly agree on the scope of work and agree any changes before making them.', '^/en/about$'),
+    ('Suprantamas planas', 'Individualus požiūris', '^/lt/apie-mus$'),
+    ('Įvardijame etapus, atsakomybes ir rezultatą, kurį gausite.', 'Kiekvienai užduočiai parenkame tinkamiausią sprendimą.', '^/lt/apie-mus$'),
+    ('Žmogaus patikra', 'Sklandus procesas', '^/lt/apie-mus$'),
+    ('Prieš gamybą tikriname modelį ir parametrus, prieš pristatymą — gaminį.', 'Pasirūpiname visais etapais, kad jums nereikėtų rūpintis detalėmis.', '^/lt/apie-mus$'),
+    ('Aiški komunikacija', 'Atsakingas požiūris', '^/lt/apie-mus$'),
+    ('Jei patikroje randame neatitikimą, pateikiame paaiškinimą ir pasirinkimus.', 'Kiekvieną užsakymą vykdome pagal suderintus reikalavimus.', '^/lt/apie-mus$'),
+    ('A clear plan', 'Individual approach', '^/en/about$'),
+    ('We define the steps, responsibilities and what you will receive.', 'We choose the most suitable solution for every task.', '^/en/about$'),
+    ('Human review', 'Smooth process', '^/en/about$'),
+    ('We review the model and settings before production, and inspect the part before delivery.', "We take care of every stage so you don't have to worry about the details.", '^/en/about$'),
+    ('Clear communication', 'Responsible approach', '^/en/about$'),
+    ('If review reveals an issue, we explain it and present the options.', 'We carry out every order according to the agreed requirements.', '^/en/about$'),
+    # Правка 05.11, H-03: подпись поля телефона без «(neprivaloma)» / «(optional)» (поле обязательно).
+    ('Telefonas (neprivaloma)', 'Telefonas', '^/lt/kontaktai$'), ('Phone (optional)', 'Phone', '^/en/contact$'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),
@@ -1149,7 +1188,9 @@ TEXT_EXCLUDED_BLOCKS = [('div', {'notice'}), ('div', {'inset', 'gap'}, '/(lt/api
                         # Правка 05.11, H-01: ряда этапов hero и кнопки паузы видео на главной нет (их слова — '' в D21_REPLACEMENTS).
                         ('div', {'stages'}, '^/(lt|en)$'), ('button', {'hero-video-toggle'}, '^/(lt|en)$'),
                         # Правка 05.11, H-02: номеров 01–06 в углу фото услуг (главная, список услуг) нет.
-                        ('span', {'service-feature-number'})]
+                        ('span', {'service-feature-number'}),
+                        # Правка 05.11, H-03: этапов блока «Aiški darbų eiga» на страницах услуг нет (заголовок — '' в D21_REPLACEMENTS).
+                        ('div', {'section', 'dark', 'panel'}, '^/(lt/paslaugos|en/services)/.')]
 NO_TEXT = {'script', 'style', 'template', 'noscript', 'svg'}
 
 
@@ -2152,6 +2193,7 @@ def check_contact_form(report, new_page, path, width):
         check_altcha_checkbox(report, page, form, where, 'contact', width)
         form.locator('input[name=name]').fill(f'Ona {token}')
         form.locator('input[name=email]').fill(email)
+        form.locator('input[name=phone]').fill('+370 600 00000')  # правка 05.11, H-03: телефон обязателен
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
         check_file_pick(report, page, form, path, where, [str(pdf), str(stl)])
@@ -3046,6 +3088,7 @@ def prod_contact(report, new_page):
         form = page.locator('#contact-form')
         form.locator('input[name=name]').fill('Ona TEST')
         form.locator('input[name=email]').fill('ona@example.test')
+        form.locator('input[name=phone]').fill('+370 600 00000')  # правка 05.11, H-03: телефон обязателен
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
         form.locator('input[type=file]').set_input_files([str(pdf), str(stl)])

@@ -11,6 +11,7 @@ use Database\Seeders\PrototypeContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\browser\ContentFactory;
 use Tests\Support\Html;
+use Tests\Support\PageHead;
 use Tests\TestCase;
 
 /**
@@ -308,13 +309,14 @@ class PublicPagesTest extends TestCase
             $this->assertSame(array_column($texts['steps'], 1), Html::texts($xpath, '//div[@class="process"]/div/p'), $path);
             $this->assertSame($texts['scanning'], Html::text($xpath->query('//article[@aria-labelledby="service-heading-scanning"]//ul/li[1]/span')->item(0)), $path);
         }
-        // Список услуг и страница услуги: тот же первый пункт 3D skenavimas и те же этапы.
+        // Список услуг: тот же первый пункт 3D skenavimas.
         $services = Html::xpath($this->get('/lt/paslaugos')->assertOk()->getContent());
         $this->assertSame($expected['/lt']['scanning'], Html::text($services->query('//article[@aria-labelledby="service-heading-scanning"]//ul/li[1]/span')->item(0)));
         $services = Html::xpath($this->get('/en/services')->assertOk()->getContent());
         $this->assertSame($expected['/en']['scanning'], Html::text($services->query('//article[@aria-labelledby="service-heading-scanning"]//ul/li[1]/span')->item(0)));
+        // Правка 05.11, H-03: на странице услуги этапов больше нет (было: те же этапы на /lt/paslaugos/3d-skenavimas).
         $service = Html::xpath($this->get('/lt/paslaugos/3d-skenavimas')->assertOk()->getContent());
-        $this->assertSame(array_column($expected['/lt']['steps'], 0), Html::texts($service, '//div[@class="process"]/div/h3'));
+        $this->assertCount(0, $service->query('//div[@class="process"]'));
     }
 
     /** Правка 05.11, H-02: миграция данных меняет прежние тексты (оба прежних варианта карточки 2), правку администратора не трогает, down возвращает. */
@@ -404,10 +406,11 @@ class PublicPagesTest extends TestCase
 
         $lt = Html::xpath($this->get('/lt/paslaugos/3d-spausdinimas')->assertOk()->getContent());
         $this->assertSame('Prototipai, funkcinės detalės ir detalių serijos.', Html::text($lt->query('//section[@class="page-top"]//p')->item(0)));
-        $this->assertSame('Reikia vienos detalės ar detalių serijos', Html::text($lt->query('//ul[@class="list-clean"]/li')->item(1)));
+        // Правка 05.11, H-03: второй пункт снова заменён — было «Reikia vienos detalės ar detalių serijos» / «A one-off component or a series of parts».
+        $this->assertSame('Reikia vienos detalės arba serijos', Html::text($lt->query('//ul[@class="list-clean"]/li')->item(1)));
         $en = Html::xpath($this->get('/en/services/3d-printing')->assertOk()->getContent());
         $this->assertSame('Prototypes, functional components and part series.', Html::text($en->query('//section[@class="page-top"]//p')->item(0)));
-        $this->assertSame('A one-off component or a series of parts', Html::text($en->query('//ul[@class="list-clean"]/li')->item(1)));
+        $this->assertSame('Need a single part or a series', Html::text($en->query('//ul[@class="list-clean"]/li')->item(1)));
 
         $answers = ['lt' => ['Nuo ko priklauso terminas?', 'Nuo detalės dydžio, sudėtingumo, kiekio ir pasirinktos medžiagos.'],
             'en' => ['What determines the lead time?', 'It depends on the part’s size, complexity, quantity and the chosen material.']];
@@ -458,7 +461,7 @@ class PublicPagesTest extends TestCase
         };
 
         foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
-            if ($path !== 'scenarios.1.text') { // правка 05.11, H-02: в prototype-content.json у карточки 2 уже текст H-02
+            if (! in_array($path, ['scenarios.1.text', 'problems.1'], true)) { // правка 05.11, H-02/H-03: в prototype-content.json уже тексты H-02/H-03
                 $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "новая установка — из prototype-content.json: $key $locale $path");
             }
             $write($type, $key, $locale, $path, $old);
@@ -561,8 +564,9 @@ class PublicPagesTest extends TestCase
         }
     }
 
-    public function test_service_page_uses_shared_process_its_faq_then_services_group_and_no_example_while_projects_are_drafts(): void
+    public function test_service_page_has_no_process_block_its_faq_then_services_group_and_no_example_while_projects_are_drafts(): void
     {
+        // Правка 05.11, H-03: блока «A clear workflow.» с этапами главной на странице услуги нет (было: этапы page_text home).
         $this->republish($this->item(ContentType::PageText, 'home'), 'en', ['process_steps' => [
             ['title' => 'Changed step', 'text' => 'Shared process text.'],
         ]]);
@@ -571,11 +575,13 @@ class PublicPagesTest extends TestCase
 
         $this->assertCount(0, $xpath->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
         $this->assertSame('Turn a physical part into a digital 3D model.', Html::text($xpath->query('//section[@class="page-top"]//p')->item(0)));
-        $this->assertSame(['Changed step'], Html::texts($xpath, '//div[@class="section dark panel"]//h3'));
+        $this->assertCount(0, $xpath->query('//div[@class="process"]'));
+        $this->assertStringNotContainsString('Changed step', $html);
         $this->assertSame(['Is a scan immediately ready for manufacturing?', 'What determines the lead time?'], Html::texts($xpath, '//details[@class="faq"]/summary'));
-        // Правка 02.11, Г2: блока «One point of contact» нет; без примера нет и div.grid.two — FAQ сразу после раздела процесса.
+        // Правка 02.11, Г2: блока «One point of contact» нет; без примера нет и div.grid.two.
+        // Правка 05.11, H-03: раздела процесса (section.section) нет — FAQ сразу после карточек «Ką pateikti? / Ką gausite?».
         $this->assertSame(0, $xpath->query('//div[@class="grid two"]')->length);
-        $this->assertSame(['div.split', 'div.grid.two.gap', 'section.section', 'h2.gap', 'details.faq', 'details.faq'], array_map(
+        $this->assertSame(['div.split', 'div.grid.two.gap', 'h2.gap', 'details.faq', 'details.faq'], array_map(
             fn ($el) => implode('.', [$el->nodeName, ...array_filter(explode(' ', $el->getAttribute('class')))]),
             iterator_to_array($xpath->query('//div[contains(@class, "page-content")]/*')),
         ));
@@ -651,6 +657,153 @@ class PublicPagesTest extends TestCase
                 $this->assertStringNotContainsString($absent, $html);
             }
         }
+    }
+
+    /** Правка 05.11, H-03: на всех страницах услуг нет надписей «01 / PRADŽIA», «02 / REZULTATAS» и блока «Aiški darbų eiga»; заголовки карточек остаются. */
+    public function test_h3_service_pages_have_no_input_output_labels_or_workflow_block(): void
+    {
+        $locales = [
+            'lt' => ['/lt/paslaugos/', 0, ['Ką pateikti?', 'Ką gausite?'], ['01 / PRADŽIA', '02 / REZULTATAS', 'Aiški darbų eiga.']],
+            'en' => ['/en/services/', 1, ['What should you provide?', 'What will you receive?'], ['01 / INPUT', '02 / OUTPUT', 'A clear workflow.']],
+        ];
+        foreach (self::SERVICES as $slugs) {
+            foreach ($locales as [$prefix, $index, $headings, $removed]) {
+                $path = $prefix.$slugs[$index];
+                $html = $this->get($path)->assertOk()->getContent();
+                $xpath = Html::xpath($html);
+                $panels = '//div[@class="wrap page-content"]/div[@class="grid two gap"]/div[@class="panel"]';
+                $this->assertSame($headings, Html::texts($xpath, $panels.'/h3'), $path);
+                $this->assertCount(0, $xpath->query($panels.'/div[@class="eyebrow"]'), $path);
+                $this->assertCount(2, $xpath->query($panels.'/p'), $path);
+                $this->assertCount(0, $xpath->query('//main//section[@class="section"] | //main//div[@class="process"]'), $path);
+                foreach ($removed as $text) {
+                    $this->assertStringNotContainsString($text, $html, $path);
+                }
+            }
+        }
+
+        $lt = Html::xpath($this->get('/lt/paslaugos/3d-spausdinimas')->getContent());
+        $this->assertSame('Reikia vienos detalės arba serijos', Html::text($lt->query('//ul[@class="list-clean"]/li')->item(1)));
+        $en = Html::xpath($this->get('/en/services/3d-printing')->getContent());
+        $this->assertSame('Need a single part or a series', Html::text($en->query('//ul[@class="list-clean"]/li')->item(1)));
+    }
+
+    /** Правка 05.11, H-03: «Apie mus» без подзаголовка, два абзаца (второй — новый), три новые карточки; мета-описание прежнее. */
+    public function test_h3_about_has_no_subtitle_two_paragraphs_and_new_panels(): void
+    {
+        $expected = [
+            '/lt/apie-mus' => [
+                'Vienas partneris – nuo jūsų užduoties iki pagaminto produkto.',
+                ['AIQME padeda įmonėms, kūrėjams, švietimo organizacijoms ir privatiems klientams įgyvendinti praktines užduotis. Vieniems reikia atkurti nebegaminamą detalę. Kitiems — patikrinti produkto idėją ar pasirinkti tinkamą įrangą.',
+                    'Visą procesą koordinuoja AIQME. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami.'],
+                [['Individualus požiūris', 'Kiekvienai užduočiai parenkame tinkamiausią sprendimą.'],
+                    ['Sklandus procesas', 'Pasirūpiname visais etapais, kad jums nereikėtų rūpintis detalėmis.'],
+                    ['Atsakingas požiūris', 'Kiekvieną užsakymą vykdome pagal suderintus reikalavimus.']],
+            ],
+            '/en/about' => [
+                'One partner — from your challenge to a finished product.',
+                ['AIQME helps businesses, creators, education organisations and private customers solve practical challenges. Some need to reconstruct an unavailable part. Others want to test an idea or choose the right equipment.',
+                    'AIQME coordinates the whole process. We clearly agree on the scope of work and agree any changes before making them.'],
+                [['Individual approach', 'We choose the most suitable solution for every task.'],
+                    ['Smooth process', 'We take care of every stage so you don\'t have to worry about the details.'],
+                    ['Responsible approach', 'We carry out every order according to the agreed requirements.']],
+            ],
+        ];
+        foreach ($expected as $path => [$subtitle, $paragraphs, $panels]) {
+            $html = $this->get($path)->assertOk()->getContent();
+            $xpath = Html::xpath($html);
+            $this->assertCount(0, $xpath->query('//section[@class="page-top"]//p'), $path);
+            $this->assertStringNotContainsString($subtitle, $html, $path);
+            $this->assertSame($paragraphs, Html::texts($xpath, '//div[@class="split"]/div[1]/p'), $path);
+            $this->assertSame(array_column($panels, 0), Html::texts($xpath, '//div[@class="grid three gap"]/div[@class="panel"]/h3'), $path);
+            $this->assertSame(array_column($panels, 1), Html::texts($xpath, '//div[@class="grid three gap"]/div[@class="panel"]/p'), $path);
+            $this->assertSame($paragraphs[0], PageHead::meta($html, 'name', 'description'), "$path: мета-описание — прежний первый абзац");
+            foreach (['Pradedame nuo paskirties', 'We start with purpose', 'Suprantamas planas', 'A clear plan'] as $old) {
+                $this->assertStringNotContainsString($old, $html, $path);
+            }
+        }
+    }
+
+    /** Правка 05.11, H-03: миграция данных меняет прежние тексты (оба прежних варианта пункта печати), правку администратора не трогает, down возвращает. */
+    public function test_h3_text_migration_changes_only_the_previous_texts(): void
+    {
+        $migration = require database_path('migrations/2026_11_05_300000_update_texts_h3.php');
+        $aboutLt = ['AIQME padeda įmonėms, kūrėjams, švietimo organizacijoms ir privatiems klientams įgyvendinti praktines užduotis. Vieniems reikia atkurti nebegaminamą detalę. Kitiems — patikrinti produkto idėją ar pasirinkti tinkamą įrangą.',
+            'Pradedame nuo paskirties: ką detalė turi atlikti, kokiomis sąlygomis ji dirbs ir kaip patikrinsime rezultatą. Tuomet deriname skenavimą, projektavimą, gamybą ir pristatymą.',
+            'Visą procesą koordinuoja AIQME, prireikus įtraukdama gamybos partnerius. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami.'];
+        $aboutEn = ['AIQME helps businesses, creators, education organisations and private customers solve practical challenges. Some need to reconstruct an unavailable part. Others want to test an idea or choose the right equipment.',
+            'We start with purpose: what the part must do, its operating conditions and how to verify the result. We then coordinate scanning, design, manufacturing and delivery.',
+            'AIQME coordinates the whole process, involving manufacturing partners when needed. We agree the scope clearly and seek approval before making changes.'];
+        $fields = [
+            [ContentType::Service, 'printing', 'lt', 'problems.1', 'Reikia vienos detalės ar detalių serijos', 'Reikia vienos detalės arba serijos'],
+            [ContentType::Service, 'printing', 'en', 'problems.1', 'A one-off component or a series of parts', 'Need a single part or a series'],
+            [ContentType::PageText, 'about', 'lt', 'intro_paragraphs', $aboutLt, [$aboutLt[0], 'Visą procesą koordinuoja AIQME. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami.']],
+            [ContentType::PageText, 'about', 'en', 'intro_paragraphs', $aboutEn, [$aboutEn[0], 'AIQME coordinates the whole process. We clearly agree on the scope of work and agree any changes before making them.']],
+            [ContentType::PageText, 'about', 'lt', 'panels.0.title', 'Suprantamas planas', 'Individualus požiūris'],
+            [ContentType::PageText, 'about', 'lt', 'panels.2.text', 'Jei patikroje randame neatitikimą, pateikiame paaiškinimą ir pasirinkimus.', 'Kiekvieną užsakymą vykdome pagal suderintus reikalavimus.'],
+            [ContentType::PageText, 'about', 'en', 'panels.1.title', 'Human review', 'Smooth process'],
+            [ContentType::PageText, 'about', 'en', 'panels.1.text', 'We review the model and settings before production, and inspect the part before delivery.', 'We take care of every stage so you don\'t have to worry about the details.'],
+        ];
+        /** Значения поля в опубликованной версии и черновике. */
+        $values = function (ContentType $type, string $key, string $locale, string $path): array {
+            $translation = $this->item($type, $key)->translation($locale)->fresh();
+
+            return [data_get($translation->fields, $path), data_get($translation->latestRevision()->fields, $path)];
+        };
+        /** Записывает значение поля в обе версии напрямую (база как до правки). */
+        $write = function (ContentType $type, string $key, string $locale, string $path, string|array $value): void {
+            $translation = $this->item($type, $key)->translation($locale);
+            $published = $translation->fields;
+            data_set($published, $path, $value);
+            $translation->forceFill(['fields' => $published])->save();
+            $draft = $translation->latestRevision();
+            $draftFields = $draft->fields;
+            data_set($draftFields, $path, $value);
+            $draft->forceFill(['fields' => $draftFields])->save();
+        };
+
+        foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
+            $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "новая установка — из prototype-content.json: $key $locale $path");
+            $write($type, $key, $locale, $path, $old);
+        }
+
+        // (а) База как до правки: прежнее → новое в обеих версиях; повтор ничего не меняет; down возвращает прежнее.
+        $migration->up();
+        $migration->up();
+        foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
+            $this->assertSame([$new, $new], $values($type, $key, $locale, $path), "up: $key $locale $path");
+        }
+        $this->get('/lt/apie-mus')->assertSee('Individualus požiūris')->assertDontSee('Pradedame nuo paskirties');
+        $migration->down();
+        foreach ($fields as [$type, $key, $locale, $path, $old, $new]) {
+            $this->assertSame([$old, $old], $values($type, $key, $locale, $path), "down: $key $locale $path");
+        }
+
+        // (б) Пункт печати до правки 02.11 (Г2) тоже заменяется; down возвращает вариант 02.11.
+        $write(ContentType::Service, 'printing', 'lt', 'problems.1', 'Reikia vienos detalės ar mažos serijos');
+        $migration->up();
+        $this->assertSame(array_fill(0, 2, 'Reikia vienos detalės arba serijos'), $values(ContentType::Service, 'printing', 'lt', 'problems.1'));
+        $migration->down();
+        $this->assertSame(array_fill(0, 2, 'Reikia vienos detalės ar detalių serijos'), $values(ContentType::Service, 'printing', 'lt', 'problems.1'));
+
+        // (в) Текст администратора (опубликован через админку) сохраняется в up() и down(); соседние поля меняются.
+        $edited = [$aboutEn[0], 'Our own second paragraph.', $aboutEn[2]];
+        $this->republish($this->item(ContentType::PageText, 'about'), 'en', ['intro_paragraphs' => $edited]);
+        $this->republish($this->item(ContentType::Service, 'printing'), 'en', ['problems' => ['One.', 'Our item.', 'Three.']]);
+        $migration->up();
+        $this->assertSame([$edited, $edited], $values(ContentType::PageText, 'about', 'en', 'intro_paragraphs'));
+        $this->assertSame(['Our item.', 'Our item.'], $values(ContentType::Service, 'printing', 'en', 'problems.1'));
+        $this->assertSame(['Smooth process', 'Smooth process'], $values(ContentType::PageText, 'about', 'en', 'panels.1.title'));
+        $migration->down();
+        $this->assertSame([$edited, $edited], $values(ContentType::PageText, 'about', 'en', 'intro_paragraphs'));
+        $this->assertSame(['Our item.', 'Our item.'], $values(ContentType::Service, 'printing', 'en', 'problems.1'));
+        $this->assertSame(['Human review', 'Human review'], $values(ContentType::PageText, 'about', 'en', 'panels.1.title'));
+
+        // (г) Записей нет — без ошибки.
+        ContentItem::query()->delete();
+        $migration->up();
+        $migration->down();
+        $this->assertSame(0, ContentItem::count());
     }
 
     public function test_contact_page_has_details_embedded_map_with_link_and_enquiry_form_without_demo_lines(): void

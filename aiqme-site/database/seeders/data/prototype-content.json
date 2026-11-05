@@ -141,21 +141,20 @@
             "intro_title": "Sujungiame idėją,\nmodelį ir gamybą.",
             "intro_paragraphs": [
               "AIQME padeda įmonėms, kūrėjams, švietimo organizacijoms ir privatiems klientams įgyvendinti praktines užduotis. Vieniems reikia atkurti nebegaminamą detalę. Kitiems — patikrinti produkto idėją ar pasirinkti tinkamą įrangą.",
-              "Pradedame nuo paskirties: ką detalė turi atlikti, kokiomis sąlygomis ji dirbs ir kaip patikrinsime rezultatą. Tuomet deriname skenavimą, projektavimą, gamybą ir pristatymą.",
-              "Visą procesą koordinuoja AIQME, prireikus įtraukdama gamybos partnerius. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami."
+              "Visą procesą koordinuoja AIQME. Aiškiai susitariame dėl darbų apimties, o pakeitimus deriname prieš juos vykdydami."
             ],
             "panels": [
               {
-                "title": "Suprantamas planas",
-                "text": "Įvardijame etapus, atsakomybes ir rezultatą, kurį gausite."
+                "title": "Individualus požiūris",
+                "text": "Kiekvienai užduočiai parenkame tinkamiausią sprendimą."
               },
               {
-                "title": "Žmogaus patikra",
-                "text": "Prieš gamybą tikriname modelį ir parametrus, prieš pristatymą — gaminį."
+                "title": "Sklandus procesas",
+                "text": "Pasirūpiname visais etapais, kad jums nereikėtų rūpintis detalėmis."
               },
               {
-                "title": "Aiški komunikacija",
-                "text": "Jei patikroje randame neatitikimą, pateikiame paaiškinimą ir pasirinkimus."
+                "title": "Atsakingas požiūris",
+                "text": "Kiekvieną užsakymą vykdome pagal suderintus reikalavimus."
               }
             ]
           }
@@ -168,21 +167,20 @@
             "intro_title": "Connecting your idea,\nmodel and production.",
             "intro_paragraphs": [
               "AIQME helps businesses, creators, education organisations and private customers solve practical challenges. Some need to reconstruct an unavailable part. Others want to test an idea or choose the right equipment.",
-              "We start with purpose: what the part must do, its operating conditions and how to verify the result. We then coordinate scanning, design, manufacturing and delivery.",
-              "AIQME coordinates the whole process, involving manufacturing partners when needed. We agree the scope clearly and seek approval before making changes."
+              "AIQME coordinates the whole process. We clearly agree on the scope of work and agree any changes before making them."
             ],
             "panels": [
               {
-                "title": "A clear plan",
-                "text": "We define the steps, responsibilities and what you will receive."
+                "title": "Individual approach",
+                "text": "We choose the most suitable solution for every task."
               },
               {
-                "title": "Human review",
-                "text": "We review the model and settings before production, and inspect the part before delivery."
+                "title": "Smooth process",
+                "text": "We take care of every stage so you don't have to worry about the details."
               },
               {
-                "title": "Clear communication",
-                "text": "If review reveals an issue, we explain it and present the options."
+                "title": "Responsible approach",
+                "text": "We carry out every order according to the agreed requirements."
               }
             ]
           }
@@ -576,7 +574,7 @@
             "description": "Pagaminame fizinę detalę pagal 3D modelį. Parenkame procesą pagal paskirtį, paviršių, mechaninius poreikius ir kiekį — nuo plastikų iki metalo sprendimų.",
             "problems": [
               "Norite patikrinti naujo produkto formą",
-              "Reikia vienos detalės ar detalių serijos",
+              "Reikia vienos detalės arba serijos",
               "Sudėtinga geometrija įprastai gamybai"
             ],
             "provide": "STL, STEP arba OBJ failą, kiekį, paskirtį ir norimą terminą. Jei modelio nėra, padėsime jį sukurti.",
@@ -597,7 +595,7 @@
             "description": "We produce a physical part from a 3D model. We select a process for the intended use, surface finish, mechanical needs and quantity, from polymers to metal solutions.",
             "problems": [
               "Testing the form of a new product",
-              "A one-off component or a series of parts",
+              "Need a single part or a series",
               "Complex geometry for conventional manufacturing"
             ],
             "provide": "An STL, STEP or OBJ file, quantity, intended use and target date. If you do not have a model, we can help create one.",
