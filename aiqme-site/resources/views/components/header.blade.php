@@ -5,6 +5,8 @@
      Шапка-шторка (правка 28.10, П2): сервер рисует тёмное состояние header--dark (первый кадр уже тёмный), resources/js/header.js
      снимает его после прокрутки — белая шапка прототипа §7.1. В a.logo обычный логотип и белый ($logoWhite) поверх него;
      без белого — обычный на белой подложке (header--logo-plate). $overlay — полупрозрачная шапка поверх hero главной.
+     Правка 05.11, H-11: тёмная шапка и белый логотип — только при тёмном верхе страницы ($overlay, сейчас только главная);
+     на остальных страницах сразу белая шапка §7.1 с обычным логотипом, header.js её не трогает.
      $cta — второй ряд (правка 02.11, Г1: главная передаёт false, класс header--no-cta даёт свою --header-height). --}}
 @props(['languages' => [], 'switchUrl' => null, 'logo', 'logoWhite' => null, 'overlay' => false, 'cta' => true])
 @php
@@ -13,9 +15,9 @@
     $current = request()->route()?->getName() ?? '';
 @endphp
 <a class="skip" href="#main">{{ __('shell.skip') }}</a>
-<header @class(['header', 'header--dark', 'header--overlay' => $overlay, 'header--logo-plate' => ! $logoWhite, 'header--no-cta' => ! $cta])>
+<header @class(['header', 'header--dark' => $overlay, 'header--overlay' => $overlay, 'header--logo-plate' => ! $logoWhite, 'header--no-cta' => ! $cta])>
     <div class="wrap head-main">
-        <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ $logo }}" alt="AIQME">@if ($logoWhite)<img class="logo-white" src="{{ $logoWhite }}" alt="">@endif</a>
+        <a class="logo" href="{{ route($locale.'.home') }}" aria-label="AIQME"><img src="{{ $logo }}" alt="AIQME">@if ($overlay && $logoWhite)<img class="logo-white" src="{{ $logoWhite }}" alt="">@endif</a>
         <nav class="nav" id="main-nav" aria-label="{{ __('shell.nav_label') }}">
             @foreach (__('shell.nav') as $page => $label)
                 @php($active = $current === $locale.'.'.$page || str_starts_with($current, $locale.'.'.$page.'.'))

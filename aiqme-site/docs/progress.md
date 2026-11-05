@@ -4938,3 +4938,45 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Вид глазами (логотип «чуть меньше и ниже», подвал, hero без ряда) — ждёт проверки пользователем; кадры `build/verification/browser-check/shots/header-*`
   не просматривались.
 - Миграция на копии рабочей БД (переопределения администратора, `ui_texts` для изменённых ключей lang) — при выпуске (H-10).
+
+## Правки 05.11, H-11: белая шапка на всех страницах, кроме главной
+
+### Что сделано
+- **Признак тёмного верха** — тот же параметр layout `headerOverlay` (сейчас только главная с hero); новых настроек нет.
+  `components/header.blade.php`: `header--dark` и белый логотип (`img.logo-white`) рисуются только при `$overlay`; на остальных
+  страницах (услуги, калькулятор, кабинет, админка, 404, главная-заглушка без записи home) — `class="header"` и один обычный
+  логотип, т. е. сразу белая шапка §7.1 с белым вторым рядом. `header--logo-plate` (свой логотип без белого) оставлен как был —
+  иначе менялось бы поле логотипа (ограничение «размеры не менять»).
+- `resources/js/header.js`: шторка включается только для `.header.header--overlay` (класс от сервера); на других страницах скрипт
+  не трогает шапку и не ставит `header--ready` — переходов нет.
+- noscript-стиль не менялся: он касается только `.header--overlay`, поэтому без JS внутренние страницы белые (проверено браузером).
+- `shell.css`, `layout.blade.php` — только комментарии; высоты рядов, логотип и отступы H-01 не тронуты.
+- **Тесты** (комментарии «правка 05.11, H-11»): `ShellTest::test_header_is_dark_and_overlays_only_on_the_home_hero` (вместо
+  «dark everywhere») — классы и число белых логотипов на /lt, /en, главной-заглушке, /lt/paslaugos, услуге, калькуляторе,
+  /lt/apie-mus, /en/quote, 404 LT/EN, /en/admin, /en/account; тест «без JS» — сеет контент (белый логотип только у главной с hero)
+  и проверяет, что на /lt/apie-mus и /en/quote шапка без `header--overlay`/`header--dark`; `DefaultMediaTest` — /en/about со своим
+  логотипом: `header header--logo-plate`, со своим белым — `header` без `img.logo-white`.
+- **bin/browser-check** (docstring дополнен): `check_styles` ждёт `header--dark` и линию rgba(255,255,255,.12) только на /lt, /en,
+  на остальных — без `header--dark`, линия #dce2e8, CTA #0867ff; `check_header` на неглавных — белая §7.1 (фон, линия, второй ряд
+  #f8fafc, CTA, логотип без белого) на прокрутке 0, после прокрутки и снова на 0, без `header--ready`, `transitionDuration` 0s,
+  анимаций 0, высоты рядов те же; главная — прежняя проверка шторки (общий код белого состояния вынесен в `check_header_white`);
+  `check_header_cases`: reduced-motion — на /en (у белой шапки переходов нет), без JS /lt/apie-mus белая с тёмными пунктами,
+  /en — тёмная сплошная. `/en/admin` в `check_accounts` проходит по ветке белой шапки (в этот точечный прогон не входит).
+
+### Проверки поведения (один раз)
+- Шаблон шапки из HEAD (старый) + новые тесты: ShellTest/DefaultMediaTest — 3 failed (header--dark на заглушке, /lt/apie-mus,
+  /en/about); с правкой — 18/18 passed.
+- Шаблон и header.js из HEAD + `bin/browser-check /lt/apie-mus` — exit 1 («тёмная шапка (header--dark) не на главной», «белая шапка
+  §7.1: фон rgb(10, 17, 25)…»). Файлы возвращены, прогон ниже — на текущем дереве (Vite пересобран им).
+
+### Команды и вывод
+- `bin/browser-check /lt /en /lt/paslaugos /lt/paslaugos/3d-spausdinimas /lt/kalkuliatorius /en/quote /lt/apie-mus /lt/kontaktai` —
+  `OK (3020 проверок)`.
+- `bin/check` — `bin/check: OK`, PHPUnit 746/746. `pint --dirty` — passed. `git status --porcelain aiqme-site` — только изменённые
+  файлы, новых нет.
+- Кадры просмотрены (верх окна): `header-top-lt-1440/390` — главная тёмная поверх видео, белый логотип;
+  `lt__paslaugos__3d-spausdinimas-desktop`, `lt__kalkuliatorius-phone` — белая шапка, тёмный логотип, светлый второй ряд.
+
+### Не проверено
+- Кадры услуги 390 и калькулятора 1440 отдельно не открывались (вид тот же по проверкам browser-check); окончательный
+  взгляд — ждёт проверки пользователем. /en/admin в браузере — в полном прогоне H-09.

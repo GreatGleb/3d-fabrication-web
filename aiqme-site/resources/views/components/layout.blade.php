@@ -5,7 +5,8 @@
      Шапка-шторка (правка 28.10, П2): белый логотип тёмной шапки — свой logo_white, иначе белое умолчание AIQME, но только
      пока нет своего logo (иначе null — обычный логотип на белой подложке); $headerOverlay — полупрозрачная шапка поверх
      hero главной; без JS она сплошная тёмная (noscript-стиль с nonce CSP). $headerCta — второй ряд шапки (правка 02.11, Г1:
-     на главной его нет). --}}
+     на главной его нет). Правка 05.11, H-11: $headerOverlay — и признак тёмного верха: только с ним шапка тёмная вверху,
+     на остальных страницах она белая сразу, без JS тоже (noscript-стиль касается только .header--overlay). --}}
 @props(['title', 'description', 'canonical' => null, 'languages' => [], 'image' => null, 'noindex' => false, 'switchUrl' => null, 'headerOverlay' => false, 'headerCta' => true])
 @use('App\Domain\Content\ContentType')
 @use('App\Domain\Content\Models\ContentItem')

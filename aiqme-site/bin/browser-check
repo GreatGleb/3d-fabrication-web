@@ -71,6 +71,10 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 белая §7.1 с теми же высотами рядов, снова тёмная наверху, меню ≤900 px белое; кадры shots/header-top|scrolled-<страница>-<ширина>.png;
 на главной hero от верха окна под шапкой на всех ширинах (check_hero_under_header); check_header_cases на /lt/apie-mus — открытие
 прокрученной страницы без анимации, reduced-motion без перехода, без JS шапка тёмная сплошная (и на /en).
+Белая шапка вне главной (правка 05.11, H-11): тёмная шапка на прокрутке 0 (header--dark) ожидается только на /lt, /en
+(check_styles, check_header); на остальных страницах (в том числе /en/admin) — белая §7.1 (фон #fff, линия #dce2e8, второй ряд
+#f8fafc, CTA #0867ff, обычный логотип без белого) на прокрутке 0, после прокрутки и снова наверху, без header--ready, переходов и
+анимаций; check_header_cases: без JS /lt/apie-mus белая, /en тёмная сплошная; reduced-motion — на /en (у белой шапки переходов нет).
 Новый логотип (правка 30.10, Г1): check_logo на /lt и /en при 320/390/600/768/901/1024/1150/1440 — ширина .header .logo
 по LOGO_WIDTHS (200/164/128, на 320 — 120 ±1; правка 05.11, H-01), не пересекается с .nav (если видна) и .tools, логотип и значки в строке .head-main,
 меню не выше, чем с логотипом ширины прототипа, документ не шире окна, белый логотип совпадает с обычным ±1 px.
@@ -500,9 +504,15 @@ def check_styles(report, page, path, width):
     report.check(all(near(p, expected['wrap_padding']) for p in got['wrapPadding']), f'{where}: поля контейнера {got["wrapPadding"]} ≠ {expected["wrap_padding"]}')
     report.check(got['wrapMax'] == '1320px', f'{where}: ширина контейнера {got["wrapMax"]}')
     # Шапка-шторка (правка 28.10, П2): на прокрутке 0 шапка тёмная; белое состояние §7.1 сверяет check_header после прокрутки.
-    report.check(got['headerDark'], f'{where}: шапка на прокрутке 0 не тёмная (нет header--dark)')
-    report.check(got['ctaColor'] in (None, 'rgb(156, 196, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
-    report.check(got['headerBorder'] == 'rgba(255, 255, 255, 0.12)', f'{where}: линия шапки {got["headerBorder"]}')
+    # Правка 05.11, H-11: тёмная — только на главной; на остальных страницах белая §7.1 сразу.
+    if path in HOME_PAGES:
+        report.check(got['headerDark'], f'{where}: шапка на прокрутке 0 не тёмная (нет header--dark)')
+        report.check(got['ctaColor'] in (None, 'rgb(156, 196, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
+        report.check(got['headerBorder'] == 'rgba(255, 255, 255, 0.12)', f'{where}: линия шапки {got["headerBorder"]}')
+    else:
+        report.check(not got['headerDark'], f'{where}: тёмная шапка (header--dark) не на главной')
+        report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
+        report.check(got['headerBorder'] == 'rgb(220, 226, 232)', f'{where}: линия шапки {got["headerBorder"]}')
     report.check(got['pageTopBackground'] in (None, 'rgb(243, 246, 249)'), f'{where}: фон page-top {got["pageTopBackground"]}')
     report.check(got['pageTopText'] in (None, 'rgb(100, 113, 126)'), f'{where}: цвет вводного текста {got["pageTopText"]}')
     # Правка 30.10 (Г2): ярлыка над h1 в page-top нет; отступ крошки → h1 не меньше прежнего крошки → ярлык
@@ -701,35 +711,43 @@ def check_logo_background(report, got, where):
     report.check(not any(p in ('all', 'background', 'background-color') for p in got['logoTransition']), f'{where}: переход фона у логотипа {got["logoTransition"]}')
 
 
+def check_header_white(report, got, where, home):
+    """Белая шапка §7.1: фон, линия, второй ряд, CTA, обычный логотип (белый скрыт или его нет)."""
+    report.check(not got['dark'], f'{where}: шапка тёмная (header--dark)')
+    report.check(got['background'] == 'rgb(255, 255, 255)' and got['border'] == 'rgb(220, 226, 232)',
+                 f'{where}: белая шапка §7.1: фон {got["background"]}, линия {got["border"]}')
+    report.check(got['ctaBackground'] == (None if home else 'rgb(248, 250, 252)'), f'{where}: фон второго ряда {got["ctaBackground"]}')
+    report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
+    report.check((got['logo'], got['white']) in (((1, 0), (1, None)) if home else ((1, None),)), f'{where}: opacity логотипов {got["logo"]}/{got["white"]}')
+    check_logo_background(report, got, where)
+    report.check(got['fits'], f'{where}: документ шире окна в белом состоянии')
+
+
 def check_header(report, new_page, path, width, state=None):
-    """Шапка-шторка (правка 28.10, П2): тёмная на прокрутке 0, белая §7.1 после порога, снова тёмная наверху."""
+    """Шапка-шторка (правка 28.10, П2): тёмная на прокрутке 0, белая §7.1 после порога, снова тёмная наверху.
+    Правка 05.11, H-11: так только на главной; на остальных страницах белая наверху, после прокрутки и снова наверху,
+    без header--ready, переходов и анимаций."""
     where = f'{path} @{width} шапка'
     home = path in ('/lt', '/en')
     context, page, problems = new_page(width, 1000 if width == 1440 else 844, storage_state=state)
     page.goto(BASE + path, wait_until='networkidle')
     top = page.evaluate(HEADER_PROBE)
-    check_header_dark(report, top, where, home)
-    report.check(top['ready'] and '0.3s' in top['transition'], f'{where}: переходы не включены после load ({top["ready"]}, {top["transition"]})')
-    report.check(top['fits'], f'{where}: документ шире окна в тёмном состоянии')
-    if path in HEADER_SHOT_PAGES:
-        header_shot(page, 'top', path, width)
-    scroll_to(page, top['height'] + 250)
-    got = page.evaluate(HEADER_PROBE)
-    if report.check(got['scrollY'] > top['height'] + 50, f'{where}: страница не прокрутилась за порог ({got["scrollY"]})'):
-        report.check(not got['dark'], f'{where}: после прокрутки осталась header--dark')
-        report.check(got['background'] == 'rgb(255, 255, 255)' and got['border'] == 'rgb(220, 226, 232)',
-                     f'{where}: белая шапка §7.1: фон {got["background"]}, линия {got["border"]}')
-        report.check(got['ctaBackground'] == (None if home else 'rgb(248, 250, 252)'), f'{where}: фон второго ряда {got["ctaBackground"]}')
-        report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA после прокрутки {got["ctaColor"]}')
-        report.check((got['logo'], got['white']) in ((1, 0), (1, None)), f'{where}: opacity логотипов после прокрутки {got["logo"]}/{got["white"]}')
-        check_logo_background(report, got, f'{where} после прокрутки')
-        report.check((got['headMain'], got['headSub']) == (top['headMain'], top['headSub']),
-                     f'{where}: высоты рядов {got["headMain"]}/{got["headSub"]} ≠ {top["headMain"]}/{top["headSub"]}')
-        report.check(got['fits'], f'{where}: документ шире окна в белом состоянии')
-        if path in HEADER_SHOT_PAGES:
-            header_shot(page, 'scrolled', path, width)
-        scroll_to(page, 0)
-        check_header_dark(report, page.evaluate(HEADER_PROBE), f'{where} (возврат на 0)', home)
+    if not home:
+        for label, y in (('', None), (' после прокрутки', top['height'] + 250), (' (возврат на 0)', 0)):
+            if y is not None:
+                scroll_to(page, y)
+            got = page.evaluate(HEADER_PROBE)
+            if y:
+                report.check(got['scrollY'] > top['height'] + 50, f'{where}: страница не прокрутилась за порог ({got["scrollY"]})')
+            check_header_white(report, got, where + label, home)
+            report.check(not got['ready'] and got['transition'] == '0s' and got['animations'] == 0,
+                         f'{where}{label}: переход у белой шапки ({got["ready"]}, {got["transition"]}, анимаций {got["animations"]})')
+            report.check((got['headMain'], got['headSub']) == (top['headMain'], top['headSub']),
+                         f'{where}{label}: высоты рядов {got["headMain"]}/{got["headSub"]} ≠ {top["headMain"]}/{top["headSub"]}')
+            if path in HEADER_SHOT_PAGES and y != 0:
+                header_shot(page, 'scrolled' if y else 'top', path, width)
+    else:
+        check_header_home(report, page, path, width, top, where)
     if width <= 900:  # выпадающее меню белое с тёмными пунктами и в тёмной шапке
         page.click('.menu-btn')
         menu = page.evaluate("""() => ({background: getComputedStyle(document.querySelector('#main-nav')).backgroundColor,
@@ -739,6 +757,26 @@ def check_header(report, new_page, path, width, state=None):
     for problem in problems:
         report.check(False, f'{where}: {problem}')
     context.close()
+
+
+def check_header_home(report, page, path, width, top, where):
+    """Главная: тёмная наверху, белая после прокрутки, снова тёмная наверху (правка 28.10, П2)."""
+    home = True
+    check_header_dark(report, top, where, home)
+    report.check(top['ready'] and '0.3s' in top['transition'], f'{where}: переходы не включены после load ({top["ready"]}, {top["transition"]})')
+    report.check(top['fits'], f'{where}: документ шире окна в тёмном состоянии')
+    if path in HEADER_SHOT_PAGES:
+        header_shot(page, 'top', path, width)
+    scroll_to(page, top['height'] + 250)
+    got = page.evaluate(HEADER_PROBE)
+    if report.check(got['scrollY'] > top['height'] + 50, f'{where}: страница не прокрутилась за порог ({got["scrollY"]})'):
+        check_header_white(report, got, f'{where} после прокрутки', home)
+        report.check((got['headMain'], got['headSub']) == (top['headMain'], top['headSub']),
+                     f'{where}: высоты рядов {got["headMain"]}/{got["headSub"]} ≠ {top["headMain"]}/{top["headSub"]}')
+        if path in HEADER_SHOT_PAGES:
+            header_shot(page, 'scrolled', path, width)
+        scroll_to(page, 0)
+        check_header_dark(report, page.evaluate(HEADER_PROBE), f'{where} (возврат на 0)', home)
 
 
 # .header .logo (правка 30.10, Г1), .footer .logo (02.11); правка 05.11, H-01: 200/164/128/120 (было 220/180/140/132)
@@ -856,10 +894,11 @@ def check_header_cases(report, new_page, path):
         report.check(False, f'{where}: {problem}')
     context.close()
 
+    # Правка 05.11, H-11: переходы есть только у шторки главной — reduced-motion проверяется на /en.
     context, page, problems = new_page(1440, 1000, reduced_motion='reduce')
-    page.goto(BASE + path, wait_until='networkidle')
+    page.goto(BASE + '/en', wait_until='networkidle')
     got = page.evaluate(HEADER_PROBE)
-    report.check(got['ready'] and got['transition'] == '0s', f'{where}: reduced-motion: transitionDuration {got["transition"]}')
+    report.check(got['ready'] and got['transition'] == '0s', f'/en @1440 шапка: reduced-motion: transitionDuration {got["transition"]}')
     context.close()
 
     for no_js in (path, '/en'):
@@ -869,8 +908,10 @@ def check_header_cases(report, new_page, path):
             scroll_to(page, top)
             got = page.evaluate(HEADER_PROBE)
             label = f'{no_js} @1440 без JS, прокрутка {got["scrollY"]}'
-            report.check(got['dark'] and got['background'] == 'rgb(10, 17, 25)', f'{label}: шапка {got["dark"]} {got["background"]}')
-            report.check(got['nav'] and set(got['nav']) == {'rgb(255, 255, 255)'}, f'{label}: ссылки {got["nav"]}')
+            # Правка 05.11, H-11: без JS тёмная сплошная — только главная (/en); внутренняя страница белая §7.1.
+            dark, background, nav = (True, 'rgb(10, 17, 25)', 'rgb(255, 255, 255)') if no_js in HOME_PAGES else (False, 'rgb(255, 255, 255)', 'rgb(17, 23, 30)')
+            report.check(got['dark'] == dark and got['background'] == background, f'{label}: шапка {got["dark"]} {got["background"]}')
+            report.check(got['nav'] and set(got['nav']) == {nav}, f'{label}: ссылки {got["nav"]}')
             report.check(got['fits'], f'{label}: документ шире окна')
         report.check(page.evaluate('window.scrollY') > 0, f'{no_js} @1440 без JS: страница не прокрутилась')
         for problem in problems:

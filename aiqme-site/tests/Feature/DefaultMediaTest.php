@@ -244,11 +244,16 @@ class DefaultMediaTest extends TestCase
         $this->assertSame('header header--dark header--overlay header--logo-plate header--no-cta', $class);
         $this->assertNull($white);
         $this->assertStringNotContainsString('defaults/logo-white.png', $html);
+        // Правка 05.11, H-11: на внутренней странице шапка белая сразу (без header--dark); подложка своего логотипа — прежняя.
+        $this->assertSame('header header--logo-plate', Html::xpath($this->get('/en/about')->getContent())->query('//header')->item(0)->getAttribute('class'));
         $white = $content->addMedia($this->admin, $home->fresh(), $this->png('logo_white'), 'logo_white');
         [$class, $src] = $header();
         $this->assertSame('header header--dark header--overlay header--no-cta', $class);
         $this->assertSame($white->getUrl(), $src);
         $this->assertStringStartsWith('/storage/', parse_url($src, PHP_URL_PATH));
+        // Правка 05.11, H-11: свой белый логотип — только у тёмной шапки главной; на внутренней странице его нет.
+        $about = Html::xpath($this->get('/en/about')->getContent());
+        $this->assertSame(['header', 0], [$about->query('//header')->item(0)->getAttribute('class'), $about->query('//header//img[@class="logo-white"]')->length]);
         $content->removeMedia($this->admin, $home->fresh(), $white->id);
         $content->removeMedia($this->admin, $home->fresh(), $logo->id);
         [$class, $src] = $header();
