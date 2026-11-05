@@ -4,7 +4,9 @@
      view» демо-кабинета, демо-тексты листа задания и его JSON. STL — только ссылки защищённой выдачи (route stl.download).
      Правка 02.11, Г7: у позиций с method — способ и параметры по способу, «Skubu» и «Reikalinga iki», заметка позиции; у
      позиции без оценки — «Kainą įvertins specialistas» и пустое поле цены; лист Bambu — только печать из STL; файлы любых
-     форматов скачиваются той же выдачей. Позиции до правки (без method) выводятся как раньше. --}}
+     форматов скачиваются той же выдачей. Позиции до правки (без method) выводятся как раньше.
+     Правка 05.11, H-08: у заказа «Prekės» — пометка в заголовке и таблица товаров (название, количество, цена за единицу,
+     сумма) вместо файлов; цена строки товара в форме цены — сумма строки. --}}
 @php
     $locale = app()->getLocale();
     $money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale);
@@ -15,6 +17,7 @@
     $jobParts = $parts->filter(fn ($line): bool => $line->purchasable->method() === 'printing' && $line->purchasable->file->format() === 'stl')->values();
     $lineLabel = fn ($line): string => match (true) {
         $line->purchasable instanceof \App\Models\StlPart => $line->purchasable->file->original_name,
+        $line->purchasable instanceof \App\Models\ProductLine => $line->purchasable->title($locale).' × '.$line->purchasable->quantity,
         $line->purchasable->kind === \App\Models\OrderCharge::DELIVERY => __('admin.orders.delivery'),
         default => __('calculator.js.order_fee'),
     };
@@ -46,7 +49,7 @@
     };
 @endphp
 <div class="panel" id="order-card">
-    <div class="status-title"><h2>{{ $meta->number }}</h2><span class="tag blue">{{ __('admin.orders.stages.'.$stage->value) }}</span></div>
+    <div class="status-title"><h2>{{ $meta->number }}</h2>@if ($meta->products)<span class="tag" data-products-order>{{ __('admin.orders.type_products') }}</span>@endif<span class="tag blue">{{ __('admin.orders.stages.'.$stage->value) }}</span></div>
     <x-status :message="$status" />
     @error('workflow')<div class="notice error" role="alert">{{ $message }}</div>@enderror
     @if ($confirming)
@@ -58,8 +61,10 @@
             </div>
         </div>
     @endif
-    <p>{{ __('admin.orders.files') }}: {{ $parts->map(fn ($line) => $line->purchasable->file->original_name)->join(', ') }}</p>
-    <div class="notice">{{ __('admin.orders.review_notice') }}</div>
+    @if ($parts->isNotEmpty())
+        <p>{{ __('admin.orders.files') }}: {{ $parts->map(fn ($line) => $line->purchasable->file->original_name)->join(', ') }}</p>
+        <div class="notice">{{ __('admin.orders.review_notice') }}</div>
+    @endif
     <div class="buttons">
         @if ($stage === \App\Domain\Orders\ProductionStage::Confirmed)
             <button class="btn small" type="button" wire:click="startProduction">{{ __('admin.orders.next') }}: {{ __('admin.orders.stages.in_production') }}</button>
@@ -92,6 +97,24 @@
         </div>
     @endif
 
+    @if ($products->isNotEmpty())
+        <h3 class="gap">{{ __('admin.orders.type_products') }}</h3>
+        <x-table id="order-products">
+            <thead><tr><th>{{ __('public.cart.product') }}</th><th>{{ __('admin.orders.quantity') }}</th><th>{{ __('public.cart.price') }}</th><th>{{ __('admin.orders.total') }}</th></tr></thead>
+            <tbody>
+                @foreach ($products as $line)
+                    <tr wire:key="product-{{ $line->id }}" data-product-line>
+                        <td>{{ $line->purchasable->title($locale) }}</td>
+                        <td>{{ $line->purchasable->quantity }}</td>
+                        <td>{{ $money($line->purchasable->unit_price) }}</td>
+                        <td>{{ $money($line->total->value) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </x-table>
+    @endif
+
+    @if ($parts->isNotEmpty())
     <h3 class="gap">{{ __('admin.orders.files') }}</h3>
     <x-table>
         <thead><tr><th>{{ __('admin.orders.file') }}</th><th>{{ __('admin.orders.parameters') }}</th><th>{{ __('admin.orders.measurement') }}</th><th>{{ __('admin.orders.estimate') }}</th></tr></thead>
@@ -127,6 +150,7 @@
             @endforeach
         </tbody>
     </x-table>
+    @endif
     @if (filled($meta->notes))
         <h3 class="gap">{{ __('calculator.settings.notes') }}</h3>
         <p id="order-notes">{!! nl2br(e($meta->notes)) !!}</p>

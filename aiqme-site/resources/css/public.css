@@ -82,3 +82,9 @@
 @media(max-width:600px){
  .part-fields,.part-fields.three,.part-methods{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Корзина товаров (правка 05.11, H-08): картинка 60 px рядом с названием, поле количества узкое. */
+.cart-product{display:flex;align-items:center;gap:12px;color:inherit}
+.cart-product img{width:60px;height:60px;object-fit:cover;flex:none}
+.cart-table input[type=number]{width:80px}
+#cart [hidden]{display:none}

@@ -41,13 +41,13 @@ class Index extends Component
         $this->uiLocale = app()->getLocale();
     }
 
-    /** Строки списка заказов (номер, дата, стадия, сумма в центах) — новые сверху; общие с Overview. */
+    /** Строки списка заказов (номер, пометка «Prekės», дата, стадия, сумма в центах) — новые сверху; общие с Overview. */
     public static function rows(): Builder
     {
         return DB::table('lunar_orders')
             ->join('order_meta', 'order_meta.order_id', '=', 'lunar_orders.id')
             ->join('production_states', 'production_states.order_id', '=', 'lunar_orders.id')
-            ->select('lunar_orders.id', 'order_meta.number', 'lunar_orders.created_at', 'production_states.stage', 'lunar_orders.total')
+            ->select('lunar_orders.id', 'order_meta.number', 'order_meta.products', 'lunar_orders.created_at', 'production_states.stage', 'lunar_orders.total')
             ->orderByDesc('lunar_orders.id');
     }
 

@@ -7,12 +7,14 @@
      без белого — обычный на белой подложке (header--logo-plate). $overlay — полупрозрачная шапка поверх hero главной.
      Правка 05.11, H-11: тёмная шапка и белый логотип — только при тёмном верхе страницы ($overlay, сейчас только главная);
      на остальных страницах сразу белая шапка §7.1 с обычным логотипом, header.js её не трогает.
-     $cta — второй ряд (правка 02.11, Г1: главная передаёт false, класс header--no-cta даёт свою --header-height). --}}
+     $cta — второй ряд (правка 02.11, Г1: главная передаёт false, класс header--no-cta даёт свою --header-height).
+     Правка 05.11, H-08: у значка корзины — число товаров корзины сессии (<small>, как в прототипе); пустая — без числа. --}}
 @props(['languages' => [], 'switchUrl' => null, 'logo', 'logoWhite' => null, 'overlay' => false, 'cta' => true])
 @php
     $locale = app()->getLocale();
     $switchTo = $locale === 'lt' ? 'en' : 'lt';
     $current = request()->route()?->getName() ?? '';
+    $cartCount = request()->hasSession() ? app(\App\Domain\Orders\ProductCart::class)->count() : 0;
 @endphp
 <a class="skip" href="#main">{{ __('shell.skip') }}</a>
 <header @class(['header', 'header--dark' => $overlay, 'header--overlay' => $overlay, 'header--logo-plate' => ! $logoWhite, 'header--no-cta' => ! $cta])>
@@ -28,7 +30,7 @@
             <a class="icon-btn" href="{{ route($locale.'.search') }}" data-modal-open="search-modal" aria-label="{{ __('shell.search') }}"><x-line-icon name="search" /></a>
             <a href="{{ $languages[$switchTo] ?? $switchUrl ?? route($switchTo.'.home') }}" hreflang="{{ $switchTo }}" aria-label="{{ __('pages.switch_language') }}" class="icon-btn lang">@if ($switchTo === 'en')LT / <span>EN</span>@else<span>LT</span> / EN @endif</a>
             <a class="icon-btn" href="{{ route(($locale === 'lt' ? 'lt' : 'en').'.account') }}" aria-label="{{ __('shell.account') }}"><x-line-icon name="user" /></a>
-            <a class="icon-btn" href="{{ route($locale.'.cart') }}" aria-label="{{ __('shell.cart') }}"><x-line-icon name="cart" /></a>
+            <a class="icon-btn" href="{{ route($locale.'.cart') }}" aria-label="{{ __('shell.cart') }}"><x-line-icon name="cart" />@if ($cartCount > 0)<small data-cart-count>{{ $cartCount }}</small>@endif</a>
             <button class="icon-btn menu-btn" type="button" aria-label="{{ __('shell.menu') }}" aria-expanded="false" aria-controls="main-nav"><x-line-icon name="menu" /></button>
         </div>
     </div>

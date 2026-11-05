@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Public;
 use App\Domain\Content\ContentType;
 use App\Domain\Content\Models\ContentTranslation;
 use App\Domain\Content\PublishedContent;
+use App\Domain\Orders\ProductCart;
 use App\Http\Controllers\Controller;
 use Collator;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
  * Каталог (§1.2, F-03–F-06): список товаров с фильтрами категории (?category=<slug категории>) и производителя
  * (?brand=<id бренда>), поиском по названию (?q=) и сортировками «Recommended» (новые публикации перевода первыми) и
  * «Name A–Z» (D-41); карточка товара по slug своей локали; сравнение до 4 опубликованных товаров (?products=<slug,…>);
- * корзина — пустое состояние (D-12; страница корзины — правка 05.11, H-08). Товар хранит meta.category (ключ категории),
+ * корзина и оформление покупки — CartController (правка 05.11, H-08). Товар хранит meta.category (ключ категории),
  * meta.brand (id бренда), meta.sale и meta.price (режим «Pirkti» с ценой в центах — правка 05.11, H-07). Пока на локали нет опубликованных товаров — заглушка (§4.2). Плановых пометок прототипа нет (D-21, D-36).
  */
 class ProductController extends Controller
@@ -28,11 +28,11 @@ class ProductController extends Controller
 
     public const SORTS = ['recommended', 'name'];
 
-    /** Наибольшее количество одного товара в корзине (как у калькулятора: 1–100). */
-    public const QUANTITY_MAX = 100;
+    /** Наибольшее количество одного товара в корзине (как у калькулятора: 1–100; корзина — ProductCart, H-08). */
+    public const QUANTITY_MAX = ProductCart::QUANTITY_MAX;
 
-    /** Ключ корзины в сессии: id товара => количество (правка 05.11, H-07; страница корзины — H-08). */
-    public const CART_SESSION = 'cart';
+    /** Ключ корзины в сессии: id товара => количество (правка 05.11, H-07). */
+    public const CART_SESSION = ProductCart::SESSION;
 
     public function __construct(private readonly PublishedContent $content) {}
 
@@ -110,34 +110,6 @@ class ProductController extends Controller
             'categories' => $this->categories($locale),
             'brands' => $this->brands($locale),
         ]);
-    }
-
-    /**
-     * «Į krepšelį» (правка 05.11, H-07): опубликованный на локали товар «Pirkti» добавляется в корзину сессии (гостю тоже),
-     * количество складывается, не больше QUANTITY_MAX. Товар «Gauti pasiūlymą», неизвестный или не опубликованный — 404.
-     */
-    public function addToCart(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'product' => ['required', 'string', 'max:120'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:'.self::QUANTITY_MAX],
-        ]);
-        $locale = app()->getLocale();
-        $product = $this->content->find(ContentType::Product, $locale, $data['product']);
-        abort_unless($product?->item->isForSale(), 404);
-
-        $cart = (array) $request->session()->get(self::CART_SESSION, []);
-        $id = $product->content_item_id;
-        $cart[$id] = min(self::QUANTITY_MAX, (int) ($cart[$id] ?? 0) + (int) $data['quantity']);
-        $request->session()->put(self::CART_SESSION, $cart);
-
-        return redirect()->route($locale.'.cart');
-    }
-
-    /** Корзина товаров (D-12): продажа выключена — пустое состояние со ссылкой на калькулятор. */
-    public function cart(): View
-    {
-        return view('public.cart', $this->seo('cart', null, null, __('pages.cart.description')));
     }
 
     /**

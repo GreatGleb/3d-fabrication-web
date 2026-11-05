@@ -190,6 +190,16 @@ return [
     ],
     'cart' => [
         'empty' => 'Your basket is empty',
+        // Basket and purchase (правка 05.11, H-08).
+        'product' => 'Product',
+        'quantity' => 'Quantity',
+        'price' => 'Price',
+        'remove' => 'Remove',
+        'continue' => 'Continue shopping',
+        'checkout' => 'Proceed to checkout',
+        'total' => 'Total',
+        'removed' => 'Some products are no longer for sale and were removed from your basket. Please check your basket.',
+        'minimum' => 'The minimum payable amount is :amount.',
     ],
     'forms' => [
         // Своё поле выбора файла контактной формы (правка 02.11, Г3).

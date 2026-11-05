@@ -12,15 +12,16 @@ use Lunar\Models\Order;
  * отправки и отпечаток её данных (§3.1), локаль заявки (язык счёта, §3.5), контакты, способ получения, адрес доставки
  * снимок настроек калькулятора, по которым посчитана оценка, и notes — «Papildoma informacija» клиента (E-05, только для
  * карточки заказа админки).
+ * products — заказ товаров из корзины, пометка «Prekės» (правка 05.11, H-08).
  */
-#[Fillable(['order_id', 'number', 'guest_token_hash', 'submission_token', 'submission_digest', 'locale', 'contact', 'delivery', 'address', 'settings', 'notes'])]
+#[Fillable(['order_id', 'number', 'guest_token_hash', 'submission_token', 'submission_digest', 'locale', 'contact', 'delivery', 'address', 'settings', 'notes', 'products'])]
 class OrderMeta extends Model
 {
     protected $table = 'order_meta';
 
     protected function casts(): array
     {
-        return ['contact' => 'array', 'address' => 'array', 'settings' => 'array'];
+        return ['contact' => 'array', 'address' => 'array', 'settings' => 'array', 'products' => 'boolean'];
     }
 
     /** @return BelongsTo<Order, $this> */

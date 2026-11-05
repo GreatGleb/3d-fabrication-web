@@ -77,6 +77,7 @@ return [
         'empty' => 'No orders found.',
         'columns' => ['order' => 'Order', 'type' => 'Type', 'status' => 'Status', 'total' => 'Total'],
         'type' => 'Manufacturing',
+        'type_products' => 'Products', // правка 05.11, H-08
         'manage' => 'Manage',
         'stages' => [
             'review' => 'Technical review',
@@ -409,6 +410,7 @@ return [
         'series' => 'Invoice series (A–Z, 0–9)',
         // Правка 05.11, H-06: следующий номер года вместо первого номера серии; ошибка — нейтральная надпись (docs/progress.md).
         'next_number' => 'Next invoice number (this year)',
+        'product_delivery' => 'Delivery price (products), €', // правка 05.11, H-08
         'next_number_issued' => 'This number has already been issued. Enter a number greater than :last.',
         // Правка 02.11, Г5: необязательные поля счёта — нейтральные надписи (docs/progress.md, G-05).
         'bank' => 'Bank',

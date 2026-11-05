@@ -57,6 +57,10 @@
             <div class="grid two gap">
                 <div>
                     <h3>{{ __('calculator.order.contents') }}</h3>
+                    {{-- Правка 05.11, H-08: товары — название, количество и сумма строки. --}}
+                    @foreach ($products as $line)
+                        <div class="summary-row" data-product-line><span>{{ $line->purchasable->title($locale) }} × {{ $line->purchasable->quantity }}</span><b>{{ $money($line->total->value) }}</b></div>
+                    @endforeach
                     @foreach ($parts as $line)
                         @php($part = $line->purchasable)
                         <div class="summary-row"><a class="text-link" href="{{ route('stl.download', $part->file->id) }}">{{ $part->file->original_name }}</a><b>× {{ $part->parameters['quantity'] }}</b></div>

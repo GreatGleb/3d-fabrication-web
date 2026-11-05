@@ -109,15 +109,16 @@ class AccountController extends Controller
      * (правка 05.11, H-04: сумма показывается только у подтверждённых).
      *
      * @param  Collection<int, Order>  $orders
-     * @return Collection<int, array{number: int, date: string, stage: string, payment_state: string, total: int, confirmed: bool}>
+     * @return Collection<int, array{number: int, products: bool, date: string, stage: string, payment_state: string, total: int, confirmed: bool}>
      */
     private function rows(Collection $orders): Collection
     {
-        $numbers = OrderMeta::whereIn('order_id', $orders->modelKeys())->pluck('number', 'order_id');
+        $metas = OrderMeta::whereIn('order_id', $orders->modelKeys())->get()->keyBy('order_id');
         $states = ProductionState::whereIn('order_id', $orders->modelKeys())->get()->keyBy('order_id');
 
         return $orders->map(fn (Order $order): array => [
-            'number' => $numbers[$order->id],
+            'number' => $metas[$order->id]->number,
+            'products' => $metas[$order->id]->products,
             'date' => $order->placed_at->timezone(config('app.timezone'))->format('Y-m-d'),
             'stage' => $states[$order->id]->stage->value,
             'payment_state' => $this->workflow->balance($order)['payment_state'],

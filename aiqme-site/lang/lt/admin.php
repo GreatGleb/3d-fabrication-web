@@ -61,6 +61,7 @@ return [
         'empty' => 'Užsakymų nerasta.',
         'columns' => ['order' => 'Užsakymas', 'type' => 'Tipas', 'status' => 'Būsena', 'total' => 'Suma'],
         'type' => 'Gamyba',
+        'type_products' => 'Prekės', // правка 05.11, H-08
         'manage' => 'Valdyti',
         'stages' => [
             'review' => 'Techninė patikra',
@@ -393,6 +394,7 @@ return [
         'series' => 'Sąskaitų serija (A–Z, 0–9)',
         // Правка 05.11, H-06: следующий номер года вместо первого номера серии; ошибка — нейтральная надпись (docs/progress.md).
         'next_number' => 'Kitas sąskaitos numeris (šiems metams)',
+        'product_delivery' => 'Pristatymo kaina (prekėms), €', // правка 05.11, H-08
         'next_number_issued' => 'Šis numeris jau išduotas. Įveskite didesnį nei :last.',
         // Правка 02.11, Г5: необязательные поля счёта — нейтральные надписи (docs/progress.md, G-05).
         'bank' => 'Bankas',

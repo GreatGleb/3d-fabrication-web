@@ -983,9 +983,51 @@ def check_buy(report, new_page, path, width, height):
         cart = '/lt/krepselis' if lt else '/en/cart'
         report.check(page.url.endswith(cart) and response is not None and response.status == 200,
                      f'{where}: «Į krepšelį» не привела на {cart}: {page.url}')
+        if page.url.endswith(cart):
+            check_cart(report, page, where, lt, price)
     for problem in problems:
         report.check(False, f'{where}: {problem}')
     context.close()
+
+
+def check_cart(report, page, where, lt, price):
+    """Правка 05.11, H-08: корзина после «Į krepšelį» (2 шт.) — значок «2» в шапке, строка товара и суммы; изменение
+    количества сразу отправляет форму (cart.js) — значок «3»; «Atsiėmimas» скрывает адрес и строку доставки; оформление
+    (поля шага калькулятора) ведёт на страницу оплаты заказа. Stripe в прогоне не настроен — страница оплаты без сети
+    показывает «оплата временно недоступна»; корзина после заказа пуста."""
+    main = page.locator('main')
+    badge = page.locator('header a.icon-btn small[data-cart-count]')
+    report.check(badge.count() == 1 and badge.inner_text() == '2', f'{where}: значок корзины не показывает 2')
+    line = main.locator('tr[data-cart-line]')
+    report.check(line.count() == 1 and ('PLA gija' if lt else 'PLA filament') in line.inner_text(), f'{where}: в корзине нет строки товара')
+    total = '48,00\u00a0€' if lt else '€48.00'
+    report.check(main.locator('td[data-line-total]').first.inner_text() == total, f'{where}: сумма строки не {total}')
+    scroll, client = document_fits(page)
+    report.check(scroll <= client, f'{where}: корзина шире окна ({scroll} > {client})')
+    with page.expect_navigation(wait_until='networkidle'):
+        line.locator('input[type="number"][name="quantity"]').fill('3')
+        line.locator('input[type="number"][name="quantity"]').dispatch_event('change')
+    report.check(badge.count() == 1 and badge.inner_text() == '3', f'{where}: после изменения количества значок не 3')
+    form = main.locator('#checkout-form')
+    report.check(form.locator('[data-address]').is_visible(), f'{where}: адрес доставки скрыт при «Pristatymas visoje ES»')
+    form.locator('input[name="name"]').fill('Ona Browser')
+    form.locator('input[name="email"]').fill('ona@example.test')
+    form.locator('input[name="phone"]').fill('+370 600 00000')
+    form.locator('select[name="delivery"]').select_option('pickup')
+    report.check(not form.locator('[data-address]').is_visible() and not main.locator('[data-delivery-row]').is_visible(),
+                 f'{where}: «Atsiėmimas» не скрыл адрес и строку доставки')
+    report.check(main.locator('[data-cart-total]').inner_text() == ('72,00\u00a0€' if lt else '€72.00'), f'{where}: итог не 72 € при самовывозе')
+    with page.expect_navigation(wait_until='networkidle') as navigation:
+        form.get_by_role('button', name='Pereiti prie apmokėjimo' if lt else 'Proceed to checkout').click()
+    response = navigation.value
+    checkout = '/lt/apmokejimas/' if lt else '/en/checkout/'
+    report.check(checkout in page.url and response is not None and response.status == 200,
+                 f'{where}: оформление не привело на страницу оплаты: {page.url}')
+    status = page.locator('#checkout')
+    report.check(status.count() == 1 and status.get_attribute('data-checkout-status') == 'unavailable'
+                 and status.locator('[data-amount]').get_attribute('data-amount') == '7200',
+                 f'{where}: страница оплаты без суммы 72 € или не в состоянии «недоступна» (без Stripe)')
+    report.check(not page.locator('header a.icon-btn small[data-cart-count]').count(), f'{where}: после заказа значок корзины не пуст')
 
 
 def check_compare(report, new_page, path, width, height):

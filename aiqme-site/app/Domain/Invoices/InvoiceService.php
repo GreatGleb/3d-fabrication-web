@@ -10,6 +10,7 @@ use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
 use App\Models\CustomerProfile;
 use App\Models\OrderCharge;
+use App\Models\ProductLine;
 use App\Models\StlPart;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -123,10 +124,16 @@ final class InvoiceService
                     // Правка 02.11, Г7: имя файла и способ («Dangtelis.STL — 3D spausdinimas, ABS»); позиции до правки — только имя.
                     $part !== null && isset($part->parameters['method']) => Str::limit($part->file->original_name.' — '.$part->label($locale, ', '), 255, ''),
                     $part !== null => $part->file->original_name,
+                    // Правка 05.11, H-08: товар — название на языке счёта, количество — товара.
+                    $line->purchasable instanceof ProductLine => Str::limit($line->purchasable->title($locale), 255, ''),
                     $line->purchasable instanceof OrderCharge && $line->purchasable->kind === OrderCharge::DELIVERY => __('admin.orders.delivery', [], $locale),
                     default => __('calculator.js.order_fee', [], $locale),
                 },
-                'quantity' => $part !== null ? (int) $part->parameters['quantity'] : 1,
+                'quantity' => match (true) {
+                    $part !== null => (int) $part->parameters['quantity'],
+                    $line->purchasable instanceof ProductLine => $line->purchasable->quantity,
+                    default => 1,
+                },
                 'net' => $gross - $vat,
                 'vat' => $vat,
                 'gross' => $gross,

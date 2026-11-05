@@ -13,6 +13,7 @@ use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Domain\Payments\PaymentRequestService;
 use App\Models\OrderCharge;
+use App\Models\ProductLine;
 use App\Models\StlPart;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -204,7 +205,9 @@ class Card extends Component
             'order' => $order,
             'meta' => $meta,
             'state' => $state,
-            'parts' => $lines->filter(fn (OrderLine $line): bool => ! $line->purchasable instanceof OrderCharge)->values(),
+            'parts' => $lines->filter(fn (OrderLine $line): bool => $line->purchasable instanceof StlPart)->values(),
+            // Позиции-товары заказа «Prekės» (правка 05.11, H-08).
+            'products' => $lines->filter(fn (OrderLine $line): bool => $line->purchasable instanceof ProductLine)->values(),
             'priced' => $lines->reject(fn (OrderLine $line): bool => self::isDelivery($line))->values(),
             'deliveryLine' => $lines->first(fn (OrderLine $line): bool => self::isDelivery($line)),
             'balance' => $flow->balance($order),

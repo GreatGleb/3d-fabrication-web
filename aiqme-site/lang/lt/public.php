@@ -190,6 +190,16 @@ return [
     ],
     'cart' => [
         'empty' => 'Krepšelis kol kas tuščias',
+        // Krepšelis ir pirkimas (правка 05.11, H-08): подписи таблицы и кнопок — из прототипа (basket), остальное — нейтральные.
+        'product' => 'Produktas',
+        'quantity' => 'Kiekis',
+        'price' => 'Kaina',
+        'remove' => 'Pašalinti',
+        'continue' => 'Tęsti apsipirkimą',
+        'checkout' => 'Pereiti prie apmokėjimo',
+        'total' => 'Iš viso',
+        'removed' => 'Kai kurie produktai nebeparduodami ir pašalinti iš krepšelio. Patikrinkite krepšelį.',
+        'minimum' => 'Mažiausia apmokama suma – :amount.',
     ],
     'forms' => [
         // Своё поле выбора файла контактной формы (правка 02.11, Г3).

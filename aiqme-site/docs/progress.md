@@ -5331,3 +5331,88 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   консоль, маркеры — ok).
 - Загрузка PDF через Telegram-бота (имя из `file_name`) проверена чтением кода; тестом не покрыта.
 - Цена в списке и на странице — без пометки «su PVM» (README называет только «цена»; в редакторе — «Kaina, EUR su PVM»).
+
+## Правки 05.11, H-08: корзина и оформление покупки товаров — заказ «Prekės», оплата Stripe, счёт
+
+### Сделано
+- **Корзина** (`app/Domain/Orders/ProductCart.php`, новый): в сессии `cart` (id товара => количество 1–100), гостю тоже.
+  Цена в сессии не хранится — берётся из товара при показе и оформлении. Товар, снятый с публикации на локали или переведённый в
+  «Gauti pasiūlymą», убирается из корзины при показе и при оформлении с сообщением «Kai kurie produktai nebeparduodami ir
+  pašalinti iš krepšelio. Patikrinkite krepšelį.» · «Some products are no longer for sale…»; заказ тогда не создаётся, чтобы
+  покупатель увидел новый итог (простейший вариант, текст нейтральный — в README его нет).
+- **Маршруты** (`CartController`, новый; `ProductController::cart/addToCart` перенесены сюда): GET/POST `/lt/krepselis` · `/en/cart`
+  (показ, «Į krepšelį»), POST `…/kiekis` · `…/quantity` (новое количество, 0 — удаление; позиция не из корзины не добавляется),
+  POST `/lt/krepselis/uzsakymas` · `/en/cart/checkout` (оформление, `throttle:orders`, только LT/EN). Страница корзины —
+  `private, no-store`.
+- **Страница корзины**: таблица basket прототипа (картинка 60 px и название-ссылка, «Kiekis» — изменение сразу отправляет форму
+  `resources/js/cart.js`, без JS — Enter; сумма строки; «Pašalinti» — иконка close), форма «Pirkėjas ir pristatymas» с полями и
+  проверками шага «Užklausos pateikimas» калькулятора (те же сообщения, телефон обязателен, honeypot, профиль вошедшего клиента
+  подставлен), доставка «Pristatymas visoje ES» / «Atsiėmimas» (адрес скрывается), кнопки «Tęsti apsipirkimą» · «Continue
+  shopping» и «Pereiti prie apmokėjimo» · «Proceed to checkout» (тексты прототипа); справа «Užsakymo suvestinė»: строки
+  «название × количество», «Pristatymas» и «Iš viso» (при самовывозе без доставки). Пустая корзина — как прежде. Отличия от
+  прототипа (решение «простейший вариант»): оформление на той же странице, а не отдельной «Produktų užsakymas»; строк скидки,
+  «PVM 21 % (demo)» и демо-пометок нет (D-21); колонка «Kaina» вместо «Be PVM» — цены товаров с PVM (H-07).
+- **Значок корзины** в шапке: `<small data-cart-count>` с суммой количеств, как `<small>` прототипа; пустая — без числа.
+- **Настройка «Pristatymo kaina (prekėms), €»** · «Delivery price (products), €» — во вкладке «Nustatymai» (форма счёта), запись
+  `settings.products.delivery_cents`, по умолчанию 0 € (вопрос 3 README к заказчику). Поле сохраняется вместе с реквизитами
+  формы (отдельной кнопки нет).
+- **Заказ** (`app/Domain/Orders/ProductOrder.php`, новый): в одной транзакции корзина Lunar из строк `ProductLine` (новая модель и
+  таблица `product_lines`: снимок названия LT/EN, количество, цена за единицу; строка Lunar — quantity 1 с суммой строки, как
+  прочие строки) и при доставке — строка `OrderCharge delivery` по настройке (0 € тоже); заказ через `RequestCartValidator`
+  (теперь допускает корзину только из товаров; смешанная с файлами — отказ) с номером общей серии; `order_meta.products = true`
+  (новая колонка — пометка «Prekės»), хеш гостевого токена; `ProductionState` сразу `confirmed` с `confirmed_at` (цены — цены
+  товаров, ревизии цены нет); `PaymentRequest` pending на всю сумму; событие `order.submitted` (то же письмо AIQME). Затем
+  корзина очищается, гостю записывается право на заказ в сессии (`OrderAccess::grantGuest`), переход на существующую страницу
+  оплаты `/lt/apmokejimas/<id>` · `/en/checkout/<id>` (intent Stripe — при её открытии, W-16). Сумма меньше 0,50 € — ошибка
+  «Mažiausia apmokama suma – 0,50 €.» (минимум Stripe-запроса; текст нейтральный). Остатки не ведутся.
+- **Счёт** после оплаты — прежний механизм (webhook → `IssueInvoice`), номер H-06; строка счёта товара — название на языке
+  заказа и количество товара (`InvoiceService::lines`).
+- **Админка**: колонка «Tipas» — «Prekės» · «Products» у заказа товаров (список заказов, Overview, карточка клиента);
+  карточка заказа — тег «Prekės», таблица товаров (Produktas, Kiekis, Kaina, Iš viso), без «Failai ir gamybos parametrai» и
+  notice проверки файла, если файлов нет; в форме цены строка товара подписана «название × количество».
+- **Кабинет**: «Tipas» — «Prekės»; карточка заказа — строки «название × количество» с суммой в «Užsakymo turinys».
+- **Письмо AIQME**: та же тема, строка «Prekės» — «PLA gija × 2 — 48,00 €» (литовские названия, как письмо на LT) и «Suma» —
+  итог с доставкой, без «Failai» и «Preliminari suma».
+
+### Тесты
+- Новый `tests/Feature/ProductPurchaseTest.php` (7 тестов): корзина гостя — добавление, значок 2/3/нет, таблица и суммы LT/EN,
+  доставка 0 € по умолчанию, изменение, предел 101, удаление; «Gauti pasiūlymą» не добавляется прямым POST (3 случая) и
+  подделанная сессия с ним не даёт заказа; проверки оформления (телефон, email, город, delivery, honeypot; самовывоз без адреса
+  и без строки доставки); гостевая покупка с доставкой 5 € — заказ «Prekės» № 1, стадия confirmed, сумма 53 €, `ProductLine`
+  и строка доставки, `PaymentRequest` на 53 €, переход на страницу оплаты, письмо с позициями, страница оплаты гостю с intent
+  через FakeStripe (без сети), подписанный webhook → счёт `TEST<год>0007` со строками «PLA gija ×2 48 €» и «Pristatymas 5 €»,
+  админка — «Prekės» в журнале и таблица товаров в карточке; вошедший клиент — заказ его, кабинет EN «Products», строка
+  «PLA filament × 2 €48.00»; товар, переведённый в «Gauti pasiūlymą» или снятый с публикации, убирается при оформлении с
+  сообщением LT/EN, заказа нет; настройка доставки — 0.00 по умолчанию, −1 — ошибка, 6,50 → 650 центов.
+- Проверено откатом (один раз): без проверки `isForSale()` в `ProductCart::lines` падают 2 теста (прямой POST/подделанная сессия
+  и снятие с продажи). Код возвращён.
+- Существующие тесты не менялись (ProductSaleTest использует константы `ProductController`, они оставлены как синонимы
+  `ProductCart`).
+
+### bin/browser-check
+- `check_buy` после «Į krepšelį» вызывает новый `check_cart`: значок «2», строка товара и сумма 48 €, ширина страницы; изменение
+  количества (cart.js) → значок «3»; «Atsiėmimas» скрывает адрес и строку доставки, итог 72 €; оформление → страница оплаты 200
+  с суммой 7200 и состоянием «unavailable» (в прогоне Stripe не настроен — без сети); после заказа значок пуст.
+  D21_REPLACEMENTS не нужны: пустая корзина и тексты эталона не менялись.
+
+### Команды и вывод
+- `bin/php artisan test --compact tests/Feature/ProductPurchaseTest.php` — 7/7; ProductSaleTest, OrderCartTest, CatalogTest,
+  InvoicesTest, AdminOrdersTest, CustomerAccountTest — 78/78 (до новых тестов).
+- `bin/php vendor/bin/pint --dirty --format agent` — passed.
+- `bin/browser-check /lt/produktai /lt/krepselis /en/cart` — **OK (427 проверок)**; `bin/browser-check /en/products` — OK (203).
+  Первая попытка падала: `.grid` перекрывал `hidden` у адреса — добавлено `#cart [hidden]{display:none}` в public.css.
+- `bin/check` — `bin/check: OK`, PHPUnit 771/771, Vite build OK. (Первый прогон дал 2 падения: при правке lang случайно удалилась
+  строка `tabs.products` EN — возвращена.)
+- `git status --porcelain aiqme-site` — новые файлы: `app/Domain/Orders/ProductCart.php`, `app/Domain/Orders/ProductOrder.php`,
+  `app/Http/Controllers/Public/CartController.php`, `app/Models/ProductLine.php`,
+  `database/migrations/2026_11_05_500000_create_product_lines_h8.php`, `resources/js/cart.js`, `tests/Feature/ProductPurchaseTest.php`.
+
+### Не проверено / вопросы
+- Вид заполненной корзины, формы и карточки заказа «Prekės» на 390/1440 — ждёт проверки пользователем (browser-check: ширина,
+  консоль — ok).
+- Настоящая оплата Stripe (тестовые ключи) — ждёт пользователя; в тестах только FakeStripe и подписанные фикстуры webhook.
+- Гостю после покупки гостевая ссылка не показывается: право на заказ — в сессии браузера (страница оплаты и заказ доступны в
+  ней); после окончания сессии администратор может перевыпустить ссылку (как у заявок). Письма покупателю нет (как у заявок).
+- Изменение администратором цены строки товара (форма цены) меняет сумму строки, но не снимок «цена за единицу» в таблице товаров.
+- Вопрос к заказчику (README, 3): стоимость доставки товаров (сейчас одна сумма, 0 €).
+- `bin/demo-check` и демо-сборка не менялись (в демо корзина пустая).

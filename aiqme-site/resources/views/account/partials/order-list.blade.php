@@ -8,7 +8,7 @@
             @foreach ($orders as $row)
                 <tr data-order="{{ $row['number'] }}">
                     <td><strong>{{ $row['number'] }}</strong><br><small>{{ $row['date'] }}</small></td>
-                    <td>{{ __('admin.orders.type') }}</td>
+                    <td>{{ __($row['products'] ? 'admin.orders.type_products' : 'admin.orders.type') }}</td>
                     <td><span class="tag blue">{{ __('admin.orders.stages.'.$row['stage']) }}</span><br><small>{{ __('admin.orders.payment_states.'.$row['payment_state']) }}</small></td>
                     <td>@if ($row['confirmed']){{ \Illuminate\Support\Number::currency($row['total'] / 100, in: 'EUR', locale: $locale) }}@else — @endif</td>
                     <td><a class="btn small secondary" href="{{ route($locale.'.account.orders.show', $row['number']) }}">{{ __('account.orders.view') }}</a></td>

@@ -11,6 +11,7 @@ use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Http\Controllers\Controller;
+use App\Models\ProductLine;
 use App\Models\StlFile;
 use App\Models\StlPart;
 use Illuminate\Contracts\View\View;
@@ -85,6 +86,8 @@ class OrderController extends Controller
             'stages' => $stages,
             'current' => array_search($state->stage, $stages, true),
             'parts' => $parts,
+            // Позиции-товары заказа «Prekės» (правка 05.11, H-08).
+            'products' => $order->lines->filter(fn ($line) => $line->purchasable instanceof ProductLine)->values(),
             'balance' => $this->workflow->balance($order),
             'requests' => PaymentRequest::where('order_id', $order->id)->whereIn('state', PaymentRequest::OPEN)->orderBy('id')->get(),
             'payments' => $order->transactions()->whereIn('type', ['capture', 'refund'])->where('success', true)->reorder('created_at')->orderBy('id')->get(),

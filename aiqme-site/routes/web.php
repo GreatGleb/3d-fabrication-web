@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\InvoiceDownloadController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\CalculatorController;
+use App\Http\Controllers\Public\CartController;
 use App\Http\Controllers\Public\FormController;
 use App\Http\Controllers\Public\OrderRequestController;
 use App\Http\Controllers\Public\PageController;
@@ -39,7 +40,8 @@ foreach (StaticPages::LOCALES as $locale) {
                     $page === 'calculator' => Route::get($segment, CalculatorController::class)->name($page),
                     $page === 'projects' => Route::get($segment, [ProjectController::class, 'index'])->name($page),
                     $page === 'products' => Route::get($segment, [ProductController::class, 'index'])->name($page),
-                    in_array($page, ['compare', 'cart'], true) => Route::get($segment, [ProductController::class, $page])->name($page),
+                    $page === 'compare' => Route::get($segment, [ProductController::class, 'compare'])->name($page),
+                    $page === 'cart' => Route::get($segment, [CartController::class, 'show'])->middleware('cache.headers:private;no_store')->name($page),
                     in_array($page, StaticPages::POLICIES, true) => Route::get($segment, [PageController::class, 'policy'])->defaults('page', $page)->name($page),
                     default => Route::view($segment, 'pages.static', ['page' => $page])->name($page),
                 };
@@ -47,8 +49,9 @@ foreach (StaticPages::LOCALES as $locale) {
             // Формы W-09: отправка на адрес своей страницы; частота по IP — общий лимит обеих форм (throttle:forms).
             Route::post(StaticPages::segment('contact', $locale), [FormController::class, 'contact'])->middleware('throttle:forms')->name('contact.store');
             Route::post(StaticPages::segment('training', $locale), [FormController::class, 'training'])->middleware('throttle:forms')->name('training.store');
-            // «Į krepšelį» товара «Pirkti» — POST на адрес корзины (правка 05.11, H-07).
-            Route::post(StaticPages::segment('cart', $locale), [ProductController::class, 'addToCart'])->name('cart.add');
+            // «Į krepšelį» товара «Pirkti» — POST на адрес корзины (правка 05.11, H-07); количество и удаление — H-08.
+            Route::post(StaticPages::segment('cart', $locale), [CartController::class, 'add'])->name('cart.add');
+            Route::post(StaticPages::segment('cart', $locale).'/'.($locale === 'lt' ? 'kiekis' : 'quantity'), [CartController::class, 'update'])->name('cart.update');
             Route::get(StaticPages::segment('services', $locale).'/{slug}', [ServiceController::class, 'show'])->name('services.show');
             Route::get(StaticPages::segment('projects', $locale).'/{slug}', [ProjectController::class, 'show'])->name('projects.show');
             Route::get(StaticPages::segment('products', $locale).'/{slug}', [ProductController::class, 'show'])->name('products.show');
@@ -65,6 +68,9 @@ foreach (StaticPages::PUBLIC_LOCALES as $locale) {
     // подтверждение сразу после отправки и гостевая страница заказа по секретной ссылке (§6.2) — не кэшируются.
     $calculator = $locale.'/'.StaticPages::segment('calculator', $locale);
     Route::post($calculator, [OrderRequestController::class, 'store'])->middleware('throttle:orders')->name($locale.'.calculator.store');
+    // Оформление покупки товаров (правка 05.11, H-08): заказ и переход на страницу оплаты; частота — как у заявок.
+    Route::post($locale.'/'.StaticPages::segment('cart', $locale).'/'.($locale === 'lt' ? 'uzsakymas' : 'checkout'), [CartController::class, 'store'])
+        ->middleware('throttle:orders')->name($locale.'.cart.checkout');
     Route::middleware('cache.headers:private;no_store')->group(function () use ($locale, $calculator): void {
         Route::get($calculator.'/'.($locale === 'lt' ? 'pateikta' : 'submitted'), [OrderRequestController::class, 'confirmation'])->name($locale.'.order.confirmation');
         // Гостевая страница (W-15): верный токен пишет право на заказ в сессию; подбор токена ограничен частотой по IP.
