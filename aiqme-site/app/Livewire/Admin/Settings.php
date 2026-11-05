@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Domain\Invoices\InvoiceNumber;
 use App\Domain\Invoices\IssuePendingInvoices;
 use App\Domain\Invoices\SellerSettings;
 use Illuminate\Contracts\View\View;
@@ -11,10 +12,10 @@ use Livewire\Component;
 
 /**
  * Вкладка Settings (§3.5, D-05, W-17): реквизиты продавца (название, код, VAT-код, адрес), статус плательщика VAT и
- * ставка (целые проценты) или пометка для счёта неплательщика, серия и первый номер счетов. Значений по умолчанию нет;
- * после сохранения ставится задание «ожидающие счета». Первый номер действует, пока по серии не выпущено ни одного
- * счёта. Каждый запрос — только администратору, иначе 404. Необязательные поля счёта (правка 02.11, Г5): банк, SWIFT,
- * IBAN, почта, телефон, сайт, условия поставки (по умолчанию EXW Vilnius) и «кто выписал»; пустое сохраняется как null.
+ * ставка (целые проценты) или пометка для счёта неплательщика, префикс серии (по умолчанию AIQ) и следующий номер
+ * текущего года (правка 05.11, H-06: вместо первого номера серии; номер не больше выданного в серии года — ошибка).
+ * Реквизитов по умолчанию нет; после сохранения ставится задание «ожидающие счета». Каждый запрос — только
+ * администратору, иначе 404. Необязательные поля счёта (правка 02.11, Г5): банк, SWIFT, IBAN, почта, телефон, сайт, условия поставки (по умолчанию EXW Vilnius) и «кто выписал»; пустое сохраняется как null.
  */
 class Settings extends Component
 {
@@ -40,9 +41,10 @@ class Settings extends Component
 
     public string $vatNote = '';
 
-    public string $series = '';
+    public string $series = 'AIQ';
 
-    public string $firstNumber = '1';
+    /** Следующий номер счёта текущего года (правка 05.11, H-06). */
+    public string $nextNumber = '1';
 
     public string $bank = '';
 
@@ -85,13 +87,13 @@ class Settings extends Component
             $this->vatRate = $values['vat_payer'] ? (string) $values['vat_rate'] : '';
             $this->vatNote = (string) $values['vat_note'];
             $this->series = $values['series'];
-            $this->firstNumber = (string) $values['first_number'];
             foreach (self::OPTIONAL as $property => $key) {
                 if (array_key_exists($key, $values)) {
                     $this->{$property} = (string) $values[$key];
                 }
             }
         }
+        $this->nextNumber = (string) InvoiceNumber::upcoming($this->series);
     }
 
     public function save(SellerSettings $settings): void
@@ -106,10 +108,16 @@ class Settings extends Component
             'vatRate' => ['required_if:vatPayer,1', 'nullable', 'integer', 'between:1,100'],
             'vatNote' => ['required_if:vatPayer,0', 'nullable', 'string', 'max:255'],
             'series' => ['required', 'regex:/^[A-Z0-9]{1,10}$/D'],
-            'firstNumber' => ['required', 'integer', 'between:1,999999999'],
+            'nextNumber' => ['required', 'integer', 'between:1,999999999'],
             ...array_fill_keys(array_keys(self::OPTIONAL), ['nullable', 'string', 'max:255']),
             'email' => ['nullable', 'email', 'max:255'],
         ], ['*' => __('admin.calculator.invalid')]);
+        $last = InvoiceNumber::lastIssued($this->series);
+        if ((int) $this->nextNumber <= $last) {
+            $this->addError('nextNumber', __('admin.settings.next_number_issued', ['last' => $last]));
+
+            return;
+        }
 
         $payer = $this->vatPayer === '1';
         $settings->save([
@@ -121,9 +129,9 @@ class Settings extends Component
             'vat_rate' => $payer ? (int) $this->vatRate : 0,
             'vat_note' => $payer || trim($this->vatNote) === '' ? null : trim($this->vatNote),
             'series' => $this->series,
-            'first_number' => (int) $this->firstNumber,
             ...array_map(fn (string $property): ?string => trim($this->{$property}) === '' ? null : trim($this->{$property}), array_flip(self::OPTIONAL)),
         ]);
+        InvoiceNumber::setNext($this->series, (int) $this->nextNumber);
         IssuePendingInvoices::dispatch();
         $this->status = __('admin.calculator.saved');
     }

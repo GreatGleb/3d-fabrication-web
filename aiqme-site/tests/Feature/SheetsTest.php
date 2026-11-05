@@ -13,6 +13,7 @@ use App\Domain\Integrations\Sheets\RebuildSheets;
 use App\Domain\Integrations\Sheets\SheetsClient;
 use App\Domain\Integrations\Sheets\SheetsProjector;
 use App\Domain\Integrations\Sheets\TokenProvider;
+use App\Domain\Invoices\InvoiceNumber;
 use App\Domain\Invoices\SellerSettings;
 use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Orders\OrderSubmission;
@@ -233,7 +234,9 @@ class SheetsTest extends TestCase
     public function test_every_section_5_1_event_of_the_order_lifecycle_lands_in_the_sheets_with_english_headers(): void
     {
         app(SellerSettings::class)->save(['name' => 'TEST UAB', 'company_code' => 'TEST-000000', 'vat_code' => 'TEST-LT000000', 'address' => 'TEST g. 1',
-            'vat_payer' => true, 'vat_rate' => 9, 'vat_note' => null, 'series' => 'TEST', 'first_number' => 7]);
+            'vat_payer' => true, 'vat_rate' => 9, 'vat_note' => null, 'series' => 'TEST']);
+        // Правка 05.11, H-06: следующий номер года — счётчик, как его задаёт админка (вместо first_number).
+        InvoiceNumber::setNext('TEST', 7);
         $order = $this->order()->order;
         $this->flow()->confirmPrice($this->admin, $order, $this->prices($order, 2000, 500), 3000);
         $this->flow()->changePrice($this->admin, $order, $this->prices($order, 3000, 500), 3000, 'Material change', 'By phone');
@@ -266,7 +269,8 @@ class SheetsTest extends TestCase
         $this->assertCount(1, $this->sheets->rows('Orders'));
         $row = $this->sheets->row('Orders', $number);
         // Правка 02.11, Г5: номер счёта без дефиса.
-        $this->assertSame(['Ona TEST', 'ona@example.test', 'UAB TEST', '2', 'quality_check', '95.00', '95.00', '0.00', 'paid', 'ship', 'DPD TEST-TRACK-1', 'TEST00007'],
+        // Правка 05.11, H-06: номер серии года (TEST + цифра года + 4 цифры).
+        $this->assertSame(['Ona TEST', 'ona@example.test', 'UAB TEST', '2', 'quality_check', '95.00', '95.00', '0.00', 'paid', 'ship', 'DPD TEST-TRACK-1', 'TEST'.(now()->year % 10).'0007'],
             [$row['Customer'], $row['Email'], $row['Company'], $row['Files'], $row['Production stage'], $row['Confirmed price EUR'], $row['Paid EUR'],
                 $row['Due EUR'], $row['Payment state'], $row['Delivery'], $row['Tracking'], $row['Invoice No']]);
         $this->assertSame(route('lt.admin', ['order' => $order->id]), $row['Admin link']);
@@ -284,7 +288,7 @@ class SheetsTest extends TestCase
 
         $invoiceEvent = IntegrationEvent::where('type', 'invoice.issued')->firstOrFail();
         // Правка 02.11, Г5: номер счёта без дефиса.
-        $this->assertSame([(string) $invoiceEvent->id, $invoiceEvent->created_at->utc()->format('Y-m-d H:i:s'), 'Order '.$number, 'invoice.issued', 'Invoice issued: TEST00007', '95.00'],
+        $this->assertSame([(string) $invoiceEvent->id, $invoiceEvent->created_at->utc()->format('Y-m-d H:i:s'), 'Order '.$number, 'invoice.issued', 'Invoice issued: TEST'.(now()->year % 10).'0007', '95.00'],
             array_values($this->sheets->row('Events', (string) $invoiceEvent->id) ?? []));
         $stage = IntegrationEvent::where('type', 'order.stage_changed')->firstOrFail();
         $this->assertSame('', $this->sheets->row('Events', (string) $stage->id)['Amount EUR'], 'unknown amount is not written as 0');

@@ -24,20 +24,18 @@ class Invoice extends Model
     }
 
     /**
-     * Номер для показа (правка 02.11, Г5): серия и номер из 5 цифр с ведущими нулями без дефиса (AIQW00001). Счета,
-     * выписанные до правки, показываются, как напечатаны в их PDF: «серия-номер», что видно по их pdf_path.
+     * Номер для показа — как напечатан в PDF: имя файла pdf_path, сохранённое при выписке и не пересчитываемое (правка
+     * 05.11, H-06). Так старые счета остаются «AIQ-1» (до правки 02.11) и «AIQW00001» (правка 02.11, Г5), новые — «AIQ60008».
      */
     public function label(): string
     {
-        $old = $this->series.'-'.$this->number;
-
-        return $this->pdf_path === 'invoices/'.$old.'.pdf' ? $old : self::number($this->series, $this->number);
+        return basename($this->pdf_path, '.pdf');
     }
 
-    /** Номер нового счёта: серия + номер до 5 цифр с ведущими нулями. */
+    /** Номер нового счёта (правка 05.11, H-06): серия года (AIQ6) + номер не короче 4 цифр — AIQ60008, AIQ610000. */
     public static function number(string $series, int $number): string
     {
-        return $series.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
+        return $series.str_pad((string) $number, 4, '0', STR_PAD_LEFT);
     }
 
     /** @return BelongsTo<Order, $this> */

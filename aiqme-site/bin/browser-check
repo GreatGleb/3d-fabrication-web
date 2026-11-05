@@ -3263,7 +3263,8 @@ def main():
     os.chdir(APP)
     if '--base-url' in sys.argv or '--compose-file' in sys.argv:
         return prod_main(sys.argv[1:])
-    arguments = [a for a in sys.argv[1:] if not a.startswith('-')]
+    # Правка 05.11, H-06: путь задачи «/lt/admin» (как у EN) — это литовская админка /lt/administravimas (маршрут lt.admin.*).
+    arguments = [re.sub(r'^/lt/admin(?=/|$)', '/lt/administravimas', a) for a in sys.argv[1:] if not a.startswith('-')]
     env = browser_env()
     log('== подготовка БД aiqme_browser')
     accounts = prepare(env)
@@ -3321,6 +3322,11 @@ def main():
 
             if not arguments or '--signed-in' in sys.argv:
                 check_accounts(report, new_page, accounts, skipped_ru, allowlist)
+            elif admin_paths := [path for path in arguments if path in ADMIN_PAGES]:
+                # Правка 05.11, H-06: вкладка админки, указанная путём, проверяется и после входа администратора
+                # (гостю ниже — 404), без остальных проверок полного прогона.
+                admin = sign_in(report, new_page, '/en/account/login', *accounts['admin'], '/en/admin')
+                check_private_pages(report, new_page, admin_paths, admin, 'main h1', allowlist, 'администратор')
 
             log(f'== страницы: {len(pages)}')
             for path in pages:

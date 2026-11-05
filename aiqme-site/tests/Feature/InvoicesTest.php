@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Domain\Content\ContentService;
 use App\Domain\Content\ContentType;
 use App\Domain\Integrations\Models\IntegrationEvent;
+use App\Domain\Invoices\InvoiceNumber;
 use App\Domain\Invoices\InvoicePdf;
 use App\Domain\Invoices\InvoiceService;
 use App\Domain\Invoices\IssueInvoice;
@@ -81,10 +82,13 @@ class InvoicesTest extends TestCase
         $this->useWebhookSecret();
     }
 
-    /** Тестовые реквизиты продавца (TEST), плательщик VAT 9 %, серия TEST с первого номера 7. */
+    /**
+     * Тестовые реквизиты продавца (TEST), плательщик VAT 9 %, серия TEST; следующий номер текущего года — 7 (правка 05.11,
+     * H-06: вместо first_number — счётчик года, как его задаёт админка).
+     */
     private function seller(array $overrides = []): void
     {
-        app(SellerSettings::class)->save([
+        $values = [
             'name' => 'TEST UAB '.self::LITHUANIAN,
             'company_code' => 'TEST-000000',
             'vat_code' => 'TEST-LT000000',
@@ -93,9 +97,18 @@ class InvoicesTest extends TestCase
             'vat_rate' => 9,
             'vat_note' => null,
             'series' => 'TEST',
-            'first_number' => 7,
             ...$overrides,
-        ]);
+        ];
+        app(SellerSettings::class)->save($values);
+        if ($values['series'] !== '') {
+            InvoiceNumber::setNext($values['series'], 7);
+        }
+    }
+
+    /** Номер счёта серии TEST текущего года (правка 05.11, H-06): TEST + последняя цифра года + 4 цифры номера. */
+    private function seriesNumber(string $digits): string
+    {
+        return 'TEST'.(now()->year % 10).$digits;
     }
 
     /** Заявка W-12 с подтверждённой ценой 95 EUR; гость — $user = null. */
@@ -161,7 +174,7 @@ class InvoicesTest extends TestCase
 
     private function counter(): ?int
     {
-        $value = DB::table('counters')->where('name', 'invoices:TEST')->value('value');
+        $value = DB::table('counters')->where('name', 'invoices:TEST:'.now()->year)->value('value');
 
         return $value === null ? null : (int) $value;
     }
@@ -179,16 +192,17 @@ class InvoicesTest extends TestCase
 
         // Неполные реквизиты (плательщик VAT без ставки) не сохраняются.
         Livewire::test(Settings::class)->set('name', 'TEST UAB')->set('companyCode', 'TEST-1')->set('address', 'TEST g. 1')
-            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('series', 'TEST')->set('firstNumber', '7')
+            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('series', 'TEST')->set('nextNumber', '7')
             ->call('save')->assertHasErrors('vatRate');
         $this->assertSame(0, Invoice::count());
 
         Livewire::test(Settings::class)->set('name', 'TEST UAB')->set('companyCode', 'TEST-1')->set('address', 'TEST g. 1')
-            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('vatRate', '9')->set('series', 'TEST')->set('firstNumber', '7')
+            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('vatRate', '9')->set('series', 'TEST')->set('nextNumber', '7')
             ->call('save')->assertHasNoErrors();
 
         $invoice = Invoice::sole();
-        $this->assertSame([$order->id, 'TEST', 7, 9500], [$invoice->order_id, $invoice->series, $invoice->number, $invoice->total]);
+        // Правка 05.11, H-06: серия в записи — с цифрой года.
+        $this->assertSame([$order->id, 'TEST'.(now()->year % 10), 7, 9500], [$invoice->order_id, $invoice->series, $invoice->number, $invoice->total]);
         Storage::disk('local')->assertExists($invoice->pdf_path);
         Livewire::test(Overview::class)->assertDontSeeHtml('id="overview-seller-missing"');
         $this->get('/en/admin/settings')->assertOk()->assertSee('TEST-LT1');
@@ -201,7 +215,7 @@ class InvoicesTest extends TestCase
         $form = Livewire::test(Settings::class)->assertSet('deliveryTerms', 'EXW Vilnius')->assertSet('bank', '')
             ->assertSeeHtml('id="field-iban"')->assertSeeHtml('id="field-issuedBy"');
         $form->set('name', 'TEST UAB')->set('companyCode', 'TEST-1')->set('address', 'TEST g. 1')
-            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('vatRate', '9')->set('series', 'TEST')->set('firstNumber', '1')
+            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('vatRate', '9')->set('series', 'TEST')->set('nextNumber', '1')
             ->set('bank', ' TEST bankas ')->set('iban', 'LT00 TEST')->set('email', 'not-an-email')->call('save')->assertHasErrors('email');
         $form->set('email', 'info@test.example')->set('deliveryTerms', '')->call('save')->assertHasNoErrors();
 
@@ -337,7 +351,8 @@ class InvoicesTest extends TestCase
         } catch (\Throwable $exception) {
             $this->assertStringContainsString('render failed (test)', $exception->getMessage());
         }
-        $this->assertSame([0, 0, null], [Invoice::count(), IntegrationEvent::where('type', 'invoice.issued')->count(), $this->counter()]);
+        // Правка 05.11, H-06: счётчик года задан заранее (следующий 7) и откатом не сдвинут.
+        $this->assertSame([0, 0, 6], [Invoice::count(), IntegrationEvent::where('type', 'invoice.issued')->count(), $this->counter()]);
         $this->assertSame([], Storage::disk('local')->allFiles('invoices'));
 
         // Повтор задания выпускает счёт с первым номером серии; ещё один повтор номер не меняет.
@@ -347,8 +362,8 @@ class InvoicesTest extends TestCase
         $invoice = Invoice::sole();
         $this->assertSame([7, 7], [$invoice->number, $this->counter()]);
         Storage::disk('local')->assertExists($invoice->pdf_path);
-        // Правка 02.11, Г5: номер без дефиса из 5 цифр.
-        $this->assertSame(['TEST00007.pdf'], array_map('basename', Storage::disk('local')->allFiles('invoices')));
+        // Правка 05.11, H-06: серия года и 4 цифры номера.
+        $this->assertSame([$this->seriesNumber('0007').'.pdf'], array_map('basename', Storage::disk('local')->allFiles('invoices')));
     }
 
     public function test_issued_event_is_written_in_the_same_transaction_as_the_invoice(): void
@@ -366,14 +381,15 @@ class InvoicesTest extends TestCase
             $this->fail('сбой outbox не откатил выпуск');
         } catch (RuntimeException) {
         }
-        $this->assertSame([0, null], [Invoice::count(), $this->counter()]);
+        // Правка 05.11, H-06: счётчик года задан заранее (следующий 7) и откатом не сдвинут.
+        $this->assertSame([0, 6], [Invoice::count(), $this->counter()]);
         $this->assertSame([], Storage::disk('local')->allFiles('invoices'));
 
         IntegrationEvent::flushEventListeners();
         IssueInvoice::dispatchSync($order->id);
         $event = IntegrationEvent::where('type', 'invoice.issued')->sole();
-        // Правка 02.11, Г5: номер без дефиса.
-        $this->assertSame(['invoices', Invoice::sole()->id, 'TEST00007', '95.00', 'none'], [
+        // Правка 05.11, H-06: номер серии года.
+        $this->assertSame(['invoices', Invoice::sole()->id, $this->seriesNumber('0007'), '95.00', 'none'], [
             $event->entity_type, $event->entity_id, $event->data['invoice_number'], $event->data['amount'], $event->mail_status,
         ]);
     }
@@ -437,7 +453,8 @@ class InvoicesTest extends TestCase
         }
         $ltInvoice = Invoice::where('order_id', $lt->id)->sole();
         $enInvoice = Invoice::where('order_id', $en->id)->sole();
-        $this->assertSame(['TEST00007', 'TEST00008'], [$ltInvoice->label(), $enInvoice->label()]);
+        // Правка 05.11, H-06: номер серии года.
+        $this->assertSame([$this->seriesNumber('0007'), $this->seriesNumber('0008')], [$ltInvoice->label(), $enInvoice->label()]);
         $this->assertSame(['Ona TEST', '+370 600 00000'], [$ltInvoice->buyer['name'], $ltInvoice->buyer['phone']]);
 
         // Порядок блоков — по тексту HTML, из которого dompdf рисует PDF (в тексте PDF ячейки одной строки при переносе
@@ -447,7 +464,7 @@ class InvoicesTest extends TestCase
         $this->assertInOrder($this->htmlText($ltInvoice), [
             'TEST UAB '.self::LITHUANIAN, 'TEST g. 1, Vilnius', 'ĮMONĖS KODAS: TEST-000000', 'PVM MOKĖTOJO KODAS: TEST-LT000000',
             'info@test.example', '+370 600 11111', 'www.test.example',
-            'PVM SĄSKAITA FAKTŪRA', 'TEST00007', 'Data : '.now()->format('Y-m-d'),
+            'PVM SĄSKAITA FAKTŪRA', $this->seriesNumber('0007'), 'Data : '.now()->format('Y-m-d'),
             'PIRKĖJAS', 'Ona TEST', 'Gedimino pr. 1, Vilnius, LT-01103, LT',
             'UŽSAKYMAS: Ona TEST, TEL. +370 600 00000', 'UŽSAKYMO DATA: 2026-10-08', 'PRISTATYMO SĄLYGOS (INCOTERMS 2010): EXW Vilnius',
             'PAVADINIMAS KIEKIS KAINA SUMA', 'bracket.stl — 3D spausdinimas, PLA 2 13,76 27,52', 'cover.stl — 3D spausdinimas, PLA 2 13,76 27,52', 'Užsakymo mokestis 1 4,59 4,59',
@@ -458,7 +475,7 @@ class InvoicesTest extends TestCase
         ]);
         $this->assertInOrder($this->htmlText($enInvoice), [
             'TEST UAB', 'COMPANY NUMBER: TEST-000000', 'VAT NUMBER: TEST-LT000000', 'info@test.example', 'www.test.example',
-            'VAT INVOICE', 'TEST00008', 'Date: '.now()->format('Y-m-d'), 'BUYER', 'Ona TEST',
+            'VAT INVOICE', $this->seriesNumber('0008'), 'Date: '.now()->format('Y-m-d'), 'BUYER', 'Ona TEST',
             'ORDER: Ona TEST, TEL. +370 600 00000', 'ORDER DATE: 2026-10-08', 'DELIVERY TERMS (INCOTERMS 2010): EXW Vilnius',
             'DESCRIPTION QTY PRICE AMOUNT', 'bracket.stl — 3D printing, PLA 2 13.76 27.52', 'Order fee 1 4.59 4.59', 'Delivery 1 27.52 27.52',
             'TOTAL 87.15', 'VAT 9 % 7.85', 'Ninety-five EUR 00 ct TOTAL INCL. VAT 95.00',
@@ -468,7 +485,7 @@ class InvoicesTest extends TestCase
 
         // Сам PDF: те же надписи и значения в тексте pdftotext.
         $ltText = $this->pdfText($ltInvoice);
-        foreach (['PVM SĄSKAITA FAKTŪRA', 'TEST00007', 'PIRKĖJAS', 'UŽSAKYMO DATA', '2026-10-08', 'EXW Vilnius', 'KAINA', '13,76',
+        foreach (['PVM SĄSKAITA FAKTŪRA', $this->seriesNumber('0007'), 'PIRKĖJAS', 'UŽSAKYMO DATA', '2026-10-08', 'EXW Vilnius', 'KAINA', '13,76',
             'Devyniasdešimt penki EUR 00 ct', 'IŠ VISO SU PVM', 'Apmokėta: 95,00 EUR', 'SWIFT: TESTLT2X', 'A / S: LT00 TEST 0000 0000 0000',
             'NETURIU.', 'IŠRAŠĖ / IŠDAVĖ: Jonas TEST', 'GAVO:', 'TEST UAB '.self::LITHUANIAN, 'www.test.example'] as $part) {
             $this->assertStringContainsString($part, $ltText);
@@ -477,7 +494,7 @@ class InvoicesTest extends TestCase
             $this->assertStringNotContainsString($absent, $ltText);
         }
         $enText = $this->pdfText($enInvoice);
-        foreach (['VAT INVOICE', 'TEST00008', 'ORDER DATE', 'PRICE', '13.76', 'Ninety-five EUR 00 ct', 'TOTAL INCL. VAT', 'Paid: 95.00 EUR', 'RECEIVED BY:'] as $part) {
+        foreach (['VAT INVOICE', $this->seriesNumber('0008'), 'ORDER DATE', 'PRICE', '13.76', 'Ninety-five EUR 00 ct', 'TOTAL INCL. VAT', 'Paid: 95.00 EUR', 'RECEIVED BY:'] as $part) {
             $this->assertStringContainsString($part, $enText);
         }
         $this->snapshot($ltInvoice, 'lt');
@@ -500,26 +517,107 @@ class InvoicesTest extends TestCase
         $this->assertStringContainsString('GAVO:', $text);
     }
 
-    /** Правка 02.11, Г5: счёт, выписанный до правки (AIQ-1), показывается и скачивается с прежним номером. */
-    public function test_invoice_issued_before_the_change_keeps_its_printed_number(): void
+    /**
+     * Старые форматы печатаются как были (правка 02.11, Г5; правка 05.11, H-06): AIQ-1 (до 02.11) и AIQW00001 (серия 02.11)
+     * — в кабинете, карточке админки и имени скачиваемого файла; номер берётся из сохранённой при выписке записи.
+     */
+    public function test_invoices_issued_in_earlier_formats_keep_their_printed_numbers(): void
     {
-        $this->seller(['series' => 'AIQ', 'first_number' => 1]);
-        $submitted = $this->order($this->client);
-        LunarCapture::create($submitted->order, 9500);
-        IssueInvoice::dispatchSync($submitted->order->id);
-        $invoice = Invoice::sole();
-        $this->assertSame('AIQ00001', $invoice->label());
-        // Запись до правки: PDF по пути «серия-номер».
-        Storage::disk('local')->move($invoice->pdf_path, 'invoices/AIQ-1.pdf');
-        $invoice->update(['pdf_path' => 'invoices/AIQ-1.pdf']);
-        $url = '/invoices/'.$invoice->id;
+        $this->seller(['series' => 'AIQ']);
+        $first = $this->order($this->client);
+        $second = $this->order($this->client);
+        foreach ([$first, $second] as $submitted) {
+            LunarCapture::create($submitted->order, 9500);
+            IssueInvoice::dispatchSync($submitted->order->id);
+        }
+        // Записи до правки: серия без цифры года и PDF по пути, как он был напечатан.
+        foreach ([[$first, 'AIQ', 1, 'AIQ-1'], [$second, 'AIQW', 1, 'AIQW00001']] as [$submitted, $series, $number, $printed]) {
+            $invoice = Invoice::where('order_id', $submitted->order->id)->sole();
+            Storage::disk('local')->move($invoice->pdf_path, 'invoices/'.$printed.'.pdf');
+            $invoice->update(['series' => $series, 'number' => $number, 'pdf_path' => 'invoices/'.$printed.'.pdf']);
+            $url = '/invoices/'.$invoice->id;
 
-        $this->assertSame('AIQ-1', $invoice->fresh()->label());
-        $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="AIQ-1"', false)->assertSee('AIQ-1 ·', false);
-        $this->get('/en/account/orders/'.$submitted->meta->number)->assertOk()->assertSee('Invoice AIQ-1 (PDF)');
-        $this->get($url)->assertOk()->assertHeader('Content-Disposition', 'attachment; filename=AIQ-1.pdf');
+            $this->assertSame($printed, $invoice->fresh()->label());
+            $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="'.$printed.'"', false)->assertSee($printed.' ·', false);
+            $this->get('/en/account/orders/'.$submitted->meta->number)->assertOk()->assertSee('Invoice '.$printed.' (PDF)');
+            $this->get($url)->assertOk()->assertHeader('Content-Disposition', 'attachment; filename='.$printed.'.pdf');
+            $this->actingAs($this->admin);
+            Livewire::test(Card::class, ['orderId' => $submitted->order->id])->assertSeeHtml('data-invoice="'.$printed.'"');
+        }
+    }
+
+    /**
+     * Правка 05.11, H-06: AIQ + последняя цифра года выписки + номер не короче 4 цифр (AIQ60008, после 9999 — AIQ610000),
+     * счётчик свой на каждый год (31.12 → 01.01: AIQ70001). Номер сохраняется при выписке: смена серии в настройках
+     * выданные номера не меняет. PDF собирается с новым номером.
+     */
+    public function test_new_invoices_are_numbered_in_the_customer_series_per_year(): void
+    {
+        $this->travelTo('2026-12-31 22:00:00');
+        $this->seller(['series' => 'AIQ']);
+        InvoiceNumber::setNext('AIQ', 8);
+        $issue = function (): Invoice {
+            $order = $this->order($this->client, 'lt')->order;
+            LunarCapture::create($order, 9500);
+            IssueInvoice::dispatchSync($order->id);
+
+            return Invoice::where('order_id', $order->id)->sole();
+        };
+
+        $invoice = $issue();
+        $this->assertSame(['AIQ60008', 'AIQ6', 8, 'invoices/AIQ60008.pdf'], [$invoice->label(), $invoice->series, $invoice->number, $invoice->pdf_path]);
+        $this->assertSame('AIQ60009', $issue()->label());
+        InvoiceNumber::setNext('AIQ', 9999);
+        $this->assertSame(['AIQ69999', 'AIQ610000'], [$issue()->label(), $issue()->label()]);
+
+        $this->travelTo('2027-01-01 00:00:30');
+        $newYear = $issue();
+        $this->assertSame(['AIQ70001', 'AIQ7', 1], [$newYear->label(), $newYear->series, $newYear->number]);
+        $this->assertSame('AIQ70002', $issue()->label());
+        $this->assertStringContainsString('AIQ70001', $this->pdfText($newYear));
+
+        // Номер не пересчитывается после смены серии в настройках.
+        $this->seller(['series' => 'XYZ']);
+        $this->assertSame(['AIQ60008', 'AIQ70001'], [$invoice->fresh()->label(), $newYear->fresh()->label()]);
+    }
+
+    /**
+     * Правка 05.11, H-06: в «Nustatymai» — «Kitas sąskaitos numeris (šiems metams)» (EN — «Next invoice number (this year)»)
+     * вместо первого номера серии; форма показывает следующий номер года, его можно поднять, но не опустить до уже
+     * выданного — ошибка по-литовски, настройки и счётчик не меняются.
+     */
+    public function test_admin_sets_the_next_number_of_this_year_but_not_an_issued_one(): void
+    {
+        $this->travelTo('2026-11-05 10:00:00');
         $this->actingAs($this->admin);
-        Livewire::test(Card::class, ['orderId' => $submitted->order->id])->assertSeeHtml('data-invoice="AIQ-1"');
+        $this->get('/lt/administravimas/settings')->assertOk()->assertSee('Kitas sąskaitos numeris (šiems metams)')
+            ->assertDontSee('Pirmas sąskaitos numeris')->assertSeeHtml('id="field-nextNumber"');
+        $this->get('/en/admin/settings')->assertOk()->assertSee('Next invoice number (this year)')->assertDontSee('First invoice number');
+
+        app()->setLocale('lt');
+        $form = fn () => Livewire::test(Settings::class)->set('name', 'TEST UAB')->set('companyCode', 'TEST-1')->set('address', 'TEST g. 1')
+            ->set('vatPayer', '1')->set('vatCode', 'TEST-LT1')->set('vatRate', '9');
+        $form()->assertSet('series', 'AIQ')->assertSet('nextNumber', '1')->set('nextNumber', '8')->call('save')->assertHasNoErrors();
+        $this->assertArrayNotHasKey('first_number', app(SellerSettings::class)->values());
+
+        $order = $this->order($this->client)->order;
+        LunarCapture::create($order, 9500);
+        IssueInvoice::dispatchSync($order->id);
+        $this->assertSame('AIQ60008', Invoice::sole()->label());
+
+        $form()->assertSet('nextNumber', '9');
+        foreach (['8', '5'] as $issued) {
+            $form()->set('nextNumber', $issued)->set('address', 'TEST g. 2')->call('save')
+                ->assertHasErrors('nextNumber')->assertSee('Šis numeris jau išduotas. Įveskite didesnį nei 8.');
+        }
+        $this->assertSame('TEST g. 1', app(SellerSettings::class)->values()['address']);
+        $form()->assertSet('nextNumber', '9');
+
+        $form()->set('nextNumber', '20')->call('save')->assertHasNoErrors();
+        $second = $this->order($this->client)->order;
+        LunarCapture::create($second, 9500);
+        IssueInvoice::dispatchSync($second->id);
+        $this->assertSame('AIQ60020', Invoice::where('order_id', $second->id)->sole()->label());
     }
 
     /** Свой логотип сайта из админки важнее defaults/logo.png (правка 02.11, Г5). */
@@ -636,9 +734,9 @@ class InvoicesTest extends TestCase
             }
         }
 
-        // Правка 02.11, Г5: имя файла — номер без дефиса.
+        // Правка 05.11, H-06: имя файла — номер серии года.
         $visitor()->actingAs($this->client)->get($ownUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf')
-            ->assertHeader('Content-Disposition', 'attachment; filename=TEST00007.pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
+            ->assertHeader('Content-Disposition', 'attachment; filename='.$this->seriesNumber('0007').'.pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->get($guestUrl)->assertNotFound();
         $visitor()->actingAs($this->admin)->get($ownUrl)->assertOk();
         $this->get($guestUrl)->assertOk();
@@ -660,8 +758,8 @@ class InvoicesTest extends TestCase
         IssueInvoice::dispatchSync($submitted->order->id);
         $url = '/invoices/'.Invoice::sole()->id;
 
-        // Правка 02.11, Г5: номер без дефиса.
-        $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="TEST00007"', false)->assertSee($url, false);
+        // Правка 05.11, H-06: номер серии года.
+        $this->actingAs($this->client)->get('/en/account/invoices')->assertOk()->assertSee('data-invoice="'.$this->seriesNumber('0007').'"', false)->assertSee($url, false);
         $this->actingAs($this->clientB)->get('/en/account/invoices')->assertOk()->assertDontSee($url, false)->assertSee('No invoices yet.');
         $this->actingAs($this->client)->get('/en/account/orders/'.$submitted->meta->number)->assertOk()->assertSee($url, false);
         $this->actingAs($this->admin);

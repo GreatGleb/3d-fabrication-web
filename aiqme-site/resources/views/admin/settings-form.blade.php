@@ -16,7 +16,8 @@
             <x-field name="vatNote" :label="__('admin.settings.vat_note')" :value="$vatNote" maxlength="255" wire:model="vatNote" />
         @endif
         <x-field name="series" :label="__('admin.settings.series')" :value="$series" maxlength="10" wire:model="series" />
-        <x-field name="firstNumber" type="number" :label="__('admin.settings.first_number')" :value="$firstNumber" min="1" wire:model="firstNumber" />
+        {{-- Правка 05.11, H-06: следующий номер текущего года вместо первого номера серии. --}}
+        <x-field name="nextNumber" type="number" :label="__('admin.settings.next_number')" :value="$nextNumber" min="1" wire:model="nextNumber" />
         @foreach (['bank', 'swift', 'iban', 'email', 'phone', 'website', 'deliveryTerms', 'issuedBy'] as $optional)
             <x-field :name="$optional" :label="__('admin.settings.'.$optional)" :value="$this->{$optional}" maxlength="255" wire:model="{{ $optional }}" />
         @endforeach

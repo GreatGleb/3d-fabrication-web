@@ -385,7 +385,9 @@ return [
         'vat_rate' => 'PVM tarifas, %',
         'vat_note' => 'Pastaba sąskaitoje, kai ne PVM mokėtojas',
         'series' => 'Sąskaitų serija (A–Z, 0–9)',
-        'first_number' => 'Pirmas sąskaitos numeris',
+        // Правка 05.11, H-06: следующий номер года вместо первого номера серии; ошибка — нейтральная надпись (docs/progress.md).
+        'next_number' => 'Kitas sąskaitos numeris (šiems metams)',
+        'next_number_issued' => 'Šis numeris jau išduotas. Įveskite didesnį nei :last.',
         // Правка 02.11, Г5: необязательные поля счёта — нейтральные надписи (docs/progress.md, G-05).
         'bank' => 'Bankas',
         'swift' => 'SWIFT',
@@ -395,7 +397,7 @@ return [
         'website' => 'Svetainė',
         'deliveryTerms' => 'Pristatymo sąlygos (Incoterms 2010)',
         'issuedBy' => 'Sąskaitą išrašė (vardas, pavardė)',
-        'hint' => 'Pirmas numeris taikomas, kol neišrašyta pirmoji serijos sąskaita. Kainos nurodomos su PVM; sąskaitoje kiekvienoje eilutėje išskiriamas į kainą įskaičiuotas PVM.',
+        'hint' => 'Kainos nurodomos su PVM; sąskaitoje kiekvienoje eilutėje išskiriamas į kainą įskaičiuotas PVM.',
         'save' => 'Išsaugoti',
     ],
     // W-19 из прототипа: вкладка «Integracijos», заголовок «Integracijos ir duomenų eiga», «NEPRIJUNGTA», «Telegram»;

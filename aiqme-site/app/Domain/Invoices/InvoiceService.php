@@ -6,7 +6,6 @@ use App\Domain\Integrations\IntegrationEvents;
 use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\ProductionState;
-use App\Domain\Orders\OrderNumber;
 use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
 use App\Models\CustomerProfile;
@@ -24,7 +23,7 @@ use RuntimeException;
  * Выпуск счетов (§3.5, W-17). issueIfDue(order) — единая идемпотентная проверка момента выпуска по D-04 (по умолчанию —
  * итоговый счёт при полной оплате): счёта ещё нет, цена подтверждена, оплачено (capture − refund) ≥ подтверждённой цены,
  * заказ не отменён, реквизиты продавца, VAT и нумерация заданы. Под блокировкой строки заказа в одной транзакции: номер
- * (атомарный UPDATE … RETURNING счётчика серии), снимок реквизитов, строки с VAT, выделенным из брутто, PDF и событие
+ * (атомарный UPDATE … RETURNING счётчика серии и года — InvoiceNumber, правка 05.11, H-06), снимок реквизитов, строки с VAT, выделенным из брутто, PDF и событие
  * §5.1 «Счёт выпущен». Исключение рендера откатывает всё (номер не расходуется), повтор задания выпускает счёт заново.
  * Итог счёта = подтверждённая цена (D-22), излишек переплаты остаётся на сверке. Вызывают только задания IssueInvoice и
  * IssuePendingInvoices.
@@ -54,10 +53,11 @@ final class InvoiceService
             $meta = OrderMeta::where('order_id', $order->id)->firstOrFail();
             $rate = $seller['vat_payer'] ? $seller['vat_rate'] : 0;
             $lines = $this->lines($order, $meta->locale, $rate);
-            $number = OrderNumber::next('invoices:'.$seller['series'], $seller['first_number']);
+            // Правка 05.11, H-06: серия года AIQ6 и номер из счётчика года; номер для показа — в pdf_path.
+            [$series, $number] = InvoiceNumber::issue($seller['series']);
             $invoice = Invoice::create([
                 'order_id' => $order->id,
-                'series' => $seller['series'],
+                'series' => $series,
                 'number' => $number,
                 'kind' => Invoice::FINAL,
                 'locale' => $meta->locale,
@@ -66,7 +66,7 @@ final class InvoiceService
                 'net_total' => $lines->sum('net'),
                 'vat_total' => $lines->sum('vat'),
                 'total' => $lines->sum('gross'),
-                'pdf_path' => 'invoices/'.Invoice::number($seller['series'], $number).'.pdf',
+                'pdf_path' => 'invoices/'.Invoice::number($series, $number).'.pdf',
                 'issued_at' => now(),
             ]);
             $invoice->lines()->createMany($lines->all());
