@@ -5416,3 +5416,122 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Изменение администратором цены строки товара (форма цены) меняет сумму строки, но не снимок «цена за единицу» в таблице товаров.
 - Вопрос к заказчику (README, 3): стоимость доставки товаров (сейчас одна сумма, 0 €).
 - `bin/demo-check` и демо-сборка не менялись (в демо корзина пустая).
+
+## Правки 05.11, H-09: сквозная проверка правок 05.11 (H-01…H-08, H-11) и статус в docs/requirements.md (2026-11-05)
+
+### Проверки на одном дереве
+- `bin/check` в начале — `bin/check: OK`: PHPUnit 771/771 (76 271 проверка), node --test 43/43, Pint, версии, Vite build; 8 мин 56 с
+  (журнал `build/verification/h09/check.log`, не отслеживается).
+- Полный `bin/browser-check` (без путей), первый прогон — **FAIL (9)**, 1492 с (`build/verification/h09/bc-run1.log`). Две причины, обе
+  исправлены (ниже). Точечно после исправлений: `bin/browser-check /lt/kalkuliatorius /en/quote /lt/produktai/pla-gija
+  /en/products/pla-filament` — OK (1102 проверок).
+- **Повторный полный `bin/browser-check` на итоговом дереве — `bin/browser-check: OK (20857 проверок)`, ошибок 0**, 101 страница + вход,
+  кабинет, админка LT/EN, /ru (19 адресов); 1431 с (журнал `build/verification/h09/bc.log`, кадры — копия `build/verification/h09/shots/`).
+  «Прерванные запросы к чужим хостам: нет», Google Maps подменена заглушкой 40 раз; W-31 — максимум кадра 49–82 мс; hero под шапкой
+  56/85 px (как в H-01). Одна команда сессии ограничена 10 мин, поэтому прогон шёл отдельным процессом с ожиданием завершения в
+  переднем плане (как в G-09).
+- `bin/check` в конце (после исправлений и этой проверки) — `bin/check: OK`, PHPUnit 771/771 (76 271), node --test 44/44, 8 мин 32 с
+  (`build/verification/h09/check2.log`). `pint --dirty` — passed.
+
+### Найдено и исправлено
+1. **Маркер «prototip» на странице товара «Pirkti»** (`/lt/produktai/pla-gija`, `/en/products/pla-filament`, 390 и 1440): описание
+   тестового товара H-07 в `tests/browser/ContentFactory.php::saleProduct` было «Gija prototipams.» / «A filament for prototypes.» —
+   поиск маркеров демо его ловит. Точечный прогон H-07 страницу товара не обходил (только список). Исправлено в данных проверки:
+   «Gija FDM spausdinimui.» / «A filament for FDM printing.» (код сайта не менялся; в тестах PHP эти строки не используются).
+2. **Порядок файлов в калькуляторе зависел от гонки чтения** (`/en/quote` @390: DWG встал раньше DXF — 5 ошибок порядка строк, панели,
+   карточки и сообщения специалисту). Причина — с G-08: `index.js` добавлял файлы `Promise.all(files.map(addFile))`, а позиция
+   записывалась после `await file.arrayBuffer()`, т. е. в порядке окончания чтения. Не регрессия H-xx, но делает полный прогон
+   нестабильным и показывает покупателю файлы не в порядке выбора. Исправление (минимальное, без новой функции):
+   `Quote.addFiles(files)` в `resources/js/calculator/quote.js` — проверка формата/размера и чтение параллельно, затем `addBuffer` в
+   порядке выбора (разбор STL по-прежнему параллельный); `addFile` вызывает его; `index.js` — `quote.addFiles(files)`.
+   Тест `tests/js/calculator-quote.test.js` «несколько файлов — позиции и ошибки в порядке выбора…» (первый файл читается дольше).
+   **Проверено откатом:** с прежней схемой (добавление после чтения каждого файла) новый тест — `not ok`, с исправлением — 13/13.
+3. **Кадр счёта `AIQ6xxxx`**: кадры счёта в bin/check были только серии TEST (`TEST60007`). В `InvoicesTest::test_admin_sets_the_next_number…`
+   (выписка `AIQ60008`) добавлен вызов имеющегося `snapshot()` → `build/verification/invoices/invoice-aiq.png` (игнорируемый каталог).
+
+### Сверка H-01…H-08, H-11 («должно стать» README ↔ код и вывод проверок)
+- **H-01: проверено** — `shell.css` (логотип 200/164/128/120, ряд 90/81/72, `--header-height` 91/82/73 на главной), тексты hero LT/EN в JSON и
+  миграции `2026_11_05_100000`, нет `hero_stages`, `.stages` и `#hero-video-toggle` в `home.blade.php`, `hero-video.js` играет без кнопки,
+  CTA/подвал в lang. Полный browser-check: `check_logo` (ширины и центр ряда), `check_hero_under_header`, `check_motion` (reduced-motion —
+  постер), сверка текста с D21 — зелёные; PublicPagesTest/ShellTest/PublicSeoTest — в bin/check. Кадры: `header-top-lt-1440/390` —
+  «3D INŽINERIJA & TECHNOLOGIJOS», подзаголовок без точки, ряда этапов и кнопки паузы нет, «Įkelkite failus ir gaukite pasiūlymą».
+  Не проверено глазами: подвал (нет кадра, ширина — замером `check_logo`; девиз и ссылка — ShellTest; в `checkout-390` виден
+  «Order summary» в подвале EN).
+- **H-11: проверено** — `header--dark`/белый логотип только при `headerOverlay`; `header.js` трогает только `.header--overlay`.
+  Полный browser-check: `check_styles`/`check_header` — тёмная только на /lt, /en; на остальных, в кабинете и в админке (`/en/admin`)
+  белая без переходов. Кадры: `header-top-lt-1440` (тёмная над видео), `header-scrolled-lt-1440` (белая), `header-top-lt__apie-mus-390`,
+  `lt__paslaugos__3d-spausdinimas-desktop`, `lt__kontaktai-desktop`, `lt__administravimas__settings-signed-in-1440` — белая с тёмным
+  логотипом и светлым вторым рядом. Дефектов не видно.
+- **H-02: проверено** — JSON + миграция `2026_11_05_200000`, `service-feature-number` удалён; сверка текста D21 и `TEXT_EXCLUDED_BLOCKS`,
+  PublicPagesTest (`test_h2_*`) — зелёные. Кадры: «PRADĖKIME NUO JŪSŲ» без номера, карточка 2 с новым текстом (`header-scrolled-lt-1440`).
+  Не проверено глазами: «Darbo eiga», раздел услуг без номеров на фото — ниже первого экрана, кадров нет (проверено тестами и сверкой текста).
+- **H-03: проверено** — `service.blade.php` без надписей и блока процесса, `about.blade.php` без подзаголовка, `FormController` `required`;
+  миграция `2026_11_05_300000`. Полный browser-check (`check_blocks`, `check_contact_form` с телефоном, сверка текста) — зелёные.
+  Кадры: `lt__paslaugos__3d-spausdinimas-desktop` — «Reikia vienos detalės arba serijos», над карточкой «Ką gausite?» нет «02 /
+  REZULTATAS»; `header-top-lt__apie-mus-390` — нет подзаголовка, два абзаца (второй новый); `lt__kontaktai-desktop` — «Telefonas» без
+  «(neprivaloma)». Карточки «Apie mus» и место FAQ — ниже первого экрана (тесты `test_h3_*`).
+- **H-04: проверено** — полный browser-check `check_calculator` (три шага, `no_sums()`, проверка файла в карточке, страница после
+  отправки, гостевая страница без сумм), `--signed-in` сценарии кабинета и админки в том же прогоне; CalculatorPageTest
+  (`test_tariffs_are_not_in_the_page_html`), OrderSubmissionTest, CustomerAccountTest — в bin/check. Кадры `calculator-step1..3-*`,
+  `calculator-submitted-390`: шаг 1 — зона, кнопка, строки STL/DXF/DWG; шаг 2 — карточки с проверкой файла и «Price to be assessed by a
+  specialist» без суммы; шаг 3 — форма; после отправки — «Your request has been received. We will contact you shortly.», номер, гостевая
+  ссылка, сумм нет.
+- **H-05: проверено** — миграция `2026_11_05_400000`, правила `numeric|min|max` в `OrderRequestController`; `check_calculator`
+  (числовые поля, ввод 6.5/0.25, свёрнутая карточка «Engraving depth: 0.25 mm»), `check_calculator_settings` — зелёные; OrderPositionsTest
+  — в bin/check. Кадр `calculator-step2-1440`: «Thickness, mm» 6.5, материалы нового списка (Wood).
+- **H-06: проверено** — `InvoiceNumber`, «Kitas sąskaitos numeris (šiems metams)»; InvoicesTest (смена года, запрет выданного, старые
+  форматы) — в bin/check; вкладка settings в полном browser-check. Кадры: `invoice-aiq.png` — «VAT INVOICE / AIQ60008», сумма прописью,
+  «Paid» (EN; реквизиты банка в этом тесте не заданы); `invoice-lt.png` — «TEST60007» (формат серия + цифра года + 4 цифры);
+  `lt__administravimas__settings-signed-in-1440` — серия `AIQ`, поле «Kitas sąskaitos numeris (šiems metams)» = 1.
+- **H-07: проверено** — `check_buy` в полном прогоне (цена, количество, нет «Gauti pasiūlymą», ссылка PDF); ProductSaleTest. Кадры:
+  `lt__produktai__pla-gija-desktop` — «24,00 €», «Kiekis», «Į krepšelį» с иконкой; `lt__produktai__norda-s1-skeneris-desktop` —
+  «Individualus pasiūlymas» / «Gauti pasiūlymą» как прежде.
+- **H-08: проверено** — `check_cart` в полном прогоне (значок 2→3, строка и сумма 48 €, «Atsiėmimas» скрывает адрес, итог 72 €,
+  оформление → страница оплаты 200, значок пуст); ProductPurchaseTest (заказ «Prekės», PaymentRequest, FakeStripe, webhook → счёт) — в
+  bin/check. Кадры: `lt__krepselis-phone` (пустая корзина — как прежде, CTA «Įkelkite failus…»), `checkout-390` (страница оплаты).
+  **Нет кадра заполненной корзины и формы оформления** (`check_cart` кадров не снимает) — вид ждёт проверки пользователем.
+
+### Замечания по кадрам (код не менялся — ждёт решения пользователя)
+- У товара «Pirkti» под кнопкой «Į krepšelį» осталась общая строка «Pristatymo terminas: patvirtinamas pasiūlyme» (для покупки без
+  предложения звучит странно); README её не касается.
+- Во втором ряду внутренних страниц — «3D INŽINERIJA IR TECHNOLOGIJOS» (`shell.tagline`), а в hero главной — «… & …»; так по README
+  (п. 2 H-01: `shell.tagline` не меняется), отмечаю для просмотра.
+- В кадрах калькулятора у левого края видна ссылка пропуска («…tent» — фокус клавиатуры сценария проверки, как в G-09).
+- Сверка с PDF заказчика «рев.4» — **ждёт проверки пользователем**.
+
+### Файлы очереди
+- `git diff --name-status main...HEAD -- aiqme-site docs` + незакоммиченное: только файлы из touches H-01…H-09. Изменения
+  `docs/planning/edits-20261105/` в этом диапазоне — коммит плана ae4324f (добавление H-11 человеком), не задачи прогона.
+  `prototype/style.css`, `experiments/`, `demo/` не менялись. Новые двоичные — только синтетическая фикстура
+  `tests/fixtures/product-document.pdf` (588 байт, H-07).
+- Незакоммиченное H-09: `resources/js/calculator/quote.js`, `resources/js/calculator/index.js`, `tests/js/calculator-quote.test.js`,
+  `tests/browser/ContentFactory.php`, `tests/Feature/InvoicesTest.php` (исправления найденного выше), `docs/requirements.md`, этот файл.
+- `docs/requirements.md`: добавлен только раздел «Правки заказчика 03.11 (рев. 4)» (`git diff --numstat` — 20 добавленных строк, без удалений).
+
+### Итог очереди 05.11
+- H-01…H-08 и H-11 выполнены и приняты; H-09 — полный bin/check и полный bin/browser-check зелёные на одном дереве (после двух исправлений
+  выше); H-10 (выпуск вместе с G-10) — с человеком.
+
+### Шаги пользователя для H-10 (вместе с G-10)
+1. Копия БД aiqme.com, `deploy <rev>`, `migrate`: миграции G-10 (тексты Г1/Г2, схема позиций, настройки фрезеровки) и 05.11 — тексты
+   hero (H-01), главной (H-02), услуг и «Apie mus» (H-03), материалы фрезеровки и удаление списков толщин/глубин (H-05), таблица
+   `product_lines` (H-08). Проверить, не остались ли тексты/материалы, изменённые администратором (тогда миграция их не трогает).
+2. Проверить, что в `ui_texts` нет переопределений ключей, изменённых в H-01/H-03/H-04 (`public.hero.*`, `shell.quote_cta`,
+   `shell.footer.*`, `public.cta.quote`, `calculator.*`, `pages.calculator.title`, подпись телефона).
+3. «Nustatymai» → счёт: префикс `AIQ` (не `AIQW`); реквизиты по G-10 (почта, сайт, телефон, банк, SWIFT, IBAN, «Išrašė» — из образца
+   заказчика, в репозиторий не переносить); «Pristatymo kaina (prekėms)» — по ответу заказчика (пока 0 €).
+4. Пробный счёт на тестовом заказе — **до** того, как задан номер серии (проба расходует номер), или по согласованию с заказчиком; затем
+   в «Kitas sąskaitos numeris (šiems metams)» — номер, который назовёт заказчик (03.11 шёл `AIQ60008`).
+5. Ручной просмотр на ПК и телефоне по списку H-09: главная (шапка вверху/после прокрутки, hero, разделы, «Darbo eiga», услуги, подвал),
+   услуга, «Apie mus», «Kontaktai», калькулятор (шаги 1–3 и страница после отправки), товар `Pirkti` и `Gauti pasiūlymą`, корзина,
+   оформление, PDF счёта; прежние заказы открываются в админке.
+6. Товары остаются «Gauti pasiūlymą», пока заказчик не задаст цены и режим «Pirkti». Настоящая оплата Stripe (тестовые ключи) по
+   корзине — проверить вручную.
+7. Вопросы заказчику (README): пределы толщины/глубины, материалы гравировки, доставка товаров, номер счёта, толкование «Apie mus».
+
+### Не проверено (H-09)
+- `bin/demo-check` и режим `--base-url/--compose-file` — не запускались (демо не пересобиралось; сценарий калькулятора demo-check
+  ещё пятишаговый — см. H-04): проверено чтением кода; выполнение — ждёт пользователя.
+- Кадров нет: «Darbo eiga», услуги без номеров на фото, подвал, карточки «Apie mus», заполненная корзина и форма оформления — только
+  замеры browser-check и тесты; вид — ждёт проверки пользователем.
+- Safari/Firefox, реальные телефоны, сверка с PDF заказчика — ждёт проверки пользователем. На aiqme.com ничего не запускалось (H-10).

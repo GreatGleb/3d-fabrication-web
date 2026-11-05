@@ -86,6 +86,20 @@ describe('добавление моделей', () => {
     assert.equal(quote.active, 0);
   });
 
+  // Сквозная проверка 05.11, H-09: позиции идут в порядке выбора, даже если первый файл читается дольше остальных.
+  test('несколько файлов — позиции и ошибки в порядке выбора, а не окончания чтения', async () => {
+    const quote = new Quote(settings);
+    let releaseFirst;
+    const slow = { name: 'plate.dxf', size: 3, arrayBuffer: () => new Promise((resolve) => { releaseFirst = () => resolve(new ArrayBuffer(3)); }) };
+    const fast = new File(['abc'], 'plate.dwg');
+    const adding = quote.addFiles([slow, new File(['x'], 'photo.png'), fast]);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    releaseFirst();
+    const results = await adding;
+    assert.deepEqual(results, [{ name: 'plate.dxf', error: null }, { name: 'photo.png', error: 'unsupported' }, { name: 'plate.dwg', error: null }]);
+    assert.deepEqual(quote.models.map((m) => m.name), ['plate.dxf', 'plate.dwg']);
+  });
+
   // Правка 02.11, Г8: STEP/STP/OBJ/DXF/DWG принимаются без разбора (прежде OBJ/STEP — specialist_format и уход на контакты).
   test('STEP, OBJ, DXF, DWG — позиции без разбора; иные форматы, размер больше лимита и отказ ядра — ошибка, модели нет', async () => {
     let parsed = 0;

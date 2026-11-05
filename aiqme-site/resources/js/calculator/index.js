@@ -88,7 +88,7 @@ function start(root) {
 
   async function addFiles(files) {
     showErrors([]);
-    const results = await Promise.all([...files].map((file) => quote.addFile(file)));
+    const results = await quote.addFiles(files);
     showErrors(results.filter((r) => r.error).map((r) => t(r.error, { name: r.name, max: settings.max_files })));
     render();
   }

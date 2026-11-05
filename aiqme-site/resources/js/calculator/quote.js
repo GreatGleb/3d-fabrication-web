@@ -38,11 +38,20 @@ export class Quote {
     this.nextId = 1;
   }
 
-  // Выбранный файл: формат и размер проверяются до чтения; затем та же функция, что для ArrayBuffer.
+  // Выбранный файл (через addFiles): формат и размер проверяются до чтения; затем та же функция, что для ArrayBuffer.
   async addFile(file) {
-    if (!FORMATS.includes(extension(file.name))) return { name: file.name, error: 'unsupported' };
-    if (file.size > this.settings.max_file_bytes) return { name: file.name, error: 'too_large' };
-    return this.addBuffer(file.name, await file.arrayBuffer());
+    return (await this.addFiles([file]))[0];
+  }
+
+  // Несколько выбранных файлов: читаются параллельно, а позиции добавляются в порядке выбора, а не в порядке окончания
+  // чтения (сквозная проверка 05.11, H-09: прежде порядок DXF/DWG зависел от гонки чтения).
+  async addFiles(files) {
+    const read = await Promise.all([...files].map(async (file) => {
+      if (!FORMATS.includes(extension(file.name))) return { name: file.name, error: 'unsupported' };
+      if (file.size > this.settings.max_file_bytes) return { name: file.name, error: 'too_large' };
+      return { name: file.name, buffer: await file.arrayBuffer() };
+    }));
+    return Promise.all(read.map((item) => (item.buffer ? this.addBuffer(item.name, item.buffer) : item)));
   }
 
   // Файл из ArrayBuffer — общая точка входа для выбранного файла и повторного заказа (W-15). Позиция получает параметры по

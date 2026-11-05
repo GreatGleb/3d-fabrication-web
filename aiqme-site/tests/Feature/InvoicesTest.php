@@ -604,6 +604,7 @@ class InvoicesTest extends TestCase
         LunarCapture::create($order, 9500);
         IssueInvoice::dispatchSync($order->id);
         $this->assertSame('AIQ60008', Invoice::sole()->label());
+        $this->snapshot(Invoice::sole(), 'aiq'); // кадр счёта серии заказчика для просмотра (сквозная проверка 05.11, H-09)
 
         $form()->assertSet('nextNumber', '9');
         foreach (['8', '5'] as $issued) {

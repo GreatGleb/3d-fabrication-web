@@ -136,9 +136,9 @@ final class ContentFactory
     {
         $vekta = ContentItem::where('type', ContentType::Brand)->where('key', 'vekta')->first();
         $item = $this->published(ContentType::Product, 'vekta-pla', [
-            'lt' => ['title' => 'PLA gija', 'slug' => 'pla-gija', 'fields' => ['description' => 'Gija prototipams.',
+            'lt' => ['title' => 'PLA gija', 'slug' => 'pla-gija', 'fields' => ['description' => 'Gija FDM spausdinimui.',
                 'specifications' => 'Skersmuo 1,75 mm.', 'compatibility' => 'FDM spausdintuvai.', 'included' => 'Ritė 1 kg.']],
-            'en' => ['title' => 'PLA filament', 'slug' => 'pla-filament', 'fields' => ['description' => 'A filament for prototypes.',
+            'en' => ['title' => 'PLA filament', 'slug' => 'pla-filament', 'fields' => ['description' => 'A filament for FDM printing.',
                 'specifications' => 'Diameter 1.75 mm.', 'compatibility' => 'FDM printers.', 'included' => 'One 1 kg spool.']],
         ], ['category' => 'materials', 'brand' => $vekta?->id, 'sale' => 'buy', 'price' => 2400], 5);
         $this->content->addMedia($this->admin, $item, dirname(__DIR__).'/fixtures/product-document.pdf', 'documents', title: 'pla-gija-duomenys.pdf');
