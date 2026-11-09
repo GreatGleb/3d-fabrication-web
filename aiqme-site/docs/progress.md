@@ -5535,3 +5535,34 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
 - Кадров нет: «Darbo eiga», услуги без номеров на фото, подвал, карточки «Apie mus», заполненная корзина и форма оформления — только
   замеры browser-check и тесты; вид — ждёт проверки пользователем.
 - Safari/Firefox, реальные телефоны, сверка с PDF заказчика — ждёт проверки пользователем. На aiqme.com ничего не запускалось (H-10).
+
+## Доработки 09.11, I-01: шаг 2 калькулятора — «failui» вместо «modeliui», без заголовка шага 2
+
+- До правок: `bin/check` на ветке `auto/night-2026-11-09-2330` зелёный (PHPUnit 772/772, Vite OK, 9 мин 17 с).
+- `lang/lt/calculator.php`: `part.intro` — «Kiekvienam failui pasirinkite gamybos būdą ir parametrus.»; `lang/en/calculator.php` —
+  «Choose the manufacturing method and parameters for each file.» (EN — из отчёта аудита r4, в README плана только «…for each file»).
+- Заголовок шага 2 «02. Gamybos pasirinkimai» / «02. Production settings» убран из `resources/views/public/calculator.blade.php`
+  (как у шага 1); ключ `settings.title` больше не используется и удалён из обоих языков. Кнопки шагов (`.steps`, `data-step`,
+  `disabled`), `data-step-panel` 0/1/2 и заголовок шага 3 «Pirkėjas ir pristatymas» не менялись; aria-ссылок на заголовок не было.
+- `ui_texts`/`prototype-content.json`/сидеры: ключей `calculator.part.intro` и `calculator.settings.title` нет — миграция данных не нужна.
+  На aiqme.com при выпуске проверить, что администратор не переопределил `calculator.part.intro` в `ui_texts` (иначе останется старый текст).
+- `bin/browser-check`: D21_REPLACEMENTS — «02. Gamybos pasirinkimai» → '' (`^/lt/kalkuliatorius$`), «02. Production settings» → ''
+  (`^/en/quote$`), с комментарием «Доработка 09.11, I-01» (заголовок есть в эталоне прототипа; подзаголовка «…modeliui» в эталоне нет —
+  записи для него не нужны).
+- `tests/Feature/CalculatorPageTest.php` (комментарии «Доработка 09.11, I-01»): заголовки панелей — только шаг 3, у панели шага 2 нет `h2`;
+  подзаголовок и `data-texts.part.intro` — новый текст LT/EN.
+  Проверка «падает до правки»: с возвращёнными из HEAD `lang/*/calculator.php` и шаблоном — 2 из 12 тестов файла падают
+  (`test_three_steps_and_texts_of_both_locales`: лишний «02. Gamybos pasirinkimai»; `test_step_two_has_cards_with_texts_of_the_plan`);
+  с правкой — 12/12.
+- grep по `lang/ resources/ app/ database/ bin/`: «modeliui», «for each model», «Gamybos pasirinkimai», «Production settings» в видимых
+  текстах калькулятора нет (только D21_REPLACEMENTS и комментарии тестов).
+- `bin/browser-check /lt/kalkuliatorius /en/quote`: OK (852 проверки); затем `bin/browser-check /lt/kalkuliatorius` (OK, 404) — чтобы
+  получить LT-кадр. Снимки `build/verification/browser-check/shots/calculator-step2-1440.png` (LT) и EN-кадр просмотрены Read:
+  панель шага 2 начинается с «Kiekvienam failui pasirinkite…» / «Choose … for each file.», заголовка «02. …» нет.
+  Пути `/lt/skaiciuokle /en/calculator` из поля checks задачи на сайте не существуют — проверены маршруты из поля browser_check.
+- Замечено, не входит в задачу: на кадре шага 2 слева поверх рамки виден обрывок «turinio»/«tent» (ссылка «перейти к содержимому»
+  попадает в кадр элемента) — на виде страницы не проверялось, ждёт проверки пользователем.
+- Не проверено: вид на aiqme.com (выпуск — с пользователем); демо-сборка `demo/` и копия `build/context/` не пересобирались (не
+  отслеживаются Git, bin/check их не проверяет) — в старой демо-сборке заголовок «02. …» остаётся.
+- Финальный `bin/check` после правок: OK (PHPUnit 772/772, Vite OK, 8 мин 45 с). `git status --porcelain aiqme-site`: изменены только
+  `bin/browser-check`, `lang/{lt,en}/calculator.php`, `resources/views/public/calculator.blade.php`, тест и этот файл; новых файлов нет.

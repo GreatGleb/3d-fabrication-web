@@ -82,18 +82,22 @@ class CalculatorPageTest extends TestCase
         }
     }
 
-    /** Правка 05.11, H-04: три шага, заголовки панелей без «01. Įkelkite savo modelius», «03. …», «04. …». */
+    /** Правка 05.11, H-04: три шага, заголовки панелей без «01. Įkelkite savo modelius», «03. …», «04. …»; доработка 09.11, I-01 — и без «02. …». */
     public function test_three_steps_and_texts_of_both_locales(): void
     {
         $lt = $this->page('/lt/kalkuliatorius');
         $this->assertSame(['1Failai', '2Gamybos parametrai', '3Užklausos pateikimas'], Html::texts($lt, '//div[@class="steps"]/button'));
         $this->assertCount(0, $lt->query('//section[@class="page-top"]//div[@class="eyebrow"]')); // правка 30.10, Г2
-        $this->assertSame(['02. Gamybos pasirinkimai', 'Pirkėjas ir pristatymas'], Html::texts($lt, '//*[@data-step-panel]/h2'));
+        // Доработка 09.11, I-01: заголовка «02. Gamybos pasirinkimai» у шага 2 нет (было ['02. Gamybos pasirinkimai', 'Pirkėjas ir pristatymas']).
+        $this->assertSame(['Pirkėjas ir pristatymas'], Html::texts($lt, '//*[@data-step-panel]/h2'));
+        $this->assertCount(0, $lt->query('//*[@data-step-panel="1"]//h2'));
 
         $en = $this->page('/en/quote');
         $this->assertSame(['1Files', '2Manufacturing parameters', '3Submit request'], Html::texts($en, '//div[@class="steps"]/button'));
         $this->assertSame(['0', '1', '2'], array_map(fn ($node) => $node->value, iterator_to_array($en->query('//*[@data-step-panel]/@data-step-panel'))));
-        $this->assertSame(['02. Production settings', 'Buyer & delivery'], Html::texts($en, '//*[@data-step-panel]/h2'));
+        // Доработка 09.11, I-01: заголовка «02. Production settings» у шага 2 нет.
+        $this->assertSame(['Buyer & delivery'], Html::texts($en, '//*[@data-step-panel]/h2'));
+        $this->assertCount(0, $en->query('//*[@data-step-panel="1"]//h2'));
         $this->assertSame('2', $en->query('//form[@id="checkout-form"]')->item(0)->getAttribute('data-step-panel'));
         $this->assertSame(1, $en->query('//*[@data-step-panel and not(@hidden)]')->length, 'видим только шаг 1');
         // Правка 02.11, Г8: принимаются DXF и DWG.
@@ -164,14 +168,15 @@ class CalculatorPageTest extends TestCase
      * Шаг 2 по макету 17.09 (правка 02.11, Г8): общих полей, общего срока и его пояснения нет — карточки на каждый файл строит
      * JS ([data-cards]); подзаголовок и нижняя подсказка — дословно из README плана; тексты карточки (способы, поля, приоритет,
      * дата, заметка) и прежние списки печати (правка 28.10, E-05; 30.10, Г3) — в data-texts.
+     * Доработка 09.11, I-01: подзаголовок — «Kiekvienam failui…» / «…for each file» (было «modeliui» / «for each model»).
      */
     public function test_step_two_has_cards_with_texts_of_the_plan(): void
     {
         foreach ([
             '/en/quote' => [
-                'Choose the manufacturing method and parameters for each model.', 'A separate production deadline can be chosen for each part.',
+                'Choose the manufacturing method and parameters for each file.', 'A separate production deadline can be chosen for each part.',
                 ['thickness' => 'Thickness', 'depth' => 'Engraving depth', 'urgent' => 'Urgent', 'needed_by' => 'Needed by',
-                    'intro' => 'Choose the manufacturing method and parameters for each model.', 'hint' => 'A separate production deadline can be chosen for each part.',
+                    'intro' => 'Choose the manufacturing method and parameters for each file.', 'hint' => 'A separate production deadline can be chosen for each part.',
                     'change' => 'Change parameters', 'method' => 'Manufacturing method', 'priority' => 'Production priority',
                     'rush_note' => 'The rush deadline will be confirmed separately.', 'notes' => 'Additional information (optional)',
                     'notes_placeholder' => 'E.g. additional requirements, remarks or other important instructions…'],
@@ -179,9 +184,9 @@ class CalculatorPageTest extends TestCase
                 ['none' => 'Not selected', 'painting' => 'Sanding and painting', 'inserts' => 'Threaded insert installation', 'assembly' => 'Part assembly', 'consult' => 'Consultation needed'],
             ],
             '/lt/kalkuliatorius' => [
-                'Kiekvienam modeliui pasirinkite gamybos būdą ir parametrus.', 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
+                'Kiekvienam failui pasirinkite gamybos būdą ir parametrus.', 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
                 ['thickness' => 'Storis', 'depth' => 'Graviravimo gylis', 'urgent' => 'Skubu', 'needed_by' => 'Reikalinga iki',
-                    'intro' => 'Kiekvienam modeliui pasirinkite gamybos būdą ir parametrus.', 'hint' => 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
+                    'intro' => 'Kiekvienam failui pasirinkite gamybos būdą ir parametrus.', 'hint' => 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
                     'change' => 'Keisti parametrus', 'method' => 'Gamybos būdas', 'priority' => 'Gamybos prioritetas',
                     'rush_note' => 'Skubos terminas bus patvirtintas atskirai.', 'notes' => 'Papildoma informacija (neprivaloma)',
                     'notes_placeholder' => 'Pvz. papildomi reikalavimai, pastabos ar kiti svarbūs nurodymai…'],

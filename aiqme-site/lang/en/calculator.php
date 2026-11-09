@@ -35,7 +35,6 @@ return [
         'confirm' => 'Confirm & recalculate',
     ],
     'settings' => [
-        'title' => '02. Production settings',
         'material' => 'Material',
         'color' => 'Colour',
         'colors' => ['black' => 'Black', 'white' => 'White', 'blue' => 'Blue'],
@@ -62,7 +61,7 @@ return [
         'depth' => 'Engraving depth',
         'urgent' => 'Urgent',
         'needed_by' => 'Needed by',
-        'intro' => 'Choose the manufacturing method and parameters for each model.',
+        'intro' => 'Choose the manufacturing method and parameters for each file.',
         'hint' => 'A separate production deadline can be chosen for each part.',
         'change' => 'Change parameters',
         'method' => 'Manufacturing method',

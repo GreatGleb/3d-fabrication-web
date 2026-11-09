@@ -35,7 +35,6 @@ return [
         'confirm' => 'Patvirtinti ir perskaičiuoti',
     ],
     'settings' => [
-        'title' => '02. Gamybos pasirinkimai',
         'material' => 'Medžiaga',
         'color' => 'Spalva',
         'colors' => ['black' => 'Juoda', 'white' => 'Balta', 'blue' => 'Mėlyna'],
@@ -62,7 +61,7 @@ return [
         'depth' => 'Graviravimo gylis',
         'urgent' => 'Skubu',
         'needed_by' => 'Reikalinga iki',
-        'intro' => 'Kiekvienam modeliui pasirinkite gamybos būdą ir parametrus.',
+        'intro' => 'Kiekvienam failui pasirinkite gamybos būdą ir parametrus.',
         'hint' => 'Kiekvienai detalei galima pasirinkti atskirą gamybos terminą.',
         'change' => 'Keisti parametrus',
         'method' => 'Gamybos būdas',

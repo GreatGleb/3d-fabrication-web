@@ -1262,6 +1262,8 @@ D21_REPLACEMENTS = [
     ('Patikra', '', '^/lt/kalkuliatorius$'), ('Kaina', '', '^/lt/kalkuliatorius$'), ('Užsakymas', 'Užklausos pateikimas', '^/lt/kalkuliatorius$'),
     ('Review', '', '^/en/quote$'), ('Price', '', '^/en/quote$'), ('Checkout', 'Submit request', '^/en/quote$'),
     ('Production', 'Manufacturing parameters', '^/en/quote$'), ('Gamyba', 'Gamybos parametrai', '^/lt/kalkuliatorius$'),
+    # Доработка 09.11, I-01: заголовка шага 2 «02. …» нет, как и у шага 1 (макет рев.4, п.11).
+    ('02. Gamybos pasirinkimai', '', '^/lt/kalkuliatorius$'), ('02. Production settings', '', '^/en/quote$'),
 ]
 # Блоки эталона без нашей пары: демо-блоки и блок команды (как в prototype-blocks.json), расписание обучения (темы и даты —
 # черновики, D-21: исключается всегда), подпись «● NN / label» над названием услуги (правка 28.10, П4: у нас её нет),

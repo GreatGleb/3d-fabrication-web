@@ -55,7 +55,7 @@
                 </section>
 
                 <section class="panel" data-step-panel="1" hidden>
-                    <h2>{{ __('calculator.settings.title') }}</h2>
+                    {{-- Доработка 09.11, I-01: заголовка «02. …» шага 2 нет, как и у шага 1 (макет рев.4, п.11). --}}
                     <p>{{ __('calculator.part.intro') }}</p>
                     <div data-cards></div>
                     <p class="part-note gap"><img class="ui-icon" src="{{ asset('icons/ui/info.svg') }}" alt="" width="20" height="20">{{ __('calculator.part.hint') }}</p>
