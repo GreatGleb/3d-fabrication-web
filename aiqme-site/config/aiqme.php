@@ -49,6 +49,17 @@ return [
     ],
 
     /*
+    | Соцсети в подвале (правка 06.11, «правки 5»: ссылки от Игоря, значки AIQME_social_icons_SVG.zip в public/icons/social).
+    | LinkedIn — по числовому id компании: Игорь прислал его на случай, если адрес /company/aiqme/ плохо открывается.
+    */
+    'social' => [
+        'linkedin' => ['label' => 'LinkedIn', 'url' => 'https://www.linkedin.com/company/145268452/'],
+        'facebook' => ['label' => 'Facebook', 'url' => 'https://www.facebook.com/AIQME'],
+        'instagram' => ['label' => 'Instagram', 'url' => 'https://www.instagram.com/aiqme_3d/'],
+        'youtube' => ['label' => 'YouTube', 'url' => 'https://www.youtube.com/@AIQME_3D'],
+    ],
+
+    /*
     | Формы обращений и регистрации на обучение (W-09, §6.4): получатель письма о новой заявке (клиенту писем нет, §5.1),
     | ограничение частоты отправок с одного IP (обе формы вместе, в час) и вложения контактной формы — до 5 файлов
     | по 15 МиБ, расширения прототипа. Это не утверждённые производственные пределы; в админке не редактируются.

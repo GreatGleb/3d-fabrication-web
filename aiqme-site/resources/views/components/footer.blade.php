@@ -7,6 +7,12 @@
             <div>
                 <a class="logo" href="{{ route($locale.'.home') }}"><img src="{{ $logo }}" alt="AIQME"></a>
                 <p>{{ __('shell.footer.slogan') }}</p>
+                {{-- Соцсети (правка 06.11, «правки 5»): ссылки и значки заказчика, config aiqme.social. --}}
+                <div class="footer-social">
+                    @foreach (config('aiqme.social') as $network => $social)
+                        <a href="{{ $social['url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $social['label'] }}" title="{{ $social['label'] }}"><img src="{{ asset('icons/social/'.$network.'.svg') }}" alt="" width="36" height="36"></a>
+                    @endforeach
+                </div>
             </div>
             <div>
                 <h4>{{ __('shell.footer.solutions') }}</h4>

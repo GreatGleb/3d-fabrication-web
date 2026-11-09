@@ -166,10 +166,12 @@ class LocaleRoutesTest extends TestCase
 
     public function test_internal_links_are_plain_anchors_built_by_route_without_trailing_slash(): void
     {
+        // Внешние ссылки — только соцсети подвала из config aiqme.social (правка 06.11).
+        $external = ['#main', ...array_column(config('aiqme.social'), 'url')];
         foreach (['/lt', '/en/faq/', '/lt/nera-tokio'] as $path) {
             preg_match_all('~href="([^"]+)"~', $this->get($path)->getContent(), $matches);
             $this->assertNotEmpty($matches[1]);
-            foreach (array_filter($matches[1], fn (string $href): bool => $href !== '#main') as $href) {
+            foreach (array_filter($matches[1], fn (string $href): bool => ! in_array($href, $external, true)) as $href) {
                 $this->assertStringStartsWith(config('app.url').'/', $href);
                 $this->assertStringEndsNotWith('/', $href);
             }

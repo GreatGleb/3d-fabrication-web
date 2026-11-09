@@ -122,6 +122,25 @@ class ShellTest extends TestCase
         $this->assertSame('© '.now()->year.' AIQME', $xpath->query('//div[@class="footer-bottom"]/span')->item(0)->textContent);
     }
 
+    public function test_footer_links_to_customer_social_networks_with_customer_icons(): void
+    {
+        $xpath = $this->xpath($this->get('/lt')->getContent());
+
+        // Правка 06.11 («правки 5»): ссылки Игоря, LinkedIn — по числовому id компании.
+        $this->assertSame([
+            ['LinkedIn', 'https://www.linkedin.com/company/145268452/'], ['Facebook', 'https://www.facebook.com/AIQME'],
+            ['Instagram', 'https://www.instagram.com/aiqme_3d/'], ['YouTube', 'https://www.youtube.com/@AIQME_3D'],
+        ], array_map(fn ($a) => [$a->getAttribute('aria-label'), $a->getAttribute('href')], iterator_to_array($xpath->query('//footer//div[@class="footer-social"]/a'))));
+        foreach ($xpath->query('//footer//div[@class="footer-social"]/a') as $link) {
+            $this->assertSame('_blank', $link->getAttribute('target'));
+            $this->assertStringContainsString('noopener', $link->getAttribute('rel'));
+        }
+        foreach (['linkedin', 'facebook', 'instagram', 'youtube'] as $network) {
+            $this->assertSame(1, $xpath->query('//footer//div[@class="footer-social"]/a/img[@src="'.asset('icons/social/'.$network.'.svg').'"]')->length);
+            $this->assertFileExists(public_path('icons/social/'.$network.'.svg'));
+        }
+    }
+
     public function test_cookie_notice_is_informational_essential_only(): void
     {
         foreach (['lt' => ['Analitika ir reklamos sekimas nenaudojami. Puslapyje „Kontaktai“ rodomas „Google Maps“ žemėlapis – jį įkeliant „Google“ gali naudoti savo slapukus.', 'Tik būtini', 'Nustatymai'],

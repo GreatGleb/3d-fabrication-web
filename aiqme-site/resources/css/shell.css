@@ -18,6 +18,11 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 @media(max-width:900px){
  .footer-top>div:last-child{grid-column:auto}
 }
+/* Соцсети в подвале (правка 06.11): ряд значков заказчика под девизом; .footer a прототипа делает ссылки блочными. */
+.footer-social{display:flex;gap:10px;margin-top:20px}
+.footer .footer-social a{display:block;margin:0;line-height:0;border-radius:9px;transition:opacity .2s}
+.footer .footer-social a:hover{opacity:.8}
+.footer-social img{width:36px;height:36px}
 /* Значок кабинета в шапке (W-07): на 320 px пять кнопок шапки прототипа шире окна — уже промежутки и поля кнопок. */
 @media(max-width:360px){
  .tools{gap:2px}
