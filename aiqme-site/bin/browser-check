@@ -87,7 +87,8 @@ CTA #9cc4ff); check_header (HEADER_PAGES при 390 и 1440, /en/admin при 14
 от низа шапки; у логотипа шапки фон прозрачный и без поля в тёмном и белом состоянии, без перехода фона (подложка — только
 header--logo-plate; check_header); логотип подвала той же ширины, что в шапке, на всех ширинах LOGO_WIDTHS, без фона (check_logo);
 check_scenarios на главной при всех ширинах — правая рамка третьей карточки как у остальных, иконки — SVG public/icons/home/ по
-порядку, высота 70 ±1 px в своих пропорциях, без подложки и обрезки; кадры header-top|scrolled для /lt и /en при 390 и 1440;
+порядку, высота 70 ±1 px в своих пропорциях, без подложки и обрезки, левый край иконки — по левому краю заголовка карточки
+±2 px (доработка 09.11, I-03); кадры header-top|scrolled для /lt и /en при 390 и 1440;
 LT-надпись hero — замена D21_REPLACEMENTS только для /lt.
 Тексты и блок услуги (правка 02.11, Г2): новые тексты главной, 3D spausdinimas и ответа FAQ services-1 — замены D21_REPLACEMENTS;
 блока «Vienas kontaktas visam darbui» на страницах услуг нет (его фразы — '' в D21_REPLACEMENTS, без примера в check_blocks нет
@@ -858,6 +859,7 @@ SCENARIO_PROBE = """async () => {
         result.push({borders: ['Top', 'Right', 'Bottom', 'Left'].map((side) => [parseFloat(s[`border${side}Width`]), s[`border${side}Color`]]),
             src: img && img.getAttribute('src').split('/').pop(), natural: img && [img.naturalWidth, img.naturalHeight],
             img: r && [r.left, r.top, r.width, r.height], card: [box.left, box.right],
+            title: card.querySelector('h3') ? card.querySelector('h3').getBoundingClientRect().left : null,
             iconBackground: icon && getComputedStyle(icon).backgroundColor, iconSvg: icon ? icon.querySelectorAll('svg').length : null});
     }
     return result;
@@ -879,6 +881,9 @@ def check_scenarios(report, page, where):
         report.check(natural[0] > 0 and abs(img[3] - 70) <= 1 and abs(img[2] / img[3] - natural[0] / natural[1]) < 0.02,
                      f'{where}: иконка {i + 1}: {img} при {natural}')
         report.check(img[0] >= card['card'][0] and img[0] + img[2] <= card['card'][1], f'{where}: иконка {i + 1} обрезана {img} {card["card"]}')
+        # Доработка 09.11, I-03: иконка у левого края, по линии заголовка карточки (макет 14.49), а не по центру.
+        report.check(card['title'] is not None and abs(img[0] - card['title']) <= 2,
+                     f'{where}: иконка {i + 1}: левый край {img[0]:.1f} ≠ заголовку {card["title"]}')
         report.check(card['iconBackground'] == 'rgba(0, 0, 0, 0)' and card['iconSvg'] == 0,
                      f'{where}: иконка {i + 1}: подложка {card["iconBackground"]}, svg {card["iconSvg"]}')
 
