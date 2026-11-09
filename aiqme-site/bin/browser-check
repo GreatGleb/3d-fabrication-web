@@ -116,6 +116,8 @@ W-27: калькулятор /lt/kalkuliatorius и /en/quote на 390 и 1440 �
 ошибка «к специалисту», на шаге 1 в панели сумм нет, шаг 2 — карточка на каждый файл (способы по формату, разные параметры
 у DXF и DWG, −/+ количества, «Skubu» и дата, сворачивание), шаг 3 — блок на файл, шаг 4 — «Kainą įvertins specialistas» и
 «+ specialisto vertinamos detalės», заявка в формате позиций; кадры calculator-step1..4-<ширина>.png.
+Доработка 09.11, I-02: check_step2_rows — поля ряда шага 2 вровень и варианты списков не обрезаны (390/1024/1280/1440/1920,
+три способа, LT и EN).
 
 W-19: вкладка Integrations (раздел Telegram) — в ADMIN_PAGES.
 W-17: вкладка Settings (реквизиты, VAT и нумерация счетов) — в ADMIN_PAGES; Overview — с предупреждением «незаполненные
@@ -2706,6 +2708,70 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     context.close()
 
 
+STEP2_ROW_WIDTHS = (390, 1024, 1280, 1440, 1920)
+STEP2_ROWS_JS = """(grid) => {
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+  const rows = [];
+  [...grid.children].forEach((label, i) => {
+    const control = label.querySelector('select, input');
+    const row = rows[Math.floor(i / cols)] ??= {labels: [], tops: []};
+    row.labels.push(label.textContent.trim().split('\\n')[0]);
+    row.tops.push(Math.round(control.getBoundingClientRect().top));
+  });
+  // Обрезка: у <select> scrollWidth не растёт от длинного текста — каждый вариант меряется копией списка шириной по
+  // содержимому (текст, отступы, стрелка) рядом с полем; копия шире поля — вариант обрезан.
+  const cut = [];
+  grid.querySelectorAll('select, input').forEach((control) => {
+    if (control.scrollWidth > control.clientWidth) cut.push(`${control.id} ${control.scrollWidth}>${control.clientWidth}`);
+    [...(control.options || [])].forEach((option) => {
+      const probe = control.cloneNode(false);
+      probe.removeAttribute('id');
+      probe.append(option.cloneNode(true));
+      probe.style.cssText = 'position:absolute;visibility:hidden;width:auto;min-width:0;max-width:none;left:0;top:0';
+      control.parentNode.append(probe);
+      if (probe.offsetWidth > control.offsetWidth) cut.push(`«${option.textContent.trim()}» ${probe.offsetWidth}>${control.offsetWidth}`);
+      probe.remove();
+    });
+  });
+  return {cols, rows, cut};
+}"""
+
+
+def check_step2_rows(report, new_page, path):
+    """Доработка 09.11, I-02: поля ряда карточки шага 2 стоят вровень, варианты списков не обрезаны — на 390/1024/1280/1440/1920,
+    для 3D spausdinimas, Frezavimas, Graviravimas, с обычным и скорым приоритетом (поле «Reikalinga iki»). Ряд — дети сетки
+    .part-fields по числу её колонок; верх <select>/<input> ряда совпадает ±1 px; у каждого варианта каждого списка ширина
+    по содержимому не больше ширины поля, scrollWidth ≤ clientWidth. Кадры shots/calculator-step2-row-<lt|en>-<способ>-<ширина>.png
+    на 1024 и 1440."""
+    lang = path.split('/')[1]
+    for width in STEP2_ROW_WIDTHS:
+        where = f'{path} @{width} ряд полей шага 2'
+        context, page, problems = new_page(width, 1000)
+        page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
+        page.goto(BASE + path, wait_until='networkidle')
+        page.locator('#model-upload').set_input_files(str(STL_FIXTURES / 'cube-10mm-binary.stl'))
+        page.wait_for_function("document.querySelectorAll('[data-files] .file-row').length === 1 && !document.querySelector('#upload-progress progress')")
+        page.locator('[data-cookie-accept]').click()
+        page.locator('[data-next]').click()
+        card = page.locator('[data-card]').first
+        for method in ('printing', 'milling', 'engraving'):
+            card.locator(f'label.part-method:has(input[value={method}])').click()
+            for priority in ('standard', 'priority'):
+                card.locator('select[data-priority]').select_option(priority)
+                fields = card.locator('.part-fields')
+                result = fields.evaluate(STEP2_ROWS_JS)
+                report.check(sum(len(row['tops']) for row in result['rows']) >= 3 and (width > 600 or result['cols'] == 1),
+                             f'{where} {method}: колонок {result["cols"]}, рядов {len(result["rows"])}')
+                for row in result['rows']:
+                    report.check(max(row['tops']) - min(row['tops']) <= 1, f'{where} {method}/{priority}: поля не вровень {row}')
+                report.check(not result['cut'], f'{where} {method}/{priority}: обрезано {result["cut"]}')
+                if priority == 'standard' and width in (1024, 1440):
+                    fields.screenshot(path=str(OUT / 'shots' / f'calculator-step2-row-{lang}-{method}-{width}.png'))
+        for problem in problems:
+            report.check(False, f'{where}: {problem}')
+        context.close()
+
+
 def check_viewer(report, new_page, path, width, files):
     """Просмотр модели W-31 (Canvas 2D): на кубе из tests/fixtures/stl/ на canvas есть пиксели модели (не только фон и сетка),
     ArrowRight, «+», кнопка масштаба, колесо и перетаскивание меняют toDataURL, сброс возвращает исходный снимок; модель
@@ -3475,6 +3541,7 @@ def main():
                         for width in (390, 1440):
                             check_calculator(report, new_page, path, width, allowlist, files)
                             check_viewer(report, new_page, path, width, files)
+                        check_step2_rows(report, new_page, path)  # доработка 09.11, I-02
                 if path in CONTACT_PAGES:
                     for width in (390, 1440):
                         check_contact_map(report, new_page, path, width, shots_dir)

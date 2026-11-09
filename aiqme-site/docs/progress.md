@@ -5566,3 +5566,32 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   отслеживаются Git, bin/check их не проверяет) — в старой демо-сборке заголовок «02. …» остаётся.
 - Финальный `bin/check` после правок: OK (PHPUnit 772/772, Vite OK, 8 мин 45 с). `git status --porcelain aiqme-site`: изменены только
   `bin/browser-check`, `lang/{lt,en}/calculator.php`, `resources/views/public/calculator.blade.php`, тест и этот файл; новых файлов нет.
+
+## Доработки 09.11, I-02: шаг 2 калькулятора — поля ряда вровень, без обрезанного текста
+
+- Замер до правки (Playwright, bundled Chromium, getBoundingClientRect, LT и EN): в режиме 3D spausdinimas список «Papildomos paslaugos
+  (neprivaloma)» / «Additional services (optional)» ниже соседей на 24 px (1280, 1440, 1920) и 48 px (1024); на 1024 съезжает и
+  второй ряд; варианты обрезаны («20 % · rekomenduojama», «Vizualiniams tikslams», «Srieginių įvorių montavimas» 234 px при поле 182 px),
+  на 1024 обрезка и во фрезеровке/гравировке («Reikia konsultacijos», «Nerūdijantis plienas» в поле 175 px). Совпадает с аудитом r2/r1/r3.
+- `resources/css/public.css` (комментарий «Доработка 09.11, I-02»): сетка `.part-fields` — `repeat(auto-fill, minmax(min(100%,240px),1fr))`
+  вместо 4/3 колонок и медиазапросов 900/600 px: 3 колонки на 1440–1920, 2 на 768–1280, 1 на 390; подпись и поле каждого `.field` —
+  две строки общей сетки (`grid-template-rows: subgrid`), поэтому поля ряда стоят вровень, даже если подпись соседа в две строки.
+  Простой `align-items:end` не подошёл: поля разной высоты (select 45, number 47, date 49 px) расходились на 2–4 px.
+  `resources/js/calculator/index.js`: класс `four`/`three` у `.part-fields` больше не нужен — убран. CSS прототипа не менялся.
+- Решение без макета (простейший вариант): на 1280 поля в 2 колонки, на 1440–1920 в 3 (не 4, как раньше) — в 4 колонки длинные варианты
+  не помещаются; подпись «Papildomos paslaugos (neprivaloma)» на 1440 по-прежнему в две строки, но поле стоит вровень с соседями.
+  Тексты не менялись — записи D21_REPLACEMENTS не нужны.
+- `bin/browser-check`: новая `check_step2_rows` (вызывается для CALCULATOR_PAGES): 390/1024/1280/1440/1920 × 3 способа × обычный и скорый
+  приоритет (поле «Reikalinga iki»): верх `<select>/<input>` каждого ряда ±1 px; обрезка — scrollWidth ≤ clientWidth и ширина копии списка
+  по содержимому для каждого варианта ≤ ширины поля; кадры `shots/calculator-step2-row-<lt|en>-<способ>-<1024|1440>.png`.
+  Проверка «падает до правки»: с возвращёнными из HEAD public.css и index.js `bin/browser-check /lt/kalkuliatorius` — FAIL (22), все
+  22 — от новой проверки (не вровень 24/48 px, обрезано); с правкой — OK.
+- Снимки до/после на 1024 и 1440 (LT печать до; LT/EN печать, LT гравировка, EN фрезеровка после) просмотрены Read: после — поля рядов
+  вровень, «20 % · rekomenduojama», «Vizualiniams tikslams», «Not selected», «20% · recommended» видны целиком.
+- Проверки: `bin/browser-check /lt/kalkuliatorius /en/quote` — OK (1142 проверки, поиск маркеров на этих страницах без замечаний);
+  `bin/check` — OK (PHPUnit 772/772, Vite OK, 8 мин 50 с). Пути `/lt/skaiciuokle /en/calculator` из поля checks не существуют —
+  проверены маршруты из поля browser_check (как в I-01). `git status --porcelain aiqme-site`: изменены только `bin/browser-check`,
+  `resources/css/public.css`, `resources/js/calculator/index.js` и этот файл; новых файлов нет.
+- Не проверено: Safari/Firefox (subgrid — Safari 16+, Firefox 71+; в старых браузерах поля просто без выравнивания), шрифты Windows на ПК
+  заказчика (запас по ширине на 1440 — 15 px для самого длинного варианта), вид на aiqme.com — ждёт проверки пользователем;
+  демо-сборка `demo/` и `build/context/` не пересобирались.

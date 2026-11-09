@@ -50,7 +50,7 @@
 .scenario-icon img{display:block;height:70px;width:auto;max-width:100%;object-fit:contain}
 /* Калькулятор, правка 02.11, Г8 (макет 17.09): значки заказчика icons/ui (24×24, #2F64FF) — 20 px; строка не-STL файла шага 1;
    карточка позиции шага 2 — заголовок (значок, имя, «Skubu», «Kiekis» −/+, «Keisti parametrus»), способы со значками, сетка
-   полей 4 (печать) или 3 (фрезеровка, гравировка) колонки → 2 на ≤900 px → 1 на ≤600 px; свёрнутая — строка-сводка. */
+   полей (см. ниже, доработка 09.11, I-02); свёрнутая — строка-сводка. */
 .ui-icon{display:inline-block;width:20px;height:20px;flex-shrink:0;vertical-align:middle}
 .file-info{display:flex;align-items:center;gap:12px;min-width:0}
 .part-card{border:1px solid var(--line);border-radius:5px;padding:20px;margin-top:16px}
@@ -69,18 +69,18 @@
 .part-method{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:4px;padding:12px;font-size:13px;cursor:pointer}
 .part-method.active{border-color:var(--blue);background:#f3f8ff;font-weight:600}
 .part-method:focus-within{outline:2px solid var(--blue);outline-offset:2px}
-.part-fields{display:grid;gap:0 18px;grid-template-columns:repeat(4,minmax(0,1fr))}
-.part-fields.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* Доработка 09.11, I-02: колонки не уже 240 px — самый длинный вариант списка («Srieginių įvorių montavimas»,
+   «20 % · rekomenduojama») виден целиком (3 колонки на 1440–1920, 2 на 1024–1280, 1 на телефоне); подпись и поле —
+   две строки общей сетки (subgrid): поля ряда стоят вровень, даже если подпись соседа переносится на две строки. */
+.part-fields{display:grid;gap:0 18px;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
+.part-fields>.field{display:grid;grid-row:span 2;grid-template-rows:subgrid}
 .field-icon{display:flex;align-items:center;gap:6px}
 .part-note{display:flex;align-items:center;gap:8px;font-size:12px;margin:0 0 16px}
 .part-summary{font-size:12px;margin:12px 0 0}
 .part-card .check-row{padding:12px 0 0;border-bottom:0} /* проверка файла в карточке шага 2 — правка 05.11, H-04 */
 .part-card .check-row p{margin:0 0 4px}
-@media(max-width:900px){
- .part-fields,.part-fields.three{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
 @media(max-width:600px){
- .part-fields,.part-fields.three,.part-methods{grid-template-columns:minmax(0,1fr)}
+ .part-methods{grid-template-columns:minmax(0,1fr)}
 }
 
 /* Корзина товаров (правка 05.11, H-08): картинка 60 px рядом с названием, поле количества узкое. */

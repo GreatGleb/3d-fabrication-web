@@ -204,7 +204,7 @@ function start(root) {
           <input type="radio" class="sr-only" id="${id}-method-${method}" name="${id}-method" value="${method}" data-part="${entry.id}" data-method${method === entry.method ? ' checked' : ''}>
           ${icon(METHOD_ICONS[method])}<span>${html(texts.methods[method])}</span></label>`).join('')}
       </fieldset>
-      <div class="part-fields ${entry.method === 'printing' ? 'four' : 'three'}">
+      <div class="part-fields">
         ${names.map((name) => select(entry, name, list[name], options[name])).join('')}
         ${entry.method === 'printing' ? '' : sizeInput(entry)}
         <label class="field" for="${id}-priority"><span class="field-icon">${icon('clock')}${html(texts.part.priority)}</span>
