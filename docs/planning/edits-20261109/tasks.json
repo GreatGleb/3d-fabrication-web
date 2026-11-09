@@ -1,0 +1,288 @@
+{
+ "schema": "aiqme-implementation-tasks/1",
+ "edition": "docs/planning/edits-20261109/README.md",
+ "created": "2026-11-09",
+ "status": "planned_not_started",
+ "plan_refs": "план docs/planning/edits-20261109/README.md; аудит docs/planning/run/edits-audit-20261109/SUMMARY.md и r1…r4-report.md (приватно); прежние планы docs/planning/edits-20261029…20261105/README.md",
+ "agent_note": "Пятая порция: доработки по аудиту живого aiqme.com 09.11 — то, что заказчик считает неисправленным. Прежние автопроверки давали ложные «сделано»: проверяйте то, что видит посетитель (снимки, измерения в браузере), а не только тесты.",
+ "rules": [
+  "Задачи выполняются по порядку массива; следующая — после выполнения критериев done предыдущей или явной отметки о блокировке в aiqme-site/docs/progress.md. Задачи, транзитивно зависящие (depends) от заблокированной, пропускаются с отметкой «пропущено: зависит от заблокированной I-xx»; независимые продолжаются.",
+  "Без человека (в том числе ночью) выполняются только задачи с track = L; на задаче с track = P (выпуска в этой очереди нет) прогон останавливается.",
+  "Каждая задача — одна рабочая сессия автора (не больше 3 ч: AIQME_TASK_MINUTES=180). Час без заметного прогресса — остановиться, описать препятствие в progress.md и предложить более простой способ. Задача, которая не укладывается, завершается status blocked с описанием сделанного; недоделанный калькулятор или корзина не оставляется в рабочем состоянии дерева как «готовый».",
+  "Запуск — ночной оркестратор docs/planning/edition-2/run/night.py с этой очередью (README плана, «Подготовка прогона»): автор не делает git commit, push, stash, reset, checkout и не меняет ветку — коммит после проверки делает оркестратор.",
+  "Меняются только aiqme-site/ (кроме aiqme-site/experiments/ — эталонный эксперимент, не изменять) и, только в задаче I-06, docs/requirements.md. Не изменять legacy-landing/ (instance/ не читать), baseline/, docs/customer/, docs/planning/ (в том числе этот план и отчёты аудита), корневой AGENTS.md. Из docs/customer/ и docs/planning/run/edits-audit-20261109/ разрешено только ЧИТАТЬ файлы, названные в inputs задач (макеты, PDF образца счёта и рев.4, отчёты аудита); не копировать их в отслеживаемые файлы и не цитировать их переписку. Chrome пользователя, CDP и docs/customer-prototype/tools/ не используются; браузерные проверки — bundled Chromium Playwright через aiqme-site/bin/browser-check.",
+  "Рабочий сервер aiqme.com, его .env и БД не трогаются, миграции на чужой БД не запускаются; внешние сервисы не вызываются. Сеть — только загрузки пакетов для версий плана (D-20: Packagist, api.github.com/codeload.github.com только чтение, npm). Google, Stripe, Telegram, SMTP — запрещены; карта Google Maps в проверках подменяется локальной заглушкой (E-04), тесты исходящих HTTP-запросов не делают (Http::preventStrayRequests).",
+  "Источник требований — README плана docs/planning/edits-20261109/README.md (раздел задачи) и названные в inputs отчёты аудита. Тексты LT/EN — дословно из README; не придумывать. Отступления прежних раундов (docs/planning/edits-20261029/, edits-20261031/, edits-20261102/, edits-20261105/ README, в том числе «Как устроено хранение текстов» в edits-20261105) остаются требованием; в остальном вид и тексты сайта не меняются.",
+  "CSS прототипа aiqme-site/resources/css/prototype/style.css не изменяется (§7.2): исправления оболочки — resources/css/shell.css, правки публичных страниц — resources/css/public.css.",
+  "Репозиторий публичный: секретов, .env, клиентских файлов (снимков, переписки, PDF заказчика) в отслеживаемых файлах нет. Новые бинарные файлы — только маленькие синтетические PDF-фикстуры в aiqme-site/tests/fixtures/. Перед завершением: git status --porcelain aiqme-site — новые файлы только в ожидаемых каталогах.",
+  "Новых зависимостей и обновлений версий нет; проверка версий в bin/check остаётся зелёной. Корзина — своим кодом на сессии или на уже установленном Lunar. Все команды PHP — через aiqme-site/bin/php (bin/php artisan …, bin/php vendor/bin/pint --dirty --format agent). Boost search-docs не используется (D-20) — документация читается из vendor/.",
+  "Изменения контента, уже лежащего в БД (тексты page_text/service/about, поля hero_stages и intro_paragraphs, настройки калькулятора и счёта), — и в database/seeders/data/prototype-content.json (или сидере/миграции-источнике), и миграцией данных по образцу 2026_11_02_100000_update_texts_g2.php: менять, только если значение прежнее (допускается несколько прежних вариантов, перечисленных в README); опубликованная версия и черновик; down возвращает при том же условии; тест на применённый, пропущенный (изменено администратором) и откат.",
+  "Каждая задача меняющая шаблоны прогоняет поиск маркеров bin/browser-check по своим страницам; законные совпадения — только в tests/fixtures/marker-allowlist.json.",
+  "Тесты проверяют поведение, а не только проходят: где done требует «падает до правки» или «прогон с откатом», автор один раз проверяет это и пишет результат в progress.md. Существующие тесты не ослабляются; менять ожидания — только там, где это прямо следует из правки (с комментарием «доработка 09.11, I-xx»).",
+  "Каждая задача завершается записью в aiqme-site/docs/progress.md («Доработки 09.11, I-xx: …»): что сделано, команды и вывод проверок, что не проверено. Ручной визуальный просмотр, который ночью некому выполнить, — «ждёт проверки пользователем», а не «готово». Старые записи progress.md не переписываются.",
+  "Демо-сборка aiqme-site/demo/ не пересобирается (только по указанию пользователя); код DemoExport, DemoSeeder и bin/demo-check правятся, если этого требует задача.",
+  "Принцип: максимально просто — только то, что просил заказчик и описано в README плана, в объёме задачи. Ничего сверх: ни функций, настроек, зависимостей, ни абстракций «на будущее». Неопределённое решается простейшим вариантом с записью в progress.md; противоречие плана и кода, которое нельзя решить без догадки, — status blocked с вопросом в progress.md. Приёмщик считает лишнее замечанием.",
+  "Во время разработки — bin/browser-check с путями задачи (поле browser_check) и точечные artisan test; полный bin/check — в конце каждой задачи. Полный bin/browser-check (без путей) — только в I-06: у задач с полем browser_check и автор, и оркестратор запускают bin/browser-check с аргументами browser_check (предел — 60 мин). Ветки проверок, которые ночью не выполняются (bin/demo-check на старой сборке demo/; режим --base-url/--compose-file), отмечаются «проверено чтением кода; выполнение — ждёт пользователя», а в progress.md — в разделе «не проверено».",
+  "Каждое изменение текста в <main>, который есть в эталонном DOM прототипа, сопровождается записью D21_REPLACEMENTS в bin/browser-check с комментарием «доработка 09.11, I-xx» и ограничением страниц регулярным выражением; копия build/context/bin/browser-check обновляется через bin/build-context, если её проверяет bin/check.",
+  "Stripe не вызывается: оплата в тестах и browser-check — через имеющиеся подмены (как в тестах CheckoutController и StripeController)."
+ ],
+ "tasks": [
+  {
+   "id": "I-01",
+   "title": "Шаг 2 калькулятора: «failui» вместо «modeliui», без заголовка шага 2",
+   "track": "L",
+   "slice": "S1",
+   "depends": [],
+   "inputs": [
+    "docs/planning/edits-20261109/README.md (I-01)",
+    "docs/planning/run/edits-audit-20261109/r4-report.md",
+    "docs/planning/run/edits-audit-20261109/r4/calc-d-lt-step2.png",
+    "aiqme-site/lang/lt/calculator.php",
+    "aiqme-site/lang/en/calculator.php",
+    "aiqme-site/resources/views/"
+   ],
+   "result": "Подзаголовок шага 2 LT «Kiekvienam failui pasirinkite gamybos būdą ir parametrus.», EN «…for each file»; заголовка «02. Gamybos pasirinkimai» нет.",
+   "touches": [
+    "aiqme-site/lang/",
+    "aiqme-site/resources/views/",
+    "aiqme-site/resources/css/",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "Первым: aiqme-site/bin/check зелёный на ветке до правок (если красный — исправить и описать в progress.md, это входит в задачу)",
+    "Текст LT/EN заменён; grep не находит «modeliui» и «for each model» в видимых текстах калькулятора",
+    "Заголовок шага 2 убран; нумерация и доступность шагов (aria) не сломаны; тесты обновлены с комментарием",
+    "Снимок шага 2 (ПК 1440, LT) просмотрен Read",
+    "progress.md: запись «Доработки 09.11, I-01: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "aiqme-site/bin/browser-check /lt/skaiciuokle /en/calculator зелёный"
+   ],
+   "constraints": [],
+   "unknowns": [],
+   "browser_check": [
+    "/lt/kalkuliatorius",
+    "/en/quote"
+   ]
+  },
+  {
+   "id": "I-02",
+   "title": "Шаг 2 калькулятора: поля ряда вровень, без обрезанного текста",
+   "track": "L",
+   "slice": "S1",
+   "depends": [
+    "I-01"
+   ],
+   "inputs": [
+    "docs/planning/edits-20261109/README.md (I-02)",
+    "docs/planning/run/edits-audit-20261109/r2-report.md",
+    "docs/planning/run/edits-audit-20261109/r2/desktop-lt-calc-step2-row.png",
+    "docs/planning/run/edits-audit-20261109/r1-report.md",
+    "aiqme-site/resources/css/public.css",
+    "aiqme-site/resources/views/"
+   ],
+   "result": "На 1024/1280/1440/1920 и 390 поля каждого ряда шага 2 стоят вровень, выбранные значения не обрезаны, во всех трёх способах производства, LT и EN.",
+   "touches": [
+    "aiqme-site/resources/css/",
+    "aiqme-site/resources/views/",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "Измерено в браузере (getBoundingClientRect): верх полей <select>/<input> одного ряда совпадает (±1 px) на 1024, 1280, 1440, 1920 для 3D spausdinimas, Frezavimas, Graviravimas, LT и EN",
+    "Выбранные значения «20 % · rekomenduojama», «Vizualiniams tikslams» и самые длинные варианты остальных списков видны целиком (scrollWidth ≤ clientWidth) на 1280 и 1440",
+    "Проверка выравнивания добавлена в bin/browser-check, чтобы не вернулось",
+    "Снимки до/после на 1024 и 1440 просмотрены Read",
+    "progress.md: запись «Доработки 09.11, I-02: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "aiqme-site/bin/browser-check /lt/skaiciuokle /en/calculator зелёный"
+   ],
+   "constraints": [],
+   "unknowns": [],
+   "browser_check": [
+    "/lt/kalkuliatorius",
+    "/en/quote"
+   ]
+  },
+  {
+   "id": "I-03",
+   "title": "Иконки карточек «Kuo galime padėti?» у левого края, как на макете 14.49",
+   "track": "L",
+   "slice": "S2",
+   "depends": [],
+   "inputs": [
+    "docs/planning/edits-20261109/README.md (I-03)",
+    "docs/customer/client/edits-20261102-part3/WhatsApp Image 2026-10-31 at 14.49.49.jpeg",
+    "docs/planning/run/edits-audit-20261109/r3-report.md",
+    "aiqme-site/resources/css/public.css",
+    "aiqme-site/resources/css/prototype/style.css (только читать)"
+   ],
+   "result": "Иконки карточек главной выровнены по левому краю текста карточки на ПК и телефоне, высота 70 px сохранена.",
+   "touches": [
+    "aiqme-site/resources/css/",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "Левый край иконки совпадает с левым краем заголовка карточки (±2 px) на 1440 и 390; проверка в browser-check",
+    "Снимок карточек сравнён с макетом 14.49 (Read обоих)",
+    "progress.md: запись «Доработки 09.11, I-03: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "aiqme-site/bin/browser-check /lt /en зелёный"
+   ],
+   "constraints": [],
+   "unknowns": [],
+   "browser_check": [
+    "/lt",
+    "/en"
+   ]
+  },
+  {
+   "id": "I-04",
+   "title": "Счёт PDF как образец 3D Creative: сетка таблицы, узкая рамка покупателя, шрифт, логотип, соцсети",
+   "track": "L",
+   "slice": "S3",
+   "depends": [],
+   "inputs": [
+    "docs/planning/edits-20261109/README.md (I-04)",
+    "docs/customer/client/edits-20261102-part3/004_2026-10-08 3D Creative.pdf",
+    "docs/planning/run/edits-audit-20261109/r3-report.md",
+    "aiqme-site/resources/views/invoices/pdf.blade.php",
+    "aiqme-site/config/aiqme.php"
+   ],
+   "result": "Отрисованный PDF счёта визуально близок к образцу: таблица с сеткой, узкая рамка покупателя слева, шрифт и размер логотипа как в образце, в подвале ссылки соцсетей.",
+   "touches": [
+    "aiqme-site/resources/views/invoices/",
+    "aiqme-site/resources/fonts/",
+    "aiqme-site/app/",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "Образец и счёт из теста/демо-данных отрисованы pdftoppm -r 100 в PNG, оба просмотрены Read; различия перечислены в progress.md до и после правки",
+    "Таблица позиций с сеткой ячеек как в образце; рамка покупателя узкая слева; насыщенность шрифта и ширина логотипа как в образце (±10 %)",
+    "В подвале — ссылки соцсетей из config('aiqme.social'), текстом или значками",
+    "Реквизиты, серия AIQ6xxxx, тексты LT/EN и суммы не изменены; тесты счёта зелёные",
+    "PNG до/после сохранены в aiqme-site/docs/ (или рядом с progress.md) для просмотра пользователем",
+    "progress.md: запись «Доработки 09.11, I-04: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "визуальная сверка PNG счёта с образцом"
+   ],
+   "constraints": [
+    "Номер серии, реквизиты продавца и формулы сумм не менять",
+    "Шрифты — только уже имеющиеся в проекте или свободные с лицензией"
+   ],
+   "unknowns": []
+  },
+  {
+   "id": "I-05",
+   "title": "Мелочи: «&» в полосе под шапкой, переносы hero и «Darbo eiga», ссылка LinkedIn, ярлык в окне поиска",
+   "track": "L",
+   "slice": "S2",
+   "depends": [],
+   "inputs": [
+    "docs/planning/edits-20261109/README.md (I-05)",
+    "docs/planning/run/edits-audit-20261109/r4-report.md",
+    "docs/planning/run/edits-audit-20261109/r2-report.md",
+    "docs/customer/client/edits-20261103-rev4/Правки. рев.4.pdf",
+    "aiqme-site/lang/lt/shell.php",
+    "aiqme-site/lang/en/shell.php",
+    "aiqme-site/config/aiqme.php",
+    "aiqme-site/database/seeders/data/prototype-content.json"
+   ],
+   "result": "Полоса под шапкой «3D INŽINERIJA & TECHNOLOGIJOS»; на ПК заголовок hero переносится после «–», «Darbo eiga» — после «procesą.»; LinkedIn /company/aiqme/; в окне поиска нет ярлыка «AIQME».",
+   "touches": [
+    "aiqme-site/lang/",
+    "aiqme-site/resources/views/",
+    "aiqme-site/resources/css/",
+    "aiqme-site/config/aiqme.php",
+    "aiqme-site/database/seeders/data/prototype-content.json",
+    "aiqme-site/database/migrations/",
+    "aiqme-site/tests/fixtures/marker-allowlist.json",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "Полоса под шапкой на всех внутренних страницах LT — «&» (EN — проверить и согласовать с hero EN)",
+    "Переносы hero и «Darbo eiga» на 1280/1440/1920 как на макете «Стало» рев.4 (просмотреть страницу PDF через pdftoppm); на 390 без лишних разрывов; тексты в БД — миграцией с down",
+    "LinkedIn в подвале всех страниц — https://www.linkedin.com/company/aiqme/",
+    "Ярлыка «AIQME» в открытом окне поиска нет",
+    "D21_REPLACEMENTS для изменённых текстов, browser-check зелёный",
+    "progress.md: запись «Доработки 09.11, I-05: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "aiqme-site/bin/browser-check /lt /en /lt/paslaugos /en/services /lt/apie-mus /en/about /lt/kontaktai /en/contact зелёный"
+   ],
+   "constraints": [],
+   "unknowns": [],
+   "browser_check": [
+    "/lt",
+    "/en",
+    "/lt/paslaugos",
+    "/en/services",
+    "/lt/apie-mus",
+    "/en/about",
+    "/lt/kontaktai",
+    "/en/contact"
+   ]
+  },
+  {
+   "id": "I-06",
+   "title": "Сквозная проверка доработок 09.11 и статус в docs/requirements.md",
+   "track": "L",
+   "slice": "S4",
+   "depends": [
+    "I-01",
+    "I-02",
+    "I-03",
+    "I-04",
+    "I-05"
+   ],
+   "inputs": [
+    "docs/planning/edits-20261109/README.md (I-06)",
+    "aiqme-site/docs/progress.md",
+    "docs/requirements.md",
+    "docs/planning/run/edits-audit-20261109/SUMMARY.md"
+   ],
+   "result": "I-01…I-05 проверены вместе: полный bin/check и полный bin/browser-check зелёные; docs/requirements.md отражает выпуск части 3 и рев.4 и доработки 09.11.",
+   "touches": [
+    "docs/requirements.md",
+    "исправления в aiqme-site/ только при регрессиях I-01…I-05",
+    "aiqme-site/tests/",
+    "aiqme-site/bin/browser-check",
+    "aiqme-site/docs/progress.md"
+   ],
+   "done": [
+    "aiqme-site/bin/check и полный aiqme-site/bin/browser-check (без путей) зелёные; число проверок в progress.md",
+    "Каждый пункт I-01…I-05 сверен со снимками (Read): строка «I-0n: проверено …»",
+    "docs/requirements.md: устаревшее «на aiqme.com ещё не работают» для части 3 и рев.4 заменено на «выпущено 05–06.11»; новый раздел «Доработки по аудиту 09.11» со статусом «сделано в коде и проверено локально; на aiqme.com — после выпуска»",
+    "git diff --name-status main...HEAD — файлы только из touches I-01…I-06",
+    "progress.md: итог очереди и шаги выпуска для пользователя",
+    "progress.md: запись «Доработки 09.11, I-06: …»"
+   ],
+   "checks": [
+    "aiqme-site/bin/check зелёный",
+    "aiqme-site/bin/browser-check зелёный (полный прогон)"
+   ],
+   "constraints": [
+    "Новых функций не добавлять",
+    "docs/planning/ не изменять"
+   ],
+   "unknowns": []
+  }
+ ]
+}
