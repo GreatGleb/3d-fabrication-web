@@ -9,10 +9,12 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 
 /**
- * PDF счёта (§3.5): Blade-шаблон invoices.pdf на языке счёта, dompdf (из зависимостей Lunar) со шрифтом DejaVu Sans из
+ * PDF счёта (§3.5): Blade-шаблон invoices.pdf на языке счёта, dompdf (из зависимостей Lunar) со шрифтом DejaVu Sans (с I-04 — запасной) из
  * dompdf/lib/fonts (литовские символы); внешние ресурсы, PHP и JavaScript в шаблоне отключены. Шаблон — код, не контент.
  * Логотип (правка 02.11, Г5) — текущий логотип сайта (свой logo главной, иначе defaults/logo.png, D-43), встроенный
- * data-URI; дата заказа — placed_at.
+ * data-URI; дата заказа — placed_at. Доработка 09.11, I-04: шрифт образца (Arial Narrow) заменён свободным метрически
+ * совместимым Liberation Sans Narrow из resources/fonts; dompdf регистрирует его в кэше storage/framework/cache/dompdf-fonts
+ * (vendor не пишется), DejaVu Sans остаётся запасным.
  */
 final class InvoicePdf
 {
@@ -23,7 +25,19 @@ final class InvoicePdf
             'isRemoteEnabled' => false,
             'isPhpEnabled' => false,
             'isJavascriptEnabled' => false,
+            'chroot' => [resource_path('fonts')],
+            'fontDir' => $cache = storage_path('framework/cache/dompdf-fonts'),
+            'fontCache' => $cache,
         ]));
+        if (! is_dir($cache)) {
+            mkdir($cache, 0775, true);
+        }
+        foreach (['normal' => 'Regular', 'bold' => 'Bold'] as $weight => $file) {
+            $dompdf->getFontMetrics()->registerFont(
+                ['family' => 'Liberation Sans Narrow', 'weight' => $weight, 'style' => 'normal'],
+                resource_path('fonts/LiberationSansNarrow-'.$file.'.ttf'),
+            );
+        }
         $dompdf->loadHtml(view('invoices.pdf', [
             'invoice' => $invoice->load('lines'),
             'locale' => $invoice->locale,

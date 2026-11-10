@@ -428,11 +428,23 @@ class InvoicesTest extends TestCase
         $this->assertStringContainsString(self::LITHUANIAN, $enText);
         $this->assertStringNotContainsString('PVM SĄSKAITA', $enText);
 
+        // Доработка 09.11, I-04: текст набран обычным и жирным Liberation Sans Narrow (замена Arial Narrow образца), шрифт встроен.
+        $fonts = (new Process([(new ExecutableFinder)->find('pdffonts') ?? 'pdffonts', Storage::disk('local')->path(Invoice::where('order_id', $lt->id)->sole()->pdf_path)]))->mustRun()->getOutput();
+        $this->assertMatchesRegularExpression('/\+LiberationSansNarrow\s.*\byes\b/', $fonts);
+        $this->assertMatchesRegularExpression('/\+LiberationSansNarrow-Bold\s.*\byes\b/', $fonts);
+
         // Внешних ресурсов нет: единственный src — логотип data:image/ (правка 02.11, Г5), ссылок и url() нет.
         $html = view('invoices.pdf', ['invoice' => Invoice::where('order_id', $en->id)->sole(), 'locale' => 'en', 'orderDate' => now(), 'logo' => InvoicePdf::logo()])->render();
         $this->assertSame(1, preg_match_all('/src=/i', $html));
         $this->assertMatchesRegularExpression('/<img src="data:image\/png;base64,[A-Za-z0-9+\/=]+"/', $html);
         $withoutLogo = preg_replace('/src="data:image\/[^"]+"/', '', $html);
+        // Доработка 09.11, I-04: в подвале — ссылки соцсетей из config('aiqme.social') (ссылка, не загружаемый ресурс);
+        // все они есть, а других ссылок нет.
+        foreach (config('aiqme.social') as $network) {
+            $link = '<a href="'.$network['url'].'">'.$network['label'].'</a>';
+            $this->assertStringContainsString($link, $withoutLogo);
+            $withoutLogo = str_replace($link, '', $withoutLogo);
+        }
         $this->assertDoesNotMatchRegularExpression('/https?:|src=|href=|<link|url\(|@import/i', $withoutLogo);
     }
 
