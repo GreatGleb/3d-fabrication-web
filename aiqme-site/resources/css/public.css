@@ -89,3 +89,8 @@
 .cart-product img{width:60px;height:60px;object-fit:cover;flex:none}
 .cart-table input[type=number]{width:80px}
 #cart [hidden]{display:none}
+/* Доработка 09.11, I-05: переносы заголовка hero (после «–») и текста «Darbo eiga» (после «procesą.») — как на макете рев.4,
+   только на ПК; на планшете и телефоне текст переносится сам. */
+@media(max-width:900px){
+  .hero h1 br,.section-head p br{display:none}
+}

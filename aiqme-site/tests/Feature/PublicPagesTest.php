@@ -8,6 +8,7 @@ use App\Domain\Content\ContentType;
 use App\Domain\Content\Models\ContentItem;
 use App\Models\User;
 use Database\Seeders\PrototypeContentSeeder;
+use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\browser\ContentFactory;
 use Tests\Support\Html;
@@ -391,6 +392,83 @@ class PublicPagesTest extends TestCase
         $this->assertSame(['01 / PRADĖKIME NUO JŪSŲ', '01 / PRADĖKIME NUO JŪSŲ'], $values(ContentType::PageText, 'home', 'lt', 'help_eyebrow'));
 
         // (г) Записей нет — без ошибки.
+        ContentItem::query()->delete();
+        $migration->up();
+        $migration->down();
+        $this->assertSame(0, ContentItem::count());
+    }
+
+    /** Доработка 09.11, I-05: переносы как на макете рев.4 — <br> в заголовке hero после «–» и в «Darbo eiga» после первого предложения; окно поиска без ярлыка «AIQME». */
+    public function test_i05_home_line_breaks_and_search_modal_without_label(): void
+    {
+        $inner = fn (DOMXPath $xpath, string $query): string => implode('', array_map(fn ($node) => $node->ownerDocument->saveHTML($node),
+            iterator_to_array($xpath->query($query)->item(0)->childNodes)));
+        $lt = Html::xpath($this->get('/lt')->assertOk()->getContent());
+        $this->assertSame("Nuo jūsų idėjos ar detalės –<br>\niki pagaminto sprendimo<span class=\"blue\">.</span>", $inner($lt, '//section[@class="hero"]//h1'));
+        $this->assertSame("AIQME koordinuoja visą procesą.<br>\nJums nereikia patiems derinti skirtingų tiekėjų.", $inner($lt, '//section[@class="section dark"]//div[@class="section-head"]/p'));
+        $en = Html::xpath($this->get('/en')->assertOk()->getContent());
+        $this->assertSame('From your idea or part to a finished solution<span class="blue">.</span>', $inner($en, '//section[@class="hero"]//h1'));
+        // EN — без переносов (макета нет; в «Darbo eiga» перенос дал бы висячее «yourself.»).
+        $this->assertSame("AIQME coordinates the whole process. You don't need to coordinate different suppliers yourself.", $inner($en, '//section[@class="section dark"]//div[@class="section-head"]/p'));
+        // Окно поиска: в .topline только крестик (было <span class="eyebrow">AIQME</span>).
+        foreach (['/lt', '/lt/paslaugos', '/en/about'] as $path) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $this->assertSame(0, $xpath->query('//div[@id="search-modal"]//*[contains(@class,"eyebrow")]')->length, $path);
+            $this->assertSame(['button'], array_map(fn ($node) => $node->nodeName, iterator_to_array($xpath->query('//div[@id="search-modal"]//div[@class="topline"]/*'))), $path);
+        }
+    }
+
+    /** Доработка 09.11, I-05: миграция переносов меняет только прежние тексты, правку администратора не трогает, down возвращает. */
+    public function test_i05_line_break_migration_changes_only_the_previous_texts(): void
+    {
+        $migration = require database_path('migrations/2026_11_09_100000_update_texts_i05.php');
+        $fields = [
+            ['lt', 'hero_title', 'Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo', "Nuo jūsų idėjos ar detalės –\niki pagaminto sprendimo"],
+            ['lt', 'process_text', 'AIQME koordinuoja visą procesą. Jums nereikia patiems derinti skirtingų tiekėjų.', "AIQME koordinuoja visą procesą.\nJums nereikia patiems derinti skirtingų tiekėjų."],
+        ];
+        $item = $this->item(ContentType::PageText, 'home');
+        $values = function (string $locale, string $path) use ($item): array {
+            $translation = $item->translation($locale)->fresh();
+
+            return [data_get($translation->fields, $path), data_get($translation->latestRevision()->fields, $path)];
+        };
+        $write = function (string $locale, string $path, string $value) use ($item): void {
+            $translation = $item->translation($locale);
+            $published = $translation->fields;
+            data_set($published, $path, $value);
+            $translation->forceFill(['fields' => $published])->save();
+            $draft = $translation->latestRevision();
+            $draftFields = $draft->fields;
+            data_set($draftFields, $path, $value);
+            $draft->forceFill(['fields' => $draftFields])->save();
+        };
+
+        // (а) Новая установка — из prototype-content.json; база как до правки → up меняет обе версии, повтор ничего не меняет, down возвращает.
+        foreach ($fields as [$locale, $path, $old, $new]) {
+            $this->assertSame([$new, $new], $values($locale, $path), "seed: $locale $path");
+            $write($locale, $path, $old);
+        }
+        $migration->up();
+        $migration->up();
+        foreach ($fields as [$locale, $path, $old, $new]) {
+            $this->assertSame([$new, $new], $values($locale, $path), "up: $locale $path");
+        }
+        $this->assertStringContainsString("detalės –<br>\niki", $this->get('/lt')->assertOk()->getContent());
+        $migration->down();
+        foreach ($fields as [$locale, $path, $old, $new]) {
+            $this->assertSame([$old, $old], $values($locale, $path), "down: $locale $path");
+        }
+
+        // (б) Текст администратора не меняется ни в up(), ни в down(); соседнее поле меняется.
+        $this->republish($item, 'lt', ['hero_title' => 'Mūsų antraštė']);
+        $migration->up();
+        $this->assertSame(['Mūsų antraštė', 'Mūsų antraštė'], $values('lt', 'hero_title'));
+        $this->assertSame([$fields[1][3], $fields[1][3]], $values('lt', 'process_text'));
+        $migration->down();
+        $this->assertSame(['Mūsų antraštė', 'Mūsų antraštė'], $values('lt', 'hero_title'));
+        $this->assertSame([$fields[1][2], $fields[1][2]], $values('lt', 'process_text'));
+
+        // (в) Записей нет — без ошибки.
         ContentItem::query()->delete();
         $migration->up();
         $migration->down();

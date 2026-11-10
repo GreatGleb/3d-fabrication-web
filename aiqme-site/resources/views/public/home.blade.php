@@ -37,7 +37,7 @@
         </div>
         <div class="wrap">
             <div class="eyebrow"><span class="dot"></span> {{ $home->field('hero_eyebrow') }}</div>
-            <h1>{{ $home->field('hero_title') }}<span class="blue">.</span></h1>
+            <h1>{!! nl2br(e($home->field('hero_title')), false) !!}<span class="blue">.</span></h1>
             <p>{{ $home->field('hero_text') }}</p>
             <div class="buttons">
                 <x-button :href="route($locale.'.calculator')" arrow>{{ __('public.hero.quote') }}</x-button>
@@ -81,7 +81,7 @@
         <div class="wrap">
             <div class="section-head">
                 <div><div class="eyebrow">{{ $home->field('process_eyebrow') }}</div><h2>{!! nl2br(e($home->field('process_title')), false) !!}</h2></div>
-                <p>{{ $home->field('process_text') }}</p>
+                <p>{!! nl2br(e($home->field('process_text')), false) !!}</p>
             </div>
             @include('public.partials.process')
         </div>

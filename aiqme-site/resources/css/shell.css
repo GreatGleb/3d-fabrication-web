@@ -108,3 +108,5 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
 }
 /* Карточки «Kuo galime padėti?» (правка 02.11, Г1): у последней та же правая рамка, что у остальных (style.css:100 обнуляла её). */
 .scenario:last-child{border-right:1px solid var(--line)}
+/* Окно (поиск и др.): ярлыка «AIQME» нет (доработка 09.11, I-05) — крестик остаётся справа. */
+.search-panel .topline{justify-content:flex-end}

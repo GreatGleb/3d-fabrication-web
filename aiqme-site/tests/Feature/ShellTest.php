@@ -82,7 +82,8 @@ class ShellTest extends TestCase
         $this->assertSame('main-nav', $menu->getAttribute('aria-controls'));
         $this->assertSame('Atverti meniu', $menu->getAttribute('aria-label'));
 
-        $this->assertSame('3D INŽINERIJA IR TECHNOLOGIJOS', trim($xpath->query('//div[contains(@class,"head-sub")]/span')->item(0)->textContent));
+        // Доработка 09.11, I-05: «&», как в hero (было «3D INŽINERIJA IR TECHNOLOGIJOS»).
+        $this->assertSame('3D INŽINERIJA & TECHNOLOGIJOS', trim($xpath->query('//div[contains(@class,"head-sub")]/span')->item(0)->textContent));
         // Правка 05.11, H-01: кнопка второго ряда (было «Įkelti modelį ir sužinoti kainą»).
         $this->assertSame([['Įkelkite failus ir gaukite pasiūlymą', route('lt.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
     }
@@ -126,9 +127,9 @@ class ShellTest extends TestCase
     {
         $xpath = $this->xpath($this->get('/lt')->getContent());
 
-        // Правка 06.11 («правки 5»): ссылки Игоря, LinkedIn — по числовому id компании.
+        // Правка 06.11 («правки 5»): ссылки Игоря. Доработка 09.11, I-05: LinkedIn — основной адрес /company/aiqme/ (было /company/145268452/).
         $this->assertSame([
-            ['LinkedIn', 'https://www.linkedin.com/company/145268452/'], ['Facebook', 'https://www.facebook.com/AIQME'],
+            ['LinkedIn', 'https://www.linkedin.com/company/aiqme/'], ['Facebook', 'https://www.facebook.com/AIQME'],
             ['Instagram', 'https://www.instagram.com/aiqme_3d/'], ['YouTube', 'https://www.youtube.com/@AIQME_3D'],
         ], array_map(fn ($a) => [$a->getAttribute('aria-label'), $a->getAttribute('href')], iterator_to_array($xpath->query('//footer//div[@class="footer-social"]/a'))));
         foreach ($xpath->query('//footer//div[@class="footer-social"]/a') as $link) {
@@ -268,7 +269,8 @@ class ShellTest extends TestCase
                 $this->assertSame(0, $xpath->query('//header//div[contains(@class,"head-sub")]')->length, $path);
                 $this->assertSame(0, $xpath->query('//header//div[contains(@class,"header-cta")]')->length, $path);
             }
-            foreach (['/lt/paslaugos' => '3D INŽINERIJA IR TECHNOLOGIJOS', '/lt/apie-mus' => '3D INŽINERIJA IR TECHNOLOGIJOS',
+            // Доработка 09.11, I-05: LT — «&», как в hero и EN (было «IR»).
+            foreach (['/lt/paslaugos' => '3D INŽINERIJA & TECHNOLOGIJOS', '/lt/apie-mus' => '3D INŽINERIJA & TECHNOLOGIJOS',
                 '/en/about' => '3D ENGINEERING & TECHNOLOGY', '/en/services' => '3D ENGINEERING & TECHNOLOGY'] as $path => $tagline) {
                 $xpath = $row($path);
                 $this->assertSame($tagline, trim($xpath->query('//header//div[contains(@class,"head-sub")]/span')->item(0)?->textContent ?? ''), $path);

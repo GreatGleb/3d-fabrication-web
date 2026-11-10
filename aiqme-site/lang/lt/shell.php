@@ -19,7 +19,7 @@ return [
     'account' => 'Paskyra',
     'cart' => 'Krepšelis',
     'menu' => 'Atverti meniu',
-    'tagline' => '3D INŽINERIJA IR TECHNOLOGIJOS',
+    'tagline' => '3D INŽINERIJA & TECHNOLOGIJOS', // доработка 09.11, I-05: как в hero (рев.4)
     'quote_cta' => 'Įkelkite failus ir gaukite pasiūlymą',
     'footer' => [
         'slogan' => 'Vienas partneris visiems gamybos etapams.',

@@ -5660,3 +5660,54 @@ AIQME ≈ 1 ГБ RAM, 1 vCPU, 3 ГБ диска + рост ≈ размер STL 
   дождался). `git status --porcelain aiqme-site`: изменены `app/Domain/Invoices/InvoicePdf.php`, `resources/views/invoices/pdf.blade.php`,
   `tests/Feature/InvoicesTest.php` и этот файл; новые — `resources/fonts/` (2 TTF + лицензия) и `docs/verification/invoice-i04/` (3 PNG,
   как требует done задачи).
+
+## Доработки 09.11, I-05: «&» в полосе под шапкой, переносы hero и «Darbo eiga», LinkedIn, ярлык в окне поиска (2026-11-10)
+
+- Полоса под шапкой внутренних страниц: `lang/lt/shell.php` `tagline` — «3D INŽINERIJA & TECHNOLOGIJOS» (было «IR»), как в hero
+  LT. EN уже «3D ENGINEERING & TECHNOLOGY» — совпадает с hero EN, не менялся. Полоса — в `<header>`, не в `<main>`, поэтому
+  D21_REPLACEMENTS для неё не нужен.
+- Переносы как на макете «Стало» рев.4 (стр. 1 и 3 PDF просмотрены через pdftoppm): LT `hero_title` —
+  «Nuo jūsų idėjos ar detalės –\niki pagaminto sprendimo», LT `process_text` — «AIQME koordinuoja visą procesą.\nJums nereikia…».
+  В `home.blade.php` оба поля выводятся через `nl2br(e(...))` (как `process_title`); в `public.css` `<br>` в `.hero h1` и
+  `.section-head p` скрыт при ширине ≤900 px — на планшете и телефоне текст переносится сам. Тексты в БД — в
+  `prototype-content.json` и миграцией `2026_11_09_100000_update_texts_i05.php` (по образцу H-02: меняет только прежний текст,
+  опубликованную версию и черновик; down возвращает при том же условии).
+  - Решение без макета: EN не меняется. У EN-заголовка hero нет тире («From your idea or part to a finished solution»); перенос в
+    EN-тексте «Darbo eiga» был опробован и дал висячую строку «yourself.» на 1024–1920 px — откатан.
+  - D21_REPLACEMENTS не добавлялись: слова текстов не изменились (только `<br>`), сверка текста с эталоном нормализует пробелы;
+    browser-check зелёный без новых записей.
+- LinkedIn: `config/aiqme.php` `social.linkedin` — `https://www.linkedin.com/company/aiqme/` (подвал всех страниц; ссылки в счёте
+  I-04 берутся из того же конфига). Открывается ли адрес — не проверялось (внешние сервисы ночью запрещены).
+- Окно поиска: из `components/modal.blade.php` убран `<span class="eyebrow">AIQME</span>`; крестик остаётся справа
+  (`shell.css`: `.search-panel .topline{justify-content:flex-end}`). Компонент общий, поэтому ярлыка нет и в других окнах
+  (подтверждение масштаба в калькуляторе, запись на обучение) — простейший вариант, «как убрали eyebrow на всех страницах».
+- Измерения в браузере (Playwright Chromium, свой `bin/php -S` на 127.0.0.1:8795 с БД `aiqme_browser` после browser-check; строки
+  по положению слов):
+  - `/lt` hero: 1024/1280/1440/1920 — «Nuo jūsų idėjos ar detalės –» | «iki pagaminto sprendimo.»; 768 — «…detalės – iki» |
+    «pagaminto sprendimo.»; 390 — «Nuo jūsų idėjos» | «ar detalės – iki» | «pagaminto» | «sprendimo.» (как до правки, лишних
+    разрывов нет).
+  - `/lt` «Darbo eiga»: 1024–1920 — «AIQME koordinuoja visą procesą.» | «Jums nereikia patiems derinti skirtingų tiekėjų.» (как на
+    макете); 390/768 — без принудительного разрыва.
+  - Окно поиска на `/lt/paslaugos` (390 и 1440): открыто, ярлыков 0, текста в `.topline` нет, крестик у правого края (зазор 0).
+  - Полоса под шапкой: `/lt/paslaugos`, `/lt/apie-mus` — «3D INŽINERIJA & TECHNOLOGIJOS»; `/en/services`, `/en/contact` —
+    «3D ENGINEERING & TECHNOLOGY»; LinkedIn в подвале — `/company/aiqme/`.
+  - Снимки hero, «Darbo eiga» и окна поиска просмотрены (вне репозитория, `/tmp`).
+- Тесты: `PublicPagesTest::test_i05_home_line_breaks_and_search_modal_without_label` (разметка `<br>` в LT, EN без него, в окне
+  поиска только кнопка), `test_i05_line_break_migration_changes_only_the_previous_texts` (применённый, повтор, правка
+  администратора, откат, пустая БД); в `ShellTest` ожидания полосы LT и LinkedIn изменены с комментарием «Доработка 09.11, I-05».
+  Падает до правки: с `home.blade.php`, `modal.blade.php`, `prototype-content.json`, `lang/lt/shell.php`, `config/aiqme.php` из HEAD
+  (подставлены во временные копии и возвращены) — 3/3 FAIL (`test_i05_home…` на `<br>` в hero, `test_footer_links…` на LinkedIn,
+  `test_home_has_no_second_header_row…` на «&»); после правки — зелёные.
+- Проверки:
+  - `bin/browser-check /lt /en /lt/paslaugos /en/services /lt/apie-mus /en/about /lt/kontaktai /en/contact` — OK (2662 проверок),
+    на итоговом коде.
+  - `bin/check`: целиком дольше 10-минутного предела инструмента, поэтому прогнан в переднем плане частями: все шаги bin/check без
+    PHPUnit (копия скрипта с заменённой строкой PHPUnit) — `bin/check: OK` (Pint, Node-тесты 44/44, Vite, границы Git); PHPUnit —
+    `--filter` по классам A–L: 256/256, остальные: 517/518 — единственный провал `StlParityTest` из-за отсутствия NODE_BINARY
+    (его выставляет bin/check), повтор с NODE_BINARY (Node 22.23.1) — 1/1. Итого 774/774. Целиком `bin/check` запустит оркестратор.
+- Не проверено: открывается ли `https://www.linkedin.com/company/aiqme/` (сеть запрещена); вид на реальных устройствах и в
+  Safari — ждёт проверки пользователем; демо-сборка `demo/` не пересобиралась; на aiqme.com — после выпуска.
+- `git status --porcelain aiqme-site`: изменены `config/aiqme.php`, `database/seeders/data/prototype-content.json`, `lang/lt/shell.php`,
+  `resources/css/public.css`, `resources/css/shell.css`, `resources/views/components/modal.blade.php`,
+  `resources/views/public/home.blade.php`, `tests/Feature/PublicPagesTest.php`, `tests/Feature/ShellTest.php`, этот файл; новый —
+  `database/migrations/2026_11_09_100000_update_texts_i05.php`.

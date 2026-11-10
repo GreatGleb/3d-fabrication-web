@@ -13,7 +13,7 @@
           "slug": null,
           "fields": {
             "hero_eyebrow": "3D INŽINERIJA & TECHNOLOGIJOS",
-            "hero_title": "Nuo jūsų idėjos ar detalės – iki pagaminto sprendimo",
+            "hero_title": "Nuo jūsų idėjos ar detalės –\niki pagaminto sprendimo",
             "hero_text": "Vienas partneris visiems gamybos etapams",
             "help_eyebrow": "PRADĖKIME NUO JŪSŲ",
             "help_title": "Kuo galime padėti?",
@@ -33,7 +33,7 @@
             ],
             "process_eyebrow": "DARBO EIGA",
             "process_title": "Aiškus ir nuoseklus gamybos\nprocesas.",
-            "process_text": "AIQME koordinuoja visą procesą. Jums nereikia patiems derinti skirtingų tiekėjų.",
+            "process_text": "AIQME koordinuoja visą procesą.\nJums nereikia patiems derinti skirtingų tiekėjų.",
             "process_steps": [
               {
                 "title": "Užklausos įvertinimas",
