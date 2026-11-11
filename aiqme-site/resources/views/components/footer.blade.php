@@ -6,7 +6,8 @@
         <div class="footer-top">
             <div>
                 <a class="logo" href="{{ route($locale.'.home') }}"><img src="{{ $logo }}" alt="AIQME"></a>
-                <p>{{ __('shell.footer.slogan') }}</p>
+                {{-- Правка 11.11, J-01: девиз одной строкой по ширине логотипа (размер шрифта подбирает resources/js/footer-slogan.js). --}}
+                <p class="footer-slogan">{{ __('shell.footer.slogan') }}</p>
                 {{-- Соцсети (правка 06.11, «правки 5»): ссылки и значки заказчика, config aiqme.social. --}}
                 <div class="footer-social">
                     @foreach (config('aiqme.social') as $network => $social)

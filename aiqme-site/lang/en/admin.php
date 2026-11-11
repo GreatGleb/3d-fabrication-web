@@ -18,7 +18,7 @@ return [
         'orders' => 'Orders',
         'products' => 'Products',
         'services' => 'Services',
-        'calculator' => 'Calculator',
+        'calculator' => 'Order summary', // edit 11.11, J-01
         'customers' => 'Customers',
         'projects' => 'Projects',
         'content' => 'Content & SEO',

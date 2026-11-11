@@ -159,11 +159,11 @@ function start(root) {
     <select id="part-${entry.id}-${name}" data-part="${entry.id}" data-option="${name}">${Object.entries(options).map(([key, text]) =>
       `<option value="${html(key)}"${String(key) === String(value) ? ' selected' : ''}>${html(text)}</option>`).join('')}</select></label>`;
 
-  // Толщина фрезеровки (0,1–200 мм, шаг 0,1) и глубина гравировки (0,01–20 мм, шаг 0,01) — числом (правка 05.11, H-05);
+  // Толщина фрезеровки (0,1–60 мм, правка 11.11, J-01, шаг 0,1) и глубина гравировки (0,01–20 мм, шаг 0,01) — числом (правка 05.11, H-05);
   // пределы проверяет сервер.
   const sizeInput = (entry) => {
     const name = sizeKey(entry);
-    const [min, max, step] = name === 'thickness' ? [0.1, 200, 0.1] : [0.01, 20, 0.01];
+    const [min, max, step] = name === 'thickness' ? [0.1, 60, 0.1] : [0.01, 20, 0.01];
     return `<label class="field" for="part-${entry.id}-${name}">${html(fieldLabels[name])}, mm
       <input type="number" id="part-${entry.id}-${name}" min="${min}" max="${max}" step="${step}" inputmode="decimal"
         value="${html(entry.options[entry.method][name])}" data-part="${entry.id}" data-option="${name}"></label>`;
@@ -220,8 +220,8 @@ function start(root) {
   }
 
   // Проверка файла (бывший шаг 3, макет 18.49; правка 05.11, H-04 — в карточке шага 2): размеры и масштаб STL, предел
-  // оборудования по способу, «Geometrija nuskaityta.» или «Failą peržiūrės specialistas.», без оценки — «Kainą įvertins
-  // specialistas»; предупреждения — списком под карточками, переход не блокируют.
+  // оборудования по способу, «Geometrija nuskaityta.» (STL без оценки — ещё «Kainą įvertins specialistas») или одна строка
+  // «Failą peržiūrės specialistas ir įvertins kainą.»; предупреждения — списком под карточками, переход не блокируют.
   function check(entry) {
     const lines = [];
     const warnings = [];
@@ -242,8 +242,12 @@ function start(root) {
       lines.push(texts.review.cnc.replace(':w', width).replace(':h', length));
       if (measured && quote.exceedsMilling(entry)) warnings.push(t('exceeds', { name: entry.name, mm: `${width} × ${length}` }));
     }
-    lines.push(entry.model ? texts.geometry_read : texts.review.specialist_file);
-    if (!quote.priced(entry)) lines.push(texts.price.specialist);
+    // Правка 11.11, J-01: у файла без разбора одна строка «Failą peržiūrės specialistas ir įvertins kainą.» вместо двух.
+    if (!entry.model) lines.push(texts.review.specialist_file);
+    else {
+      lines.push(texts.geometry_read);
+      if (!quote.priced(entry)) lines.push(texts.price.specialist);
+    }
     return { lines, warnings };
   }
 

@@ -17,7 +17,7 @@ final class CalculatorSettings
     public const KEY = 'calculator';
 
     /** Пределы ввода, мм (допущение плана 05.11, H-05; заказчик их не назвал): толщина фрезеровки и глубина гравировки. */
-    public const THICKNESS_MM = [0.1, 200];
+    public const THICKNESS_MM = [0.1, 60]; // правка 11.11, J-01 (было 200)
 
     public const DEPTH_MM = [0.01, 20];
 

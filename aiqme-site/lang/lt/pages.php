@@ -39,7 +39,7 @@ return [
     'calculator' => ['title' => 'Jūsų failai. Mūsų kitas žingsnis.'], // pataisa 05.11, H-04
     'cart' => [
         'title' => 'Jūsų krepšelis',
-        'description' => 'Produktų pirkimas. Gamybos užsakymai pateikiami atskiroje kalkuliatoriaus aplinkoje.',
+        'description' => 'Produktų pirkimas arba gamybos užsakymas.', // pataisa 11.11, J-01
     ],
     'compare' => [
         'title' => 'Produktų palyginimas',

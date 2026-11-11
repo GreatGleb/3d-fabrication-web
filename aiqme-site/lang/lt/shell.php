@@ -22,7 +22,7 @@ return [
     'tagline' => '3D INŽINERIJA & TECHNOLOGIJOS', // доработка 09.11, I-05: как в hero (рев.4)
     'quote_cta' => 'Įkelkite failus ir gaukite pasiūlymą',
     'footer' => [
-        'slogan' => 'Vienas partneris visiems gamybos etapams.',
+        'slogan' => 'Kai tikslumas įgauna formą', // pataisa 11.11, J-01
         'solutions' => 'Sprendimai',
         'services' => 'Paslaugos',
         'products' => 'Produktai',

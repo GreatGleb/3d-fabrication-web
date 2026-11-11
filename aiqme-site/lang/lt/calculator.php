@@ -74,7 +74,7 @@ return [
         'build' => 'Įrangos dydžio ribos',
         'build_text' => 'FDM: :mm × :mm × :mm mm.',
         'cnc' => 'Frezavimo ir graviravimo matmenys :w × :h mm.',
-        'specialist_file' => 'Failą peržiūrės specialistas.',
+        'specialist_file' => 'Failą peržiūrės specialistas ir įvertins kainą.', // pataisa 11.11, J-01
         'specialist' => 'Reikia specialisto pagalbos',
     ],
     // Pataisa 05.11, H-04: kainos žingsnio nėra; pirkėjui — tik žingsnio 2 kortelėje, administratoriui — užsakymo kortelėje.
@@ -108,7 +108,7 @@ return [
         'conflict' => 'Šis užsakymas jau pateiktas su kitais duomenimis. Atnaujinkite puslapį ir bandykite dar kartą.',
         'too_large_request' => 'Failai per dideli išsiųsti: iki :mb MB vienam failui.',
         'quantity' => 'Kiekis: nuo 1 iki 100.',
-        'thickness' => 'Storis: nuo 0,1 iki 200 mm.',
+        'thickness' => 'Storis: nuo 0,1 iki 60 mm.', // pataisa 11.11, J-01
         'depth' => 'Graviravimo gylis: nuo 0,01 iki 20 mm.',
     ],
     'order' => [

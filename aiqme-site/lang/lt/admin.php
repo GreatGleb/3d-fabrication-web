@@ -8,7 +8,7 @@ return [
         'orders' => 'Užsakymai',
         'products' => 'Produktai',
         'services' => 'Paslaugos',
-        'calculator' => 'Kalkuliatorius',
+        'calculator' => 'Užsakymo suvestinė', // pataisa 11.11, J-01
         'customers' => 'Klientai',
         'projects' => 'Projektai',
         'content' => 'Informacija ir SEO',

@@ -39,7 +39,7 @@ return [
     'calculator' => ['title' => 'Your files. Our next step.'], // edit 05.11, H-04
     'cart' => [
         'title' => 'Your basket',
-        'description' => 'Product purchases. Manufacturing orders use the separate quote workspace.',
+        'description' => 'Product purchase or production order.', // edit 11.11, J-01
     ],
     'compare' => [
         'title' => 'Product comparison',

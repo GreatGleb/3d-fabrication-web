@@ -102,8 +102,9 @@ class AdminShellTest extends TestCase
     public function test_shell_follows_the_prototype_without_demo_texts_roles_or_excluded_tabs(): void
     {
         $this->actingAs($this->admin());
-        foreach (['lt' => ['AIQME valdymo aplinka', 'Administravimo meniu', ['Apžvalga', 'Užsakymai', 'Produktai', 'Paslaugos', 'Kalkuliatorius', 'Klientai', 'Projektai', 'Informacija ir SEO', 'Mokymai', 'LT / EN turinys', 'Integracijos', 'Nustatymai', 'Veiksmų istorija']],
-            'en' => ['AIQME management workspace', 'Administration menu', ['Overview', 'Orders', 'Products', 'Services', 'Calculator', 'Customers', 'Projects', 'Content &amp; SEO', 'Training', 'LT / EN content', 'Integrations', 'Settings', 'Audit log']]] as $locale => [$title, $menu, $tabs]) {
+        // Правка 11.11, J-01: пункт меню «Užsakymo suvestinė» / «Order summary» (было «Kalkuliatorius» / «Calculator»).
+        foreach (['lt' => ['AIQME valdymo aplinka', 'Administravimo meniu', ['Apžvalga', 'Užsakymai', 'Produktai', 'Paslaugos', 'Užsakymo suvestinė', 'Klientai', 'Projektai', 'Informacija ir SEO', 'Mokymai', 'LT / EN turinys', 'Integracijos', 'Nustatymai', 'Veiksmų istorija']],
+            'en' => ['AIQME management workspace', 'Administration menu', ['Overview', 'Orders', 'Products', 'Services', 'Order summary', 'Customers', 'Projects', 'Content &amp; SEO', 'Training', 'LT / EN content', 'Integrations', 'Settings', 'Audit log']]] as $locale => [$title, $menu, $tabs]) {
             foreach (self::TABS[$locale] as $path) {
                 $html = $this->get($path)->assertOk()->getContent();
                 $this->assertStringContainsString('<h1>'.$title.'</h1>', $html);

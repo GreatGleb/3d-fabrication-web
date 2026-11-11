@@ -63,14 +63,14 @@ class CalculatorPageTest extends TestCase
 
     /**
      * Проверка по файлам (правка 02.11, Г8; правка 05.11, H-04 — в карточке шага 2): блоки строит JS по data-texts — строка FDM
-     * (П7: 1000 мм из настроек), строка предела фрезеровки и гравировки, «Failą peržiūrės specialistas.» для файлов без разбора,
+     * (П7: 1000 мм из настроек), строка предела фрезеровки и гравировки, «Failą peržiūrės specialistas ir įvertins kainą.» (правка 11.11, J-01) для файлов без разбора,
      * подпись масштаба; отдельной панели проверки нет, предупреждения — под карточками шага 2.
      */
     public function test_review_step_texts_of_both_locales(): void
     {
         foreach ([
-            '/lt/kalkuliatorius' => ['Įrangos dydžio ribos', 'FDM: :mm × :mm × :mm mm.', 'Frezavimo ir graviravimo matmenys :w × :h mm.', 'Failą peržiūrės specialistas.', 'Mastelis, %'],
-            '/en/quote' => ['Build size limits', 'FDM: :mm × :mm × :mm mm.', 'Milling and engraving dimensions: :w × :h mm.', 'A specialist will review the file.', 'Scale, %'],
+            '/lt/kalkuliatorius' => ['Įrangos dydžio ribos', 'FDM: :mm × :mm × :mm mm.', 'Frezavimo ir graviravimo matmenys :w × :h mm.', 'Failą peržiūrės specialistas ir įvertins kainą.', 'Mastelis, %'], // правка 11.11, J-01
+            '/en/quote' => ['Build size limits', 'FDM: :mm × :mm × :mm mm.', 'Milling and engraving dimensions: :w × :h mm.', 'A specialist will review the file and estimate the price.', 'Scale, %'],
         ] as $path => $expected) {
             $page = $this->page($path);
             $texts = json_decode($page->query('//*[@id="quote"]')->item(0)->getAttribute('data-texts'), true);

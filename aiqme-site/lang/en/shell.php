@@ -21,7 +21,7 @@ return [
     'tagline' => '3D ENGINEERING & TECHNOLOGY',
     'quote_cta' => 'Upload files and get a quote',
     'footer' => [
-        'slogan' => 'One partner for every stage of production.',
+        'slogan' => 'Precision takes shape', // edit 11.11, J-01
         'solutions' => 'Solutions',
         'services' => 'Services',
         'products' => 'Products',

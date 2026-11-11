@@ -11,6 +11,7 @@ import './calculator/index.js';
 import './checkout';
 import './cart';
 import './file-field';
+import './footer-slogan';
 
 // Капча ALTCHA (П3) — отдельный чанк, только на страницах с виджетом (контакты, окна обучения, регистрация).
 if (document.querySelector('altcha-widget')) {

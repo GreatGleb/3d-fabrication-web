@@ -18,6 +18,8 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 @media(max-width:900px){
  .footer-top>div:last-child{grid-column:auto}
 }
+/* Девиз подвала (правка 11.11, J-01): одна строка шириной с логотип; font-size подбирает resources/js/footer-slogan.js. */
+.footer p.footer-slogan{white-space:nowrap;width:max-content;max-width:none;line-height:1.3}
 /* Соцсети в подвале (правка 06.11): ряд значков заказчика под девизом; .footer a прототипа делает ссылки блочными. */
 .footer-social{display:flex;gap:10px;margin-top:20px}
 .footer .footer-social a{display:block;margin:0;line-height:0;border-radius:9px;transition:opacity .2s}

@@ -294,9 +294,12 @@ class CatalogTest extends TestCase
     public function test_cart_is_an_empty_state_with_a_link_to_the_calculator(): void
     {
         $this->factory()->catalog();
-        foreach (['/lt/krepselis' => ['Jūsų krepšelis', 'Krepšelis kol kas tuščias', 'lt.calculator'], '/en/cart' => ['Your basket', 'Your basket is empty', 'en.calculator']] as $url => [$title, $empty, $calculator]) {
+        // Правка 11.11, J-01: видимый подзаголовок под h1 — «Produktų pirkimas arba gamybos užsakymas.» / «Product purchase or production order.».
+        foreach (['/lt/krepselis' => ['Jūsų krepšelis', 'Krepšelis kol kas tuščias', 'lt.calculator', 'Produktų pirkimas arba gamybos užsakymas.'],
+            '/en/cart' => ['Your basket', 'Your basket is empty', 'en.calculator', 'Product purchase or production order.']] as $url => [$title, $empty, $calculator, $intro]) {
             $xpath = Html::xpath($this->get($url)->assertOk()->getContent());
             $this->assertSame($title, Html::text($xpath->query('//h1')->item(0)));
+            $this->assertSame([$intro], Html::texts($xpath, '//main//section[@class="page-top"]//h1/following-sibling::p'));
             $this->assertSame([$empty], Html::texts($xpath, '//main//div[@class="empty"]/h3'));
             $this->assertSame(route($calculator), $xpath->query('//main//div[@class="empty"]/a')->item(0)->getAttribute('href'));
             $this->assertCount(0, $xpath->query('//main//div[@class="empty"]/p | //main//table'));

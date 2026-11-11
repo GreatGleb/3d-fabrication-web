@@ -115,10 +115,10 @@ class ShellTest extends TestCase
         $this->assertSame([
             ['Delivery', route('en.delivery')], ['Returns', route('en.returns')], ['Privacy', route('en.privacy')], ['Cookies', route('en.cookies')],
         ], $this->links($xpath, '//footer//div[@class="footer-bottom"]//a'));
-        // Правка 05.11, H-01: новый девиз (было «One partner — from your challenge to a finished product.»).
-        $this->assertSame('One partner for every stage of production.', $xpath->query('//footer//p')->item(0)->textContent);
+        // Правка 11.11, J-01: девиз без точки (было «One partner for every stage of production.» правки 05.11, H-01).
+        $this->assertSame('Precision takes shape', $xpath->query('//footer//p')->item(0)->textContent);
         $lt = $this->xpath($this->get('/lt')->getContent());
-        $this->assertSame('Vienas partneris visiems gamybos etapams.', $lt->query('//footer//p')->item(0)->textContent);
+        $this->assertSame('Kai tikslumas įgauna formą', $lt->query('//footer//p')->item(0)->textContent);
         $this->assertSame([['Užsakymo suvestinė', route('lt.calculator')]], $this->links($lt, '//footer//div[@class="footer-top"]/div/a[@href="'.route('lt.calculator').'"]'));
         $this->assertSame('© '.now()->year.' AIQME', $xpath->query('//div[@class="footer-bottom"]/span')->item(0)->textContent);
     }

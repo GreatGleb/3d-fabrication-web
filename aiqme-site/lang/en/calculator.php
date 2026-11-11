@@ -74,7 +74,7 @@ return [
         'build' => 'Build size limits',
         'build_text' => 'FDM: :mm × :mm × :mm mm.',
         'cnc' => 'Milling and engraving dimensions: :w × :h mm.',
-        'specialist_file' => 'A specialist will review the file.',
+        'specialist_file' => 'A specialist will review the file and estimate the price.', // edit 11.11, J-01
         'specialist' => 'Get specialist help',
     ],
     // Edit 05.11, H-04: no price step; shown to the buyer only in the step 2 card, to the administrator in the order card.
@@ -108,7 +108,7 @@ return [
         'conflict' => 'This order has already been submitted with other details. Reload the page and try again.',
         'too_large_request' => 'The files are too large to send: up to :mb MB per file.',
         'quantity' => 'Quantity: from 1 to 100.',
-        'thickness' => 'Thickness: from 0.1 to 200 mm.',
+        'thickness' => 'Thickness: from 0.1 to 60 mm.', // edit 11.11, J-01
         'depth' => 'Engraving depth: from 0.01 to 20 mm.',
     ],
     'order' => [

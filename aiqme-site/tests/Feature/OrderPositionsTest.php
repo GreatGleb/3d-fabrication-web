@@ -211,7 +211,7 @@ class OrderPositionsTest extends TestCase
             // Правка 05.11, H-05: «Mediena» теперь есть и у фрезеровки — материал только гравировки.
             'engraving list for milling' => [[$this->milled(override: ['material' => 'Nerūdijantis plienas'])], 'parts.0.material', 'Choose a value from the list.'],
             // Правка 05.11, H-05: толщина и глубина — числом в пределах (границы — test_thickness_and_depth_are_numbers_within_limits).
-            'thickness' => [[$this->milled(override: ['thickness' => '200.1'])], 'parts.0.thickness', 'Thickness: from 0.1 to 200 mm.'],
+            'thickness' => [[$this->milled(override: ['thickness' => '60.1'])], 'parts.0.thickness', 'Thickness: from 0.1 to 60 mm.'], // правка 11.11, J-01
             'depth' => [[$this->milled(override: ['method' => 'engraving', 'material' => 'Mediena', 'depth' => '20.01'])], 'parts.0.depth', 'Engraving depth: from 0.01 to 20 mm.'],
             'no depth' => [[$this->milled(override: ['method' => 'engraving', 'material' => 'Mediena'])], 'parts.0.depth', 'Engraving depth: from 0.01 to 20 mm.'],
             'printing material' => [[$this->printed('a.stl', ['material' => 'Aliuminis'])], 'parts.0.material', 'Choose a value from the list.'],
@@ -378,7 +378,7 @@ class OrderPositionsTest extends TestCase
         $this->assertSame(0, DB::table('settings')->count());
     }
 
-    /** Правка 05.11, H-05: пределы толщины (0,1–200 мм) и глубины (0,01–20 мм), сообщения LT/EN, «Reikia konsultacijos». */
+    /** Правка 05.11, H-05: пределы толщины (0,1–60 мм, правка 11.11, J-01; было 200) и глубины (0,01–20 мм), сообщения LT/EN, «Reikia konsultacijos». */
     public function test_thickness_and_depth_are_numbers_within_limits(): void
     {
         $engraved = fn (array $override): array => $this->milled('cad/plate.dwg', 'sign.dwg', ['method' => 'engraving', 'material' => 'Mediena', ...$override]);
@@ -386,7 +386,8 @@ class OrderPositionsTest extends TestCase
             'thickness 0.09' => [$this->milled(override: ['thickness' => '0.09']), 'thickness'],
             'thickness 0' => [$this->milled(override: ['thickness' => '0']), 'thickness'],
             'thickness -1' => [$this->milled(override: ['thickness' => '-1']), 'thickness'],
-            'thickness 200.01' => [$this->milled(override: ['thickness' => '200.01']), 'thickness'],
+            'thickness 60.1' => [$this->milled(override: ['thickness' => '60.1']), 'thickness'], // правка 11.11, J-01 (было 200.01)
+            'thickness 300' => [$this->milled(override: ['thickness' => '300']), 'thickness'],
             'thickness text' => [$this->milled(override: ['thickness' => 'šeši']), 'thickness'],
             'thickness empty' => [$this->milled(override: ['thickness' => '']), 'thickness'],
             'no thickness' => [array_diff_key($this->milled(), ['thickness' => 1]), 'thickness'],
@@ -395,8 +396,8 @@ class OrderPositionsTest extends TestCase
             'depth text' => [$engraved(['depth' => 'abc']), 'depth'],
         ];
         $messages = [
-            'en' => ['thickness' => 'Thickness: from 0.1 to 200 mm.', 'depth' => 'Engraving depth: from 0.01 to 20 mm.'],
-            'lt' => ['thickness' => 'Storis: nuo 0,1 iki 200 mm.', 'depth' => 'Graviravimo gylis: nuo 0,01 iki 20 mm.'],
+            'en' => ['thickness' => 'Thickness: from 0.1 to 60 mm.', 'depth' => 'Engraving depth: from 0.01 to 20 mm.'],
+            'lt' => ['thickness' => 'Storis: nuo 0,1 iki 60 mm.', 'depth' => 'Graviravimo gylis: nuo 0,01 iki 20 mm.'],
         ];
         foreach ($cases as $label => [$part, $field]) {
             foreach ($messages as $locale => $texts) {
@@ -409,13 +410,13 @@ class OrderPositionsTest extends TestCase
         // Границы и дробные значения принимаются; число хранится как ввели.
         $this->submit([
             $this->milled(override: ['thickness' => '0.1']),
-            $this->milled('cad/plate.dxf', 'b.dxf', ['thickness' => '200']),
+            $this->milled('cad/plate.dxf', 'b.dxf', ['thickness' => '60']), // правка 11.11, J-01: верхняя граница 60
             $this->milled('cad/plate.dxf', 'c.dxf', ['thickness' => '12.5', 'material' => 'Mediena']),
             $engraved(['depth' => '0.01']),
             $engraved(['depth' => '20']),
             $engraved(['depth' => '0.25']),
         ])->assertCreated();
-        $this->assertSame([0.1, 200, 12.5, 0.01, 20, 0.25], array_map(fn (StlPart $part): int|float => $part->parameters['thickness'] ?? $part->parameters['depth'], $this->positions()));
+        $this->assertSame([0.1, 60, 12.5, 0.01, 20, 0.25], array_map(fn (StlPart $part): int|float => $part->parameters['thickness'] ?? $part->parameters['depth'], $this->positions()));
         $this->assertSame(['Frezavimas / Mediena, 12,5 mm', 'Milling / Wood, 12.5 mm', 'Graviravimas / Mediena, 0,25 mm'],
             [$this->positions()[2]->label('lt'), $this->positions()[2]->label('en'), $this->positions()[5]->label('lt')]);
 
@@ -428,7 +429,7 @@ class OrderPositionsTest extends TestCase
             [$consult->label('lt'), $consult->label('en'), $given->label('lt')]);
         $this->token = (string) Str::uuid();
         $this->submit([$this->milled(override: ['material' => 'Reikia konsultacijos', 'thickness' => '300'])])
-            ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.thickness' => ['Thickness: from 0.1 to 200 mm.']]);
+            ->assertUnprocessable()->assertJsonPath('errors', ['parts.0.thickness' => ['Thickness: from 0.1 to 60 mm.']]);
         // Без консультации пустая толщина — ошибка (проверено выше), глубина гравировки обязательна всегда.
         $errors = $this->submit([$engraved(['material' => 'Reikia konsultacijos', 'depth' => ''])])->assertUnprocessable()->json('errors');
         $this->assertSame([['Choose a value from the list.'], ['Engraving depth: from 0.01 to 20 mm.']], [$errors['parts.0.material'], $errors['parts.0.depth']]);

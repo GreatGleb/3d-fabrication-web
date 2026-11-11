@@ -5763,3 +5763,62 @@ I-01…I-06 выполнены (track L), полный `bin/check` и полны
    (кэш метрик шрифта счёта); сформировать пробный PDF счёта и сравнить с образцом; проверить ссылку LinkedIn.
 4. Отдельные решения пользователя (не входили): заказы в Telegram, выгрузка в Excel, капча в калькуляторе, второй ряд шапки на
    внутренних страницах, тестовый товар «Crealyti» на рабочем сайте (скрыть в админке).
+
+## Правки 11.11, J-01: тексты корзины, админ-меню, строки специалиста, толщина до 60 mm, девиз подвала (2026-11-11)
+
+- До правок: `bin/check` на ветке `auto/night-2026-11-11-2232` — `bin/check: OK` (PHPUnit 774/774, журнал `build/j01/check-before.log`, не отслеживается).
+- Пункт 1, корзина: `lang/*/pages.php` `cart.description` — это видимый подзаголовок `<p>` под h1 блока page-top (`x-page-top :intro`),
+  а также meta description страницы. LT «Produktų pirkimas arba gamybos užsakymas.», EN «Product purchase or production order.».
+  Текст есть в эталонном DOM прототипа → две записи `D21_REPLACEMENTS` («правка 11.11, J-01», `^/lt/krepselis$`, `^/en/cart$`).
+  Тест `CatalogTest::test_cart_is_an_empty_state_with_a_link_to_the_calculator` проверяет подзаголовок под h1 в LT и EN.
+- Пункт 3, админка: `admin.tabs.calculator` — «Užsakymo suvestinė» / «Order summary» (меню; заголовок страницы
+  «Medžiagos, parametrai ir kainodara» не менялся). `AdminShellTest` — новые ожидания с комментарием.
+- Пункт 4, калькулятор: у файла без разбора (DXF/DWG/STEP/OBJ…) в карточке шага 2 одна строка `calculator.review.specialist_file` —
+  «Failą peržiūrės specialistas ir įvertins kainą.» / «A specialist will review the file and estimate the price.» вместо двух.
+  У STL с фрезеровкой/гравировкой (геометрия прочитана, цены нет) остаётся «Geometrija nuskaityta.» + «Kainą įvertins specialistas» —
+  простейшее толкование: пункт заказчика о файлах «по специалисту». Сводка справа (`.quote-summary`) выводит только «имя × количество»
+  и заметку — строки специалиста там нет, менять нечего. `calculator.price.specialist` в админке (карточка заказа) не менялся.
+  browser-check: последняя строка проверки DXF/DWG — новая фраза ровно один раз, «Kainą įvertins specialistas» нет. В проверке «нет сумм»
+  слово «Estimate» совпадало с «…estimate the price.» — эта строка заказчика исключена из поиска (комментарий J-01).
+- Пункт 6, толщина: `CalculatorSettings::THICKNESS_MM` = [0.1, 60] (сервер), поле `max="60"` (браузер), ошибка
+  «Storis: nuo 0,1 iki 60 mm.» / «Thickness: from 0.1 to 60 mm.». Отдельной подсказки, кроме текста ошибки и атрибута max, в коде нет.
+  `OrderPositionsTest`: 60 — принимается, 60,1 и 300 — ошибка с новым текстом (LT и EN). Проверено: при прежнем пределе 200 тест падает
+  (11 из 12, 1 провал), с правкой — проходит. browser-check: атрибуты 0.1/60/0.1, `validity` для 60 — valid, для 60.1 — rangeOverflow.
+- Пункт 8, подвал: девиз `shell.footer.slogan` — «Kai tikslumas įgauna formą» / «Precision takes shape» (без точки). Выравнивание:
+  `p.footer-slogan` (nowrap, `width:max-content`, shell.css) и `resources/js/footer-slogan.js` — подбор font-size так, чтобы ширина
+  текста равнялась ширине картинки логотипа (ResizeObserver на логотипе + `document.fonts.ready`); шрифт Arial прототипа и разные
+  длины LT/EN/свой логотип из админки делают постоянный размер в CSS ненадёжным. У PNG логотипа по умолчанию прозрачные поля 8 px
+  из 1922 (≈0,8 px при 200 px) — равняем по картинке, в пределах ±2 px. Замер в browser-check (`check_logo`, /lt и /en на всех
+  ширинах LOGO_WIDTHS, в т. ч. 1440 и 390): текст, одна строка, левый/правый край ±2 px. Снимок своим сервером (Playwright, кадры в /tmp):
+  /lt 1440 — текст 108–307.97, логотип 108–308 (16,68 px); /lt 390 — 20–147.94 / 20–148 (10,67 px); /en 1440 — 108–307.95 (20,45 px);
+  /en 390 — 20–147.95 (13,09 px). На снимках одна строка под логотипом.
+- Тексты БД: все пять текстов J-01 лежат в `lang/*` (не в `page_text`/`prototype-content.json`), поэтому миграция данных не нужна.
+  Девиз hero главной (`hero_text` в БД, «Vienas partneris visiems gamybos etapams» без точки) — другой текст, не менялся.
+  Если администратор переопределил эти ключи в `ui_texts`, файл их не перекрывает — проверить при выпуске.
+- Проверки: точечно `artisan test` CatalogTest, ShellTest, AdminShellTest, CalculatorPageTest, OrderPositionsTest, PublicSeoTest — 57/57;
+  `bin/browser-check /lt /en /lt/krepselis /en/cart /lt/kalkuliatorius /en/quote` — `OK (2766 проверок)` (поиск маркеров на этих страницах
+  без замечаний); итоговый `bin/check` — `bin/check: OK` (PHPUnit 774/774, Pint, Node-тесты, Vite build). Обе длинные проверки — отдельным
+  процессом с журналом `build/j01/*.log`, сессия ждала строки `EXIT` в переднем плане.
+- Не проверено (ждёт пользователя): вид девиза в Safari/Firefox и на реальных телефонах (при другом шрифте JS всё равно подгонит ширину;
+  без JS — строка обычного размера 14 px, может быть шире логотипа); админ-меню глазами (покрыто тестом, снимка нет); демо `demo/` не пересобиралась.
+- `git status --porcelain aiqme-site`: изменены `app/Domain/Pricing/CalculatorSettings.php`, `bin/browser-check`, `lang/{lt,en}/{admin,calculator,pages,shell}.php`,
+  `resources/css/shell.css`, `resources/js/app.js`, `resources/js/calculator/index.js`, `resources/views/components/footer.blade.php`,
+  тесты AdminShell/CalculatorPage/Catalog/OrderPositions/Shell, этот файл; новый — `resources/js/footer-slogan.js`.
+- Продолжение после прерывания (2026-11-11, вторая сессия): сделанное сверено с done — все пять пунктов в дереве. Добавлено:
+  в `OrderPositionsTest::test_thickness_and_depth_are_numbers_within_limits` случай «thickness 200.01» (при пределе 60 ничего не
+  проверял) заменён на «thickness 60.1» и «thickness 300» (LT и EN сообщения), docblock — «0,1–60 мм». Повторно: `bin/check` —
+  `bin/check: OK` (PHPUnit 774/774, журнал `build/j01/check-final2.log`); `bin/browser-check /lt /en /lt/krepselis /en/cart
+  /lt/kalkuliatorius /en/quote` — `OK (2766 проверок)` (`build/j01/browser-final2.log`). Не проверено — как выше.
+- Доработка по замечанию приёмщика (2026-11-12): «bin/check зелёный, bin/browser-check красный» — единственный провал в журнале
+  `J-01.check0.log`: `/en/quote @390 просмотр: кадр модели 500 000 треугольников 110 мс (≥ 100)` (W-31, первый замер 199 мс, повтор
+  110 мс при медиане 55 мс). Это не следствие J-01: код просмотра (`resources/js/calculator/viewer/`) не менялся; изменение в
+  `calculator/index.js` — только строки карточки шага 2, `footer-slogan.js` — ResizeObserver логотипа, он не срабатывает внутри
+  синхронного `dispatchEvent` замера. Тот же провал был до J-01: G-08 (02.11, `night-2026-11-02-2239/G-08.browser-check0.log`,
+  119 мс). Причина — посторонняя нагрузка машины: load average ≈ 8 (три процесса `start_test_bots` чужого проекта по ~32 % CPU и
+  параллельные воркеры PostgreSQL); повторный полный прогон воспроизвёл одиночный выброс 112,9 мс при медиане 60,7 мс.
+  Исправление в `bin/browser-check` (`check_viewer`): до двух повторов замера через 3 с вместо одного, провал — если медленны все
+  три; порог 100 мс и сам замер (10 синхронных перерисовок по ArrowRight) прежние, в отчёте перечислены выбросы предыдущих замеров.
+  `bin/browser-check /lt/kalkuliatorius /en/quote` — `OK (1146 проверок)`: после выбросов 139–211 мс повторы дали максимум 56–73 мс.
+  Итог доработки: полный `bin/check` — `bin/check: OK` (`build/j01/check-rework.log`), полный `bin/browser-check` (101 страница) —
+  `bin/browser-check: OK (21213 проверок)` (`build/j01/browser-rework.log`; выбросы 201,6 и 112,1 мс сняты повтором, максимум
+  после повтора 57–78 мс). Не проверено — как выше (Safari/Firefox, телефоны).
