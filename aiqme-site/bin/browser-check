@@ -20,6 +20,9 @@ J-05, вместо iframe Google Maps правки 28.10 П5): check_contact_map
 одна картинка /images/contact-map.jpg (loading=lazy, alt языка страницы) загружена после прокрутки, на всю ширину рамки с
 пропорциями файла, ссылка на Google Maps под картинкой в рамке, .legal-note не перекрыта, снимок рамки
 shots/contact-map-<lt|en>-<ширина>.png.
+Панель поиска статей (правка 12.11, K-06): check_filter_panel на FILTER_PAGES при 1920/1600/1440/1280/390 — подпись «Kategorija»
+над списком, на ПК низ и высота списка = поиску ±1 px, на телефоне поиск во всю ширину и список под ним, панель не заходит на
+первую строку карточек; снимок shots/filter-<язык>-<страница>-<ширина>.png.
 
 Проверки: самопроверка детекторов на синтетической странице; ширина документа = окну на 320/390/768/1024/1440;
 сверка getComputedStyle с §7.1 на 1440/768/390;
@@ -231,6 +234,9 @@ GUTTER_1280_PAGES = ['/lt/apie-mus', '/lt/kalkuliatorius', '/lt/duk']  # пол�
 MAP_ALT = {'lt': 'AIQME vieta žemėlapyje', 'en': 'AIQME location map'}
 MAP_LINK = 'https://www.google.com/maps?q=54.641192%2C25.268099'
 CONTACT_PAGES = ['/lt/kontaktai', '/en/contact']
+# Правка 12.11, K-06: панель поиска и «Kategorija» на страницах статей (вкладки с одним шаблоном public.articles).
+FILTER_PAGES = ['/lt/informacija', '/en/information', '/lt/biblioteka', '/en/library', '/lt/naujienos', '/en/news']
+FILTER_WIDTHS = (1920, 1600, 1440, 1280, 390)
 SHOTS = {'desktop': (1440, 1000), 'tablet': (768, 1024), 'phone': (390, 844)}  # размеры verified-route-screens.json
 
 # Маркеры служебных демо-надписей, заметок автора и плановых пометок каталога (D-21), без учёта регистра.
@@ -2326,6 +2332,55 @@ def check_contact_map(report, new_page, path, width, shots_dir):
     context.close()
 
 
+FILTER_JS = """() => {
+  const rect = (e) => e.getBoundingClientRect().toJSON();
+  const bar = document.querySelector('form.toolbar');
+  if (!bar) return null;
+  const search = bar.querySelector('.search-box input'), field = bar.querySelector('label.field'), select = field.querySelector('select');
+  const range = document.createRange();
+  range.selectNodeContents(field.firstChild);  // текст подписи «Kategorija» до <select>
+  const parts = [...bar.querySelectorAll('*')].map(rect);
+  const cards = [...document.querySelectorAll('#resource-results > .card')].map(rect);
+  const firstRow = cards.filter((c) => cards.length && Math.abs(c.top - cards[0].top) < 1);
+  return {bar: rect(bar), search: rect(search), select: rect(select), caption: range.getBoundingClientRect().toJSON(),
+          caption_text: field.firstChild.textContent.trim(), panel_bottom: Math.max(...parts.map((r) => r.bottom), rect(bar).bottom),
+          panel_right: Math.max(...parts.map((r) => r.right)), grid_right: rect(document.querySelector('#resource-results')).right,
+          cards: firstRow};
+}"""
+
+
+def check_filter_panel(report, new_page, path, width):
+    """Правка 12.11, K-06: подпись «Kategorija» над списком, на ПК низ списка вровень с низом поиска ±1 px (та же высота), на
+    телефоне — поиск во всю ширину, под ним список с подписью; ни одна часть панели не заходит на первую строку карточек и за
+    правый край сетки карточек. Кадр shots/filter-<язык>-<страница>-<ширина>.png."""
+    where = f'{path} @{width} панель фильтра'
+    context, page, problems = new_page(width, 1000 if width > 600 else 844)
+    page.goto(BASE + path, wait_until='networkidle')
+    box = page.evaluate(FILTER_JS)
+    if report.check(box is not None, f'{where}: нет form.toolbar'):
+        search, select, caption = box['search'], box['select'], box['caption']
+        report.check(box['caption_text'] in ('Kategorija', 'Category'), f'{where}: подпись {box["caption_text"]!r}')
+        report.check(caption['bottom'] <= select['top'] + 1 and caption['left'] >= select['left'] - 1,
+                     f'{where}: подпись не над списком {caption} / {select}')
+        if width > 600:
+            report.check(abs(search['bottom'] - select['bottom']) <= 1, f'{where}: низ поиска {search["bottom"]:.1f}, списка {select["bottom"]:.1f}')
+            report.check(abs(search['height'] - select['height']) <= 1, f'{where}: высота поиска {search["height"]:.1f}, списка {select["height"]:.1f}')
+            report.check(select['left'] >= search['right'], f'{where}: список не справа от поиска')
+        else:
+            report.check(abs(search['width'] - box['bar']['width']) <= 1, f'{where}: поиск не во всю ширину {search["width"]} / {box["bar"]["width"]}')
+            report.check(caption['top'] >= search['bottom'], f'{where}: подпись списка не под поиском')
+        if report.check(len(box['cards']) > 0, f'{where}: нет карточек'):
+            top = min(card['top'] for card in box['cards'])
+            report.check(box['panel_bottom'] <= top, f'{where}: панель (низ {box["panel_bottom"]:.1f}) заходит на карточки (верх {top:.1f})')
+        report.check(box['panel_right'] <= box['grid_right'] + 1, f'{where}: панель (правый край {box["panel_right"]:.1f}) шире сетки карточек ({box["grid_right"]:.1f})')
+        page.locator('[data-cookie-accept]').click()
+        page.screenshot(path=str(OUT / 'shots' / f'filter-{path.strip("/").replace("/", "-")}-{width}.png'), clip={
+            'x': 0, 'y': max(box['bar']['top'] - 120, 0), 'width': width, 'height': 520}, full_page=True)
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def check_altcha_checkbox(report, page, form, where, name, width):
     """Флажок капчи до проверки (правка 02.11, Г3): рамка видна — вычисленный border-color не прозрачный, ширина ≥ 1 px;
     кадр формы shots/altcha-<страница>-<ширина>-before.png."""
@@ -2783,6 +2838,10 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     page.on('pageerror', lambda error: page_errors.append(str(error)[:160]))
     errors_before = 0
     plate.locator('input[data-option=thickness]').click()
+    # Правка 12.11, K-06 (прогон проверок): перерисовка после change даты идёт setTimeout после щелчка; Ctrl+A без паузы
+    # успевал выделить текст в старом поле до замены, ввод дописывался к «6.5» («656.5», шаг 3 не открывался). Пауза как
+    # у человека между щелчком и вводом; фокус проверяется уже на перерисованной карточке.
+    page.wait_for_timeout(50)
     focus_after_date = page.evaluate('document.activeElement?.dataset.option')
     page.keyboard.press('Control+A')
     page.keyboard.type('6.5')
@@ -3782,6 +3841,9 @@ def main():
                             check_calculator(report, new_page, path, width, allowlist, files)
                             check_viewer(report, new_page, path, width, files)
                         check_step2_rows(report, new_page, path)  # доработка 09.11, I-02
+                if path in FILTER_PAGES:
+                    for width in FILTER_WIDTHS:
+                        check_filter_panel(report, new_page, path, width)  # правка 12.11, K-06
                 if path in CONTACT_PAGES:
                     for width in (390, 1440):
                         check_contact_map(report, new_page, path, width, shots_dir)

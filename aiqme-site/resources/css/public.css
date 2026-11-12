@@ -114,3 +114,9 @@
 /* Ошибка у поля калькулятора (правка 11.11, п.6): толщина/глубина на шаге 2 и поля формы шага 3 — цветом .notice.error. */
 #quote .field small[data-error]{color:#9c3733}
 #quote .field [aria-invalid="true"]{border-color:#e5afac;background:#fff0ef}
+/* Правка 12.11, K-06: панель поиска статей (информация, новости, библиотека). У .toolbar прототипа align-items:center, а поле
+   «Kategorija» (подпись + список 45 px) выше поиска (52 px): подпись вставала на уровень поиска, список опускался ниже него
+   и при крупном шрифте/масштабе (Chrome Windows 125 %) доходил до карточек. Теперь поля прижаты к низу строки, у поиска и
+   списка одна высота 52 px — подпись над списком, низ списка вровень с поиском. */
+form.toolbar:has(>.search-box){align-items:flex-end}
+form.toolbar:has(>.search-box) .search-box input,form.toolbar:has(>.search-box) .field select{height:52px;min-height:52px}
