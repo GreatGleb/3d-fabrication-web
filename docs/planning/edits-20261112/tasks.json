@@ -1,0 +1,199 @@
+{
+  "schema": "aiqme-implementation-tasks/1",
+  "edition": "docs/planning/edits-20261112/README.md",
+  "created": "2026-11-12",
+  "status": "planned_not_started",
+  "plan_refs": "план docs/planning/edits-20261112/README.md; JPEG шаблонов писем — docs/customer/client/edits-20261112-mail/ (приватно, только чтение); прежние планы docs/planning/edits-20261029…20261111/README.md",
+  "agent_note": "Седьмая порция: письма клиенту о заказе по двум шаблонам заказчика (12.11). Проверяйте то, что увидит клиент (снимки писем), а не только тесты. Решение заказчика 12.11 (клиент получает письма) отменяет прежнее «клиенту писем нет» для оплаты и отправки заказа.",
+  "rules": [
+    "Задачи выполняются по порядку массива; следующая — после выполнения критериев done предыдущей или явной отметки о блокировке в aiqme-site/docs/progress.md. Задачи, транзитивно зависящие (depends) от заблокированной, пропускаются с отметкой «пропущено: зависит от заблокированной K-xx»; независимые продолжаются.",
+    "Без человека (в том числе ночью) выполняются только задачи с track = L; на задаче с track = P (K-04, выпуск) прогон останавливается.",
+    "Каждая задача — одна рабочая сессия автора (не больше 3 ч: AIQME_TASK_MINUTES=180). Час без заметного прогресса — остановиться, описать препятствие в progress.md и предложить более простой способ. Задача, которая не укладывается, завершается status blocked с описанием сделанного; недоделанный калькулятор или корзина не оставляется в рабочем состоянии дерева как «готовый».",
+    "Запуск — ночной оркестратор docs/planning/edition-2/run/night.py с этой очередью (README плана, «Подготовка прогона»): автор не делает git commit, push, stash, reset, checkout и не меняет ветку — коммит после проверки делает оркестратор.",
+    "Меняются только aiqme-site/ (кроме aiqme-site/experiments/ — эталонный эксперимент, не изменять) и, только в задаче K-03, docs/requirements.md. Не изменять legacy-landing/ (instance/ не читать), baseline/, docs/customer/, docs/planning/ (в том числе этот план и отчёты аудита), корневой AGENTS.md. Из docs/customer/ и docs/customer/client/edits-20261112-mail/ (JPEG шаблонов писем) разрешено только ЧИТАТЬ файлы, названные в inputs задач; не копировать их в отслеживаемые файлы и не цитировать их переписку. Chrome пользователя, CDP и docs/customer-prototype/tools/ не используются; браузерные проверки — bundled Chromium Playwright через aiqme-site/bin/browser-check.",
+    "Рабочий сервер aiqme.com, его .env и БД не трогаются, миграции на чужой БД не запускаются; внешние сервисы не вызываются. Сеть — только загрузки пакетов для версий плана (D-20: Packagist, api.github.com/codeload.github.com только чтение, npm). Google, Stripe, Telegram, SMTP — запрещены; письма в тестах — Mail::fake()/транспорт array или log; карта Google Maps в проверках подменяется локальной заглушкой (E-04), тесты исходящих HTTP-запросов не делают (Http::preventStrayRequests).",
+    "Источник требований — README плана docs/planning/edits-20261112/README.md (раздел задачи) и JPEG шаблонов из inputs. Тексты LT/EN — дословно из README; не придумывать. Отступления прежних раундов (docs/planning/edits-20261029/, edits-20261031/, edits-20261102/, edits-20261105/, edits-20261109/, edits-20261111/ README, в том числе «Как устроено хранение текстов» в edits-20261105) остаются требованием; в остальном вид и тексты сайта не меняются.",
+    "CSS прототипа aiqme-site/resources/css/prototype/style.css не изменяется (§7.2): исправления оболочки — resources/css/shell.css, правки публичных страниц — resources/css/public.css.",
+    "Репозиторий публичный: секретов, .env, клиентских файлов (снимков, переписки, PDF заказчика) в отслеживаемых файлах нет. Новые бинарные файлы — только маленькие синтетические PDF-фикстуры в aiqme-site/tests/fixtures/. Перед завершением: git status --porcelain aiqme-site — новые файлы только в ожидаемых каталогах.",
+    "Новых зависимостей и обновлений версий нет; проверка версий в bin/check остаётся зелёной. Корзина — своим кодом на сессии или на уже установленном Lunar. Все команды PHP — через aiqme-site/bin/php (bin/php artisan …, bin/php vendor/bin/pint --dirty --format agent). Boost search-docs не используется (D-20) — документация читается из vendor/.",
+    "Изменения контента, уже лежащего в БД (тексты page_text/service/about, поля hero_stages и intro_paragraphs, настройки калькулятора и счёта), — и в database/seeders/data/prototype-content.json (или сидере/миграции-источнике), и миграцией данных по образцу 2026_11_02_100000_update_texts_g2.php: менять, только если значение прежнее (допускается несколько прежних вариантов, перечисленных в README); опубликованная версия и черновик; down возвращает при том же условии; тест на применённый, пропущенный (изменено администратором) и откат.",
+    "Каждая задача меняющая шаблоны прогоняет поиск маркеров bin/browser-check по своим страницам; законные совпадения — только в tests/fixtures/marker-allowlist.json.",
+    "Тесты проверяют поведение, а не только проходят: где done требует «падает до правки» или «прогон с откатом», автор один раз проверяет это и пишет результат в progress.md. Существующие тесты не ослабляются; менять ожидания — только там, где это прямо следует из правки (с комментарием «правка 12.11, K-xx»).",
+    "Каждая задача завершается записью в aiqme-site/docs/progress.md («Правки 12.11, K-xx: …»): что сделано, команды и вывод проверок, что не проверено. Ручной визуальный просмотр, который ночью некому выполнить, — «ждёт проверки пользователем», а не «готово». Старые записи progress.md не переписываются.",
+    "Демо-сборка aiqme-site/demo/ не пересобирается (только по указанию пользователя); код DemoExport, DemoSeeder и bin/demo-check правятся, если этого требует задача.",
+    "Принцип: максимально просто — только то, что просил заказчик и описано в README плана, в объёме задачи. Ничего сверх: ни функций, настроек, зависимостей, ни абстракций «на будущее». Неопределённое решается простейшим вариантом с записью в progress.md; противоречие плана и кода, которое нельзя решить без догадки, — status blocked с вопросом в progress.md. Приёмщик считает лишнее замечанием.",
+    "Во время разработки — bin/browser-check с путями задачи (поле browser_check) и точечные artisan test; полный bin/check — в конце каждой задачи. Полный bin/browser-check (без путей) — только в K-03: у задач с полем browser_check и автор, и оркестратор запускают bin/browser-check с аргументами browser_check (предел — 60 мин). Ветки проверок, которые ночью не выполняются (bin/demo-check на старой сборке demo/; режим --base-url/--compose-file), отмечаются «проверено чтением кода; выполнение — ждёт пользователя», а в progress.md — в разделе «не проверено».",
+    "Каждое изменение текста в <main>, который есть в эталонном DOM прототипа, сопровождается записью D21_REPLACEMENTS в bin/browser-check с комментарием «правка 12.11, K-xx» и ограничением страниц регулярным выражением; копия build/context/bin/browser-check обновляется через bin/build-context, если её проверяет bin/check.",
+    "Stripe не вызывается: оплата в тестах и browser-check — через имеющиеся подмены (как в тестах CheckoutController и StripeController)."
+  ],
+  "tasks": [
+    {
+      "id": "K-01",
+      "title": "Письмо клиенту после оплаты заказа (шаблоны 1 и 2), настройка «Numatomas terminas»",
+      "track": "L",
+      "slice": "S1",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261112/README.md (решения 1–10, 12, 13)",
+        "docs/customer/client/edits-20261112-mail/template-1-products.jpeg",
+        "docs/customer/client/edits-20261112-mail/template-2-calculator.jpeg",
+        "aiqme-site/app/Domain/Payments/PaymentRecorder.php",
+        "aiqme-site/app/Domain/Integrations/IntegrationEvents.php",
+        "aiqme-site/app/Domain/Invoices/",
+        "aiqme-site/app/Mail/",
+        "aiqme-site/resources/views/mail/",
+        "aiqme-site/app/Livewire/Admin/Settings.php"
+      ],
+      "result": "После первой успешной оплаты клиент получает письмо по шаблону (1 — товары, 2 — калькулятор) на языке заказа, с PDF счёта, если он выпущен.",
+      "touches": [
+        "aiqme-site/app/",
+        "aiqme-site/resources/views/",
+        "aiqme-site/lang/",
+        "aiqme-site/config/",
+        "aiqme-site/database/migrations/",
+        "aiqme-site/database/seeders/",
+        "aiqme-site/routes/",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "Первым: aiqme-site/bin/check зелёный на ветке до правок (иначе исправить и описать)",
+        "Mailable и blade-шаблон письма (HTML на таблицах со встроенными стилями + text/plain) по README: шапка с логотипом и заголовком шаблона 1 или 2, позиции, итоги с VAT как в счёте, доставка, покупатель, «Kas toliau?», подпись; LT дословно, EN по README",
+        "Отправка через outbox с повтором: адресат — email клиента заказа; одно письмо на заказ (повторный webhook, вторая оплата, retry — без второго письма; тест)",
+        "Тест: оплата заказа товаров → письмо шаблона 1, заказа калькулятора → шаблона 2; язык заказа LT и EN; гость — без кнопки кабинета, клиент кабинета — со ссылкой на account.orders.show",
+        "Тест: полная оплата с заданными реквизитами → вложение PDF счёта с его номером; частичная оплата или нет реквизитов → письмо без вложения; сбой почты (исключение транспорта) → оплата и счёт записаны, канал failed, повтор доставляет",
+        "Тест: при оплате письмо на info@aiqme.com по-прежнему не уходит (§5.1)",
+        "Настройка «Numatomas terminas» LT/EN в админке рядом с «Pristatymo kaina (prekėms)»; пустая — строки в письме нет (тест)",
+        "Снимок HTML письма LT/EN (рендер Mailable в файл и скриншот через bundled Chromium) в журнале задачи, сверен с JPEG шаблона (Read); в progress.md — отличия от шаблона, если есть",
+        "progress.md: запись «Правки 12.11, K-01: …»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check /lt/krepselis /en/cart зелёный"
+      ],
+      "constraints": [
+        "SMTP не вызывается; почта в тестах — Mail::fake() или транспорт array",
+        "Гостевой токен не перевыпускается и не хранится открытым"
+      ],
+      "unknowns": [],
+      "browser_check": [
+        "/lt/krepselis",
+        "/en/cart"
+      ]
+    },
+    {
+      "id": "K-02",
+      "title": "Письмо клиенту с трек-номером при отправке заказа",
+      "track": "L",
+      "slice": "S2",
+      "depends": [
+        "K-01"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261112/README.md (решения 11–13)",
+        "docs/customer/client/edits-20261112-mail/template-1-products.jpeg",
+        "aiqme-site/app/Domain/Orders/OrderWorkflow.php"
+      ],
+      "result": "Когда администратор сохраняет трек-номер, клиент получает письмо «Jūsų užsakymas išsiųstas!» в оформлении K-01.",
+      "touches": [
+        "aiqme-site/app/",
+        "aiqme-site/resources/views/",
+        "aiqme-site/lang/",
+        "aiqme-site/config/",
+        "aiqme-site/database/migrations/",
+        "aiqme-site/database/seeders/",
+        "aiqme-site/routes/",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "Письмо в оформлении K-01 (общий макет, без дублирования вёрстки) по README, LT/EN, HTML + text/plain",
+        "Тест: setTracking → одно письмо клиенту с перевозчиком и номером; повтор того же номера — без письма; новый номер — новое письмо; отменённый заказ — без письма; язык заказа",
+        "Отправка через outbox с повтором, сбой почты не отменяет сохранение трек-номера (тест)",
+        "Снимок письма LT/EN сверен с оформлением K-01",
+        "progress.md: запись «Правки 12.11, K-02: …»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный"
+      ],
+      "constraints": [
+        "SMTP не вызывается"
+      ],
+      "unknowns": []
+    },
+    {
+      "id": "K-03",
+      "title": "Сквозная проверка писем 12.11 и статус в docs/requirements.md",
+      "track": "L",
+      "slice": "S3",
+      "depends": [
+        "K-01",
+        "K-02"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261112/README.md (K-03)",
+        "docs/customer/client/edits-20261112-mail/template-1-products.jpeg",
+        "docs/customer/client/edits-20261112-mail/template-2-calculator.jpeg",
+        "aiqme-site/docs/progress.md",
+        "docs/requirements.md"
+      ],
+      "result": "K-01 и K-02 проверены вместе; полный bin/check и bin/browser-check зелёные; в docs/requirements.md раздел «Письма клиенту 12.11».",
+      "touches": [
+        "docs/requirements.md",
+        "исправления в aiqme-site/ только при регрессиях K-01…K-02",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "aiqme-site/bin/check и полный bin/browser-check зелёные; число проверок в progress.md",
+        "Сквозной сценарий в тесте: заказ калькулятора → подтверждение цены → запрос оплаты → оплата (подмена Stripe) → письмо шаблона 2 с PDF счёта → трек-номер → письмо отправки; то же для заказа товаров (шаблон 1)",
+        "Снимки писем (оба шаблона, LT и EN, гость и клиент кабинета, с вложением и без, письмо отправки) на 600 и 390 px — без горизонтальной прокрутки; каждый пункт README сверен (строка «решение N: проверено …»)",
+        "docs/requirements.md: раздел «Письма клиенту 12.11» со статусом «сделано в коде и проверено локально; на aiqme.com — после выпуска»; строка 101 об уведомлениях дополнена решением заказчика 12.11",
+        "git diff --name-status main...HEAD — файлы только из touches K-01…K-03",
+        "progress.md: итог очереди и шаги выпуска K-04 (миграции, почтовый транспорт, worker очереди mail)",
+        "progress.md: запись «Правки 12.11, K-03: …»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check зелёный (полный прогон)"
+      ],
+      "constraints": [],
+      "unknowns": []
+    },
+    {
+      "id": "K-04",
+      "title": "Выпуск писем клиенту на aiqme.com",
+      "track": "P",
+      "slice": "S4",
+      "depends": [
+        "K-03"
+      ],
+      "inputs": [
+        "docs/planning/edits-20261112/README.md (K-04)",
+        "aiqme-site/docs/operations.md"
+      ],
+      "result": "На aiqme.com клиент получает письмо после оплаты и при отправке заказа.",
+      "touches": [
+        "рабочий сервер aiqme.com"
+      ],
+      "done": [
+        "Только с пользователем: копия, выпуск, migrate",
+        "Настройка «Numatomas terminas» заполнена в админке или оставлена пустой по решению пользователя",
+        "Тестовая оплата (тестовые ключи Stripe) на заказ с ящиком пользователя → письмо пришло, не в спаме, вид в Gmail проверен"
+      ],
+      "checks": [
+        "ручной просмотр"
+      ],
+      "constraints": [
+        "Не выполнять ночью"
+      ],
+      "unknowns": []
+    }
+  ]
+}
