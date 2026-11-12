@@ -429,6 +429,13 @@ function start(root) {
     } else if (field.name === 'delivery') {
       $('[data-address]').hidden = field.value !== 'ship';
     }
+    // Текстовые поля (толщина, глубина, дата, количество) дают change при уходе из поля — посреди щелчка по соседнему полю.
+    // Перерисовка сразу заменила бы поле, по которому щёлкнули (первый щелчок терялся, аудит 12.11), поэтому — после щелчка:
+    // фокус уже на новом поле, и render() вернёт его на то же поле новой разметки.
+    if (field.matches('input[type=number], input[data-date]')) {
+      setTimeout(render);
+      return;
+    }
     render();
   });
 

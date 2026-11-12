@@ -79,7 +79,9 @@
    «20 % · rekomenduojama») виден целиком (3 колонки на 1440–1920, 2 на 1024–1280, 1 на телефоне); подпись и поле —
    две строки общей сетки (subgrid): поля ряда стоят вровень, даже если подпись соседа переносится на две строки. */
 .part-fields{display:grid;gap:0 18px;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
-.part-fields>.field{display:grid;grid-row:span 2;grid-template-rows:subgrid}
+.part-fields>.field{display:grid;grid-row:span 3;grid-template-rows:subgrid}
+/* Третья строка сетки — под ошибку поля (правка 11.11, п.6); без ошибки её высота 0 (row-gap 0). */
+.part-fields>.field>small[data-error]{grid-row:3;margin-top:4px}
 .field-icon{display:flex;align-items:center;gap:6px}
 .part-note{display:flex;align-items:center;gap:8px;font-size:12px;margin:0 0 16px}
 .part-summary{font-size:12px;margin:12px 0 0}

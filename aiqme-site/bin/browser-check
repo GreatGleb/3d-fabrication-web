@@ -2738,6 +2738,11 @@ def check_calculator(report, new_page, path, width, allowlist, files):
                  and plate.locator('input[data-option=thickness]').get_attribute('aria-invalid') == 'true'
                  and page.evaluate('document.activeElement?.dataset.option') == 'thickness',
                  f'{where}: толщина 70 не остановлена на шаге 2 у поля')
+    if error.count() == 1:
+        input_box = plate.locator('input[data-option=thickness]').bounding_box()
+        error_box = error.bounding_box()
+        report.check(error_box['y'] >= input_box['y'] + input_box['height'] - 0.5,
+                     f'{where}: ошибка толщины наезжает на поле (поле {input_box}, ошибка {error_box})')
     if not page.locator('[data-step-panel="1"]').is_visible():
         click('[data-back]')
     thickness.fill('6.5')
@@ -2765,7 +2770,21 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     needed.fill('')
     needed.press_sequentially(needed_by.replace('.', ''))
     report.check(needed.input_value() == needed_by, f'{where}: маска даты дала «{needed.input_value()}», а не {needed_by}')
-    needed.dispatch_event('change')
+    # Аудит 12.11: после ввода даты первый настоящий щелчок по соседнему полю не теряется (раньше карточка перерисовывалась
+    # посреди щелчка, фокус уходил, в консоли — ошибка innerHTML); так же после ввода толщины.
+    page_errors = []
+    page.on('pageerror', lambda error: page_errors.append(str(error)[:160]))
+    errors_before = 0
+    plate.locator('input[data-option=thickness]').click()
+    focus_after_date = page.evaluate('document.activeElement?.dataset.option')
+    page.keyboard.press('Control+A')
+    page.keyboard.type('6.5')
+    plate.locator('textarea[data-notes]').click()
+    page.wait_for_timeout(50)
+    focus_after_thickness = page.evaluate('document.activeElement?.hasAttribute("data-notes")')
+    report.check(focus_after_date == 'thickness' and focus_after_thickness and len(page_errors) == errors_before
+                 and plate.locator('[data-needed-by]').input_value() == needed_by,
+                 f'{where}: щелчок после ввода потерян (фокус {focus_after_date}, {focus_after_thickness}), ошибки {page_errors[errors_before:]}')
     plate_notes = 'Kraštai be šerpetų.\nDvi skylės.'
     plate.locator('textarea[data-notes]').fill(plate_notes)
     plate.locator('textarea[data-notes]').dispatch_event('change')
