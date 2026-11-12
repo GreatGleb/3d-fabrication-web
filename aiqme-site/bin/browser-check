@@ -2728,6 +2728,21 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     depth_field.dispatch_event('change')
     report.check(plate.locator('input[data-option=thickness]').input_value() == '6.5' and plate.locator('select[data-option=material]').input_value() == 'Mediena',
                  f'{where}: параметры DXF изменились вместе с DWG')
+    # Правка 11.11, п.6: неверная толщина не пускает на шаг 3 — ошибка у самого поля на шаге 2, фокус на поле.
+    thickness.fill('70')
+    thickness.dispatch_event('change')
+    click('[data-next]')
+    expected = 'Thickness: from 0.1 to 60 mm.' if en else 'Storis: nuo 0,1 iki 60 mm.'
+    error = plate.locator('label.field:has([data-option=thickness]) small[data-error]')
+    report.check(page.locator('[data-step-panel="1"]').is_visible() and error.count() == 1 and error.inner_text().strip() == expected
+                 and plate.locator('input[data-option=thickness]').get_attribute('aria-invalid') == 'true'
+                 and page.evaluate('document.activeElement?.dataset.option') == 'thickness',
+                 f'{where}: толщина 70 не остановлена на шаге 2 у поля')
+    if not page.locator('[data-step-panel="1"]').is_visible():
+        click('[data-back]')
+    thickness.fill('6.5')
+    thickness.dispatch_event('change')
+    report.check(plate.locator('small[data-error]').count() == 0, f'{where}: ошибка толщины не снята после исправления')
     # «Skubu» и дата: при скорой очереди — метка в заголовке, поле даты не раньше завтра, пояснение; дата уходит в заявку.
     report.check(plate.locator('[data-urgent]').count() == 0 and plate.locator('[data-needed-by]').count() == 0, f'{where}: дата без скорой очереди')
     # Правка 11.11, J-04: «Reikalinga iki» — поле dd.mm.yyyy (страница открыта в локали браузера en-US или lt-LT), ввод с клавиатуры

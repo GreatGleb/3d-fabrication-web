@@ -355,9 +355,33 @@ function start(root) {
         if (!quote.busy) showErrors([texts.no_model]);
         return;
       }
+      if (step === 1 && !sizesValid()) return;
       goTo(Math.min(LAST_STEP, step + 1));
     }
   });
+
+  // Толщина и глубина проверяются уже на шаге 2, у самого поля (правка 11.11, п.6): раньше ошибку «Storis: nuo 0,1 iki 60 mm»
+  // показывал только сервер при отправке на шаге 3, вдали от поля. Сервер по-прежнему проверяет сам.
+  function sizesValid() {
+    const bad = quote.ready.find((entry) => {
+      if (entry.method === 'printing') return false;
+      const raw = String(entry.options[entry.method][sizeKey(entry)] ?? '').trim().replace(',', '.');
+      const value = Number(raw);
+      const [min, max] = sizeKey(entry) === 'thickness' ? [0.1, 60] : [0.01, 20];
+      return raw === '' || !Number.isFinite(value) || value < min || value > max;
+    });
+    if (!bad) return true;
+    bad.collapsed = false;
+    render();
+    const field = document.getElementById(`part-${bad.id}-${sizeKey(bad)}`);
+    if (field) {
+      field.setAttribute('aria-invalid', 'true');
+      field.closest('label.field').insertAdjacentHTML('beforeend', `<small data-error>${html(texts.submit[sizeKey(bad)])}</small>`);
+      field.focus();
+      field.scrollIntoView({ block: 'center' });
+    }
+    return false;
+  }
 
   // Единицы и масштаб — с подтверждением новых размеров (окно x-modal); неверный масштаб окно не открывает.
   $('[data-apply-scale]').addEventListener('click', (event) => {

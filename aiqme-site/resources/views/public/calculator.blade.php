@@ -13,7 +13,7 @@
 @php
     $locale = app()->getLocale();
     $maxMb = intdiv($settings['max_file_bytes'], 1024 * 1024);
-    $texts = __('calculator.js') + ['mb' => $maxMb, 'scale' => __('calculator.files.scale')] + collect(__('calculator'))->only(['settings', 'methods', 'part', 'review', 'price'])->all();
+    $texts = __('calculator.js') + ['mb' => $maxMb, 'scale' => __('calculator.files.scale')] + collect(__('calculator'))->only(['settings', 'methods', 'part', 'review', 'price', 'submit'])->all();
 @endphp
 <x-layout :title="$seoTitle" :description="$description" :canonical="route($locale.'.calculator')" :languages="$languages" :noindex="$locale === 'ru'">
     <x-page-top :title="$heading" :intro="__('calculator.intro')" />
