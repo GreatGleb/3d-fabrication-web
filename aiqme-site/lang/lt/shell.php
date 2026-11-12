@@ -19,7 +19,7 @@ return [
     'account' => 'Paskyra',
     'cart' => 'Krepšelis',
     'menu' => 'Atverti meniu',
-    'tagline' => '3D INŽINERIJA & TECHNOLOGIJOS', // доработка 09.11, I-05: как в hero (рев.4)
+    'language' => 'Kalba', // правка 11.11, J-02: имя кнопки выбора языка (второй ряд с tagline удалён)
     'quote_cta' => 'Įkelkite failus ir gaukite pasiūlymą',
     'footer' => [
         'slogan' => 'Kai tikslumas įgauna formą', // pataisa 11.11, J-01

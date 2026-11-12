@@ -52,7 +52,6 @@ return [
     'cookies' => ['title' => 'Cookie preferences'],
     'delivery' => ['title' => 'Delivery & collection'],
     'returns' => ['title' => 'Returns & discrepancies'],
-    'switch_language' => 'Keisti į lietuvių kalbą',
     'not_found' => [
         'title' => 'Page not found',
         'text' => 'Choose one of the main website pages.',

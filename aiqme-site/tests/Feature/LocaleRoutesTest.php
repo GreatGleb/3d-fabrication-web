@@ -6,7 +6,9 @@ use App\Models\User;
 use App\Support\Seo\StaticPages;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use RuntimeException;
+use Tests\Support\Html;
 use Tests\Support\PageHead;
 use Tests\TestCase;
 
@@ -23,9 +25,37 @@ class LocaleRoutesTest extends TestCase
         return $admin;
     }
 
-    public function test_root_redirects_permanently_to_lithuanian_home(): void
+    /** Правка 11.11, J-02: корень aiqme.com — на EN (было 301 на /lt), временным 302. */
+    public function test_root_redirects_to_english_home(): void
     {
-        $this->get('/')->assertStatus(301)->assertRedirect(config('app.url').'/lt');
+        $this->get('/')->assertStatus(302)->assertRedirect(config('app.url').'/en');
+        $this->get('http://aiqme.com/')->assertStatus(302)->assertRedirect(config('app.url').'/en');
+    }
+
+    /** Правка 11.11, J-02: корень aiqme.lt — на LT, остальные пути aiqme.lt — 301 на тот же путь канонического адреса. */
+    public function test_lithuanian_domain_opens_lithuanian_home_and_sends_other_paths_to_the_canonical_host(): void
+    {
+        config(['app.url' => 'https://aiqme.com']);
+        URL::forceRootUrl('https://aiqme.com');
+
+        foreach (['http://aiqme.lt/', 'https://aiqme.lt', 'https://www.aiqme.lt/'] as $url) {
+            $this->get($url)->assertStatus(301)->assertRedirect('https://aiqme.com/lt');
+        }
+        $this->get('https://aiqme.lt/en/services?page=2')->assertStatus(301)->assertRedirect('https://aiqme.com/en/services?page=2');
+        $this->get('https://aiqme.lt/lt/kontaktai')->assertStatus(301)->assertRedirect('https://aiqme.com/lt/kontaktai');
+        $this->post('https://aiqme.lt/lt/kontaktai')->assertStatus(301)->assertRedirect('https://aiqme.com/lt/kontaktai');
+        // Канонический хост и прочие хосты не перенаправляются.
+        $this->get('https://aiqme.com/lt/kontaktai')->assertOk();
+        $this->get('https://aiqme.com/')->assertStatus(302)->assertRedirect('https://aiqme.com/en');
+    }
+
+    /** Список хостов со своим языком корня — в config, не в коде. */
+    public function test_locale_hosts_come_from_config(): void
+    {
+        config(['aiqme.locale_hosts' => ['aiqme.test' => 'lt']]);
+
+        $this->get('http://aiqme.test/')->assertStatus(301)->assertRedirect(config('app.url').'/lt');
+        $this->get('http://aiqme.lt/')->assertStatus(302)->assertRedirect(config('app.url').'/en');
     }
 
     public function test_every_static_page_exists_on_both_public_locales_with_its_own_segment(): void
@@ -157,11 +187,47 @@ class LocaleRoutesTest extends TestCase
         $this->assertSame(['en' => 'https://x.test/en/a'], PageHead::hreflang($withoutLithuanian), 'x-default только при LT-версии');
     }
 
+    /**
+     * Правка 11.11, J-02: переключатель — кнопка с текущим кодом («LT ▾»), закрытая (aria-expanded=false), и список
+     * остальных языков config('aiqme.languages'): на LT — только EN, на EN — только LT, ссылка — та же страница
+     * другого языка (без версии — главная языка).
+     *
+     * @return array{button: string, expanded: string, controls: string, links: list<array{0: string, 1: string}>}
+     */
+    private function switcher(string $path): array
+    {
+        $xpath = Html::xpath($this->get($path)->getContent());
+        $button = $xpath->query('//header//div[@data-lang-menu]/button')->item(0);
+        $links = [];
+        foreach ($xpath->query('//header//ul[@id="lang-list"]/li/a') as $link) {
+            $links[] = [trim($link->textContent), $link->getAttribute('href')];
+            $this->assertSame($link->getAttribute('hreflang'), $link->getAttribute('lang'));
+        }
+
+        return ['button' => preg_replace('/\s+/u', ' ', trim($button->textContent)), 'expanded' => $button->getAttribute('aria-expanded'),
+            'controls' => $button->getAttribute('aria-controls'), 'links' => $links];
+    }
+
     public function test_language_switcher_links_to_the_same_page_in_the_other_locale(): void
     {
-        $this->get('/lt/paslaugos/')->assertSee('<a href="'.route('en.services').'" hreflang="en" aria-label="Switch to English"', escape: false);
-        $this->get('/en/services')->assertSee('<a href="'.route('lt.services').'" hreflang="lt" aria-label="Keisti į lietuvių kalbą"', escape: false);
-        $this->get('/en/missing')->assertSee('<a href="'.route('lt.home').'" hreflang="lt"', escape: false);
+        $this->assertSame(['button' => 'LT ▾', 'expanded' => 'false', 'controls' => 'lang-list', 'links' => [['EN', route('en.services')]]],
+            $this->switcher('/lt/paslaugos/'));
+        $this->assertSame(['button' => 'EN ▾', 'expanded' => 'false', 'controls' => 'lang-list', 'links' => [['LT', route('lt.services')]]],
+            $this->switcher('/en/services'));
+        $this->assertSame([['LT', route('lt.home')]], $this->switcher('/en/missing')['links']);
+        $this->assertSame([['EN', route('en.contact')]], $this->switcher('/lt/kontaktai')['links']);
+        $this->assertSame([['LT', route('lt.contact')]], $this->switcher('/en/contact')['links']);
+        $this->assertSame('Kalba: LT', Html::xpath($this->get('/lt')->getContent())->query('//div[@data-lang-menu]/button/@aria-label')->item(0)->value);
+        $this->assertSame('Language: EN', Html::xpath($this->get('/en')->getContent())->query('//div[@data-lang-menu]/button/@aria-label')->item(0)->value);
+    }
+
+    /** Список языков строится из config: новый язык появляется в списке без правки шаблона. */
+    public function test_language_list_comes_from_config(): void
+    {
+        config(['aiqme.languages' => ['en', 'lt', 'ru']]);
+
+        $this->assertSame([['EN', route('en.services')], ['RU', route('ru.home')]], $this->switcher('/lt/paslaugos')['links']);
+        $this->assertSame([['LT', route('lt.services')], ['RU', route('ru.home')]], $this->switcher('/en/services')['links']);
     }
 
     public function test_internal_links_are_plain_anchors_built_by_route_without_trailing_slash(): void

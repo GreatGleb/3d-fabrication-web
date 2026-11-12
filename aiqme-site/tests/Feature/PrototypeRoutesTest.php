@@ -71,7 +71,7 @@ class PrototypeRoutesTest extends TestCase
     public function test_prototype_address_answers_as_its_section_4_6_row(string $path, int $row): void
     {
         match ($row) {
-            1 => $this->get($path)->assertStatus(301)->assertRedirect(route('lt.home')),
+            1 => $this->get($path)->assertStatus(302)->assertRedirect(route('en.home')), // правка 11.11, J-02: корень — EN (было 301 на LT)
             2 => $this->assertPublicPage($path),
             // Slug другой локали, дубли статей и демо-товары — 404 после сидера (без сидера 404 ничего бы не доказывал).
             3, 4, 5 => $this->seed(PrototypeContentSeeder::class)->get($path)->assertNotFound(),

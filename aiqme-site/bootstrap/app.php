@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RedirectLocaleHost;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocaleFromPath;
 use App\Http\Middleware\TrustProxies;
@@ -24,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->replace(FrameworkTrustProxies::class, TrustProxies::class);
         $middleware->append(SetLocaleFromPath::class);
         $middleware->append(SecurityHeaders::class);
+        // Хосты со своим языком корня (aiqme.lt, правка 11.11, J-02) — до маршрутов, ответ с заголовками безопасности.
+        $middleware->append(RedirectLocaleHost::class);
         // Гость на действии кабинета и сессия, завершённая после смены пароля (AuthenticateSession), — на вход своей локали.
         $middleware->redirectGuestsTo(fn (Request $request): string => route(($request->segment(1) === 'lt' ? 'lt' : 'en').'.account.login'));
     })

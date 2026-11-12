@@ -5822,3 +5822,44 @@ I-01…I-06 выполнены (track L), полный `bin/check` и полны
   Итог доработки: полный `bin/check` — `bin/check: OK` (`build/j01/check-rework.log`), полный `bin/browser-check` (101 страница) —
   `bin/browser-check: OK (21213 проверок)` (`build/j01/browser-rework.log`; выбросы 201,6 и 112,1 мс сняты повтором, максимум
   после повтора 57–78 мс). Не проверено — как выше (Safari/Firefox, телефоны).
+
+## Правки 11.11, J-02: шапка без второго ряда, EN по умолчанию, выпадающий список языков, aiqme.lt → LT (2026-11-12)
+
+- Пункт 2, полоса под шапкой: компонент `x-header-cta` (подпись «3D INŽINERIJA & TECHNOLOGIJOS» + «Įkelkite failus ir gaukite
+  pasiūlymą →») удалён, параметры `cta`/`headerCta` и класс `header--no-cta` убраны; ключ `shell.tagline` удалён (`shell.quote_cta`
+  остаётся — его использует пустая корзина). `shell.css`: `--header-height` 91/82/73 px на всех страницах (раньше только на главной;
+  внутренние были 131/122/112), правила тёмного второго ряда удалены. Шапка `position:sticky` прототипа, поэтому первый блок main идёт
+  сразу под ней. Замер browser-check (`check_styles`, все ширины STYLE_WIDTHS): `.head-sub` нет нигде, высота шапки = 91/82/73 =
+  `--header-height`, вне главной верх первого блока main = низ шапки ±1 px; на главной `check_hero_under_header` прежний (зелёный).
+- Пункт 11, EN по умолчанию: `/` → 302 на `/en` (было 301 на `/lt`). 302 выбран, чтобы язык корня можно было снова сменить;
+  **браузеры, уже открывавшие aiqme.com, запомнили прежний 301 на /lt** — у них корень откроется на LT до очистки кэша (в т. ч. у
+  заказчика: проверять в новом окне инкогнито).
+- Пункт 11, переключатель: кнопка `button.icon-btn.lang` «EN ▾» (текущий код; имя для чтения «Language: EN» / «Kalba: LT» — новый ключ
+  `shell.language`) и `ul#lang-list` с остальными языками из `config('aiqme.languages')` = ['en', 'lt'] (текущий не повторяется: на LT
+  в списке EN, на EN — LT; на /ru администратора — EN и LT). Ссылка — та же страница другого языка (`$languages`, иначе `$switchUrl`,
+  иначе главная языка). `resources/js/lang-menu.js`: нажатие/Enter/пробел открывает и закрывает, на ПК мышь открывает наведением и
+  закрывает уходом, Esc закрывает и возвращает фокус на кнопку, уход фокуса и нажатие вне — закрывают, `aria-expanded` всегда как вид.
+  Без JS список открывается `:hover`/`:focus-within` (выключается атрибутом `data-ready`). Список белый с тёмным текстом и в тёмной шапке.
+  `pages.switch_language` удалён (не используется). Новый язык в config требует ещё маршрутов и текстов — записано в комментарии config.
+- Пункт 12, aiqme.lt: глобальный middleware `RedirectLocaleHost` (после SecurityHeaders — у перенаправления те же заголовки):
+  хосты `config('aiqme.locale_hosts')` = aiqme.lt, www.aiqme.lt → lt; корень → 301 на `APP_URL/lt`, любой другой путь (и POST) → 301
+  на тот же путь с query на `APP_URL`; хост самого APP_URL не перенаправляется. Остальные хосты — корень на EN. DNS/Caddy — J-08.
+- Тесты: `LocaleRoutesTest` — корень → /en 302; aiqme.lt, www.aiqme.lt (http/https) корень → https://aiqme.com/lt 301, `/en/services?page=2`,
+  `/lt/kontaktai` (GET и POST) → 301 на aiqme.com, aiqme.com не перенаправляется; хосты из config (aiqme.test → lt, aiqme.lt без config → EN);
+  переключатель: текст «LT ▾»/«EN ▾», aria-expanded=false, aria-controls, список = другой язык той же страницы (услуги, контакты, 404 →
+  главная), список из config (с 'ru' — два пункта). `ShellTest::test_no_page_has_a_second_header_row` — 13 страниц LT/EN без
+  head-sub/header-cta/cta-link и подписи (на прежнем коде упал бы — ряд был на внутренних; прогоном с откатом не проверялось). Изменены ожидания с комментарием «правка 11.11, J-02»:
+  ShellTest/DefaultMediaTest (класс header--no-cta), SecurityHeadersTest (302 + перенаправление aiqme.lt), PrototypeRoutesTest строка 1
+  (`/` → en.home 302), PublicSectionsTest (слово «Language» проверяется только в main — теперь это имя кнопки в шапке).
+- browser-check: новая `check_lang_menu` для /lt /en /lt/paslaugos /en/services /lt/kontaktai /en/contact при 390 и 1440 — закрыт при
+  загрузке, наведение (1440) открывает / уход закрывает, нажатие открывает, ссылки, белый фон, в окне, мышь на списке не закрывает, Esc +
+  фокус на кнопке, Enter, Tab в список и из него, нажатие вне, переход по ссылке на ту же страницу другого языка (lang). Кадры
+  `shots/lang-closed|open-*` просмотрены Read (1440 и 390: /lt/paslaugos открыт — «LT ▾», под ним EN, полосы нет, page-top сразу под
+  шапкой; /en 1440 в тёмной шапке — белый список «LT»; /lt/kontaktai 390 закрыт; /en/services 390 открыт — список в окне).
+- Проверки: `bin/browser-check /lt /en /lt/paslaugos /en/services /lt/kontaktai /en/contact` — `bin/browser-check: OK (2493 проверок)`
+  (поиск маркеров на этих страницах без замечаний; `build/j02/browser1.log`); `bin/check` — первый прогон 775/777 (две старые проверки
+  корня и слова «Language», исправлены выше), повтор — `bin/check: OK` (PHPUnit 777/777, Pint, Vite; `build/j02/check2.log`).
+- Не проверено (ждёт пользователя): Safari/Firefox и реальные телефоны (касание — Playwright щёлкает мышью); работа на настоящем
+  домене aiqme.lt (DNS/Caddy и APP_URL=https://aiqme.com — J-08); x-default в hreflang остаётся LT (задача о нём не говорит);
+  демо-сборка `demo/` (DemoExport ведёт корень демо на /lt) не менялась и не пересобиралась.
+- Удаление `resources/views/components/header-cta.blade.php` сделано `git rm` (в индексе как D) — коммит делает оркестратор.

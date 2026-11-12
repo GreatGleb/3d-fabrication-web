@@ -82,10 +82,7 @@ class ShellTest extends TestCase
         $this->assertSame('main-nav', $menu->getAttribute('aria-controls'));
         $this->assertSame('Atverti meniu', $menu->getAttribute('aria-label'));
 
-        // Доработка 09.11, I-05: «&», как в hero (было «3D INŽINERIJA IR TECHNOLOGIJOS»).
-        $this->assertSame('3D INŽINERIJA & TECHNOLOGIJOS', trim($xpath->query('//div[contains(@class,"head-sub")]/span')->item(0)->textContent));
-        // Правка 05.11, H-01: кнопка второго ряда (было «Įkelti modelį ir sužinoti kainą»).
-        $this->assertSame([['Įkelkite failus ir gaukite pasiūlymą', route('lt.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
+        // Правка 11.11, J-02: второго ряда (подпись и CTA калькулятора) больше нет — проверяет test_no_page_has_a_second_header_row.
     }
 
     public function test_english_shell_texts_and_no_active_item_on_404(): void
@@ -95,9 +92,6 @@ class ShellTest extends TestCase
         $this->assertSame(['Home', 'Services', 'Products', 'Projects', 'Resources', 'About', 'Contact'],
             array_column($this->links($xpath, '//nav[@id="main-nav"]/a'), 0));
         $this->assertSame(0, $xpath->query('//nav[@id="main-nav"]/a[@class="active"]')->length);
-        // Правка 05.11, H-01: было «Upload a model & get a price».
-        $this->assertSame([['Upload files and get a quote', route('en.calculator')]], $this->links($xpath, '//a[@class="cta-link"]'));
-        $this->assertSame('3D ENGINEERING & TECHNOLOGY', trim($xpath->query('//div[contains(@class,"head-sub")]/span')->item(0)->textContent));
         $this->assertSame([['Go home', route('en.home')]], $this->links($xpath, '//main//a[contains(@class,"btn")]'));
     }
 
@@ -217,15 +211,15 @@ class ShellTest extends TestCase
         };
 
         // Без записи home главная — заглушка со светлым page-top, без hero: белая шапка (правка 05.11, H-11; было header--dark)
-        // и без второго ряда (правка 02.11, Г1).
+        // и без второго ряда (правка 02.11, Г1); правка 11.11, J-02: второго ряда нет нигде — класса header--no-cta больше нет.
         foreach (['/lt', '/en'] as $path) {
-            $this->assertSame([['header', 'header--no-cta'], 0], $header($this->get($path)->getContent()), "$path без home");
+            $this->assertSame([['header'], 0], $header($this->get($path)->getContent()), "$path без home");
         }
         $this->seed(PrototypeContentSeeder::class);
         $pages = ['/lt' => true, '/en' => true, '/lt/paslaugos' => false, '/lt/paslaugos/3d-spausdinimas' => false, '/lt/kalkuliatorius' => false,
             '/lt/apie-mus' => false, '/en/quote' => false, '/lt/nera-tokio' => false, '/en/missing' => false];
         foreach ($pages as $path => $home) {
-            $this->assertSame($home ? [['header', 'header--dark', 'header--overlay', 'header--no-cta'], 1] : [['header'], 0], $header($this->get($path)->getContent()), $path);
+            $this->assertSame($home ? [['header', 'header--dark', 'header--overlay'], 1] : [['header'], 0], $header($this->get($path)->getContent()), $path);
         }
         $this->assertSame([['header'], 0], $header($this->actingAs($admin)->get('/en/admin')->assertOk()->getContent()), '/en/admin');
         $this->assertSame([['header'], 0], $header($this->actingAs($client)->get('/en/account')->assertOk()->getContent()), '/en/account');
@@ -259,22 +253,18 @@ class ShellTest extends TestCase
         }
     }
 
-    /** Правка 02.11, Г1: второй ряд шапки (слоган и CTA калькулятора) есть на внутренних страницах и нет на главной. */
-    public function test_home_has_no_second_header_row_and_inner_pages_keep_it(): void
+    /** Правка 11.11, J-02: второго ряда шапки (подпись и CTA калькулятора) нет ни на одной странице LT/EN (до правки — был везде, кроме главной). */
+    public function test_no_page_has_a_second_header_row(): void
     {
-        $row = fn (string $path): DOMXPath => $this->xpath($this->get($path)->assertOk()->getContent());
-        $check = function () use ($row): void {
-            foreach (['/lt', '/en'] as $path) {
-                $xpath = $row($path);
-                $this->assertSame(0, $xpath->query('//header//div[contains(@class,"head-sub")]')->length, $path);
-                $this->assertSame(0, $xpath->query('//header//div[contains(@class,"header-cta")]')->length, $path);
-            }
-            // Доработка 09.11, I-05: LT — «&», как в hero и EN (было «IR»).
-            foreach (['/lt/paslaugos' => '3D INŽINERIJA & TECHNOLOGIJOS', '/lt/apie-mus' => '3D INŽINERIJA & TECHNOLOGIJOS',
-                '/en/about' => '3D ENGINEERING & TECHNOLOGY', '/en/services' => '3D ENGINEERING & TECHNOLOGY'] as $path => $tagline) {
-                $xpath = $row($path);
-                $this->assertSame($tagline, trim($xpath->query('//header//div[contains(@class,"head-sub")]/span')->item(0)?->textContent ?? ''), $path);
-                $this->assertSame(1, $xpath->query('//header//a[@class="cta-link"]')->length, $path);
+        $check = function (): void {
+            foreach (['/lt', '/en', '/lt/paslaugos', '/en/services', '/lt/kontaktai', '/en/contact', '/lt/apie-mus', '/en/about',
+                '/lt/kalkuliatorius', '/en/quote', '/lt/krepselis', '/en/cart', '/en/missing'] as $path) {
+                $html = $this->get($path)->getContent();
+                $xpath = $this->xpath($html);
+                $this->assertSame(0, $xpath->query('//*[contains(@class,"head-sub") or contains(@class,"header-cta") or contains(@class,"cta-link")]')->length, $path);
+                $this->assertStringNotContainsString('TECHNOLOGIJOS</span>', $html, $path);
+                $this->assertStringNotContainsString('TECHNOLOGY</span>', $html, $path);
+                $this->assertStringNotContainsString('header--no-cta', $html, $path);
             }
         };
         $check(); // без записи home (заглушка главной)

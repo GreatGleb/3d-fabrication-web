@@ -4,10 +4,9 @@
      favicon — свои файлы page_text главной, иначе файлы прототипа по умолчанию (D-43); без БД (страница 500) — умолчания.
      Шапка-шторка (правка 28.10, П2): белый логотип тёмной шапки — свой logo_white, иначе белое умолчание AIQME, но только
      пока нет своего logo (иначе null — обычный логотип на белой подложке); $headerOverlay — полупрозрачная шапка поверх
-     hero главной; без JS она сплошная тёмная (noscript-стиль с nonce CSP). $headerCta — второй ряд шапки (правка 02.11, Г1:
-     на главной его нет). Правка 05.11, H-11: $headerOverlay — и признак тёмного верха: только с ним шапка тёмная вверху,
+     hero главной; без JS она сплошная тёмная (noscript-стиль с nonce CSP). Второго ряда шапки нет (правка 11.11, J-02). Правка 05.11, H-11: $headerOverlay — и признак тёмного верха: только с ним шапка тёмная вверху,
      на остальных страницах она белая сразу, без JS тоже (noscript-стиль касается только .header--overlay). --}}
-@props(['title', 'description', 'canonical' => null, 'languages' => [], 'image' => null, 'noindex' => false, 'switchUrl' => null, 'headerOverlay' => false, 'headerCta' => true])
+@props(['title', 'description', 'canonical' => null, 'languages' => [], 'image' => null, 'noindex' => false, 'switchUrl' => null, 'headerOverlay' => false])
 @use('App\Domain\Content\ContentType')
 @use('App\Domain\Content\Models\ContentItem')
 @use('Illuminate\Support\Facades\Vite')
@@ -36,7 +35,7 @@
 <noscript><style nonce="{{ Vite::cspNonce() }}">.header--overlay{background:var(--dark)}</style></noscript>
 </head>
 <body>
-<x-header :languages="$languages" :switch-url="$switchUrl" :logo="$logo" :logo-white="$logoWhite" :overlay="$headerOverlay" :cta="$headerCta" />
+<x-header :languages="$languages" :switch-url="$switchUrl" :logo="$logo" :logo-white="$logoWhite" :overlay="$headerOverlay" />
 <main id="main" tabindex="-1">
 {{ $slot }}
 </main>

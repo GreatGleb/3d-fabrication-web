@@ -46,7 +46,8 @@ class SecurityHeadersTest extends TestCase
             '/lt/kontaktai' => $this->get('/lt/kontaktai')->assertOk(),
             '404' => $this->get('/lt/nera-tokio')->assertNotFound(),
             '/ru (404 гостю)' => $this->get('/ru')->assertNotFound(),
-            'redirect /' => $this->get('/')->assertStatus(301),
+            'redirect /' => $this->get('/')->assertStatus(302), // правка 11.11, J-02: корень — 302 на /en (было 301 на /lt)
+            'redirect aiqme.lt' => $this->get('http://aiqme.lt/lt/paslaugos')->assertStatus(301), // правка 11.11, J-02
             'sitemap' => $this->get('/sitemap.xml')->assertOk(),
             'robots' => $this->get('/robots.txt')->assertOk(),
         ];

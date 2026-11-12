@@ -24,7 +24,9 @@ use App\Http\Middleware\RestrictRussianToAdmin;
 use App\Support\Seo\StaticPages;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('lt.home', status: 301));
+// Правка 11.11, J-02: корень — на EN (было 301 на /lt); временный 302, чтобы язык корня можно было снова сменить.
+// Корень хостов config('aiqme.locale_hosts') (aiqme.lt → /lt) обрабатывает RedirectLocaleHost до маршрутов.
+Route::get('/', fn () => redirect()->route('en.home'));
 
 foreach (StaticPages::LOCALES as $locale) {
     Route::prefix($locale)

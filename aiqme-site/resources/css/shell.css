@@ -49,7 +49,9 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
    задан с весом одного класса: noscript-стиль layout (.header--overlay, позже в каскаде) делает её без JS сплошной.
    Правка 05.11, H-11: header--dark сервер рисует только над тёмным верхом (главная, header--overlay); на остальных страницах
    шапка сразу белая §7.1 (правила ниже их не касаются). */
-:root{--header-height:131px}
+/* Правка 11.11, J-02: второго ряда шапки (.header-cta) нет нигде — --header-height = ряд логотипа + линия 91/82/73 px
+   на всех страницах (раньше так было только на главной, header--no-cta; внутренние — 131/122/112). */
+:root{--header-height:91px}
 .header .logo{position:relative}
 /* Новый логотип заказчика крупнее в шапке (правка 30.10, Г1): вместо 150/125/115 прототипа; в подвале та же ширина, что
    в шапке (правка 02.11, Г1; было 160 px). Правка 05.11, H-01: чуть меньше — 200/164/128/120 px (было 220/180/140/132). */
@@ -72,28 +74,20 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
 :where(.header--dark).header--overlay{background:rgba(10,17,25,.6)}
 .header--dark .logo-white{opacity:1}
 .header--dark:not(.header--logo-plate) .logo img:not(.logo-white){opacity:0}
-.header--dark .nav a:hover,.header--dark .head-sub .cta-link{color:#9cc4ff}
+.header--dark .nav a:hover{color:#9cc4ff}
 .header--dark .nav a.active:after{background:#9cc4ff}
 .header--dark .lang span{color:#b7c3ce}
-.header--dark .header-cta{background:transparent;border-top-color:rgba(255,255,255,.12)}
-.header--dark .head-sub>span{color:#d5dde6}
 /* Переходы — только у элементов со своим значением: пункты и значки наследуют цвет шапки (свой переход у наследника
    отставал бы, догоняя родителя). */
 .header--ready{transition:background-color .3s ease,border-color .3s ease,color .3s ease}
-.header--ready .header-cta{transition:background-color .3s ease,border-color .3s ease}
-.header--ready .cta-link,.header--ready .lang span{transition:color .3s ease}
+.header--ready .lang span{transition:color .3s ease}
 .header--ready .logo img{transition:opacity .3s ease}
-/* Главная без второго ряда шапки (правка 02.11, Г1): своя --header-height = 131/122/112 px (правка 05.11, H-01) минус ряд .header-cta (40/40/39 px)
-   у шапки и main — отступ и высота hero ниже считаются от неё, содержимое hero на прежнем расстоянии от низа шапки. */
-.header--no-cta,.header--no-cta~main{--header-height:91px}
-@media(max-width:900px){.header--no-cta,.header--no-cta~main{--header-height:82px}}
-@media(max-width:600px){.header--no-cta,.header--no-cta~main{--header-height:73px}}
 /* Главная: hero начинается от верха окна под полупрозрачной шапкой, содержимое hero — на прежних координатах. */
 .header--overlay{margin-bottom:calc(-1*var(--header-height))}
 .header--overlay~main>.hero:first-child{min-height:calc(650px + var(--header-height))}
 .header--overlay~main>.hero:first-child .wrap{padding-top:calc(85px + var(--header-height))}
 @media(max-width:900px){
- :root{--header-height:122px}
+ :root{--header-height:82px}
  .header--overlay~main>.hero:first-child{min-height:calc(620px + var(--header-height))}
  /* Выпадающее меню остаётся белым прототипа с тёмными пунктами и в тёмной шапке. */
  .header--dark .nav{color:var(--ink)}
@@ -101,13 +95,20 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
  .header--dark .nav a.active:after{background:var(--blue)}
 }
 @media(max-width:600px){
- :root{--header-height:112px}
+ :root{--header-height:73px}
  .header--overlay~main>.hero:first-child{min-height:calc(660px + var(--header-height))}
  .header--overlay~main>.hero:first-child .wrap{padding-top:calc(56px + var(--header-height))}
 }
 @media(prefers-reduced-motion:reduce){
- .header--ready,.header--ready .header-cta,.header--ready .cta-link,.header--ready .lang span,.header--ready .logo img{transition:none}
+ .header--ready,.header--ready .lang span,.header--ready .logo img{transition:none}
 }
+/* Выбор языка (правка 11.11, J-02): кнопка «EN ▾» (.lang прототипа) и список остальных языков под ней — белый с тёмным
+   текстом и в тёмной шапке, вплотную под кнопкой (без зазора мышь не уходит из меню по пути к списку). Открыт с классом open (resources/js/lang-menu.js); без JS — наведением и фокусом. */
+.lang-menu{position:relative}
+.lang-list{display:none;position:absolute;top:100%;left:0;min-width:64px;margin:0;padding:6px 0;list-style:none;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:3px;box-shadow:0 8px 24px rgba(10,17,25,.12);z-index:60}
+.lang-menu.open .lang-list,.lang-menu:not([data-ready]):is(:hover,:focus-within) .lang-list{display:block}
+.lang-list a{display:block;padding:8px 14px;font-size:12px;font-weight:700}
+.lang-list a:hover,.lang-list a:focus-visible{color:var(--blue);background:var(--soft)}
 /* Карточки «Kuo galime padėti?» (правка 02.11, Г1): у последней та же правая рамка, что у остальных (style.css:100 обнуляла её). */
 .scenario:last-child{border-right:1px solid var(--line)}
 /* Окно (поиск и др.): ярлыка «AIQME» нет (доработка 09.11, I-05) — крестик остаётся справа. */

@@ -90,6 +90,11 @@ check_scenarios на главной при всех ширинах — прав�
 порядку, высота 70 ±1 px в своих пропорциях, без подложки и обрезки, левый край иконки — по левому краю заголовка карточки
 ±2 px (доработка 09.11, I-03); кадры header-top|scrolled для /lt и /en при 390 и 1440;
 LT-надпись hero — замена D21_REPLACEMENTS только для /lt.
+Шапка без второго ряда и выбор языка (правка 11.11, J-02): .head-sub/.header-cta нет ни на одной странице (check_styles,
+check_header_white), шапка 91/82/73 px = --header-height, вне главной первый блок main — вплотную под шапкой ±1 px;
+check_lang_menu на LANG_MENU_PAGES при 390 и 1440 — кнопка «LT ▾»/«EN ▾», список закрыт, наведение (ПК), нажатие, Enter
+открывают, aria-expanded, Esc закрывает с фокусом на кнопке, Tab из списка и нажатие вне закрывают, список — другой язык той же
+страницы, белый, в окне; кадры shots/lang-closed|open-<страница>-<ширина>.png.
 Тексты и блок услуги (правка 02.11, Г2): новые тексты главной, 3D spausdinimas и ответа FAQ services-1 — замены D21_REPLACEMENTS;
 блока «Vienas kontaktas visam darbui» на страницах услуг нет (его фразы — '' в D21_REPLACEMENTS, без примера в check_blocks нет
 и div.grid.two).
@@ -426,7 +431,7 @@ def expected_styles(width):
         'body_size': 14 if phone else 15,
         'h1_size': h1,
         'head_main': 72 if phone else 81 if menu else 90,  # правка 05.11, H-01: ряд выше на 4/6/8 px (было 68/75/82 прототипа)
-        'head_sub': 38 if phone else 39,
+        'header_height': 73 if phone else 82 if menu else 91,  # правка 11.11, J-02: шапка без второго ряда на всех страницах
         'wrap_padding': 20 if phone else 28 if compact else 48,
     }
 
@@ -445,6 +450,11 @@ STYLE_PROBE = """() => {
         headMain: document.querySelector('.head-main').getBoundingClientRect().height,
         logo: document.querySelector('.header .logo').getBoundingClientRect().height,
         headSub: document.querySelector('.head-sub') && document.querySelector('.head-sub').getBoundingClientRect().height,
+        headerHeight: document.querySelector('.header').getBoundingClientRect().height,
+        headerBottom: document.querySelector('.header').getBoundingClientRect().bottom,
+        headerVariable: parseFloat(getComputedStyle(document.querySelector('.header')).getPropertyValue('--header-height')),
+        mainFirst: document.querySelector('main').firstElementChild && document.querySelector('main').firstElementChild.getBoundingClientRect().top,
+        scrollY: window.scrollY,
         wrapPadding: [parseFloat(css('.head-main', 'paddingLeft')), parseFloat(css('.head-main', 'paddingRight'))],
         wrapMax: css('.head-main', 'maxWidth'),
         ctaColor: visible(document.querySelector('.cta-link')) ? css('.cta-link', 'color') : null,
@@ -507,11 +517,14 @@ def check_styles(report, page, path, width):
                      and abs(card['spacing'] - card['size'] * -0.04) <= 0.1, f'{where}: заголовок карточки услуги {card} ≠ {card_size:.1f}')
     report.check(near(got['headMain'], expected['head_main']), f'{where}: высота шапки {got["headMain"]} ≠ {expected["head_main"]}')
     report.check(0 < got['logo'] <= got['headMain'], f'{where}: логотип {got["logo"]}px не помещается в шапку')
-    # Правка 02.11, Г1: на главной второго ряда шапки (.head-sub) нет, на остальных страницах — прежний.
-    if path in HOME_PAGES:
-        report.check(got['headSub'] is None, f'{where}: на главной есть второй ряд шапки (.head-sub)')
-    else:
-        report.check(near(got['headSub'], expected['head_sub']), f'{where}: высота второго ряда {got["headSub"]} ≠ {expected["head_sub"]}')
+    # Правка 11.11, J-02: второго ряда шапки (.head-sub, подпись и CTA) нет ни на одной странице (правка 02.11, Г1 — только на главной).
+    # Шапка = ряд логотипа + линия (91/82/73 px) = --header-height; вне главной первый блок main начинается сразу под шапкой
+    # (не уезжает под неё и без пустой полосы).
+    report.check(got['headSub'] is None, f'{where}: есть второй ряд шапки (.head-sub)')
+    report.check(near(got['headerHeight'], expected['header_height']) and abs(got['headerHeight'] - got['headerVariable']) <= 1,
+                 f'{where}: высота шапки {got["headerHeight"]}, --header-height {got["headerVariable"]} ≠ {expected["header_height"]}')
+    if path not in HOME_PAGES and got['scrollY'] == 0 and got['mainFirst'] is not None:
+        report.check(abs(got['mainFirst'] - got['headerBottom']) <= 1, f'{where}: первый блок main {got["mainFirst"]} ≠ низ шапки {got["headerBottom"]}')
     report.check(all(near(p, expected['wrap_padding']) for p in got['wrapPadding']), f'{where}: поля контейнера {got["wrapPadding"]} ≠ {expected["wrap_padding"]}')
     report.check(got['wrapMax'] == '1320px', f'{where}: ширина контейнера {got["wrapMax"]}')
     # Шапка-шторка (правка 28.10, П2): на прокрутке 0 шапка тёмная; белое состояние §7.1 сверяет check_header после прокрутки.
@@ -570,6 +583,84 @@ def check_focus_style(report, page, path):
     report.check(focus['cls'] == 'skip', f'{path}: первый Tab не на ссылке «к содержимому» ({focus["cls"]})')
     report.check((focus['style'], focus['width'], focus['offset']) == ('solid', '3px', '4px'), f'{path}: стиль фокуса {focus}')
     report.check(focus['top'] >= 0, f'{path}: ссылка «к содержимому» не видна при фокусе')
+
+
+# Правка 11.11, J-02: выбор языка — кнопка «<код> ▾» и список остальных языков (та же страница другого языка).
+LANG_MENU_PAGES = {'/lt': ('LT', {'EN': '/en'}), '/en': ('EN', {'LT': '/lt'}), '/lt/paslaugos': ('LT', {'EN': '/en/services'}),
+                   '/en/services': ('EN', {'LT': '/lt/paslaugos'}), '/lt/kontaktai': ('LT', {'EN': '/en/contact'}),
+                   '/en/contact': ('EN', {'LT': '/lt/kontaktai'})}
+LANG_PROBE = """() => { const menu = document.querySelector('[data-lang-menu]'), button = menu.querySelector('button'), list = menu.querySelector('#lang-list');
+    const box = list.getBoundingClientRect(), header = document.querySelector('.header').getBoundingClientRect();
+    return {text: button.textContent.replace(/\\s+/g, ' ').trim(), expanded: button.getAttribute('aria-expanded'),
+        visible: getComputedStyle(list).display !== 'none' && box.height > 0, focusButton: document.activeElement === button,
+        focusInList: list.contains(document.activeElement), box: [box.left, box.top, box.right, box.bottom], headerBottom: header.bottom,
+        background: getComputedStyle(list).backgroundColor,
+        links: [...list.querySelectorAll('a')].map((a) => [a.textContent.trim(), new URL(a.href).pathname, getComputedStyle(a).color])}; }"""
+
+
+def check_lang_menu(report, new_page, path, width):
+    """Правка 11.11, J-02: закрыт при загрузке; нажатие открывает (aria-expanded), Esc закрывает и возвращает фокус,
+    на ПК — наведение открывает и уход мыши закрывает; клавиатура — Enter, Tab в список, уход фокуса закрывает; нажатие вне —
+    закрывает; ссылка ведёт на ту же страницу другого языка. Кадры lang-closed|open-<страница>-<ширина>.png."""
+    code, links = LANG_MENU_PAGES[path]
+    where = f'{path} @{width} язык'
+    context, page, problems = new_page(width, 1000 if width == 1440 else 844)
+    page.goto(BASE + path, wait_until='networkidle')
+    slug = path.strip('/').replace('/', '__')
+    button = page.locator('[data-lang-menu] button')
+    probe = lambda: page.evaluate(LANG_PROBE)  # noqa: E731
+    got = probe()
+    report.check(got['text'] == f'{code} ▾' and got['expanded'] == 'false' and not got['visible'], f'{where}: при загрузке {got}')
+    page.screenshot(path=str(OUT / 'shots' / f'lang-closed-{slug}-{width}.png'), clip={'x': 0, 'y': 0, 'width': width, 'height': 220})
+    if width > 900:
+        button.hover()
+        page.wait_for_timeout(100)
+        got = probe()
+        report.check(got['expanded'] == 'true' and got['visible'], f'{where}: наведение не открыло список {got}')
+        page.mouse.move(width / 2, 600)
+        page.wait_for_timeout(100)
+        got = probe()
+        report.check(got['expanded'] == 'false' and not got['visible'], f'{where}: уход мыши не закрыл список {got}')
+    button.click()
+    got = probe()
+    report.check(got['expanded'] == 'true' and got['visible'], f'{where}: нажатие не открыло список {got}')
+    report.check([[text, href] for text, href, _ in got['links']] == [[k, v] for k, v in links.items()], f'{where}: список {got["links"]} ≠ {links}')
+    report.check(got['background'] == 'rgb(255, 255, 255)' and all(color == 'rgb(17, 23, 30)' for _, _, color in got['links']),
+                 f'{where}: список не белый с тёмным текстом {got["background"]} {got["links"]}')
+    left, top, right, bottom = got['box']
+    report.check(left >= 0 and right <= width and bottom <= 844, f'{where}: список вне окна {got["box"]}')
+    page.screenshot(path=str(OUT / 'shots' / f'lang-open-{slug}-{width}.png'), clip={'x': 0, 'y': 0, 'width': width, 'height': 220})
+    if width > 900:  # открытый наведением и нажатием список не закрывается, пока мышь над ним
+        page.mouse.move(*[(left + right) / 2, (top + bottom) / 2])
+        report.check(probe()['visible'], f'{where}: список закрылся при переходе мыши на него')
+    page.keyboard.press('Escape')
+    got = probe()
+    report.check(got['expanded'] == 'false' and not got['visible'] and got['focusButton'], f'{where}: Esc не закрыл список или фокус не на кнопке {got}')
+    page.mouse.move(width / 2, 600)
+    button.focus()
+    page.keyboard.press('Enter')
+    got = probe()
+    report.check(got['expanded'] == 'true' and got['visible'], f'{where}: Enter не открыл список {got}')
+    page.keyboard.press('Tab')
+    report.check(probe()['focusInList'], f'{where}: Tab не перешёл в список')
+    for _ in links:
+        page.keyboard.press('Tab')
+    got = probe()
+    report.check(got['expanded'] == 'false' and not got['visible'], f'{where}: уход фокуса не закрыл список {got}')
+    button.focus()
+    page.keyboard.press('Enter')
+    page.mouse.click(5, 30)  # пустое поле шапки слева от логотипа
+    got = probe()
+    report.check(got['expanded'] == 'false' and not got['visible'], f'{where}: нажатие вне не закрыло список {got}')
+    button.click()
+    page.locator('#lang-list a').first.click()
+    page.wait_for_load_state('networkidle')
+    target = next(iter(links.values()))
+    report.check(page.url == BASE + target and page.evaluate('document.documentElement.lang') == target.split('/')[1],
+                 f'{where}: ссылка открыла {page.url}, ожидалось {target}')
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
 
 
 def check_menu(report, page, path, width, height):
@@ -727,7 +818,7 @@ def check_header_white(report, got, where, home):
     report.check(not got['dark'], f'{where}: шапка тёмная (header--dark)')
     report.check(got['background'] == 'rgb(255, 255, 255)' and got['border'] == 'rgb(220, 226, 232)',
                  f'{where}: белая шапка §7.1: фон {got["background"]}, линия {got["border"]}')
-    report.check(got['ctaBackground'] == (None if home else 'rgb(248, 250, 252)'), f'{where}: фон второго ряда {got["ctaBackground"]}')
+    report.check(got['ctaBackground'] is None, f'{where}: есть второй ряд шапки, фон {got["ctaBackground"]}')  # правка 11.11, J-02
     report.check(got['ctaColor'] in (None, 'rgb(8, 103, 255)'), f'{where}: цвет CTA {got["ctaColor"]}')
     report.check((got['logo'], got['white']) in (((1, 0), (1, None)) if home else ((1, None),)), f'{where}: opacity логотипов {got["logo"]}/{got["white"]}')
     check_logo_background(report, got, where)
@@ -3555,6 +3646,9 @@ def main():
                 if path in HEADER_PAGES:
                     for width in (390, 1440):
                         check_header(report, new_page, path, width)
+                if path in LANG_MENU_PAGES:
+                    for width in (390, 1440):
+                        check_lang_menu(report, new_page, path, width)
                 if path in ('/lt', '/en'):
                     check_logo(report, new_page, path)
                 if path == '/lt/apie-mus':

@@ -52,7 +52,6 @@ return [
     'cookies' => ['title' => 'Slapukų pasirinkimai'],
     'delivery' => ['title' => 'Pristatymas ir atsiėmimas'],
     'returns' => ['title' => 'Grąžinimas ir neatitikimai'],
-    'switch_language' => 'Switch to English',
     'not_found' => [
         'title' => 'Puslapis nerastas',
         'text' => 'Pasirinkite vieną iš pagrindinių svetainės puslapių.',

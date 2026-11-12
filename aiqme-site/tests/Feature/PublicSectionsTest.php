@@ -251,7 +251,9 @@ class PublicSectionsTest extends TestCase
     {
         $xpath = Html::xpath($this->get('/en/information')->getContent());
         $this->assertSame(0, $xpath->query('//select[@name="resource-language"]')->length);
-        $this->get('/en/information')->assertDontSee('Language')->assertDontSee('LT / EN');
+        // Правка 11.11, J-02: «Language» теперь — имя кнопки выбора языка в шапке; фильтра языка нет в содержимом страницы.
+        $this->assertStringNotContainsString('Language', Html::text($xpath->query('//main')->item(0)));
+        $this->get('/en/information')->assertDontSee('LT / EN');
         $this->assertSame(['All topics', 'Materials', 'File preparation', 'Technology'], Html::texts($xpath, '//select[@name="category"]/option'));
         $this->assertSame('Search resources...', $xpath->query('//input[@id="resource-search"]')->item(0)->getAttribute('placeholder'));
 

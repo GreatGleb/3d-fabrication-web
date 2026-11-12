@@ -18,7 +18,7 @@ return [
     'account' => 'Account',
     'cart' => 'Basket',
     'menu' => 'Open menu',
-    'tagline' => '3D ENGINEERING & TECHNOLOGY',
+    'language' => 'Language', // правка 11.11, J-02: имя кнопки выбора языка (второй ряд с tagline удалён)
     'quote_cta' => 'Upload files and get a quote',
     'footer' => [
         'slogan' => 'Precision takes shape', // edit 11.11, J-01
