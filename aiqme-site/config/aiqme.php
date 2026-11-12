@@ -70,18 +70,19 @@ return [
 
     /*
     | Формы обращений и регистрации на обучение (W-09, §6.4): получатель письма о новой заявке (клиенту писем нет, §5.1),
-    | ограничение частоты отправок с одного IP (обе формы вместе, в час) и вложения контактной формы — до 5 файлов
+    | ограничение частоты отправок с одного IP (обе формы вместе: limit за limit_minutes минут, правка 11.11, J-06) и вложения контактной формы — до 5 файлов
     | по 15 МиБ, расширения прототипа. Это не утверждённые производственные пределы; в админке не редактируются.
     */
     'forms' => [
         'mail_to' => 'info@aiqme.com',
-        'per_hour' => (int) env('AIQME_FORMS_PER_HOUR', 10),
+        'limit' => (int) env('AIQME_FORMS_LIMIT', 5),
+        'limit_minutes' => (int) env('AIQME_FORMS_LIMIT_MINUTES', 5),
         'attachments_max_files' => 5,
         'attachments_max_kb' => 15360,
         'attachments_extensions' => ['stl', 'step', 'stp', 'obj', 'pdf', 'jpg', 'jpeg', 'png'],
         // Капча ALTCHA (правка 28.10 П3): ключ подписи задач (64 hex) только в .env, пусто — задачи не выдаются и формы
         // не принимаются. Задача PBKDF2/SHA-256: cost итераций, секретный counter из диапазона, срок в секундах.
-        // Выдача задач (GET /altcha) — в минуту с одного IP; через env, как AIQME_ORDERS_PER_HOUR.
+        // Выдача задач (GET /altcha) — в минуту с одного IP; через env, как AIQME_ORDERS_LIMIT.
         'altcha' => [
             'hmac_key' => env('ALTCHA_HMAC_KEY'),
             'cost' => 5000,
@@ -104,12 +105,14 @@ return [
     ],
 
     /*
-    | Заявки на изготовление (W-12, §3.1): ограничение частоты отправок с одного IP (в час; превышение — 429 без записи)
+    | Заявки на изготовление (W-12, §3.1): ограничение частоты отправок с одного IP (limit за limit_minutes минут, правка
+    | 11.11, J-06; заявки калькулятора и оформление корзины вместе; превышение — 429 без записи)
     | и первый порядковый номер заказа (счётчик counters; номер выдаёт UPDATE … RETURNING). Гостевая страница заказа
     | (W-15, §6.2): запросов в минуту с одного IP (превышение — 429). В админке не редактируются.
     */
     'orders' => [
-        'per_hour' => (int) env('AIQME_ORDERS_PER_HOUR', 10),
+        'limit' => (int) env('AIQME_ORDERS_LIMIT', 5),
+        'limit_minutes' => (int) env('AIQME_ORDERS_LIMIT_MINUTES', 5),
         'guest_per_minute' => 30,
         'first_number' => (int) env('AIQME_ORDERS_FIRST_NUMBER', 1),
     ],

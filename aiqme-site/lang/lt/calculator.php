@@ -155,6 +155,5 @@ return [
         'message_intro' => 'Prašau padėti įvertinti failus:',
         'message_more' => 'Nenurodyta modelių: :count.',
         'submit_failed' => 'Užsakymas neišsiųstas. Bandykite dar kartą.',
-        'throttle' => 'Per daug užklausų. Bandykite vėliau.',
     ],
 ];

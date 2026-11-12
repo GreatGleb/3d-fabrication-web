@@ -77,14 +77,16 @@ class AppServiceProvider extends ServiceProvider
         // Временные загрузки Livewire (медиа админки) — тот же предел, что у MediaFile (§6.4); по умолчанию Livewire — 12 МБ.
         config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.config('aiqme.media_max_kb')]]);
 
-        // Формы обращений и регистрации на обучение (W-09): общий лимит отправок с одного IP в час; превышение — 429.
-        RateLimiter::for('forms', fn (Request $request): Limit => Limit::perHour(config('aiqme.forms.per_hour'))->by($request->ip()));
+        // Формы обращений и регистрации на обучение (W-09): общий лимит отправок с одного IP — 5 за 5 минут (правка 11.11,
+        // J-06); превышение — 429 с числом минут до повтора (errors/429 и JSON в bootstrap/app.php).
+        RateLimiter::for('forms', fn (Request $request): Limit => Limit::perMinutes(config('aiqme.forms.limit_minutes'), config('aiqme.forms.limit'))->by($request->ip()));
         // Задачи ALTCHA (правка 28.10 П3): выдача в минуту с одного IP; превышение — 429.
         RateLimiter::for('altcha', fn (Request $request): Limit => Limit::perMinute(config('aiqme.forms.altcha.per_minute'))->by($request->ip()));
 
         // Заявки на изготовление (W-12, §3.1): своя частота по IP; корзина Lunar → заказ без адресов Lunar, через
         // валидатор заявки; номер заказа — порядковый из счётчика counters.
-        RateLimiter::for('orders', fn (Request $request): Limit => Limit::perHour(config('aiqme.orders.per_hour'))->by($request->ip()));
+        // Считается каждая отправка, и отклонённая проверкой (422): разбор STL дорог; окно — 5 минут (правка 11.11, J-06).
+        RateLimiter::for('orders', fn (Request $request): Limit => Limit::perMinutes(config('aiqme.orders.limit_minutes'), config('aiqme.orders.limit'))->by($request->ip()));
         // Гостевая страница заказа (W-15, §6.2): подбор токена ограничен частотой по IP.
         RateLimiter::for('guest-orders', fn (Request $request): Limit => Limit::perMinute(config('aiqme.orders.guest_per_minute'))->by($request->ip()));
         config([

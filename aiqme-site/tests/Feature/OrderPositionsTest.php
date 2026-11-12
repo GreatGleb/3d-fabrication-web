@@ -47,7 +47,7 @@ class OrderPositionsTest extends TestCase
         $this->seed(PrototypeContentSeeder::class);
         Storage::fake('local');
         Mail::fake();
-        config(['aiqme.orders.per_hour' => 100]);
+        config(['aiqme.orders.limit' => 100]);
         $this->token = (string) Str::uuid();
     }
 

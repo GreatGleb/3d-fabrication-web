@@ -213,7 +213,7 @@ return [
         'file_content' => 'The file content does not match its type.',
         'participants' => 'Participants: from :min to :max.',
         'rejected' => 'The request was not accepted. Please try again.',
-        'throttle' => 'Too many requests. Please try again later.',
+        'throttle' => 'Too many requests. Try again in :minutes min.',
         'altcha' => 'Confirm that you are not a robot: tick “I\'m not a robot” and wait until it says “Verified”. The box needs JavaScript enabled.',
     ],
 ];

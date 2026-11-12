@@ -58,7 +58,7 @@ $C restart worker scheduler
 
 `build/prod-local/.env` (игнорируется Git, права 0644, синтетические значения) — копия `.env.example` с отличиями:
 `APP_URL=http://127.0.0.1:8792`, `APP_KEY` — случайный, `SESSION_SECURE_COOKIE=false`, `MAIL_MAILER=log`,
-`DB_PASSWORD=prod-local-only-not-a-secret`, `AIQME_ORDERS_PER_HOUR=100`, `AIQME_ENV_FILE=build/prod-local/.env`,
+`DB_PASSWORD=prod-local-only-not-a-secret`, `AIQME_ORDERS_LIMIT=100`, `AIQME_ENV_FILE=build/prod-local/.env`,
 `AIQME_BUILD_CONTEXT=build/context`, `AIQME_WEB_PORT=8792`, `TRUSTED_PROXIES=<шлюз aiqme-prod_default>`; ключи Stripe,
 Google и Telegram пустые (события этих каналов остаются неотправленными — так и должно быть). Капча ALTCHA (правка
 28.10, П3): в `build/prod-local/.env` — свой `ALTCHA_HMAC_KEY` (`openssl rand -hex 32`), иначе `/altcha` отвечает 503 и

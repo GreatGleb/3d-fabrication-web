@@ -49,7 +49,7 @@ class OrderPositionsDisplayTest extends TestCase
         $this->seed(PrototypeContentSeeder::class);
         Storage::fake('local');
         Mail::fake();
-        config(['aiqme.orders.per_hour' => 100]);
+        config(['aiqme.orders.limit' => 100]);
         Livewire::flushState();
         $this->admin = User::factory()->create();
         $this->admin->forceFill(['is_admin' => true])->save();

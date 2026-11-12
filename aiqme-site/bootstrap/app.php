@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Middleware\TrustProxies as FrameworkTrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // Превышен лимит частоты (правка 11.11, J-06): JSON-запросу (заявка калькулятора) — текст с числом минут до повтора,
+        // как на странице errors/429; заголовки Retry-After и X-RateLimit-* — от middleware.
+        $exceptions->render(function (ThrottleRequestsException $exception, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json(['message' => __('public.forms.throttle', [
+                'minutes' => max(1, (int) ceil($exception->getHeaders()['Retry-After'] / 60)),
+            ])], 429, $exception->getHeaders());
+        });
         // Тело больше post_max_size PHP отбрасывает целиком (до маршрута и локали): заявке калькулятора (W-12) — понятное
         // сообщение о лимите файлов на языке адреса вместо пустой ошибки 413.
         $exceptions->render(function (PostTooLargeException $exception, Request $request) {

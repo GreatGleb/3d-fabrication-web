@@ -136,7 +136,8 @@ function start(root) {
         return;
       }
       if (response.status === 422) showFieldErrors(body.errors ?? {});
-      else showErrors([response.status === 429 ? texts.throttle : response.status === 413 && body.message ? body.message : texts.submit_failed]);
+      // 413 и 429 (правка 11.11, J-06: «через N мин.») — сообщение сервера на языке адреса.
+      else showErrors([[413, 429].includes(response.status) && body.message ? body.message : texts.submit_failed]);
     } catch {
       showErrors([texts.submit_failed]);
     }

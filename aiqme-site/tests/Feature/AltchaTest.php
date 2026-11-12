@@ -198,7 +198,7 @@ class AltchaTest extends TestCase
         $this->seed(PrototypeContentSeeder::class);
         $this->training();
         // Двенадцать отправок одной формы с одного IP — больше обычного лимита throttle:forms.
-        config(['aiqme.forms.per_hour' => 100]);
+        config(['aiqme.forms.limit' => 100]);
         $data = $this->formData($form, $locale);
         $rejected = [
             'без поля' => null,

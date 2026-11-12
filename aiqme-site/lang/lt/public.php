@@ -213,7 +213,7 @@ return [
         'file_content' => 'Failo turinys neatitinka jo tipo.',
         'participants' => 'Dalyvių skaičius — nuo :min iki :max.',
         'rejected' => 'Užklausa nepriimta. Bandykite dar kartą.',
-        'throttle' => 'Per daug užklausų. Bandykite vėliau.',
+        'throttle' => 'Per daug užklausų. Bandykite po :minutes min.',
         'altcha' => 'Patvirtinkite, kad nesate robotas: pažymėkite langelį „Aš nesu robotas“ ir palaukite, kol bus parašyta „Patvirtinta“. Langelis veikia tik įjungus JavaScript.',
     ],
 ];

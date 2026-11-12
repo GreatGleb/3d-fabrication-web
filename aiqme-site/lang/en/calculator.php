@@ -155,6 +155,5 @@ return [
         'message_intro' => 'Please help review these files:',
         'message_more' => 'Models not listed: :count.',
         'submit_failed' => 'The order was not sent. Please try again.',
-        'throttle' => 'Too many requests. Please try again later.',
     ],
 ];

@@ -6009,3 +6009,50 @@ I-01…I-06 выполнены (track L), полный `bin/check` и полны
 - **Не проверено (ждёт пользователя):** вид глазами в реальных браузерах/телефонах; на рабочем сервере может быть своё ui_text
   `shell.cookie.text` (перекроет новый текст); снимок карты в хорошем качестве от заказчика ещё не получен (стоит временный);
   режим `--base-url` против aiqme.com до deploy упадёт на iframe старой версии — проверено чтением кода; демо-сборка не пересобиралась.
+
+## Правки 11.11, J-06: лимит заявок и заказов 5 за 5 минут; причина срабатывания на второй отправке; ответ заказчику
+
+- **Причина (воспроизведение).** Новый тест `OrderSubmissionTest::test_two_step_3_submissions_in_a_row_are_not_throttled_but_rejected_attempts_count`
+  прогнан **до правки** — зелёный: две отправки шага 3 подряд 429 **не давали** и до правки; одна отправка = ровно одна
+  попытка лимита `orders` (`route:list`: на `POST lt/kalkuliatorius` один `ThrottleRequests:orders`, JS шлёт один `fetch`).
+  Значит, 429 у заказчика — от накопленных за **час** попыток с его IP: лимит (10 в час) считал **каждую** отправку, в том числе
+  отклонённые проверкой (422 — например «Storis: nuo 0,1 iki 200 mm» на том же снимке p-4), а заявки калькулятора и оформление
+  корзины делят один счётчик; заказчик в тот день проверял формы много раз. Другая возможная причина, которую ночью проверить
+  нельзя: если `TRUSTED_PROXIES` на сервере не совпадает со шлюзом сети Docker (в документах встречаются 172.18.0.1 и
+  172.23.0.1), все посетители видны с одного IP прокси и делят счётчик — **проверить при выпуске J-08**
+  (`bin/php artisan config:show aiqme.trusted_proxies` = шлюз `aiqme-prod_default`).
+  Устранение: окно 5 минут вместо часа (накопленное «снимается» не позже чем через 5 минут) и текст с числом минут.
+  Отклонённые 422 по-прежнему считаются (разбор STL дорог; не ослаблять защиту без причины) — записано в комментарии.
+- **Лимиты.** `config/aiqme.php`: `forms.limit`/`forms.limit_minutes` (`AIQME_FORMS_LIMIT`=5, `AIQME_FORMS_LIMIT_MINUTES`=5),
+  `orders.limit`/`orders.limit_minutes` (`AIQME_ORDERS_LIMIT`=5, `AIQME_ORDERS_LIMIT_MINUTES`=5); `AppServiceProvider` —
+  `Limit::perMinutes(...)->by(ip)`. Переменные переименованы (`*_PER_HOUR` → `*_LIMIT`), чтобы старое `AIQME_ORDERS_PER_HOUR=10`
+  в рабочем `.env` не переопределило новое значение; `.env.example`, `docs/operations.md`, `bin/browser-check` (поднимает
+  `AIQME_ORDERS_LIMIT` и `AIQME_FORMS_LIMIT` до 100 на прогон) обновлены. **При выпуске:** старые `AIQME_*_PER_HOUR` из `.env`
+  можно удалить (больше не читаются). ALTCHA (30 в минуту) и guest-orders (30 в минуту) не менялись.
+- **Текст.** `public.forms.throttle`: LT «Per daug užklausų. Bandykite po :minutes min.», EN «Too many requests. Try again in
+  :minutes min.» (EN по образцу `account.messages.throttle`; в README дан только LT). N = ⌈Retry-After/60⌉, не меньше 1.
+  Страница `errors/429` (формы, оформление корзины) берёт N из заголовков исключения; JSON-запрос (калькулятор) получает
+  `{"message": …}` из `bootstrap/app.php`, JS показывает `body.message` для 413 и 429 (ключ `calculator.js.throttle` удалён).
+  Если на сервере в админке есть свой ui_text для `public.forms.throttle` без `:minutes` — он перекроет новый текст (проверить при выпуске).
+- **Тесты:** `FormsTest::test_forms_allow_five_submissions_in_five_minutes_then_429_with_minutes_until_reset` (5 — ок, 6-я — 429,
+  h1 «Per daug užklausų. Bandykite po 5 min.», Retry-After 300; через 3 мин — EN «… in 2 min.»; через 5 мин 1 с — принимается),
+  `OrderSubmissionTest::test_orders_allow_five_in_five_minutes_then_429_with_minutes_and_reset` (5 заявок, 6-я — 429 JSON LT
+  «… po 5 min.», через 4 мин EN «… in 1 min.», заказов 5; после окна — 201). На коде до правки эти тесты падают (ключей
+  `limit`/`limit_minutes` нет, текст «Bandykite vėliau.»). Прежние тесты: ожидаемый текст в `test_forms_are_throttled_per_ip_across_both_forms`;
+  в двух тестах FormsTest, где отправок больше 5 (вложения, ошибки регистрации), лимит поднят с комментарием «правка 11.11, J-06»;
+  `per_hour` → `limit` в подменах config.
+- **Проверки:** `bin/check` — `bin/check: OK` (PHPUnit 781/781, Vite). `bin/browser-check /lt/kontaktai /lt/kalkuliatorius` —
+  `OK (814 проверок)`. D21_REPLACEMENTS не нужны (текста 429 в эталоне нет).
+- **Не проверено:** показ сообщения 429 в калькуляторе в браузере (browser-check поднимает лимит; проверено тестом JSON и чтением
+  JS); значение `TRUSTED_PROXIES` и ui_text на рабочем сервере — ждёт выпуска J-08.
+
+### Ответ заказчику (J-06)
+
+- **LT:** Apsauga nuo per dažnų užklausų skaičiuoja visus siuntimus iš to paties IP adreso, taip pat ir tuos, kuriuos sistema
+  atmetė dėl klaidos formoje; anksčiau riba buvo 10 per valandą, todėl po kelių bandymų tekdavo laukti iki valandos. Dabar riba —
+  5 užklausos per 5 minutes (atskirai formoms ir užsakymams), apribojimas pats nusiima ne vėliau kaip po 5 minučių, o pranešime
+  parašyta, po kiek minučių bandyti dar kartą („Per daug užklausų. Bandykite po N min.“).
+- **RU:** Защита от слишком частых запросов считает все отправки с одного IP-адреса, в том числе отклонённые из-за ошибки в форме;
+  раньше лимит был 10 в час, поэтому после нескольких попыток приходилось ждать до часа. Теперь лимит — 5 запросов за 5 минут
+  (отдельно для форм и для заказов), ограничение снимается само не позже чем через 5 минут, а в сообщении указано, через сколько
+  минут повторить («Per daug užklausų. Bandykite po N min.»).

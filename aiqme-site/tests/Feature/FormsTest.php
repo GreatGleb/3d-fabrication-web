@@ -244,6 +244,8 @@ class FormsTest extends TestCase
     public function test_attachments_follow_section_6_4_limits_and_signatures(): void
     {
         Mail::fake();
+        // правка 11.11, J-06: отправок в тесте больше лимита по умолчанию (5 за 5 минут) — лимит поднят.
+        config(['aiqme.forms.limit' => 100]);
         $cases = [
             'too many' => [array_map(fn (int $i) => UploadedFile::fake()->createWithContent("p$i.stl", 'solid'), range(1, 6)), 'attachments'],
             'too large' => [[UploadedFile::fake()->create('big.step', 15361)], 'attachments.0'],
@@ -310,15 +312,40 @@ class FormsTest extends TestCase
     public function test_forms_are_throttled_per_ip_across_both_forms(): void
     {
         Mail::fake();
-        config(['aiqme.forms.per_hour' => 2]);
+        config(['aiqme.forms.limit' => 2]);
         $training = $this->training();
         $this->post('/en/contact', $this->contact())->assertRedirect();
         $this->post('/lt/mokymai', ['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test', 'format' => 'aiqme', 'participants' => 2])->assertRedirect();
-        $this->post('/en/contact', $this->contact())->assertStatus(429)->assertSee('Too many requests. Please try again later.');
+        // правка 11.11, J-06: текст говорит, через сколько минут повторить.
+        $this->post('/en/contact', $this->contact())->assertStatus(429)->assertSee('Too many requests. Try again in 5 min.');
         $this->post('/en/training', ['training' => $training->id])->assertStatus(429);
         $this->assertSame(1, ContactRequest::count());
         $this->assertSame(1, TrainingRegistration::count());
         $this->post('/en/contact', $this->contact(), ['REMOTE_ADDR' => '10.0.0.2'])->assertRedirect()->assertSessionHasNoErrors();
+    }
+
+    /**
+     * Правка 11.11, J-06: по умолчанию 5 отправок форм за 5 минут с IP; шестая — 429 с числом минут на языке страницы,
+     * окно истекает — снова принимается.
+     */
+    public function test_forms_allow_five_submissions_in_five_minutes_then_429_with_minutes_until_reset(): void
+    {
+        Mail::fake();
+        $this->freezeTime();
+        $this->assertSame([5, 5], [config('aiqme.forms.limit'), config('aiqme.forms.limit_minutes')]);
+        foreach (range(1, 5) as $ignored) {
+            $this->post('/lt/kontaktai', $this->contact(['service' => '3d-spausdinimas']))->assertRedirect()->assertSessionHasNoErrors();
+        }
+        $this->assertSame(5, ContactRequest::count());
+        $page = $this->post('/lt/kontaktai', $this->contact(['service' => '3d-spausdinimas']))->assertStatus(429)->assertHeader('Retry-After', '300');
+        $this->assertSame('Per daug užklausų. Bandykite po 5 min.', Html::text(Html::xpath($page->getContent())->query('//main//h1')->item(0)));
+
+        $this->travel(3)->minutes();
+        $this->post('/en/contact', $this->contact())->assertStatus(429)->assertSee('Too many requests. Try again in 2 min.');
+        $this->travel(2)->minutes();
+        $this->travel(1)->seconds();
+        $this->post('/en/contact', $this->contact())->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(6, ContactRequest::count());
     }
 
     public function test_prefill_by_section_1_2_contract_is_escaped_trimmed_and_ignores_unknown_slugs(): void
@@ -393,6 +420,8 @@ class FormsTest extends TestCase
     public function test_invalid_training_registration_reopens_its_modal_and_stores_nothing(): void
     {
         Mail::fake();
+        // правка 11.11, J-06: отправок в тесте больше лимита по умолчанию (5 за 5 минут) — лимит поднят.
+        config(['aiqme.forms.limit' => 100]);
         $training = $this->training();
         foreach ([['participants' => 21], ['participants' => 0], ['format' => 'onsite'], ['email' => 'x'], ['training' => 999999]] as $override) {
             $this->from('/en/training')->post('/en/training', [...['training' => $training->id, 'altcha' => $this->altcha(), 'name' => 'Jonas', 'email' => 'jonas@example.test',

@@ -257,8 +257,9 @@ def browser_env():
     env = dict(os.environ)
     env.update({'DB_DATABASE': DATABASE, 'QUEUE_CONNECTION': 'sync', 'APP_URL': BASE, 'APP_ENV': 'local',
                 'APP_DEBUG': 'false',
-                # Заявки W-12 одного прогона (несколько страниц, ширин и ошибочных отправок) — с одного IP; лимит поднят.
-                'AIQME_ORDERS_PER_HOUR': '100',
+                # Заявки W-12 и формы одного прогона (несколько страниц, ширин и ошибочных отправок) — с одного IP; лимиты
+                # подняты (правка 11.11, J-06: по умолчанию 5 за 5 минут).
+                'AIQME_ORDERS_LIMIT': '100', 'AIQME_FORMS_LIMIT': '100',
                 # Капча ALTCHA (П3): свой ключ на прогон; задачи всех страниц и ширин — с 127.0.0.1, лимит выдачи поднят
                 # (ответ 429 от /altcha считался бы ошибкой страницы).
                 'ALTCHA_HMAC_KEY': secrets.token_hex(32), 'AIQME_ALTCHA_PER_MINUTE': '1000',

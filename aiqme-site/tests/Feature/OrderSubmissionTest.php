@@ -13,6 +13,7 @@ use Database\Seeders\PrototypeContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -197,7 +198,7 @@ class OrderSubmissionTest extends TestCase
      */
     public function test_infill_consultation_preferences_and_notes(): void
     {
-        config(['aiqme.orders.per_hour' => 100]);
+        config(['aiqme.orders.limit' => 100]);
         // Правка 02.11, Г8: пожелания, срок и заметка — у каждой позиции ($printing — в обе позиции заявки); у заказа notes нет.
         $order = function (array $printing): array {
             $this->token = (string) Str::uuid();
@@ -392,10 +393,29 @@ class OrderSubmissionTest extends TestCase
         $this->get('/en/quote/submitted')->assertNotFound();
     }
 
+    /**
+     * Правка 11.11, J-06: заказчик дважды подряд отправил шаг 3 и получил 429. Одна отправка — одна попытка лимита orders
+     * (маршрут без двойного throttle), две подряд с настройками по умолчанию — без 429. Причина — лимит считает и
+     * отклонённые проверкой (422) отправки того же IP: после исправлений формы 429 наступает раньше, чем «на пятом заказе».
+     */
+    public function test_two_step_3_submissions_in_a_row_are_not_throttled_but_rejected_attempts_count(): void
+    {
+        Mail::fake();
+        $key = md5('orders'.'127.0.0.1');
+        $this->submit($this->payload())->assertCreated();
+        $this->assertSame(1, RateLimiter::attempts($key));
+        $this->token = (string) Str::uuid();
+        $this->submit($this->payload())->assertCreated();
+        $this->assertSame(2, RateLimiter::attempts($key));
+
+        $this->submit($this->payload(['phone' => '']))->assertUnprocessable();
+        $this->assertSame(3, RateLimiter::attempts($key));
+    }
+
     public function test_rate_limit_per_ip_returns_429_without_writes(): void
     {
         Mail::fake();
-        config(['aiqme.orders.per_hour' => 2]);
+        config(['aiqme.orders.limit' => 2]);
         foreach (range(1, 2) as $ignored) {
             $this->token = (string) Str::uuid();
             $this->submit($this->payload())->assertCreated();
@@ -409,6 +429,31 @@ class OrderSubmissionTest extends TestCase
         Mail::assertSent(FormSubmitted::class, 2);
         // Лимит — по IP: с другого адреса заявка принимается.
         $this->post('/en/quote', $this->payload(), ['Accept' => 'application/json', 'REMOTE_ADDR' => '10.0.0.2'])->assertCreated();
+    }
+
+    /**
+     * Правка 11.11, J-06: по умолчанию 5 заявок за 5 минут с IP; шестая — 429 JSON с текстом на языке адреса и числом минут
+     * (его показывает калькулятор), после окна — принимается.
+     */
+    public function test_orders_allow_five_in_five_minutes_then_429_with_minutes_and_reset(): void
+    {
+        Mail::fake();
+        $this->freezeTime();
+        $this->assertSame([5, 5], [config('aiqme.orders.limit'), config('aiqme.orders.limit_minutes')]);
+        foreach (range(1, 5) as $ignored) {
+            $this->token = (string) Str::uuid();
+            $this->submit($this->payload(), 'lt')->assertCreated();
+        }
+        $this->token = (string) Str::uuid();
+        $this->submit($this->payload(), 'lt')->assertTooManyRequests()->assertHeader('Retry-After', '300')
+            ->assertExactJson(['message' => 'Per daug užklausų. Bandykite po 5 min.']);
+        $this->travel(4)->minutes();
+        $this->submit($this->payload())->assertTooManyRequests()->assertExactJson(['message' => 'Too many requests. Try again in 1 min.']);
+        $this->assertSame(5, Order::count());
+
+        $this->travel(61)->seconds();
+        $this->submit($this->payload())->assertCreated();
+        $this->assertSame(6, Order::count());
     }
 
     public function test_files_over_php_limits_get_a_clear_message(): void
@@ -434,7 +479,7 @@ class OrderSubmissionTest extends TestCase
     public function test_invalid_input_is_rejected_by_the_server_without_writes(): void
     {
         Mail::fake();
-        config(['aiqme.orders.per_hour' => 100]);
+        config(['aiqme.orders.limit' => 100]);
         $part = fn (array $override = [], string $fixture = 'cube-10mm-ascii.stl'): array => $this->printed(['file' => $this->stl($fixture), 'unit' => 'mm', 'scale' => '100', 'quantity' => '1', ...$override]);
         $cases = [
             'parts.0.file' => [['parts' => [$part([], 'truncated-binary.stl')]], 'truncated-binary.stl: Could not read geometry'],
