@@ -897,6 +897,7 @@ LOGO_PROBE = """() => {
             const tops = new Set([...range.getClientRects()].map((box) => Math.round(box.top)));
             return {text: p.textContent, rect: [r.left, r.top, r.right, r.bottom], lines: tops.size,
                 font: parseFloat(getComputedStyle(p).fontSize)}; })(),
+        social: [...document.querySelectorAll('.footer-social a')].map(rect),
         row: rect(header.querySelector('.head-main')), navHeight: visible(nav) ? nav.getBoundingClientRect().height : 0,
         fits: document.documentElement.scrollWidth <= document.documentElement.clientWidth};
 }"""
@@ -945,6 +946,12 @@ def check_logo(report, new_page, path):
                      f'{where}: девиз «{slogan["text"]}»')
         report.check(slogan['lines'] == 1 and abs(slogan['rect'][0] - image[0]) <= 2 and abs(slogan['rect'][2] - image[2]) <= 2,
                      f'{where}: девиз {slogan["rect"]} ({slogan["lines"]} стр., {slogan["font"]:.2f} px) не по ширине логотипа {image}')
+        # Макет рев.5, п.8: значки соцсетей — один ряд под логотипом, крайние по его краям (±1 px), промежутки равные (±1 px).
+        social = got['social']
+        gaps = [b[0] - a[2] for a, b in zip(social, social[1:])]
+        report.check(len(social) == 4 and len({round(box[1]) for box in social}) == 1 and abs(social[0][0] - image[0]) <= 1
+                     and abs(social[-1][2] - image[2]) <= 1 and max(gaps) - min(gaps) <= 1 and min(gaps) >= 2,
+                     f'{where}: значки соцсетей {social} не по ширине логотипа {image}')
         for problem in problems:
             report.check(False, f'{where}: {problem}')
         context.close()

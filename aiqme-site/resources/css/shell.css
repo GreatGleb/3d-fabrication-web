@@ -21,10 +21,16 @@ main,.wrap>*,.grid>*,.split>*,.catalog>*,.account-layout>*,.admin-layout>*{min-w
 /* Девиз подвала (правка 11.11, J-01): одна строка шириной с логотип; font-size подбирает resources/js/footer-slogan.js. */
 .footer p.footer-slogan{white-space:nowrap;width:max-content;max-width:none;line-height:1.3}
 /* Соцсети в подвале (правка 06.11): ряд значков заказчика под девизом; .footer a прототипа делает ссылки блочными. */
-.footer-social{display:flex;gap:10px;margin-top:20px}
+.footer-social img{width:36px;height:36px}
+/* Значки соцсетей (макет рев.5, п.8): ряд шириной с логотип над ним — крайние значки по краям логотипа, между ними поровну;
+   ширина ряда — те же ступени, что у .footer .logo (200/164/128/120 px), на телефоне значки 28/26 px, чтобы четыре поместились. */
+.footer-social{display:flex;justify-content:space-between;width:200px;margin-top:20px}
+@media(max-width:1150px){.footer-social{width:164px}}
+@media(max-width:600px){.footer-social{width:128px}.footer-social img{width:28px;height:28px}}
+@media(max-width:360px){.footer-social{width:120px}.footer-social img{width:26px;height:26px}}
 .footer .footer-social a{display:block;margin:0;line-height:0;border-radius:9px;transition:opacity .2s}
 .footer .footer-social a:hover{opacity:.8}
-.footer-social img{width:36px;height:36px}
+
 /* Значок кабинета в шапке (W-07): на 320 px пять кнопок шапки прототипа шире окна — уже промежутки и поля кнопок. */
 @media(max-width:360px){
  .tools{gap:2px}
