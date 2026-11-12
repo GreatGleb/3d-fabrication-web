@@ -4,7 +4,7 @@
   "created": "2026-11-12",
   "status": "planned_not_started",
   "plan_refs": "план docs/planning/edits-20261112/README.md; JPEG шаблонов писем — docs/customer/client/edits-20261112-mail/ (приватно, только чтение); прежние планы docs/planning/edits-20261029…20261111/README.md",
-  "agent_note": "Седьмая порция: письма клиенту о заказе по двум шаблонам заказчика (12.11). Проверяйте то, что увидит клиент (снимки писем), а не только тесты. Решение заказчика 12.11 (клиент получает письма) отменяет прежнее «клиенту писем нет» для оплаты и отправки заказа.",
+  "agent_note": "Седьмая порция: письма клиенту о заказе по двум шаблонам заказчика (12.11). Проверяйте то, что увидит клиент (снимки писем), а не только тесты. Решение заказчика 12.11 (клиент получает письма) отменяет прежнее «клиенту писем нет» для оплаты и отправки заказа. Дополнение 13.11: K-05 (анонимный номер заказа) и K-06 (поле «Kategorija») выполняются первыми.",
   "rules": [
     "Задачи выполняются по порядку массива; следующая — после выполнения критериев done предыдущей или явной отметки о блокировке в aiqme-site/docs/progress.md. Задачи, транзитивно зависящие (depends) от заблокированной, пропускаются с отметкой «пропущено: зависит от заблокированной K-xx»; независимые продолжаются.",
     "Без человека (в том числе ночью) выполняются только задачи с track = L; на задаче с track = P (K-04, выпуск) прогон останавливается.",
@@ -27,6 +27,102 @@
     "Stripe не вызывается: оплата в тестах и browser-check — через имеющиеся подмены (как в тестах CheckoutController и StripeController)."
   ],
   "tasks": [
+    {
+      "id": "K-05",
+      "title": "Анонимный номер заказа вместо порядкового",
+      "track": "L",
+      "slice": "S0",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261112/README.md (K-05)",
+        "aiqme-site/app/Domain/Orders/OrderNumber.php",
+        "aiqme-site/config/aiqme.php",
+        "aiqme-site/docs/operations.md"
+      ],
+      "result": "Новые заказы получают случайный уникальный 8-значный номер; клиент нигде не видит порядковый номер заказа.",
+      "touches": [
+        "aiqme-site/app/",
+        "aiqme-site/resources/views/",
+        "aiqme-site/lang/",
+        "aiqme-site/config/",
+        "aiqme-site/database/migrations/",
+        "aiqme-site/database/seeders/",
+        "aiqme-site/routes/",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md",
+        "aiqme-site/.env.example",
+        "aiqme-site/docs/operations.md"
+      ],
+      "done": [
+        "Первым: aiqme-site/bin/check зелёный на ветке до правок (иначе исправить и описать)",
+        "OrderNumber выдаёт случайный 8-значный номер (random_int), уникальность — повтор при совпадении с reference/order_meta.number; тест: два заказа подряд не идут подряд по номеру, совпадение (подменённый генератор) даёт новую попытку",
+        "Заказ калькулятора и заказ товаров: страница подтверждения, кабинет, гостевая ссылка, оплата, счёт, админка работают с новым номером (существующие тесты зелёные, ожидания номеров поправлены с комментарием «правка 12.11, K-05»)",
+        "Списки заказов (админка, кабинет, Overview) упорядочены по дате/id, а не по номеру (тест)",
+        "aiqme.orders.first_number и AIQME_ORDERS_FIRST_NUMBER убраны из config, .env.example, docs/operations.md; поиск по коду — нет использований",
+        "Тест: в HTML страницы подтверждения, кабинета и гостевой страницы нет Lunar id заказа и порядкового номера",
+        "Нумерация счетов (InvoiceNumber) не изменена (тест остаётся зелёным)",
+        "progress.md: запись «Правки 12.11, K-05: …»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check /lt/kalkuliatorius /en/quote /lt/krepselis /en/cart зелёный"
+      ],
+      "constraints": [
+        "Существующие заказы номера не меняют; строка counters.orders не удаляется"
+      ],
+      "unknowns": [],
+      "browser_check": [
+        "/lt/kalkuliatorius",
+        "/en/quote",
+        "/lt/krepselis",
+        "/en/cart"
+      ]
+    },
+    {
+      "id": "K-06",
+      "title": "Поле «Kategorija» на странице информации: вровень с поиском, без наложения на карточки",
+      "track": "L",
+      "slice": "S0",
+      "depends": [],
+      "inputs": [
+        "docs/planning/edits-20261112/README.md (K-06)",
+        "docs/customer/client/edits-20261112-mail/resources-category-wrong.jpeg",
+        "docs/customer/client/edits-20261112-mail/resources-category-expected.jpeg",
+        "aiqme-site/resources/views/public/articles.blade.php",
+        "aiqme-site/resources/views/components/field.blade.php",
+        "aiqme-site/resources/css/public.css"
+      ],
+      "result": "На /lt/informacija и вкладках подпись «Kategorija» над списком, список вровень с поиском, карточки не перекрываются — на ПК и телефоне.",
+      "touches": [
+        "aiqme-site/resources/css/public.css",
+        "aiqme-site/resources/views/",
+        "aiqme-site/tests/",
+        "aiqme-site/bin/browser-check",
+        "aiqme-site/tests/fixtures/marker-allowlist.json",
+        "aiqme-site/docs/progress.md"
+      ],
+      "done": [
+        "Причина найдена и описана в progress.md (воспроизведение снимком до правки на ширине, где ломается)",
+        "Исправление в resources/css/public.css (style.css прототипа не меняется); на 1920, 1600, 1440, 1280, 390 px снимки до/после в журнале задачи",
+        "browser-check: на этих страницах нижний край поиска и списка совпадает ±1 px (ПК), панель фильтра не пересекается с карточками (ПК и телефон)",
+        "Другие формы с x-field (контакты, калькулятор, админка) не изменились — их проверки browser-check зелёные",
+        "progress.md: запись «Правки 12.11, K-06: …»"
+      ],
+      "checks": [
+        "aiqme-site/bin/check зелёный",
+        "aiqme-site/bin/browser-check /lt/informacija /en/information /lt/kontaktai /lt/kalkuliatorius зелёный"
+      ],
+      "constraints": [],
+      "unknowns": [],
+      "browser_check": [
+        "/lt/informacija",
+        "/en/information",
+        "/lt/kontaktai",
+        "/lt/kalkuliatorius"
+      ]
+    },
     {
       "id": "K-01",
       "title": "Письмо клиенту после оплаты заказа (шаблоны 1 и 2), настройка «Numatomas terminas»",
@@ -59,7 +155,6 @@
         "aiqme-site/docs/progress.md"
       ],
       "done": [
-        "Первым: aiqme-site/bin/check зелёный на ветке до правок (иначе исправить и описать)",
         "Mailable и blade-шаблон письма (HTML на таблицах со встроенными стилями + text/plain) по README: шапка с логотипом и заголовком шаблона 1 или 2, позиции, итоги с VAT как в счёте, доставка, покупатель, «Kas toliau?», подпись; LT дословно, EN по README",
         "Отправка через outbox с повтором: адресат — email клиента заказа; одно письмо на заказ (повторный webhook, вторая оплата, retry — без второго письма; тест)",
         "Тест: оплата заказа товаров → письмо шаблона 1, заказа калькулятора → шаблона 2; язык заказа LT и EN; гость — без кнопки кабинета, клиент кабинета — со ссылкой на account.orders.show",
@@ -127,10 +222,12 @@
     },
     {
       "id": "K-03",
-      "title": "Сквозная проверка писем 12.11 и статус в docs/requirements.md",
+      "title": "Сквозная проверка правок 12.11 (письма, номер заказа, «Kategorija») и статус в docs/requirements.md",
       "track": "L",
       "slice": "S3",
       "depends": [
+        "K-05",
+        "K-06",
         "K-01",
         "K-02"
       ],
@@ -139,12 +236,13 @@
         "docs/customer/client/edits-20261112-mail/template-1-products.jpeg",
         "docs/customer/client/edits-20261112-mail/template-2-calculator.jpeg",
         "aiqme-site/docs/progress.md",
-        "docs/requirements.md"
+        "docs/requirements.md",
+        "docs/customer/client/edits-20261112-mail/resources-category-expected.jpeg"
       ],
-      "result": "K-01 и K-02 проверены вместе; полный bin/check и bin/browser-check зелёные; в docs/requirements.md раздел «Письма клиенту 12.11».",
+      "result": "K-05, K-06, K-01 и K-02 проверены вместе; полный bin/check и bin/browser-check зелёные; в docs/requirements.md раздел «Письма клиенту 12.11».",
       "touches": [
         "docs/requirements.md",
-        "исправления в aiqme-site/ только при регрессиях K-01…K-02",
+        "исправления в aiqme-site/ только при регрессиях K-01, K-02, K-05, K-06",
         "aiqme-site/tests/",
         "aiqme-site/bin/browser-check",
         "aiqme-site/tests/fixtures/marker-allowlist.json",
@@ -153,9 +251,10 @@
       "done": [
         "aiqme-site/bin/check и полный bin/browser-check зелёные; число проверок в progress.md",
         "Сквозной сценарий в тесте: заказ калькулятора → подтверждение цены → запрос оплаты → оплата (подмена Stripe) → письмо шаблона 2 с PDF счёта → трек-номер → письмо отправки; то же для заказа товаров (шаблон 1)",
+        "Номер заказа: два новых заказа — случайные несоседние номера; на /lt/informacija снимки 1600 и 390 px сверены с resources-category-expected.jpeg (Read)",
         "Снимки писем (оба шаблона, LT и EN, гость и клиент кабинета, с вложением и без, письмо отправки) на 600 и 390 px — без горизонтальной прокрутки; каждый пункт README сверен (строка «решение N: проверено …»)",
         "docs/requirements.md: раздел «Письма клиенту 12.11» со статусом «сделано в коде и проверено локально; на aiqme.com — после выпуска»; строка 101 об уведомлениях дополнена решением заказчика 12.11",
-        "git diff --name-status main...HEAD — файлы только из touches K-01…K-03",
+        "git diff --name-status main...HEAD — файлы только из touches K-01…K-06",
         "progress.md: итог очереди и шаги выпуска K-04 (миграции, почтовый транспорт, worker очереди mail)",
         "progress.md: запись «Правки 12.11, K-03: …»"
       ],
