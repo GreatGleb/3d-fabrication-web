@@ -6139,3 +6139,16 @@ J-01…J-06 сделаны и проверены, J-07 — сквозная пр
   Ошибки у полей калькулятора (шаг 2 и 3) — цветом `.notice.error` (`public.css`).
 - Проверка: `bin/check` OK; `bin/browser-check /lt/kalkuliatorius /en/quote` OK (1178), новая проверка «толщина 70 не остановлена
   на шаге 2 у поля» падает при отключённой правке.
+
+## Правки 11.11, J-08: выпуск на aiqme.com (2026-11-12)
+
+- Копия `/var/backups/aiqme/20261112-154217`; код `1983ef6` (git archive → rsync, build, up, migrate — «Nothing to migrate», bootstrap,
+  optimize, restart worker/scheduler). `.env`: убраны `AIQME_FORMS_PER_HOUR`/`AIQME_ORDERS_PER_HOUR` (копия `.env.bak-20261112`),
+  лимиты по умолчанию 5/5; `aiqme.trusted_proxies` = 172.18.0.1.
+- Проверено на живом сайте: `/` → 302 `/en`; `/lt`, `/en`, `/lt/kontaktai`, `/lt/kalkuliatorius`, `/up` — 200; девиз «Kai tikslumas įgauna formą»;
+  полосы под шапкой нет; на «Kontaktai» картинка `contact-map.jpg`, Google iframe нет; поле даты dd.mm.yyyy; `/altcha` — JSON.
+  Через приложение с `Host: aiqme.lt`: `/` → 301 `https://aiqme.com/lt`, `/lt/kontaktai` → 301 `https://aiqme.com/lt/kontaktai`.
+  `ui_texts` без переопределений изменённых ключей. В ленте партнёров — только тестовый бренд «Crealyti» (данные админки).
+- Caddy: добавлен сайт `aiqme.lt, www.aiqme.lt` → 127.0.0.1:8080 (копия `Caddyfile.bak-20261112`), `caddy validate` OK, reload.
+  **Ждёт пользователя:** DNS `aiqme.lt` и `www.aiqme.lt` сейчас A 2.57.91.91 (парковка Hostinger) — сменить на 187.126.17.111;
+  сертификат Caddy выпустит сам. Ответ заказчику по лимиту (J-06) — отправить.
