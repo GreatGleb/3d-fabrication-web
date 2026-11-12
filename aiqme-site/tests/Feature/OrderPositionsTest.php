@@ -308,7 +308,8 @@ class OrderPositionsTest extends TestCase
         // Заказ без STL повторить нельзя.
         $this->token = (string) Str::uuid();
         $this->submit([$this->milled()])->assertCreated();
-        $this->assertStringNotContainsString('data-reorder', $this->get('/en/account/orders/'.OrderMeta::orderByDesc('number')->first()->number)->assertOk()->getContent());
+        // Правка 12.11, K-05: последний заказ — по id (номер случайный).
+        $this->assertStringNotContainsString('data-reorder', $this->get('/en/account/orders/'.OrderMeta::orderByDesc('id')->first()->number)->assertOk()->getContent());
     }
 
     public function test_estimate_service_uses_each_position_and_skips_unpriced(): void

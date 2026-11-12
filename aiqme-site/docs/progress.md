@@ -6171,3 +6171,31 @@ J-01…J-06 сделаны и проверены, J-07 — сквозная пр
   `justify-content:space-between`; на ≤600 px значки 28 px, на ≤360 — 26 px (`resources/css/shell.css`).
 - `bin/browser-check` (check_logo, 8 ширин 320–1440, /lt и /en): крайние значки по краям логотипа ±1 px, промежутки равны; без правки падает.
   `bin/browser-check /lt /en` OK (1484).
+
+## Правки 12.11, K-05: анонимный номер заказа вместо порядкового (2026-11-13)
+
+- До правок: `bin/check` OK (781 тест).
+- `OrderNumber` (генератор reference Lunar) выдаёт случайный 8-значный номер `random_int(10000000, 99999999)`; при совпадении с
+  `lunar_orders.reference` или `order_meta.number` — новая попытка. Номер остаётся числом: маршруты (`whereNumber`), гостевая ссылка,
+  кабинет, админка, Sheets, Stripe metadata, счёт и письма работают как раньше с новым номером. Прежние заказы номер не меняют,
+  строка `counters.orders` не удаляется и не меняется (тест).
+- Счётчик `counters` (атомарный UPDATE … RETURNING) остался только у счетов: функция перенесена из `OrderNumber::next` в
+  `InvoiceNumber::next` без изменения поведения (серия AIQ6xxxx; `InvoicesTest` и тест параллельной выдачи зелёные).
+- `aiqme.orders.first_number` / `AIQME_ORDERS_FIRST_NUMBER` убраны из `config/aiqme.php` и `.env.example`; в `docs/operations.md`
+  упоминаний не было. Поиск по коду: использований нет (оставшиеся `first_number` — прежняя настройка счетов H-06, другое).
+- Списки заказов (админка `Index::rows()`, Overview, кабинет) уже сортировались по id — код не менялся; добавлен тест.
+- Тесты (новые): `OrderCartTest` — номер 8-значный, три заказа подряд не идут подряд, счётчик заказов не растёт; повтор при совпадении
+  с reference и с order_meta.number (подменённый `candidate()`); `OrderSubmissionTest::test_different_submissions_get_random_eight_digit_numbers`;
+  `OrderSubmissionTest::test_pages_show_neither_the_lunar_id_nor_a_sequential_number` — id заказов сдвинуты к 7654321, `counters.orders`
+  = 4242: в HTML подтверждения (гость и клиент), гостевой страницы и кабинета (обзор, заказы, карточка, модели, счета) нет ни id, ни 4243/4244;
+  гостевая ссылка с Lunar id вместо номера — 404; `AdminOrdersTest::test_order_lists_are_ordered_by_creation_not_by_number` (номера
+  20000000, 90000000, 10000000 → списки 10000000, 90000000, 20000000).
+- Проверено «падает до правки»: со старым `OrderNumber` три новых теста номера падают (номера 1, 2…; 4243); с сортировкой
+  `Index::rows()` по номеру тест порядка падает. Код возвращён.
+- Ожидания номеров «1» в существующих тестах поправлены с комментарием «правка 12.11, K-05» (OrderSubmissionTest, ProductPurchaseTest,
+  OrderPositionsTest, OrderCartTest, OrderNumberConcurrencyTest).
+- Проверки: `bin/browser-check /lt/kalkuliatorius /en/quote /lt/krepselis /en/cart` — OK (1422 проверок); `bin/check` — OK (784 теста).
+- Не проверено / решения: одновременное совпадение случайного номера у двух параллельных заявок (вероятность ~1/90 млн) не
+  перехватывается — уникальный индекс `order_meta.number` отклонит вторую заявку (500), простейший вариант. Номер в PDF счёта и в
+  письмах проверен существующими тестами, отдельного снимка нет. Админка по-прежнему открывает карточку по Lunar id
+  (`?order=<id>`) — её видит только администратор. Демо-сборка `demo/` не пересобиралась (номера демо-заказов там старые).

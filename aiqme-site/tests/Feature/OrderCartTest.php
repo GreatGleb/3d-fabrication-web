@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\OrderNumber;
 use App\Models\OrderCharge;
 use App\Models\StlFile;
@@ -144,21 +145,55 @@ class OrderCartTest extends TestCase
         $this->assertRejected($cart);
     }
 
-    public function test_order_reference_is_the_sequential_number_from_the_counter(): void
+    /** Правка 12.11, K-05: номер заказа — случайный 8-значный, не следующий за предыдущим; счётчик заказов не растёт. */
+    public function test_order_reference_is_a_random_eight_digit_number(): void
     {
-        config(['aiqme.orders.first_number' => 7]);
         $references = [];
-        foreach (range(1, 2) as $ignored) {
+        foreach (range(1, 3) as $ignored) {
             $cart = $this->cart();
             $cart->add($this->part(), 1);
-            $references[] = $cart->createOrder()->reference;
+            $references[] = (int) $cart->createOrder()->reference;
         }
-        $this->assertSame(['7', '8'], $references);
 
-        // Откат транзакции не расходует номер.
-        DB::beginTransaction();
-        $this->assertSame(9, OrderNumber::next(OrderNumber::COUNTER));
-        DB::rollBack();
-        $this->assertSame(9, OrderNumber::next(OrderNumber::COUNTER));
+        foreach ($references as $index => $reference) {
+            $this->assertMatchesRegularExpression('/^[1-9]\d{7}$/', (string) $reference);
+            if ($index > 0) {
+                $this->assertNotSame(1, abs($reference - $references[$index - 1]), 'номера идут подряд: '.implode(', ', $references));
+            }
+        }
+        $this->assertCount(3, array_unique($references));
+        $this->assertSame(0, DB::table('counters')->where('name', 'orders')->count());
+    }
+
+    /** Правка 12.11, K-05: совпадение с reference заказа или order_meta.number — новая попытка (подменённый генератор). */
+    public function test_order_number_retries_when_the_candidate_is_taken(): void
+    {
+        $candidates = [12345678, 12345678, 23456789, 34567890, 45678901];
+        $this->app->bind(OrderNumber::class, function () use (&$candidates) {
+            return new class($candidates) extends OrderNumber
+            {
+                /** @param  list<int>  $candidates */
+                public function __construct(private array &$candidates) {}
+
+                protected function candidate(): int
+                {
+                    return array_shift($this->candidates);
+                }
+            };
+        });
+
+        $cart = $this->cart();
+        $cart->add($this->part(), 1);
+        $first = $cart->createOrder();
+        $this->assertSame('12345678', $first->reference);
+
+        // 23456789 занят только в order_meta.number: reference первого заказа другой.
+        OrderMeta::create(['order_id' => $first->id, 'number' => 23456789, 'submission_token' => (string) Str::uuid(), 'submission_digest' => str_repeat('0', 64),
+            'locale' => 'lt', 'contact' => [], 'delivery' => 'pickup', 'settings' => []]);
+        $cart = $this->cart();
+        $cart->add($this->part(), 1);
+        // Второй заказ: 12345678 (reference первого) и 23456789 (order_meta.number) заняты — берётся третий кандидат.
+        $this->assertSame('34567890', $cart->createOrder()->reference);
+        $this->assertSame([45678901], $candidates);
     }
 }

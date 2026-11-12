@@ -3,7 +3,6 @@
 namespace App\Domain\Invoices;
 
 use App\Domain\Invoices\Models\Invoice;
-use App\Domain\Orders\OrderNumber;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,7 +24,7 @@ final class InvoiceNumber
     {
         $year = now()->year;
 
-        return [self::series($prefix, $year), OrderNumber::next(self::counter($prefix, $year))];
+        return [self::series($prefix, $year), self::next(self::counter($prefix, $year))];
     }
 
     /** Номер, который получит следующий счёт текущего года. */
@@ -44,6 +43,18 @@ final class InvoiceNumber
     public static function setNext(string $prefix, int $next): void
     {
         DB::table('counters')->upsert(['name' => self::counter($prefix, now()->year), 'value' => $next - 1], ['name'], ['value']);
+    }
+
+    /**
+     * Следующее значение счётчика counters: атомарный UPDATE … SET value = value + 1 RETURNING value в транзакции
+     * выпуска — при откате номер не расходуется, параллельные выпуски получают разные номера; строку создаёт первая
+     * выдача (первое значение — 1). До правки 12.11 (K-05) — OrderNumber::next, общий с порядковым номером заказа.
+     */
+    public static function next(string $counter): int
+    {
+        DB::table('counters')->insertOrIgnore(['name' => $counter, 'value' => 0]);
+
+        return (int) DB::selectOne('update counters set value = value + 1 where name = ? returning value', [$counter])->value;
     }
 
     private static function counter(string $prefix, int $year): string

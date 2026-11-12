@@ -141,9 +141,10 @@ class OrderSubmissionTest extends TestCase
 
         $order = Order::with('lines.purchasable')->sole();
         $meta = OrderMeta::sole();
-        $this->assertSame(1, $meta->number);
-        $this->assertSame('1', $order->reference);
-        $this->assertSame(['number' => 1, 'total' => 549], ['number' => $confirmed['number'], 'total' => $confirmed['total']]);
+        // Правка 12.11, K-05: номер — случайный 8-значный, а не 1.
+        $this->assertMatchesRegularExpression('/^[1-9]\\d{7}$/', $order->reference);
+        $this->assertSame((int) $order->reference, $meta->number);
+        $this->assertSame(['number' => $meta->number, 'total' => 549], ['number' => $confirmed['number'], 'total' => $confirmed['total']]);
         $this->assertNull($order->user_id);
         $this->assertNotNull($order->placed_at);
 
@@ -255,19 +256,23 @@ class OrderSubmissionTest extends TestCase
     public function test_guest_link_opens_the_order_and_wrong_number_or_token_is_404(): void
     {
         $confirmed = $this->submitAndConfirm($this->payload());
-        $this->assertStringStartsWith(config('app.url').'/en/order/1/', $confirmed['guest_url']);
+        // Правка 12.11, K-05: номер — случайный 8-значный, а не 1.
+        $number = $confirmed['number'];
+        $this->assertStringStartsWith(config('app.url').'/en/order/'.$number.'/', $confirmed['guest_url']);
 
         $page = $this->get($confirmed['guest_url'])->assertOk()->assertHeader('Cache-Control', 'no-store, private');
         // Правка 05.11, H-04: до подтверждения цены суммы нет (была предварительная €5.49) — заметка о подтверждении цены.
-        $page->assertSee('Order No. 1')->assertSee('bracket.stl')->assertSee('× 3')->assertDontSee('€')
+        $page->assertSee('Order No. '.$number)->assertSee('bracket.stl')->assertSee('× 3')->assertDontSee('€')
             ->assertSee('We will confirm the final price and production time after reviewing your request.');
         $this->assertStringContainsString('noindex', $page->getContent());
         $token = basename($confirmed['guest_url']);
-        $this->get('/lt/uzsakymas/1/'.$token)->assertOk()->assertSee('Užsakymas Nr. 1');
+        $this->get('/lt/uzsakymas/'.$number.'/'.$token)->assertOk()->assertSee('Užsakymas Nr. '.$number);
 
-        $this->get('/en/order/1/'.strrev($token))->assertNotFound();
-        $this->get('/en/order/1/x')->assertNotFound();
-        $this->get('/en/order/2/'.$token)->assertNotFound();
+        $this->get('/en/order/'.$number.'/'.strrev($token))->assertNotFound();
+        $this->get('/en/order/'.$number.'/x')->assertNotFound();
+        $this->get('/en/order/'.($number + 1).'/'.$token)->assertNotFound();
+        // Порядковый номер (Lunar id) доступа к заказу не даёт.
+        $this->get('/en/order/'.Order::sole()->id.'/'.$token)->assertNotFound();
         // Номер доступа не даёт: подтверждение без только что отправленной заявки — 404.
         $this->get('/en/quote/submitted')->assertNotFound();
     }
@@ -292,7 +297,7 @@ class OrderSubmissionTest extends TestCase
         $this->assertSame(1, IntegrationEvent::count());
         $this->assertNotSame($first['guest_url'], $second['guest_url']);
         $this->get($first['guest_url'])->assertNotFound();
-        $this->get($second['guest_url'])->assertOk()->assertSee('Order No. 1');
+        $this->get($second['guest_url'])->assertOk()->assertSee('Order No. '.$second['number']); // Правка 12.11, K-05: номер — случайный 8-значный, а не 1.
     }
 
     public function test_same_token_with_other_data_is_rejected_without_writes(): void
@@ -307,18 +312,24 @@ class OrderSubmissionTest extends TestCase
         $this->assertCount(2, Storage::disk('local')->allFiles('stl'));
     }
 
-    public function test_different_submissions_get_sequential_numbers_from_the_counter(): void
+    /** Правка 12.11, K-05: разные заявки — разные случайные 8-значные номера (reference и order_meta.number), не подряд. */
+    public function test_different_submissions_get_random_eight_digit_numbers(): void
     {
-        config(['aiqme.orders.first_number' => 1001]);
         $numbers = [];
         foreach (range(1, 3) as $ignored) {
             $this->token = (string) Str::uuid();
             $numbers[] = $this->submitAndConfirm($this->payload())['number'];
         }
 
-        $this->assertSame([1001, 1002, 1003], $numbers);
-        $this->assertSame(['1001', '1002', '1003'], Order::orderBy('id')->pluck('reference')->all());
-        $this->assertSame(1003, (int) \DB::table('counters')->where('name', 'orders')->value('value'));
+        $this->assertCount(3, array_unique($numbers));
+        foreach ($numbers as $number) {
+            $this->assertTrue($number >= 10000000 && $number <= 99999999, (string) $number);
+        }
+        $this->assertNotSame(1, abs($numbers[1] - $numbers[0]));
+        $this->assertNotSame(1, abs($numbers[2] - $numbers[1]));
+        $this->assertSame(array_map('strval', $numbers), Order::orderBy('id')->pluck('reference')->all());
+        $this->assertSame($numbers, OrderMeta::orderBy('id')->pluck('number')->all());
+        $this->assertNull(\DB::table('counters')->where('name', 'orders')->value('value'));
     }
 
     public function test_event_is_recorded_with_the_order_and_mail_goes_to_info(): void
@@ -330,7 +341,8 @@ class OrderSubmissionTest extends TestCase
         $event = IntegrationEvent::sole();
         $this->assertSame(['order.submitted', 'lunar_orders', $order->id], [$event->type, $event->entity_type, $event->entity_id]);
         $this->assertSame(['sent', 'pending'], [$event->mail_status, $event->sheets_status]);
-        $this->assertSame(['order', 1, 'Ona Petraitė', 'ona@example.test', 'bracket.stl, spacer.stl', 2, '5.49'],
+        // Правка 12.11, K-05: номер в событии — номер заказа (случайный), а не 1.
+        $this->assertSame(['order', OrderMeta::sole()->number, 'Ona Petraitė', 'ona@example.test', 'bracket.stl, spacer.stl', 2, '5.49'],
             [$event->data['kind'], $event->data['number'], $event->data['name'], $event->data['email'], $event->data['summary'], $event->data['attachments'], $event->data['amount']]);
         Mail::assertSent(FormSubmitted::class, function (FormSubmitted $mail): bool {
             $html = $mail->render();
@@ -354,9 +366,10 @@ class OrderSubmissionTest extends TestCase
         $this->assertSame(0, StlPart::count() + OrderCharge::count());
         $this->assertNull(\DB::table('counters')->where('name', 'orders')->value('value'));
 
-        // Номер при откате не расходуется.
+        // Правка 12.11, K-05: номер случайный — после отката заявка проходит и получает свой номер.
         OrderMeta::flushEventListeners();
-        $this->assertSame(1, $this->submitAndConfirm($this->payload())['number']);
+        $number = $this->submitAndConfirm($this->payload())['number'];
+        $this->assertSame(OrderMeta::sole()->number, $number);
     }
 
     public function test_mail_failure_does_not_roll_back_the_order(): void
@@ -539,10 +552,54 @@ class OrderSubmissionTest extends TestCase
 
         $meta = OrderMeta::sole();
         $this->assertSame(['lt', 'pickup', null], [$meta->locale, $meta->delivery, $meta->address]);
-        $this->assertStringStartsWith(config('app.url').'/lt/uzsakymas/1/', $confirmed['guest_url']);
+        // Правка 12.11, K-05: номер — случайный 8-значный, а не 1.
+        $this->assertStringStartsWith(config('app.url').'/lt/uzsakymas/'.$meta->number.'/', $confirmed['guest_url']);
         $this->token = (string) Str::uuid();
         $this->submitAndConfirm($this->payload());
-        $this->assertSame(['lt', 'en'], OrderMeta::orderBy('number')->pluck('locale')->all());
+        $this->assertSame(['lt', 'en'], OrderMeta::orderBy('id')->pluck('locale')->all());
+    }
+
+    /**
+     * Правка 12.11, K-05: клиент не видит ни Lunar id заказа, ни порядкового номера. id заказов сдвинуты к 7654321, счётчик
+     * прежних заказов counters «orders» — 4242 (прежний генератор выдал бы 4243, 4244): этих чисел нет в HTML страницы
+     * подтверждения, гостевой страницы и кабинета; счётчик не меняется.
+     */
+    public function test_pages_show_neither_the_lunar_id_nor_a_sequential_number(): void
+    {
+        $sequence = \DB::selectOne('select last_value, is_called from lunar_orders_id_seq'); // setval вне транзакции теста — вернуть
+        \DB::table('counters')->insert(['name' => 'orders', 'value' => 4242]);
+        try {
+            \DB::select("select setval('lunar_orders_id_seq', 7654320)");
+            $pages = [];
+            $guest = $this->submit($this->payload())->assertCreated()->json('redirect');
+            $pages['guest confirmation'] = $this->get($guest)->assertOk()->getContent();
+            $guestUrl = Html::xpath($pages['guest confirmation'])->query('//a[@data-guest-link]')->item(0)->getAttribute('href');
+            $pages['guest page'] = $this->get($guestUrl)->assertOk()->getContent();
+
+            $this->flushSession();
+            $client = User::factory()->create(['email' => 'jonas@example.test']);
+            $this->token = (string) Str::uuid();
+            $redirect = $this->actingAs($client)->submit($this->payload())->assertCreated()->json('redirect');
+            $pages['client confirmation'] = $this->get($redirect)->assertOk()->getContent();
+            $number = OrderMeta::where('order_id', Order::where('user_id', $client->id)->value('id'))->value('number');
+            foreach (['/en/account', '/en/account/orders', '/en/account/orders/'.$number, '/en/account/models', '/en/account/invoices'] as $url) {
+                $pages[$url] = $this->get($url)->assertOk()->getContent();
+            }
+
+            $this->assertSame([7654321, 7654322], Order::orderBy('id')->pluck('id')->all());
+            foreach (OrderMeta::pluck('number') as $own) {
+                $this->assertMatchesRegularExpression('/^[1-9]\d{7}$/', (string) $own);
+            }
+            foreach ($pages as $name => $html) {
+                foreach (['7654321', '7654322', '4243', '4244'] as $hidden) {
+                    $this->assertDoesNotMatchRegularExpression('/(?<!\w)'.$hidden.'(?!\w)/', $html, $name);
+                }
+            }
+            $this->assertStringContainsString('Order No. '.$number, $pages['client confirmation']);
+            $this->assertSame(4242, (int) \DB::table('counters')->where('name', 'orders')->value('value'));
+        } finally {
+            \DB::select('select setval(\'lunar_orders_id_seq\', ?, ?)', [$sequence->last_value, $sequence->is_called]);
+        }
     }
 
     public function test_signed_in_client_owns_the_order_without_guest_link(): void
@@ -557,8 +614,9 @@ class OrderSubmissionTest extends TestCase
         $this->assertSame([$client->id, $client->id], StlFile::pluck('user_id')->all());
         $this->assertNull(OrderMeta::sole()->guest_token_hash);
         // У заказа клиента гостевой ссылки нет: любой токен — 404, в том числе для самого клиента и клиента B.
-        $this->get('/en/order/1/'.str_repeat('a', 43))->assertNotFound();
-        $this->actingAs(User::factory()->create())->get('/en/order/1/'.str_repeat('a', 43))->assertNotFound();
+        // Правка 12.11, K-05: номер заказа — случайный, а не 1.
+        $this->get('/en/order/'.$order->reference.'/'.str_repeat('a', 43))->assertNotFound();
+        $this->actingAs(User::factory()->create())->get('/en/order/'.$order->reference.'/'.str_repeat('a', 43))->assertNotFound();
         $this->get($redirect)->assertNotFound();
     }
 
@@ -570,11 +628,13 @@ class OrderSubmissionTest extends TestCase
         $other = $this->submitAndConfirm($this->payload());
 
         // Гость с ссылкой на другой заказ, клиент B и посетитель без токена — 404 (§6.1: null === null доступа не даёт).
-        $this->get('/en/order/1/'.basename($other['guest_url']))->assertNotFound();
-        $this->actingAs(User::factory()->create())->get('/en/order/1/'.basename($other['guest_url']))->assertNotFound();
-        $this->get('/en/order/1')->assertNotFound();
-        $this->get('/en/order/1/')->assertNotFound();
-        $this->get('/en/order/1/'.$token)->assertOk();
+        // Правка 12.11, K-05: номер — случайный 8-значный, а не 1.
+        $number = $confirmed['number'];
+        $this->get('/en/order/'.$number.'/'.basename($other['guest_url']))->assertNotFound();
+        $this->actingAs(User::factory()->create())->get('/en/order/'.$number.'/'.basename($other['guest_url']))->assertNotFound();
+        $this->get('/en/order/'.$number)->assertNotFound();
+        $this->get('/en/order/'.$number.'/')->assertNotFound();
+        $this->get('/en/order/'.$number.'/'.$token)->assertOk();
     }
 
     public function test_calculator_form_is_prefilled_from_the_client_profile(): void

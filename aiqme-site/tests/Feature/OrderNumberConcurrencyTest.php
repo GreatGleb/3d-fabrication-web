@@ -2,15 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Domain\Orders\OrderNumber;
+use App\Domain\Invoices\InvoiceNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 /**
- * Параллельная выдача порядковых номеров (§3.1, W-12): несколько отдельных процессов PHP со своими подключениями к
- * PostgreSQL одновременно берут номера OrderNumber::next в своих транзакциях (каждая держит строку счётчика) — номера
+ * Параллельная выдача порядковых номеров счётчика counters (§3.1, W-12): несколько отдельных процессов PHP со своими
+ * подключениями к PostgreSQL одновременно берут номера InvoiceNumber::next (правка 12.11, K-05: счётчик остался только у
+ * счетов, номер заказа — случайный) в своих транзакциях (каждая держит строку счётчика) — номера
  * без повторов и пропусков. Без RefreshDatabase: транзакции процессов должны видеть закоммиченный счётчик;
  * счётчик теста — с уникальным именем и удаляется после теста.
  */
@@ -34,7 +35,7 @@ class OrderNumberConcurrencyTest extends TestCase
             $numbers = [];
             for ($i = 0; $i < $count; $i++) {
                 $numbers[] = Illuminate\Support\Facades\DB::transaction(function () use ($counter) {
-                    $number = App\Domain\Orders\OrderNumber::next($counter);
+                    $number = App\Domain\Invoices\InvoiceNumber::next($counter);
                     usleep(2000); // строка счётчика заблокирована до commit: соседние процессы ждут
                     return $number;
                 });
@@ -68,11 +69,12 @@ class OrderNumberConcurrencyTest extends TestCase
         }
     }
 
-    public function test_first_number_comes_from_configuration(): void
+    /** Правка 12.11, K-05: настройки первого номера (aiqme.orders.first_number) нет, счётчик начинается с 1. */
+    public function test_counter_starts_at_one(): void
     {
         $counter = 'test-first-'.Str::uuid();
         try {
-            $this->assertSame([1001, 1002], [OrderNumber::next($counter, 1001), OrderNumber::next($counter, 1001)]);
+            $this->assertSame([1, 2], [InvoiceNumber::next($counter), InvoiceNumber::next($counter)]);
         } finally {
             DB::table('counters')->where('name', $counter)->delete();
         }

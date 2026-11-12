@@ -170,7 +170,9 @@ class ProductPurchaseTest extends TestCase
         $order = Order::sole();
         $meta = OrderMeta::sole();
         $state = ProductionState::sole();
-        $this->assertSame([true, 1, null, 'lt'], [$meta->products, $meta->number, $order->user_id, $meta->locale]);
+        // Правка 12.11, K-05: номер — случайный 8-значный (= reference), а не 1.
+        $this->assertSame([true, (int) $order->reference, null, 'lt'], [$meta->products, $meta->number, $order->user_id, $meta->locale]);
+        $this->assertMatchesRegularExpression('/^[1-9]\d{7}$/', $order->reference);
         $this->assertNotNull($meta->guest_token_hash);
         $this->assertSame(ProductionStage::Confirmed, $state->stage);
         $this->assertNotNull($state->confirmed_at);
@@ -206,7 +208,8 @@ class ProductPurchaseTest extends TestCase
         // Админка: «Prekės» в журнале и карточка с позициями.
         $this->actingAs($this->admin);
         $list = Html::xpath($this->get('/lt/administravimas/orders')->assertOk()->getContent());
-        $this->assertSame(['1', 'Prekės'], [Html::text($list->query('//tbody/tr/td[1]/strong')->item(0)), Html::text($list->query('//tbody/tr/td[2]')->item(0))]);
+        // Правка 12.11, K-05: в журнале номер заказа (случайный), а не 1.
+        $this->assertSame([$order->reference, 'Prekės'], [Html::text($list->query('//tbody/tr/td[1]/strong')->item(0)), Html::text($list->query('//tbody/tr/td[2]')->item(0))]);
         $card = Html::xpath($this->get('/lt/administravimas/orders?order='.$order->id)->assertOk()->getContent());
         $this->assertSame(['PLA gija', '2', '24,00 €', '48,00 €'], Html::texts($card, '//*[@id="order-products"]//tr[@data-product-line]/td'));
         $this->assertSame(1, $card->query('//*[@data-products-order]')->length);

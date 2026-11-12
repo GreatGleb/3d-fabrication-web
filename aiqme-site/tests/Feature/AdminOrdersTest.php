@@ -8,6 +8,7 @@ use App\Domain\Orders\Models\OrderMessage;
 use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\Models\PriceRevision;
 use App\Domain\Orders\Models\ProductionState;
+use App\Domain\Orders\OrderNumber;
 use App\Domain\Orders\OrderSubmission;
 use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
@@ -203,6 +204,39 @@ class AdminOrdersTest extends TestCase
         $this->assertSame([$number($second)], $listed($list->set('search', '')->set('stage', 'confirmed')));
         $this->assertSame([$number($first)], $listed($list->set('stage', 'review')));
         $list->assertSeeHtml('href="'.route('en.admin.orders', ['order' => $first->id]).'#order-card"');
+    }
+
+    /**
+     * Правка 12.11, K-05: номер заказа случайный, поэтому списки заказов (админка, Overview, кабинет) идут по id — новые
+     * сверху, а не по номеру. Номера подменённого генератора: 20000000, 90000000, 10000000 — порядок по номеру дал бы другой.
+     */
+    public function test_order_lists_are_ordered_by_creation_not_by_number(): void
+    {
+        $candidates = [20000000, 90000000, 10000000];
+        $this->app->bind(OrderNumber::class, function () use (&$candidates) {
+            return new class($candidates) extends OrderNumber
+            {
+                /** @param  list<int>  $candidates */
+                public function __construct(private array &$candidates) {}
+
+                protected function candidate(): int
+                {
+                    return array_shift($this->candidates);
+                }
+            };
+        });
+        foreach (range(1, 3) as $ignored) {
+            $this->order();
+        }
+        $expected = [10000000, 90000000, 20000000];
+        $numbers = fn ($rows): array => collect($rows)->pluck('number')->map(fn ($n): int => (int) $n)->all();
+
+        $this->assertSame($expected, $numbers(Livewire::actingAs($this->admin)->test(Index::class)->viewData('orders')));
+        $this->assertSame($expected, $numbers(Livewire::actingAs($this->admin)->test(Overview::class)->viewData('orders')));
+        foreach (['/en/account/orders', '/en/account'] as $url) {
+            preg_match_all('/data-order="(\d+)"/', $this->actingAs($this->client)->get($url)->assertOk()->getContent(), $found);
+            $this->assertSame(array_map('strval', $url === '/en/account' ? [$expected[0]] : $expected), $found[1], $url);
+        }
     }
 
     public function test_price_is_confirmed_by_lines_with_delivery_through_the_workflow(): void

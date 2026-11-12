@@ -84,7 +84,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('altcha', fn (Request $request): Limit => Limit::perMinute(config('aiqme.forms.altcha.per_minute'))->by($request->ip()));
 
         // Заявки на изготовление (W-12, §3.1): своя частота по IP; корзина Lunar → заказ без адресов Lunar, через
-        // валидатор заявки; номер заказа — порядковый из счётчика counters.
+        // валидатор заявки; номер заказа — случайный 8-значный (OrderNumber, правка 12.11, K-05).
         // Считается каждая отправка, и отклонённая проверкой (422): разбор STL дорог; окно — 5 минут (правка 11.11, J-06).
         RateLimiter::for('orders', fn (Request $request): Limit => Limit::perMinutes(config('aiqme.orders.limit_minutes'), config('aiqme.orders.limit'))->by($request->ip()));
         // Гостевая страница заказа (W-15, §6.2): подбор токена ограничен частотой по IP.
