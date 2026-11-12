@@ -138,8 +138,9 @@ class ShellTest extends TestCase
 
     public function test_cookie_notice_is_informational_essential_only(): void
     {
-        foreach (['lt' => ['Analitika ir reklamos sekimas nenaudojami. Puslapyje „Kontaktai“ rodomas „Google Maps“ žemėlapis – jį įkeliant „Google“ gali naudoti savo slapukus.', 'Tik būtini', 'Nustatymai'],
-            'en' => ['No analytics or advertising tracking is used. The Contact page shows a Google Maps map; Google may use its own cookies when it loads.', 'Essential only', 'Settings']] as $locale => [$text, $accept, $settings]) {
+        // Правка 11.11, J-05: фраза о cookie Google Maps убрана вместе с iframe карты (текст — как до правки 28.10 П5).
+        foreach (['lt' => ['Analitika ir reklamos sekimas nenaudojami.', 'Tik būtini', 'Nustatymai'],
+            'en' => ['No analytics or advertising tracking is used.', 'Essential only', 'Settings']] as $locale => [$text, $accept, $settings]) {
             $xpath = $this->xpath($this->get(route($locale.'.home'))->getContent());
 
             $cookie = $xpath->query('//div[@class="cookie"]')->item(0);
@@ -161,8 +162,8 @@ class ShellTest extends TestCase
             $this->assertSame('AIQME', $xpath->query($query)->item(0)->getAttribute('alt'));
         }
         $this->assertSame(asset('defaults/favicon.svg'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
-        // D-43 заменяет D-25: прежних копий логотипа нет.
-        $this->assertDirectoryDoesNotExist(public_path('images'));
+        // D-43 заменяет D-25: прежних копий логотипа нет. Правка 11.11, J-05: в public/images/ — только картинка карты «Kontaktai».
+        $this->assertSame(['contact-map.jpg'], array_values(array_diff(scandir(public_path('images')), ['.', '..'])));
     }
 
     public function test_static_pages_use_the_prototype_page_top_with_breadcrumbs(): void

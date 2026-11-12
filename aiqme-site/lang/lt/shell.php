@@ -39,7 +39,7 @@ return [
         'cookies' => 'Slapukai',
     ],
     'cookie' => [
-        'text' => 'Analitika ir reklamos sekimas nenaudojami. Puslapyje „Kontaktai“ rodomas „Google Maps“ žemėlapis – jį įkeliant „Google“ gali naudoti savo slapukus.',
+        'text' => 'Analitika ir reklamos sekimas nenaudojami.',
         'accept' => 'Tik būtini',
         'settings' => 'Nustatymai',
     ],

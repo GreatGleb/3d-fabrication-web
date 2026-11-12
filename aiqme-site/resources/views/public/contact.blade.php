@@ -1,5 +1,5 @@
-{{-- Контакты (§1.2): реквизиты из page_text, встроенная карта Google Maps и ссылка на неё (правка 28.10 П5: iframe без ключа,
-     сразу при открытии; хост www.google.com разрешён в CSP frame-src — узкое исключение из D-20),
+{{-- Контакты (§1.2): реквизиты из page_text, своя картинка карты public/images/contact-map.jpg (правка 11.11, J-05: вместо
+     iframe Google Maps; заменяется одним файлом) и под ней ссылка на Google Maps,
      форма проектного обращения (W-09: отправка, предзаполнение $prefill по §1.2, honeypot, капча ALTCHA П3, результат в #contact-result
      как в прототипе). Демо-надписи формы и флажок «I understand this is a demonstration enquiry…» не переносятся (D-21). --}}
 @php
@@ -31,7 +31,7 @@
                         @endforeach
                     </ul>
                     <div class="contact-map">
-                        <iframe src="{{ __('public.contact.map_embed_url') }}" title="{{ __('public.contact.map_title') }}"></iframe>
+                        <img src="{{ asset('images/contact-map.jpg') }}" alt="{{ __('public.contact.map_title') }}" width="1400" height="1000" loading="lazy">
                         <a class="text-link" href="{{ __('public.contact.map_url') }}" target="_blank" rel="noopener noreferrer">{{ __('public.contact.map') }}</a>
                     </div>
                     <p class="legal-note">{{ $contact->field('visit_note') }}</p>

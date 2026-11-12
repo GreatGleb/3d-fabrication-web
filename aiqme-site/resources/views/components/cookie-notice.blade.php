@@ -1,5 +1,5 @@
-{{-- Информационная cookie-плашка (D-11: только необходимые cookie, выбора аналитики нет; правка 28.10 П5: текст называет
-     cookie Google Maps встроенной карты «Kontaktai», поведение плашки прежнее). Показ и скрытие — resources/js/app.js:
+{{-- Информационная cookie-плашка (D-11: только необходимые cookie, выбора аналитики нет; правка 11.11 J-05: текст о cookie
+     Google Maps убран вместе с iframe карты «Kontaktai», поведение плашки прежнее). Показ и скрытие — resources/js/app.js:
      скрыта до проверки, нажимал ли посетитель «Tik būtini» (отметка в localStorage). --}}
 <div class="cookie" hidden>
     <p>{{ __('shell.cookie.text') }}</p>

@@ -901,27 +901,32 @@ class PublicPagesTest extends TestCase
         $this->assertSame(0, ContentItem::count());
     }
 
-    public function test_contact_page_has_details_embedded_map_with_link_and_enquiry_form_without_demo_lines(): void
+    public function test_contact_page_has_details_map_image_with_link_and_enquiry_form_without_demo_lines(): void
     {
-        // Правка 28.10 П5: спутниковая карта Google Maps (без ключа, язык страницы) сразу при открытии, ссылка — под ней.
-        foreach (['/en/contact' => ['en', 'AIQME location map', 'Open map ↗'], '/lt/kontaktai' => ['lt', 'AIQME vieta žemėlapyje', 'Atidaryti žemėlapį ↗']] as $path => [$locale, $title, $link]) {
+        // Правка 11.11, J-05 (вместо iframe Google Maps правки 28.10 П5): своя картинка карты public/images/contact-map.jpg
+        // (lazy, alt на языке страницы), под ней в той же рамке — ссылка на прежний адрес Google Maps; iframe нет.
+        foreach (['/en/contact' => ['AIQME location map', 'Open map ↗'], '/lt/kontaktai' => ['AIQME vieta žemėlapyje', 'Atidaryti žemėlapį ↗']] as $path => [$alt, $link]) {
             $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
-            $this->assertCount(1, $xpath->query('//iframe'), $path);
-            $iframe = $xpath->query('//div[@class="contact-map"]/iframe')->item(0);
-            $this->assertNotNull($iframe, $path);
-            $src = $iframe->getAttribute('src');
-            $this->assertSame(trans('public.contact.map_embed_url', [], $locale), $src, $path);
-            $this->assertStringStartsWith('https://www.google.com/maps?', $src, $path);
-            $this->assertStringContainsString('output=embed', $src, $path);
-            $this->assertStringContainsString('&hl='.$locale.'&', $src, $path);
-            $this->assertSame($title, $iframe->getAttribute('title'), $path);
-            $this->assertFalse($iframe->hasAttribute('loading'), $path);
-            $this->assertFalse($iframe->hasAttribute('referrerpolicy'), $path);
-            $anchor = $xpath->query('//div[@class="contact-map"]/iframe/following-sibling::a')->item(0);
+            $this->assertCount(0, $xpath->query('//iframe'), $path);
+            $images = $xpath->query('//div[@class="contact-map"]/img');
+            $this->assertCount(1, $images, $path);
+            $image = $images->item(0);
+            $this->assertSame(asset('images/contact-map.jpg'), $image->getAttribute('src'), $path);
+            $this->assertSame($alt, $image->getAttribute('alt'), $path);
+            $this->assertSame('lazy', $image->getAttribute('loading'), $path);
+            $anchor = $xpath->query('//div[@class="contact-map"]/img/following-sibling::a')->item(0);
             $this->assertNotNull($anchor, "$path: ссылка после карты");
             $this->assertSame($link, Html::text($anchor), $path);
             $this->assertSame('https://www.google.com/maps?q=54.641192%2C25.268099', $anchor->getAttribute('href'), $path);
+            $this->assertSame('_blank', $anchor->getAttribute('target'), $path);
         }
+
+        // Файл карты — в public/images/, ширина ≤ 1400 px, размер ≤ 300 КБ (заменяется одним файлом с тем же именем).
+        $file = public_path('images/contact-map.jpg');
+        $this->assertFileExists($file);
+        $this->assertLessThanOrEqual(300 * 1024, filesize($file));
+        [$width] = getimagesize($file);
+        $this->assertLessThanOrEqual(1400, $width);
 
         $html = $this->get('/en/contact')->assertOk()->getContent();
         $xpath = Html::xpath($html);

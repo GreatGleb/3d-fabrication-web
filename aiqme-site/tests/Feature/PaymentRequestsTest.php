@@ -724,8 +724,8 @@ class PaymentRequestsTest extends TestCase
         }
         $stripe = fn (string $directive): array => array_values(preg_grep('/stripe/', $csp[$directive]));
         $this->assertSame(['https://js.stripe.com', 'https://*.js.stripe.com'], $stripe('script-src'));
-        // Правка 28.10 П5: в frame-src дополнительно только фрейм карты Google Maps; скрипты и запросы к Google не разрешены.
-        $this->assertSame(['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com', 'https://www.google.com'], $csp['frame-src']);
+        // Правка 11.11, J-05: фрейм Google Maps убран — в frame-src только Stripe; скрипты Google не разрешены.
+        $this->assertSame(['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com'], $csp['frame-src']);
         $this->assertSame(["'self'", 'https://api.stripe.com'], $csp['connect-src']);
         $this->assertSame([], preg_grep('/google/', $csp['script-src']));
         $this->assertNotContains("'unsafe-inline'", $csp['script-src']);

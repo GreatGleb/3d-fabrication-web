@@ -64,8 +64,8 @@ class SecurityHeadersTest extends TestCase
             $this->assertSame(["'self'"], $csp['base-uri'] ?? null, $name);
             $this->assertSame(["'self'"], $csp['form-action'] ?? null, $name);
             $this->assertSame(["'self'", 'data:'], $csp['img-src'] ?? null, $name);
-            // Stripe (W-16) и карта Google Maps на «Kontaktai» (правка 28.10 П5) — других фреймов нет.
-            $this->assertSame(['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com', 'https://www.google.com'],
+            // Только Stripe (W-16); фрейм Google Maps убран (правка 11.11, J-05: на «Kontaktai» своя картинка карты).
+            $this->assertSame(['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com'],
                 $csp['frame-src'] ?? null, $name);
         }
     }

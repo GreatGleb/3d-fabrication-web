@@ -15,10 +15,10 @@
 Подготовка: своя БД aiqme_browser dev-PostgreSQL — migrate:fresh, сидеры контента, данные tests/browser/,
 администратор (aiqme:make-admin --password-stdin, D-29) и клиент со случайными паролями на каждый запуск.
 Сервер — bin/php -S на фиксированном порту PORT (занят — отказ до старта); QUEUE_CONNECTION=sync.
-Запросы к любым хостам, кроме проверяемого, прерываются и перечисляются в отчёте (D-20). Исключение — документ встроенной
-карты Google Maps на «Kontaktai» (правка 28.10, П5): адрес MAP_EMBED отдаётся локальной заглушкой MAP_STUB (к Google запросов
-нет), число подмен — в сводке; check_contact_map на /lt/kontaktai и /en/contact при 390 и 1440: один iframe (src, hl, title,
-без loading), размер 100 % × 320/260 px, ссылка под картой в рамке, .legal-note не перекрыта, кадр карты загружен, снимок рамки
+Запросы к любым хостам, кроме проверяемого, прерываются и перечисляются в отчёте (D-20). Карта «Kontaktai» (правка 11.11,
+J-05, вместо iframe Google Maps правки 28.10 П5): check_contact_map на /lt/kontaktai и /en/contact при 390 и 1440 — iframe нет,
+одна картинка /images/contact-map.jpg (loading=lazy, alt языка страницы) загружена после прокрутки, на всю ширину рамки с
+пропорциями файла, ссылка на Google Maps под картинкой в рамке, .legal-note не перекрыта, снимок рамки
 shots/contact-map-<lt|en>-<ширина>.png.
 
 Проверки: самопроверка детекторов на синтетической странице; ширина документа = окну на 320/390/768/1024/1440;
@@ -227,10 +227,9 @@ DEFAULT_MEDIA = {
 WIDTHS = [320, 390, 768, 1024, 1440]
 STYLE_WIDTHS = [1440, 768, 390]
 GUTTER_1280_PAGES = ['/lt/apie-mus', '/lt/kalkuliatorius', '/lt/duk']  # поля контента на 1280×900 (П1), не во всех WIDTHS
-# Встроенная карта Google Maps (правка 28.10, П5): документ iframe подменяется заглушкой, к Google не обращаемся (D-20).
-MAP_EMBED = re.compile(r'^https://www\.google\.com/maps\?[^#]*output=embed')
-MAP_STUB = ('<!DOCTYPE html><meta charset="utf-8"><title>AIQME map stub</title>'
-            '<body style="margin:0;height:100vh;background:#7d8f7a" data-map-stub>Google Maps — local stub of bin/browser-check</body>')
+# Карта «Kontaktai» (правка 11.11, J-05): своя картинка вместо iframe Google Maps; ссылка — на прежний адрес Google Maps.
+MAP_ALT = {'lt': 'AIQME vieta žemėlapyje', 'en': 'AIQME location map'}
+MAP_LINK = 'https://www.google.com/maps?q=54.641192%2C25.268099'
 CONTACT_PAGES = ['/lt/kontaktai', '/en/contact']
 SHOTS = {'desktop': (1440, 1000), 'tablet': (768, 1024), 'phone': (390, 844)}  # размеры verified-route-screens.json
 
@@ -372,7 +371,6 @@ class Report:
     def __init__(self):
         self.failures, self.notes, self.passed = [], [], 0
         self.external = set()
-        self.map_stubbed = 0
 
     def check(self, ok, message):
         if ok:
@@ -380,12 +378,6 @@ class Report:
         else:
             self.failures.append(message)
         return ok
-
-
-def map_stub(report, route):
-    """Документ карты Google Maps (MAP_EMBED) — локальная заглушка вместо запроса к Google."""
-    report.map_stubbed += 1
-    return route.fulfill(status=200, content_type='text/html; charset=utf-8', body=MAP_STUB)
 
 
 def load_allowlist(file=ALLOWLIST):
@@ -2287,42 +2279,40 @@ def check_form_mail(report, where, token, subject, client_email, expected_html):
 
 
 def check_contact_map(report, new_page, path, width, shots_dir):
-    """Правка 28.10, П5: карта Google Maps (заглушка MAP_STUB) сразу видна под реквизитами, ссылка под ней в той же рамке."""
+    """Правка 11.11, J-05: своя картинка карты (lazy) под реквизитами, iframe нет, ссылка на Google Maps под ней в той же рамке."""
     where = f'{path} @{width} карта'
     locale = path.split('/')[1]
-    stubbed = report.map_stubbed
     context, page, problems = new_page(width, 1000 if width == 1440 else 844)
     page.goto(BASE + path, wait_until='networkidle')
-    iframes = page.locator('iframe')
-    if report.check(iframes.count() == 1 and page.locator('.contact-map > iframe').count() == 1,
-                    f'{where}: ожидался один iframe в .contact-map, найдено {iframes.count()}'):
-        iframe = iframes.first
-        report.check(iframe.is_visible(), f'{where}: iframe не виден')
-        src = iframe.get_attribute('src') or ''
-        report.check(MAP_EMBED.match(src) is not None and f'&hl={locale}&' in src, f'{where}: src {src}')
-        report.check(bool((iframe.get_attribute('title') or '').strip()), f'{where}: нет title')
-        report.check(iframe.get_attribute('loading') is None, f'{where}: есть loading')
+    report.check(page.locator('iframe').count() == 0, f'{where}: на странице есть iframe')
+    images = page.locator('.contact-map > img')
+    if report.check(images.count() == 1, f'{where}: ожидалась одна картинка в .contact-map, найдено {images.count()}'):
+        image = images.first
+        report.check(urlparse(image.get_attribute('src') or '').path == '/images/contact-map.jpg', f'{where}: src {image.get_attribute("src")}')
+        report.check(image.get_attribute('loading') == 'lazy', f'{where}: нет loading=lazy')
+        report.check(image.get_attribute('alt') == MAP_ALT[locale], f'{where}: alt {image.get_attribute("alt")}')
+        image.scroll_into_view_if_needed()
+        page.wait_for_function('() => { const i = document.querySelector(".contact-map > img"); return i.complete && i.naturalWidth > 0; }',
+                               timeout=10000)
         box = page.evaluate('''() => {
             const rect = (e) => e && e.getBoundingClientRect();
             const frame = document.querySelector('.contact-map');
-            const [map, link, note] = [frame.querySelector('iframe'), frame.querySelector('a'), document.querySelector('.contact-map ~ .legal-note')];
-            return {inner: frame.clientWidth, frame: rect(frame).toJSON(), map: rect(map).toJSON(),
-                    link: link && rect(link).toJSON(), note: note && rect(note).toJSON()};
+            const [map, link, note] = [frame.querySelector('img'), frame.querySelector('a'), document.querySelector('.contact-map ~ .legal-note')];
+            return {inner: frame.clientWidth, frame: rect(frame).toJSON(), map: rect(map).toJSON(), natural: [map.naturalWidth, map.naturalHeight],
+                    link: link && rect(link).toJSON(), href: link && link.href, note: note && rect(note).toJSON()};
         }''')
-        height = 320 if width == 1440 else 260
+        report.check(box['natural'][0] <= 1400, f'{where}: ширина файла карты {box["natural"]}')
         report.check(abs(box['map']['width'] - box['inner']) <= 1, f'{where}: ширина карты {box["map"]["width"]} ≠ рамке {box["inner"]}')
-        report.check(abs(box['map']['height'] - height) <= 1, f'{where}: высота карты {box["map"]["height"]} ≠ {height}')
+        height = box['map']['width'] * box['natural'][1] / box['natural'][0]
+        report.check(abs(box['map']['height'] - height) <= 1, f'{where}: высота карты {box["map"]["height"]} ≠ {height:.1f} (пропорции файла)')
         if report.check(box['link'] is not None, f'{where}: нет ссылки на карту'):
+            report.check(box['href'] == MAP_LINK, f'{where}: ссылка {box["href"]}')
             report.check(box['map']['bottom'] <= box['link']['top'] + 1 and box['link']['top'] <= box['link']['bottom']
                          <= box['frame']['bottom'] + 1, f'{where}: ссылка не под картой внутри рамки {box}')
         if report.check(box['note'] is not None, f'{where}: нет .legal-note'):
             report.check(box['note']['top'] >= box['frame']['bottom'] - 1, f'{where}: .legal-note перекрыта рамкой карты {box}')
-        loaded = [frame for frame in page.frames if MAP_EMBED.match(frame.url)]
-        report.check(len(loaded) == 1 and loaded[0].locator('[data-map-stub]').count() == 1,
-                     f'{where}: кадр карты не загружен (заглушка) {[frame.url for frame in page.frames]}')
         page.locator('[data-cookie-accept]').click()  # плашка не закрывает рамку на снимке
         page.locator('.contact-map').screenshot(path=str(shots_dir / f'contact-map-{locale}-{width}.png'))
-    report.check(report.map_stubbed > stubbed, f'{where}: запрос карты не подменён заглушкой')
     for problem in problems:
         report.check(False, f'{where}: {problem}')
     context.close()
@@ -3537,8 +3527,7 @@ def prod_main(argv):
             context = browser.new_context(viewport={'width': width, 'height': height}, storage_state=storage_state)
 
             def foreign(url):
-                return (url.startswith(('http:', 'https:', 'ws:', 'wss:')) and urlparse(url).netloc != HOST
-                        and not MAP_EMBED.match(url))
+                return url.startswith(('http:', 'https:', 'ws:', 'wss:')) and urlparse(url).netloc != HOST
 
             def abort(route):
                 report.external.add(route.request.url)
@@ -3548,8 +3537,6 @@ def prod_main(argv):
             # фиксируются (их запросы и так запрещает CSP), на остальных страницах — прерываются.
             if intercept:
                 context.route(foreign, abort)
-            # После route(foreign, abort): позднее зарегистрированный обработчик Playwright срабатывает первым.
-            context.route(MAP_EMBED, lambda route: map_stub(report, route))
             page = context.new_page()
             problems = []
             page.on('request', lambda r: report.external.add(r.url) if foreign(r.url) else None)
@@ -3601,8 +3588,7 @@ def prod_main(argv):
     lines = [f'# bin/browser-check --base-url {BASE} — {time.strftime("%Y-%m-%d %H:%M")}', '',
              f'- Итог: {"FAIL" if report.failures else "OK"}; проверок пройдено {report.passed}, ошибок {len(report.failures)}.',
              '- Время от отправки заявки до страницы подтверждения: ' + '; '.join(f'{k} — {v:.1f} с' for k, v in timings.items()),
-             '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'),
-             f'- Карта Google Maps (контакты): подменена заглушкой {report.map_stubbed} раз', ''] + [f'- FAIL {f}' for f in report.failures]
+             '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'), ''] + [f'- FAIL {f}' for f in report.failures]
     (OUT / 'prod-summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     for name, value in timings.items():
         log(f'   время заявки ({name}): {value:.1f} с')
@@ -3656,8 +3642,6 @@ def main():
                                               storage_state=storage_state, java_script_enabled=java_script_enabled, locale=locale)
 
                 def guard(route):
-                    if MAP_EMBED.match(route.request.url):
-                        return map_stub(report, route)
                     host = route.request.url.split('/')[2] if '://' in route.request.url else ''
                     if host != HOST and not route.request.url.startswith(('data:', 'blob:')):
                         report.external.add(route.request.url)
@@ -3807,7 +3791,6 @@ def write_report(report, pages, skipped_ru, rows, signed_in):
          + ', '.join(ADMIN_PAGES) + f'; /ru/ ({len(skipped_ru)} адресов) — 200 с noindex; профиль, выход, сброс пароля по письму из Mailpit.'
          if signed_in else '- Вход, кабинет, админка и /ru/ — не проверялись (запуск с путями).'),
         '- Прерванные запросы к чужим хостам: ' + (', '.join(sorted(report.external)) or 'нет'),
-        f'- Карта Google Maps (контакты): подменена заглушкой {report.map_stubbed} раз',
         '- Сверка текста с эталоном: text-discrepancies.md; заметки: ' + ('; '.join(report.notes) or 'нет'),
         '- Кадры рядом с эталоном: ' + ('report.html' if have_evidence else 'не проверено (нет эталона)')
         + '; ручной просмотр — ждёт проверки пользователем.', '',

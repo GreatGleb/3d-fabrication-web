@@ -5973,3 +5973,39 @@ I-01…I-06 выполнены (track L), полный `bin/check` и полны
 - `Dates::show()`: убраны неиспользуемые параметр `$time` и ветка Carbon/DateTimeInterface — все вызовы передают строки Y-m-d;
   теперь `show(?string)`.
 - Проверки: `bin/check` OK (778 тестов), `bin/browser-check /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote` OK (1703).
+
+### Правки 11.11, J-05: «Kontaktai» — своя картинка карты вместо Google iframe (12.11)
+
+- **Картинка:** `public/images/contact-map.jpg` — из `docs/planning/edits-20261111/map/contact-map-temp.jpg` (1484×1060)
+  уменьшена Pillow (LANCZOS) до **1400×1000**, JPEG q82 progressive, без EXIF — **273 249 байт** (≤300 КБ). Замена снимком
+  заказчика в хорошем качестве — **одним файлом с тем же именем `public/images/contact-map.jpg`** (≤1400 px, ≤300 КБ; пропорции
+  могут быть любыми — высота по файлу; атрибуты `width/height` 1400×1000 в шаблоне лишь резервируют место, CSS `height:auto`).
+  Новый бинарный файл вне `tests/fixtures/` — по прямому требованию задачи (done J-05).
+- `contact.blade.php`: вместо `<iframe>` — `<img src=asset('images/contact-map.jpg') alt=public.contact.map_title width=1400
+  height=1000 loading=lazy>`; ссылка `public.contact.map` («Atidaryti žemėlapį ↗» / «Open map ↗», прежний текст со стрелкой) под
+  ней на прежний `map_url` (`https://www.google.com/maps?q=54.641192%2C25.268099`). alt — прежний `map_title` («AIQME vieta
+  žemėlapyje» / «AIQME location map»; ключ сохранён, чтобы не терять возможный ui_text). `map_embed_url` удалён из `lang/{lt,en}/public.php`.
+- `public.css`: `.contact-map img{display:block;width:100%;height:auto}` (style.css прототипа не менялся).
+- **CSP:** `https://www.google.com` убран из `frame-src` (grep: других iframe/Google-фреймов нет) — только Stripe.
+- **Cookies:** фраза о Google Maps убрана из `shell.cookie.text` (LT/EN — текст как до 28.10 П5: «Analitika ir reklamos sekimas
+  nenaudojami.» / «No analytics or advertising tracking is used.»); комментарий cookie-notice обновлён. В сиде политики cookies
+  о карте ничего нет (grep); раздел, предложенный 28.10 в `docs/verification/production-launch.md`, заменён пунктом «после deploy»
+  J-05 (убрать в админке, если заказчик его опубликовал).
+- **Тесты:** `PublicPagesTest::test_contact_page_has_details_map_image_with_link_and_enquiry_form_without_demo_lines` — iframe нет,
+  одна `img` в `.contact-map` (src, alt LT/EN, loading=lazy), ссылка после неё (текст, href, target), файл ≤1400 px и ≤300 КБ;
+  на прежнем шаблоне с iframe тест **падает** («actual size 1 matches expected size 0», проверено подменой шаблона и возвратом).
+  `SecurityHeadersTest`, `PaymentRequestsTest` — `frame-src` без Google; `ShellTest` — текст cookie-плашки; проверка D-43
+  «нет public/images» уточнена: в каталоге только `contact-map.jpg` (правка 11.11, J-05 — каталог требует задача).
+- **browser-check:** заглушка `MAP_EMBED/MAP_STUB` и счётчик подмен удалены (любой запрос к Google теперь — «чужой хост»);
+  `check_contact_map` (390, 1440, LT/EN): iframe нет, одна картинка `/images/contact-map.jpg`, lazy, alt, загружена после
+  прокрутки (`naturalWidth>0`), ширина файла ≤1400, ширина = рамке, высота = пропорциям файла, ссылка = прежний адрес под картинкой
+  в рамке, `.legal-note` не перекрыта; снимки `shots/contact-map-<lt|en>-<ширина>.png`. Текст <main> эталона не менялся —
+  D21_REPLACEMENTS не нужны. `bin/demo-check` не менялся: он проверяет старую сборку `demo/` (там iframe), заглушка там нужна.
+- **Проверки:** `bin/browser-check /lt/kontaktai /en/contact` — `OK (547 проверок)`, чужих запросов нет, поиск маркеров без
+  замечаний; снимки `contact-map-lt-1440`, `contact-map-en-390`, `lt__kontaktai-desktop`, `lt__kontaktai-phone` просмотрены Read
+  (карта со схемой подъезда на всю ширину рамки, «Atidaryti žemėlapį ↗» / «Open map ↗» под ней по центру). `bin/check` — первый
+  прогон упал только на проверке D-43 `assertDirectoryDoesNotExist(public/images)` (уточнена, см. выше); повтор — `bin/check: OK`
+  (PHPUnit 778/778, Pint, Vite).
+- **Не проверено (ждёт пользователя):** вид глазами в реальных браузерах/телефонах; на рабочем сервере может быть своё ui_text
+  `shell.cookie.text` (перекроет новый текст); снимок карты в хорошем качестве от заказчика ещё не получен (стоит временный);
+  режим `--base-url` против aiqme.com до deploy упадёт на iframe старой версии — проверено чтением кода; демо-сборка не пересобиралась.
