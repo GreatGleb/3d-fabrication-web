@@ -6056,3 +6056,77 @@ I-01…I-06 выполнены (track L), полный `bin/check` и полны
   раньше лимит был 10 в час, поэтому после нескольких попыток приходилось ждать до часа. Теперь лимит — 5 запросов за 5 минут
   (отдельно для форм и для заказов), ограничение снимается само не позже чем через 5 минут, а в сообщении указано, через сколько
   минут повторить («Per daug užklausų. Bandykite po N min.»).
+
+## Правки 11.11, J-07: сквозная проверка J-01…J-06 и статус в docs/requirements.md (2026-11-12)
+
+- **Полные проверки** на ветке `auto/night-2026-11-11-2232` (HEAD `ce831a7`, дерево чистое до J-07): `bin/check` —
+  `bin/check: OK` (PHPUnit **781/781**, 78 105 утверждений, Pint, Node-тесты, Vite build; журнал `build/j07/check.log`).
+  Полный `bin/browser-check` (101 страница, все ширины, поиск маркеров на всех страницах) — `bin/browser-check: OK (22293 проверок)`
+  (`build/j07/browser.log`, отчёт `build/verification/browser-check/summary.md`). Обе — отдельным процессом с журналом, сессия ждала
+  строки `EXIT` в переднем плане. Нагрузка машины во время прогона высокая (load average до 15) — провалов замеров не было.
+  Точечно ещё раз: тесты лимитов 5/5 мин (формы, заказы, две отправки шага 3), толщины и `LocaleRoutesTest` — 21/21.
+- **Регрессий не найдено**, исправлений в `aiqme-site/` в J-07 нет (изменены только `docs/requirements.md` и этот файл).
+- **Сверка 14 пунктов** (PDF-страницы `docs/customer/client/edits-20261111-rev5/pages/p-1…p-8.png` просмотрены Read; снимки — кадры
+  полного browser-check `build/verification/browser-check/shots/` и свои кадры главной/подвала Playwright на временном сервере
+  с БД `aiqme_browser`, вне репозитория `/tmp/j07shots/`):
+  - п.1: проверено снимком `lt__krepselis-desktop` — под «Jūsų krepšelis» строка «Produktų pirkimas arba gamybos užsakymas.»; EN — тест CatalogTest.
+  - п.2: проверено снимками `lt__krepselis-desktop`, `lt__administravimas__calculator-signed-in-1440`, `lt__paslaugos-phone` (390) и
+    `lang-*` (/lt, /en, услуги, контакты; 390 и 1440) — второго ряда под шапкой нет, page-top сразу под шапкой; замер высоты шапки — `check_styles` (зелёный).
+  - п.3: проверено снимком `lt__administravimas__calculator-signed-in-1440` — пункт меню «Užsakymo suvestinė» выделен, заголовок «Medžiagos, parametrai ir kainodara».
+  - п.4: проверено снимком `calculator-step2-1440` — у plate.dxf и plate.dwg одна строка «Failą peržiūrės specialistas ir įvertins kainą.»
+    (двух прежних строк нет); у STL — «Geometrija nuskaityta.» (толкование J-01).
+  - п.5: проверено тестами (снимка нет: browser-check поднимает лимиты до 100) — 5 отправок за 5 минут проходят, 6-я — 429 с «Bandykite po 5 min.»,
+    две отправки шага 3 подряд 429 не дают; ответ заказчику LT/RU — в записи J-06.
+  - п.6: проверено тестом `OrderPositionsTest` (60 — да, 60,1 и 300 — «Storis: nuo 0,1 iki 60 mm.») и проверкой browser-check атрибутов/validity
+    поля (max=60); снимок `calculator-step2-row-lt-milling-1440` — поле «Storis, mm» в ряду, текст ошибки глазами не снимался.
+  - п.7: проверено снимками `date-en-US-lt__kontaktai-1440` (браузер в локали en-US: «Pageidaujamas terminas» — «09.04.2027» и кнопка календаря)
+    и `calculator-step2-1440` («Reikalinga iki» — «15.11.2026»); вывод дат — тесты J-04.
+  - п.8: проверено своими снимками `footer-lt-390`, `footer-*-1440` и замером: /lt 1440 текст 108–307.97 при логотипе 108–308 (одна строка
+    21,7 px высотой), /en 1440 108–307.95; /lt 390 20–147.94 при 20–148, /en 390 20–147.95 — края совпадают ±0,1 px.
+  - п.9: проверено своим снимком `process-lt-1440` — 01, 02, 03, 04 без стрелок; `PROCESS_ARROWS_PROBE` (1440, 390, reduced-motion) зелёный.
+  - п.10: проверено своим снимком `cards-lt-1440` — три новые синие иконки заказчика у левого края карточек.
+  - п.11: проверено — `GET /` → `/en` (свой прогон Playwright: `root -> /en 200`); снимок `lang-open-lt-1440` — кнопка «LT ▾», список с «EN»
+    (белый в тёмной шапке); `check_lang_menu` (наведение, нажатие, Esc, Tab) зелёный.
+  - п.12: проверено тестами `LocaleRoutesTest` (aiqme.lt/ → https://aiqme.com/lt 301, прочие пути → 301 на aiqme.com); на настоящем домене — J-08.
+  - п.13: проверено своим снимком `partners-en-1440` — в ленте «NORDA VEKTA» текстом, без картинок, кнопки паузы нет.
+  - п.14: проверено снимком `contact-map-lt-1440` — картинка карты со схемой подъезда, под ней «Atidaryti žemėlapį ↗»; iframe и запросов к Google нет.
+- **docs/requirements.md:** добавлен раздел «Правки заказчика 11.11 (рев. 5)» — строки J-01…J-06 со статусом «сделано в коде и проверено
+  локально; на aiqme.com — после выпуска» и перечнем отменённых прежних решений (I-05 второй ряд, H-05 0,1–200 мм, «не входит» про формат даты).
+  Старые разделы не переписывались.
+- **`git diff --name-status main...HEAD`:** все файлы в `aiqme-site/` (нет `experiments/`, `demo/`, `resources/css/prototype/style.css`,
+  `legacy-landing/`, `docs/planning/`). Вне буквального списка touches J-01…J-06 — четыре файла, все по смыслу задач:
+  `bootstrap/app.php` (J-02: регистрация глобального middleware `RedirectLocaleHost` — в Laravel 12 только здесь; J-06: JSON-ответ 429 с
+  числом минут), `.env.example` и `docs/operations.md` (J-06: новые имена переменных лимитов, README требует переопределения через env),
+  `docs/verification/production-launch.md` (J-05: пункт выпуска про текст cookies о карте). Откатывать их нельзя без поломки J-02/J-06;
+  отмечено как отступление от списка touches.
+- **Не проверено (ждёт пользователя):** Safari/Firefox и реальные телефоны (девиз, меню языков касанием, календарь); системное окно
+  календаря глазами (в headless не снимается); экран 429 и текст ошибки толщины глазами (только тесты); данные брендов рабочего сайта;
+  `aiqme.lt` на настоящем домене; `bin/demo-check` и демо-сборка `demo/` (не пересобиралась; проверено чтением кода — demo-check
+  проверяет старую сборку с iframe, выполнение ждёт пользователя); режим `--base-url … --compose-file` (локальный prod-compose W-20) ночью не выполнялся.
+
+### Итог очереди правок 11.11
+
+J-01…J-06 сделаны и проверены, J-07 — сквозная проверка зелёная (`bin/check` 781/781, полный `bin/browser-check` 22293 проверки).
+Ветка `auto/night-2026-11-11-2232` не слита в main, не выпущена. Следующая — **J-08 (track P, только с пользователем)**.
+
+### Шаги выпуска J-08 (с пользователем)
+
+1. Резервная копия рабочего сервера (`bin/backup` — БД и файлы) до выпуска.
+2. Слить ветку в main, выкатить код, `npm run build` / сборка образа как в прежних выпусках (`docs/operations.md`).
+3. `bin/php artisan migrate --force` — новых миграций в этой очереди нет (тексты в `lang/*`), но команда обязательна по порядку выпуска;
+   затем `config:cache`, `route:cache`, `view:cache`.
+4. `.env`: удалить старые `AIQME_FORMS_PER_HOUR` / `AIQME_ORDERS_PER_HOUR` (не читаются); при желании задать `AIQME_FORMS_LIMIT(_MINUTES)`,
+   `AIQME_ORDERS_LIMIT(_MINUTES)` (по умолчанию 5/5); проверить `bin/php artisan config:show aiqme.trusted_proxies` = шлюз сети Docker
+   `aiqme-prod_default` (иначе все посетители делят один лимит). `APP_URL=https://aiqme.com` — канонический хост для 301 с aiqme.lt.
+5. Админка: проверить, нет ли в `ui_texts` переопределений изменённых ключей (`shell.footer.slogan`, `shell.cookie.text`,
+   `public.forms.throttle`, `pages.cart.description`, `admin.tabs.calculator`, `calculator.review.specialist_file`); в «Prekių ženklai» —
+   опубликовать бренды-партнёры с названиями LT/EN; если опубликован раздел политики cookies о Google Maps — убрать.
+6. **DNS:** записи A (и AAAA, если есть) для `aiqme.lt` и `www.aiqme.lt` → IP сервера aiqme.com.
+7. **Caddy:** по образцу `docker/proxy/Caddyfile.example` добавить сайт `aiqme.lt, www.aiqme.lt` с автоматическим TLS на тот же
+   `127.0.0.1:<AIQME_WEB_PORT>` с сохранением `Host`
+   (перенаправление делает приложение: `RedirectLocaleHost`, хосты в `config('aiqme.locale_hosts')`), перезагрузить Caddy.
+8. Проверка: `curl -sI https://aiqme.com/` → 302 на `/en`; `curl -sI https://aiqme.lt/` → 301 на `https://aiqme.com/lt`;
+   `curl -sI https://aiqme.lt/lt/kontaktai` → 301 на `https://aiqme.com/lt/kontaktai`; в инкогнито: шапка без второго ряда, меню
+   языков, девиз подвала, карта на «Kontaktai», даты dd.mm.yyyy, лента партнёров (режим `bin/browser-check --base-url` принимает только
+   127.0.0.1/localhost — для aiqme.com не годится). Затем строки в docs/requirements.md → «выпущено на aiqme.com».
+9. Ответ заказчику по лимиту (запись J-06) отправляет пользователь.
