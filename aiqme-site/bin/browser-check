@@ -95,6 +95,9 @@ check_header_white), шапка 91/82/73 px = --header-height, вне главн
 check_lang_menu на LANG_MENU_PAGES при 390 и 1440 — кнопка «LT ▾»/«EN ▾», список закрыт, наведение (ПК), нажатие, Enter
 открывают, aria-expanded, Esc закрывает с фокусом на кнопке, Tab из списка и нажатие вне закрывают, список — другой язык той же
 страницы, белый, в окне; кадры shots/lang-closed|open-<страница>-<ширина>.png.
+Главная (правка 11.11, J-03): check_motion на /lt и /en — в «Darbo eiga» нет стрелок между этапами при 1440, 390 и
+reduced-motion; кнопок паузы лент нет, лента останавливается наведением и идёт дальше без него; в ленте брендов — названия
+текстом, без <img>; check_scenarios — новые SVG заказчика (те же имена и viewBox), левый край по заголовку (I-03).
 Тексты и блок услуги (правка 02.11, Г2): новые тексты главной, 3D spausdinimas и ответа FAQ services-1 — замены D21_REPLACEMENTS;
 блока «Vienas kontaktas visam darbui» на страницах услуг нет (его фразы — '' в D21_REPLACEMENTS, без примера в check_blocks нет
 и div.grid.two).
@@ -1283,6 +1286,8 @@ D21_REPLACEMENTS = [
     ('SKENUOTI', '', '^/lt$'), ('PROJEKTUOTI', '', '^/lt$'), ('GAMINTI', '', '^/lt$'),
     ('SCAN', '', '^/en$'), ('DESIGN', '', '^/en$'), ('MANUFACTURE', '', '^/en$'),
     ('Sustabdyti video', '', '^/lt$'), ('Pause video', '', '^/en$'),
+    # Правка 11.11, J-03: кнопок паузы лент брендов и новостей главной («Ⅱ Sustabdyti judėjimą» / «Ⅱ Pause scrolling») нет.
+    ('Ⅱ', '', '^/(lt|en)$'), ('Sustabdyti judėjimą', '', '^/lt$'), ('Pause scrolling', '', '^/en$'),
     # Правка 05.11, H-01: кнопки калькулятора — «Įkelkite failus ir gaukite pasiūlymą» (hero), «Įkelti failus» (синий блок,
     # карточки услуг). Длинная фраза — раньше короткой, которая входит в неё.
     ('Įkelti modelį ir sužinoti kainą', 'Įkelkite failus ir gaukite pasiūlymą', '^/lt(/|$)'),
@@ -1582,10 +1587,20 @@ def check_defaults(report, page, path, width):
                 report.check(element['drawn'], f'{where}: не отрисовано {element}')
 
 
+# Правка 11.11, J-03: видимые стрелки между этапами «Darbo eiga» (::after или .process-arrow).
+PROCESS_ARROWS_PROBE = """() => { const steps = [...document.querySelectorAll('.process>div')]; return steps.length < 2 ? null : steps.flatMap((step) => {
+    const after = getComputedStyle(step, '::after');
+    const arrows = [...step.querySelectorAll('.process-arrow')].filter((a) => a.getBoundingClientRect().width > 0).map((a) => a.textContent);
+    return [...(after.content !== 'none' && after.content !== 'normal' && after.display !== 'none' ? [after.content] : []), ...arrows];
+}); }"""
+
+
 def check_motion(report, browser, new_page, path):
     """Видео hero и ленты (§7.3) на данных фабрик: с reduced-motion — пауза, без autoplay, постер, лента без анимации
-    и дублей; без него — видео играет, лента движется, кнопка паузы её останавливает. Правка 05.11, H-01: кнопки паузы
-    видео нет — видео запускается само (без reduced-motion) и не запускается с reduced-motion."""
+    и дублей; без него — видео играет, лента движется, наведение её останавливает. Правка 05.11, H-01: кнопки паузы
+    видео нет — видео запускается само (без reduced-motion) и не запускается с reduced-motion. Правка 11.11, J-03: кнопок
+    паузы лент нет (было — нажатие останавливало ленту), пауза — наведением; в ленте брендов названия текстом, без <img>;
+    в «Darbo eiga» нет стрелок между этапами при 1440 и 390 (и с reduced-motion)."""
     context, page, _ = new_page(1440, 1000, reduced_motion='reduce')
     page.goto(BASE + path, wait_until='networkidle')
     page.wait_for_timeout(800)
@@ -1601,6 +1616,12 @@ def check_motion(report, browser, new_page, path):
     report.check(len(got['tracks']) == 2, f'{path}: ожидались ленты брендов и новостей (данные фабрик), найдено {len(got["tracks"])}')
     for track in got['tracks']:
         report.check(track['animation'] == 'none' and track['duplicates'] == 0, f'{path} reduced-motion: лента {track}')
+    report.check(page.evaluate(PROCESS_ARROWS_PROBE) == [], f'{path} reduced-motion: стрелки «Darbo eiga»')
+    context.close()
+
+    context, page, _ = new_page(390, 844)
+    page.goto(BASE + path, wait_until='networkidle')
+    report.check(page.evaluate(PROCESS_ARROWS_PROBE) == [], f'{path} @390: стрелки «Darbo eiga» {page.evaluate(PROCESS_ARROWS_PROBE)}')
     context.close()
 
     context, page, _ = new_page(1440, 1000)
@@ -1612,18 +1633,27 @@ def check_motion(report, browser, new_page, path):
     except Exception:  # noqa: BLE001 — таймаут ожидания и есть провал проверки
         report.check(False, f'{path}: без reduced-motion видео hero не играет')
     report.check(page.locator('#hero-video-toggle, .hero-video-toggle').count() == 0, f'{path}: есть кнопка паузы видео hero')
+    arrows = page.evaluate(PROCESS_ARROWS_PROBE)
+    report.check(arrows == [], f'{path} @1440: стрелки «Darbo eiga» {arrows}')
+    report.check(page.locator('.partner-motion-toggle').count() == 0, f'{path}: есть кнопка паузы ленты')
+    wordmarks = page.locator('.partner-marquee-group[role="list"] .partner-wordmark')
+    report.check(wordmarks.count() > 0 and page.locator('.partner-marquee img').count() == 0
+                 and all(text.strip() for text in wordmarks.all_inner_texts()),
+                 f'{path}: в ленте брендов не названия текстом {wordmarks.all_inner_texts()}')
     for selector in ('.partner-section', '.news-section'):
         track = page.locator(f'{selector} [class$="-marquee-track"]')
         before = track.evaluate('(t) => getComputedStyle(t).transform')
         page.wait_for_timeout(400)
         moved = track.evaluate('(t) => getComputedStyle(t).transform')
         report.check(before != moved, f'{path}: лента {selector} не движется')
-        page.locator(f'{selector} .partner-motion-toggle').click()
-        page.mouse.move(1, 1)
+        page.locator(f'{selector} [class$="-marquee"]').hover()
+        page.wait_for_timeout(100)
         stopped = track.evaluate('(t) => getComputedStyle(t).transform')
         page.wait_for_timeout(400)
-        report.check(stopped == track.evaluate('(t) => getComputedStyle(t).transform'), f'{path}: пауза не остановила ленту {selector}')
-        report.check(page.locator(f'{selector} .partner-motion-toggle').get_attribute('aria-pressed') == 'true', f'{path}: aria-pressed паузы {selector}')
+        report.check(stopped == track.evaluate('(t) => getComputedStyle(t).transform'), f'{path}: наведение не остановило ленту {selector}')
+        page.mouse.move(1, 1)
+        page.wait_for_timeout(400)
+        report.check(stopped != track.evaluate('(t) => getComputedStyle(t).transform'), f'{path}: лента {selector} не пошла после наведения')
     context.close()
 
 

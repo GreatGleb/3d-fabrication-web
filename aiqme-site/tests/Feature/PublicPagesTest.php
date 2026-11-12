@@ -112,13 +112,19 @@ class PublicPagesTest extends TestCase
             );
             $this->assertSame(0, $xpath->query('//span[@class="scenario-icon"]//svg')->length, "$path: прежние линейные иконки");
         }
-        // Файлы — копии docs/planning/edits-20261102/icons/home/ байт в байт.
+        // Правка 11.11, J-03: файлы — новые SVG заказчика docs/planning/edits-20261111/icons/ без метаданных Inkscape
+        // (прежде — копии edits-20261102 байт в байт), тот же viewBox.
         $this->assertSame([
-            '162ac36b415d96fbbcec975c198916f6b90e4f8ad54491490d50cad1dd82837d',
-            'aa0d4dde2426c29bb15df8568ccfd5d8113b07df0c8d649ece65fa7b305ac864',
-            'abf7f60d7f0afbcfacd4beb4b3724639113ef2ec1650b5f88f9171a11d7e814a',
+            'fdbd8591aa37cce150406e30871e8a2935fe9ed56b75cab682f5a5f527aa9672',
+            'ae60200e08a6fc3006ff4cd585a708d989ad1b74614f5930a00183956ee1a5ff',
+            'fddd2fa9b3a2fc038390ff72a50fc568376efaa1908a0c39a5238063e6fff2e1',
         ], array_map(fn (string $name): string => hash_file('sha256', public_path("icons/home/$name.svg")),
             ['01-scan-to-gear-cube', '02-file-to-gear-cube', '03-gear-and-cube']));
+        foreach (['01-scan-to-gear-cube' => '0 0 202 113', '02-file-to-gear-cube' => '0 0 200 111', '03-gear-and-cube' => '0 0 148 125'] as $name => $viewBox) {
+            $svg = (string) file_get_contents(public_path("icons/home/$name.svg"));
+            $this->assertStringContainsString('viewBox="'.$viewBox.'"', $svg, $name);
+            $this->assertDoesNotMatchRegularExpression('/inkscape|sodipodi|<metadata/i', $svg, $name);
+        }
     }
 
     /** Правка 02.11, Г1: миграция данных меняет прежний hero_eyebrow LT (опубликованный и черновик), правку администратора не трогает. */
@@ -615,12 +621,23 @@ class PublicPagesTest extends TestCase
         $this->assertStringNotContainsString('Kaip paruošti failą 3D spausdinimui?', $this->get('/lt')->getContent());
 
         ContentFactory::as($this->admin())->homeTickers();
+        // Правка 11.11, J-03: картинка, загруженная бренду раньше (на рабочем сайте — изображение товара вместо названия),
+        // в ленту не попадает: в ленте только название бренда текстом.
+        $image = imagecreatetruecolor(8, 8);
+        ob_start();
+        imagepng($image);
+        ContentItem::where('type', ContentType::Brand)->where('key', 'norda')->firstOrFail()
+            ->addMediaFromString((string) ob_get_clean())->usingFileName('product.png')->toMediaCollection('images');
         foreach (['lt' => ['Prekių ženklai', 'Planuojami prekių ženklai'], 'en' => ['Technology brands', 'Planned technology brands']] as $locale => [$label, $old]) {
             $html = $this->get('/'.$locale)->getContent();
             $xpath = Html::xpath($html);
             $this->assertSame($label, $xpath->query('//div[@class="partner-marquee-group" and @role="list"]')->item(0)->getAttribute('aria-label'));
             $this->assertStringNotContainsString($old, $html);
             $this->assertSame(['NORDA', 'VEKTA'], Html::texts($xpath, '//div[@class="partner-marquee-group" and @role="list"]/div'));
+            $this->assertCount(0, $xpath->query('//div[@class="partner-marquee"]//img'), $locale);
+            // Правка 11.11, J-03: кнопок паузы лент нет (пауза — наведением и фокусом).
+            $this->assertCount(0, $xpath->query('//*['.Html::hasClass('partner-motion-toggle').']'), $locale);
+            $this->assertStringNotContainsString(['lt' => 'Sustabdyti judėjimą', 'en' => 'Pause scrolling'][$locale], $html);
             $this->assertCount(1, $xpath->query('//div[@class="partner-marquee-group" and @aria-hidden="true"]'));
             $this->assertCount(2, $xpath->query('//div[@class="news-marquee-group" and @role="list"]/a'));
             $this->assertCount(0, $xpath->query('//section['.Html::hasClass('news-section').']//div[@class="empty"]'));

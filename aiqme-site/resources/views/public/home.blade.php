@@ -3,7 +3,9 @@
      D-26), категории, CTA. Видео по умолчанию — один набор: при своём video мобильный ролик и постер — только свои,
      подпись — из источника своего медиа (§7.3). С hero шапка полупрозрачная поверх видео (правка 28.10, П2), у заглушки
      без записи home — обычная тёмная. Правка 02.11, Г1: иконки
-     карточек — SVG заказчика из public/icons/home/. --}}
+     карточек — SVG заказчика из public/icons/home/. Правка 11.11, J-03: иконки — новые SVG заказчика; кнопок паузы лент
+     нет (пауза при наведении и фокусе, без движения при prefers-reduced-motion — CSS прототипа); в ленте брендов — названия
+     брендов из админки текстом, без изображений. --}}
 @use('App\Domain\Content\ContentType')
 @use('App\Domain\Content\Models\ContentItem')
 @use('Illuminate\Support\Facades\Route')
@@ -97,13 +99,10 @@
         </div>
     </section>
 
-    <section class="section partner-section" aria-labelledby="partner-heading" data-paused="false">
+    <section class="section partner-section" aria-labelledby="partner-heading">
         <div class="wrap">
             <div class="section-head partner-heading-row">
                 <div><div class="eyebrow">{{ $home->field('partners_eyebrow') }}</div><h2 id="partner-heading">{{ $home->field('partners_title') }}</h2></div>
-                @if ($brands->isNotEmpty())
-                    @include('public.partials.ticker-toggle', ['target' => 'partner-marquee'])
-                @endif
             </div>
             @if ($brands->isEmpty())
                 <x-placeholder />
@@ -113,13 +112,7 @@
                         @foreach ([false, true] as $duplicate)
                             <div class="partner-marquee-group" @if ($duplicate) aria-hidden="true" @else role="list" aria-label="{{ __('public.ticker.brands_list') }}" @endif>
                                 @foreach ($brands as $brand)
-                                    <div class="partner-wordmark" @unless ($duplicate) role="listitem" @endunless>
-                                        @if ($logo = $brand->item->getFirstMedia('images'))
-                                            @include('public.partials.media', ['mediaImage' => $logo, 'mediaSizes' => '225px'])
-                                        @else
-                                            {{ $brand->title }}
-                                        @endif
-                                    </div>
+                                    <div class="partner-wordmark" @unless ($duplicate) role="listitem" @endunless>{{ $brand->title }}</div>
                                 @endforeach
                             </div>
                         @endforeach
@@ -144,14 +137,11 @@
         </div>
     </section>
 
-    <section class="section news-section" aria-labelledby="news-heading" data-news-paused="false">
+    <section class="section news-section" aria-labelledby="news-heading">
         <div class="wrap">
             <div class="section-head partner-heading-row">
                 <div><div class="eyebrow">{{ $home->field('news_eyebrow') }}</div><h2 id="news-heading">{{ $home->field('news_title') }}</h2></div>
                 <div class="news-actions">
-                    @if ($news->isNotEmpty())
-                        @include('public.partials.ticker-toggle', ['target' => 'news-marquee'])
-                    @endif
                     <a class="text-link" href="{{ route($locale.'.news') }}">{{ __('public.ticker.all_news') }}</a>
                 </div>
             </div>

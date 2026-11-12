@@ -15,8 +15,6 @@ return [
         'training' => 'Topics & registration ↗',
     ],
     'ticker' => [
-        'pause' => 'Pause scrolling',
-        'resume' => 'Resume scrolling',
         'brands' => 'Horizontally scrolling brand banner. Motion pauses on hover or keyboard focus.',
         'brands_list' => 'Technology brands',
         'news' => 'Horizontally scrolling news strip. Motion pauses on hover or keyboard focus.',

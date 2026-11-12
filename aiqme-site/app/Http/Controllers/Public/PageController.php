@@ -40,7 +40,7 @@ class PageController extends Controller
             'home' => $home,
             'services' => $services,
             'modelling' => $services->first(fn (ContentTranslation $service): bool => $service->item->key === 'modelling'),
-            'brands' => $this->content->list(ContentType::Brand, $locale)->load('item.media'),
+            'brands' => $this->content->list(ContentType::Brand, $locale),
             'categories' => $this->content->list(ContentType::Category, $locale),
             'news' => $this->content->list(ContentType::Article, $locale, ['section' => 'news'])
                 ->sortByDesc('published_at')->take(self::HOME_NEWS)->values(),

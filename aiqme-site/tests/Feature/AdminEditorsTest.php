@@ -252,12 +252,13 @@ class AdminEditorsTest extends TestCase
         }
         $this->assertSame(['kind' => 'records', 'parts' => ['heading', 'text']], ContentTypes::fields(new ContentItem(['type' => ContentType::Article]))['sections']);
         $this->assertSame(['images' => false], ContentTypes::media(new ContentItem(['type' => ContentType::Project])));
-        $this->assertSame(['images' => true], ContentTypes::media(new ContentItem(['type' => ContentType::Brand])));
+        // Правка 11.11, J-03: у бренда нет загрузки логотипа — в ленте главной только название.
+        $this->assertSame([], ContentTypes::media(new ContentItem(['type' => ContentType::Brand])));
         $this->assertSame([], ContentTypes::media(new ContentItem(['type' => ContentType::Training])));
         $this->assertSame(['meta.date', 'meta.format'], array_keys(ContentTypes::metaRules(new ContentItem(['type' => ContentType::Training]))));
     }
 
-    public function test_project_photos_are_several_and_a_brand_logo_is_one(): void
+    public function test_project_photos_are_several_and_a_brand_has_no_upload(): void
     {
         $project = ContentItem::where('type', ContentType::Project)->firstOrFail();
         $editor = $this->edit($project)->assertSee('Files &amp; photos', false);
@@ -267,12 +268,11 @@ class AdminEditorsTest extends TestCase
         }
         $this->assertCount(2, $project->fresh()->getMedia('images'));
 
-        $brand = $this->create('brand')->set('form.lt.title', 'VEKTA')->call('save')->assertHasNoErrors();
-        foreach ([1, 2] as $index) {
-            $brand->set('upload', UploadedFile::fake()->createWithContent("logo$index.png", $this->png()))
-                ->call('uploadMedia')->assertHasNoErrors();
-        }
-        $this->assertCount(1, $this->latest(ContentType::Brand)->getMedia('images'), 'новый логотип заменяет прежний');
+        // Правка 11.11, J-03: логотип бренда не загружается (в ленте главной — название), раньше — один файл.
+        $brand = $this->create('brand')->set('form.lt.title', 'VEKTA')->call('save')->assertHasNoErrors()
+            ->assertDontSee('Files &amp; photos', false);
+        $brand->set('upload', UploadedFile::fake()->createWithContent('logo.png', $this->png()))->call('uploadMedia')->assertHasErrors();
+        $this->assertCount(0, $this->latest(ContentType::Brand)->getMedia('images'));
     }
 
     private function png(): string

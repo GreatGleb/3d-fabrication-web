@@ -3,7 +3,6 @@ import './header';
 import './lang-menu';
 import './modal';
 import './hero-video';
-import './tickers';
 import './filters';
 import './search';
 import './compare';

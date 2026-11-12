@@ -15,8 +15,6 @@ return [
         'training' => 'Temos ir registracija ↗',
     ],
     'ticker' => [
-        'pause' => 'Sustabdyti judėjimą',
-        'resume' => 'Tęsti judėjimą',
         'brands' => 'Horizontaliai judanti prekių ženklų juosta. Judėjimas sustoja užvedus pelę arba pasirinkus klaviatūra.',
         'brands_list' => 'Prekių ženklai',
         'news' => 'Horizontaliai judanti naujienų juosta. Judėjimas sustoja užvedus pelę arba pasirinkus klaviatūra.',

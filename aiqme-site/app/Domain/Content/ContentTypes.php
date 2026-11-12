@@ -62,7 +62,7 @@ final class ContentTypes
         'service' => ['images' => true],
         'project' => ['images' => false],
         'product' => ['images' => false, 'documents' => false],
-        'brand' => ['images' => true],
+        // Правка 11.11, J-03: у бренда нет логотипа — в ленте главной название текстом.
         'page_text' => [
             'home' => ['video' => true, 'video_mobile' => true, 'video_poster' => true, 'logo' => true, 'logo_white' => true, 'favicon' => true],
             'about' => ['images' => true],
