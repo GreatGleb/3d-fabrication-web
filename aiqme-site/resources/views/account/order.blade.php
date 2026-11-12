@@ -7,7 +7,7 @@
 @php
     $locale = app()->getLocale();
     $money = fn (int $cents): string => \Illuminate\Support\Number::currency($cents / 100, in: 'EUR', locale: $locale);
-    $date = fn ($time): string => \Illuminate\Support\Carbon::parse($time)->timezone(config('app.timezone'))->format('Y-m-d');
+    $date = fn ($time): string => \Illuminate\Support\Carbon::parse($time)->timezone(config('app.timezone'))->format('d.m.Y');
     $cancelled = $state->stage === \App\Domain\Orders\ProductionStage::Cancelled;
     $lastAdmin = $messages->where('kind', \App\Domain\Orders\Models\OrderMessage::ADMIN)->last();
 @endphp

@@ -125,7 +125,7 @@ class OrderPositionsDisplayTest extends TestCase
         $this->assertStringStartsWith('Quantity: 1<br><b>3D printing</b><br>PLA / Infill 100%', $step);
         $this->assertStringNotContainsString('Units', $step);
         $this->assertStringStartsWith('Quantity: 3<br><b>Milling</b><br>Non-ferrous metals / Thickness: 6.5 mm / Production lead time: Urgent', $dxf);
-        $this->assertStringContainsString('<span class="tag blue" data-urgent>Urgent</span>Needed by: '.$this->neededBy, $dxf);
+        $this->assertStringContainsString('<span class="tag blue" data-urgent>Urgent</span>Needed by: '.now()->addDays(2)->format('d.m.Y'), $dxf); // правка 11.11, J-04: даты dd.mm.yyyy
         $this->assertStringContainsString('Additional information:<span style="white-space:pre-line">Kraštai be šerpetų. &lt;b&gt;Matinis&lt;/b&gt;</span>', $dxf);
         $this->assertStringStartsWith('Quantity: 1<br><b>Engraving</b><br>Wood / Engraving depth: 0.1 mm / Production lead time: Standard', $dwg);
         $this->assertStringNotContainsString('Needed by', $dwg);
@@ -146,7 +146,7 @@ class OrderPositionsDisplayTest extends TestCase
         app()->setLocale('lt');
         [, , $dxf, $dwg] = self::cells($this->card($order)->html());
         $this->assertStringStartsWith('Kiekis: 3<br><b>Frezavimas</b><br>Spalvotieji metalai / Storis: 6,5 mm / Gamybos terminas: Skubos tvarka', $dxf);
-        $this->assertStringContainsString('data-urgent>Skubu</span>Reikalinga iki: '.$this->neededBy, $dxf);
+        $this->assertStringContainsString('data-urgent>Skubu</span>Reikalinga iki: '.now()->addDays(2)->format('d.m.Y'), $dxf);
         $this->assertStringStartsWith('Kiekis: 1<br><b>Graviravimas</b><br>Mediena / Graviravimo gylis: 0,1 mm', $dwg);
         $this->assertStringContainsString('Kainą įvertins specialistas', $this->card($order)->html());
     }

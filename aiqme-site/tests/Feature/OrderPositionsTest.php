@@ -82,7 +82,8 @@ class OrderPositionsTest extends TestCase
             $this->printed('cover.stl', ['material' => 'PETG', 'surface' => 'high']),
             ['file' => UploadedFile::fake()->createWithContent('housing.step', "ISO-10303-21;\nHEADER;\nENDSEC;\nEND-ISO-10303-21;\n"), 'method' => 'printing', 'material' => 'PLA',
                 'infill' => 'consult', 'color' => 'black', 'purpose' => 'practical', 'service' => 'none', 'surface' => 'standard', 'quantity' => '1', 'priority' => 'standard'],
-            $this->milled('cad/plate.dxf', 'plate.dxf', ['quantity' => '3', 'priority' => 'priority', 'needed_by' => now()->addDays(2)->format('Y-m-d'), 'notes' => $dxfNotes]),
+            // Правка 11.11, J-04: дата вводится dd.mm.yyyy, хранится Y-m-d.
+            $this->milled('cad/plate.dxf', 'plate.dxf', ['quantity' => '3', 'priority' => 'priority', 'needed_by' => now()->addDays(2)->format('d.m.Y'), 'notes' => $dxfNotes]),
             ['file' => $this->upload('cad/plate.dwg', 'sign.DWG'), 'method' => 'engraving', 'material' => 'Mediena', 'depth' => '0.1', 'quantity' => '1',
                 'priority' => 'standard', 'needed_by' => now()->addDays(2)->format('Y-m-d')],
         ];
@@ -217,8 +218,14 @@ class OrderPositionsTest extends TestCase
             'printing material' => [[$this->printed('a.stl', ['material' => 'Aliuminis'])], 'parts.0.material', 'Choose a value from the list.'],
             'STL without unit' => [[array_diff_key($this->printed('a.stl'), ['unit' => 1])], 'parts.0.unit', 'Fill in this field.'],
             'priority' => [[$this->milled(override: ['priority' => 'express'])], 'parts.0.priority', 'Choose a value from the list.'],
-            'needed by yesterday' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => $yesterday])], 'parts.0.needed_by', 'Choose a value from the list.'],
-            'needed by today' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => now()->format('Y-m-d')])], 'parts.0.needed_by', 'Choose a value from the list.'],
+            // Правка 11.11, J-04: дата dd.mm.yyyy (и прежний Y-m-d); неверная или не позже сегодня — «Enter a valid date.».
+            'needed by yesterday' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => $yesterday])], 'parts.0.needed_by', 'Enter a valid date.'],
+            'needed by today' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => now()->format('Y-m-d')])], 'parts.0.needed_by', 'Enter a valid date.'],
+            'needed by today dd.mm.yyyy' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => now()->format('d.m.Y')])], 'parts.0.needed_by', 'Enter a valid date.'],
+            'needed by 31.02' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => '31.02.'.(now()->year + 1)])], 'parts.0.needed_by', 'Enter a valid date.'],
+            'needed by mm/dd/yyyy' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => now()->addDays(2)->format('m/d/Y')])], 'parts.0.needed_by', 'Enter a valid date.'],
+            // Массив вместо даты — обычная ошибка 422, не 500 (замыкание срока получает не строку).
+            'needed by array' => [[$this->milled(override: ['priority' => 'priority', 'needed_by' => ['x']])], 'parts.0.needed_by', 'Enter a valid date.'],
             'notes' => [[$this->milled(override: ['notes' => str_repeat('a', 2001)])], 'parts.0.notes', 'Too long: up to 2000 characters.'],
             'quantity' => [[$this->milled(override: ['quantity' => '0'])], 'parts.0.quantity', 'Quantity: from 1 to 100.'],
         ];

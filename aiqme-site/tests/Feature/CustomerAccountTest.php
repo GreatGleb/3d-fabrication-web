@@ -129,7 +129,7 @@ class CustomerAccountTest extends TestCase
         $this->assertSame([(string) $a2->meta->number, (string) $a1->meta->number],
             array_map(fn ($n) => $n->value, iterator_to_array($orders->query('//tr/@data-order'))));
         $row = $orders->query('//tr[@data-order="'.$a1->meta->number.'"]')->item(0)->textContent;
-        foreach (['Gamyba', 'Techninė patikra', 'Neapmokėta', now()->format('Y-m-d')] as $text) {
+        foreach (['Gamyba', 'Techninė patikra', 'Neapmokėta', now()->format('d.m.Y')] as $text) { // правка 11.11, J-04: даты dd.mm.yyyy
             $this->assertStringContainsString($text, $row);
         }
 
@@ -221,7 +221,7 @@ class CustomerAccountTest extends TestCase
         // Платежи и возвраты (D-04): дата, вид, сумма; неуспешная транзакция не показывается.
         $transactions = iterator_to_array($html->query('//*[@data-transaction]'));
         $this->assertCount(2, $transactions);
-        $this->assertStringContainsString(now()->format('Y-m-d').' · Payment', $transactions[0]->textContent);
+        $this->assertStringContainsString(now()->format('d.m.Y').' · Payment', $transactions[0]->textContent);
         $this->assertStringContainsString('€25.00', $transactions[0]->textContent);
         $this->assertStringContainsString('Refund', $transactions[1]->textContent);
         $this->assertStringContainsString('−€5.00', $transactions[1]->textContent);

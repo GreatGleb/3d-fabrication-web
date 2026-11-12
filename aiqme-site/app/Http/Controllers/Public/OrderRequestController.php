@@ -6,6 +6,7 @@ use App\Domain\Orders\OrderFileFormat;
 use App\Domain\Orders\OrderSubmission;
 use App\Domain\Pricing\CalculatorSettings;
 use App\Http\Controllers\Controller;
+use App\Support\Dates;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -62,13 +63,13 @@ class OrderRequestController extends Controller
             'integer' => __('public.forms.choice'),
             'numeric' => __('public.forms.choice'),
             'date_format' => __('public.forms.choice'),
-            'after' => __('public.forms.choice'),
             'uuid' => __('public.forms.rejected'),
             'parts.required' => __('calculator.js.no_model'),
             'parts.max' => __('public.forms.files_count', ['max' => $limits['max_files']]),
             // Файл больше upload_max_filesize PHP приходит без содержимого (ошибка загрузки) — то же сообщение о лимите.
             'parts.*.file.uploaded' => __('public.forms.file_size', ['max' => $maxMb]),
             'parts.*.file.max' => __('public.forms.file_size', ['max' => $maxMb]),
+            'parts.*.needed_by.date_format' => __('public.forms.date'),
             'parts.*.quantity.min' => __('calculator.submit.quantity'),
             'parts.*.quantity.max' => __('calculator.submit.quantity'),
             'parts.*.scale.min' => __('calculator.js.scale_range'),
@@ -168,7 +169,13 @@ class OrderRequestController extends Controller
         $rules += [
             $prefix.'.method' => ['required', Rule::in($printable ? ['printing', 'milling', 'engraving'] : ['milling', 'engraving'])],
             $prefix.'.priority' => $this->choice('calculator.settings.terms'),
-            $prefix.'.needed_by' => ['nullable', 'date_format:Y-m-d', 'after:today'],
+            // Правка 11.11, J-04: дата dd.mm.yyyy (и прежний Y-m-d), не раньше завтра.
+            $prefix.'.needed_by' => ['nullable', Dates::RULE, function (string $attribute, mixed $value, Closure $fail): void {
+                $iso = is_string($value) ? Dates::toIso($value) : null; // не строка — ошибку уже дал date_format
+                if ($iso !== null && $iso <= today()->format('Y-m-d')) {
+                    $fail(__('public.forms.date'));
+                }
+            }],
             $prefix.'.notes' => ['nullable', 'string', 'max:2000'],
         ];
         $names = fn (string $key): array => array_column($settings[$key], 'lt');
@@ -228,7 +235,7 @@ class OrderRequestController extends Controller
 
         return $parameters + [
             'term' => $part['priority'],
-            'needed_by' => $part['priority'] === 'priority' ? ($part['needed_by'] ?? null) : null,
+            'needed_by' => $part['priority'] === 'priority' ? Dates::toIso($part['needed_by'] ?? null) : null,
             'notes' => ($part['notes'] ?? null) ?: null,
         ];
     }

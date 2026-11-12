@@ -9,6 +9,7 @@ use App\Domain\Forms\Altcha;
 use App\Domain\Forms\FormSubmissions;
 use App\Domain\Forms\Models\TrainingRegistration;
 use App\Http\Controllers\Controller;
+use App\Support\Dates;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,7 @@ class FormController extends Controller
             'phone' => ['required', 'string', 'max:50'], // правка 05.11, H-03: телефон обязателен
             'service' => ['required', 'string', Rule::in([...$services->keys(), 'equipment'])],
             'description' => ['required', 'string', 'min:10', 'max:5000'],
-            'deadline' => ['nullable', 'date'],
+            'deadline' => ['nullable', Dates::RULE], // правка 11.11, J-04: dd.mm.yyyy (и прежний Y-m-d)
             'attachments' => ['nullable', 'array', 'max:'.$limits['attachments_max_files']],
             'attachments.*' => ['file', 'max:'.$limits['attachments_max_kb'], 'extensions:'.implode(',', $limits['attachments_extensions']), $this->signature(...)],
         ], $this->messages([
@@ -65,7 +66,9 @@ class FormController extends Controller
             'attachments.max' => __('public.forms.files_count'),
             'attachments.*.max' => __('public.forms.file_size', ['max' => intdiv($limits['attachments_max_kb'], 1024)]),
             'attachments.*.extensions' => __('public.forms.file_type', ['types' => implode(', ', $limits['attachments_extensions'])]),
+            'deadline.date_format' => __('public.forms.date'),
         ]));
+        $data['deadline'] = Dates::toIso($data['deadline'] ?? null);
 
         $service = $services->get($data['service']);
         $files = array_values($request->file('attachments', []));

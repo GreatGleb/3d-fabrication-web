@@ -9,7 +9,7 @@
 @php
     $t = fn (string $key, array $replace = []): string => __('invoices.'.$key, $replace, $locale);
     $amount = fn (int $cents): string => \Illuminate\Support\Number::format($cents / 100, precision: 2, locale: $locale);
-    $date = fn ($moment): string => $moment->timezone(config('app.timezone'))->format('Y-m-d');
+    $date = fn ($moment): string => $moment->timezone(config('app.timezone'))->format('d.m.Y');
     $seller = $invoice->seller;
     $buyer = $invoice->buyer;
     $rate = $seller['vat_payer'] ? $seller['vat_rate'] : 0;

@@ -9,7 +9,7 @@
     @if ($customer)
         <div class="panel gap" id="customer-card">
             <h3>{{ $customer->name }}</h3>
-            <p>{{ $customer->email }} · {{ __('admin.customers.registered') }}: {{ $customer->created_at->timezone(config('app.timezone'))->format('Y-m-d') }}</p>
+            <p>{{ $customer->email }} · {{ __('admin.customers.registered') }}: {{ $customer->created_at->timezone(config('app.timezone'))->format('d.m.Y') }}</p>
             @if ($customer->profile)
                 <h3 class="gap">{{ __('admin.customers.details') }}</h3>
                 <x-table>
@@ -33,7 +33,7 @@
                 <tr wire:key="customer-{{ $item->id }}">
                     <td>{{ $item->name }}</td>
                     <td>{{ $item->email }}</td>
-                    <td>{{ $item->created_at->timezone(config('app.timezone'))->format('Y-m-d') }}</td>
+                    <td>{{ $item->created_at->timezone(config('app.timezone'))->format('d.m.Y') }}</td>
                     <td>{{ $item->orders }}</td>
                     <td><a class="btn small secondary" href="{{ route($locale.'.admin.customers', ['customer' => $item->id]) }}#customer-card">{{ __('admin.customers.open') }}</a></td>
                 </tr>

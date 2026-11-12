@@ -5903,3 +5903,73 @@ I-01…I-06 выполнены (track L), полный `bin/check` и полны
   `bin/check: OK` (PHPUnit 777/777, Pint, Vite).
 - Не проверено (ждёт пользователя): данные брендов рабочего сайта (какая именно картинка была у бренда) и вид ленты с настоящими
   названиями; Safari/Firefox и реальные телефоны; демо-сборка `demo/` не пересобиралась.
+
+## Правки 11.11, J-04: даты везде в формате dd.mm.yyyy (ввод и вывод)
+
+- **Список полей ввода дат** (grep `type="date"`, `type=date`): контактная форма «Pageidaujamas terminas» / «Target date»
+  (`public/contact.blade.php` → `x-field type=date`); калькулятор «Reikalinga iki» / «Needed by» при скорой очереди
+  (`resources/js/calculator/index.js`); админка — атрибут «data» обучения (`ContentTypes::meta` kind `date` → `x-field`
+  в `admin/content-editor.blade.php`); Telegram-бот — то же поле обучения текстом (`ask_meta` → `ContentTypes::metaRules`).
+- **Список мест вывода дат** (grep `format(`, `isoFormat`, `toLocaleDateString`, `meta('date')`, `needed_by`, `training_date`):
+  кабинет — список заказов (`AccountController` `date`), карточка заказа (`account/order.blade.php` `$date`: платежи и пр.);
+  админка — overview (время заявки, `deadline`), список заказов (`partials/order-rows`), карточка заказа (запросы оплаты,
+  сообщения, ревизии, журнал, «Reikalinga iki» позиции), клиенты (регистрация, модели), обучение (регистрации: время и дата
+  обучения), аудит, интеграции; счёт PDF («Data :», «UŽSAKYMO DATA»); сайт — даты обучений (`training-topics`: метка и строка
+  окна регистрации); письмо AIQME и событие регистрации на обучение (`subject` «тема · дата», то же в Google Sheets).
+  `toLocaleDateString`/`isoFormat` в коде нет; JS дат не выводит, кроме сводки свёрнутой карточки калькулятора (введённое dd.mm.yyyy).
+  Остаются как были (не «вывод для человека»): столбец времени Google Sheets `Y-m-d H:i:s` UTC (`SheetsProjector::time` —
+  машинное значение для сортировки/фильтра в таблице) и `diffForHumans` «резервная копия … назад» в overview (не дата).
+- **Вывод:** все перечисленные `format('Y-m-d')` → `d.m.Y`, `Y-m-d H:i` → `d.m.Y H:i`; строки Y-m-d из meta/параметров
+  (дата обучения, `needed_by`, `training_date`) — через новый `App\Support\Dates::show`. Хранение не менялось (Y-m-d) — миграций нет.
+- **Ввод:** `x-field type=date` и поле калькулятора — `input type=text inputmode=numeric maxlength=10 placeholder="dd.mm.yyyy"
+  data-date` + кнопка календаря (иконка `icons/ui/calendar.svg`) + невидимое `input type=date` без name. `resources/js/date-field.js`
+  (свой код, без зависимостей, делегирование на document в фазе перехвата): маска цифр «05032027» → «05.03.2027» (на телефоне —
+  цифровая клавиатура, точки ставит маска), кнопка — `showPicker()` системного календаря, выбранная дата → dd.mm.yyyy в поле
+  (события input/change поля; change скрытого поля дальше не идёт, чтобы калькулятор не перерисовал карточку раньше переноса).
+  Календарь калькулятора — с `min` = завтра. Значение Y-m-d в x-field (old/админка) показывается как dd.mm.yyyy.
+  Решения (простейшие, без новых текстов): кнопка календаря `aria-hidden` и `tabindex=-1` — клавиатура и экранные чтецы вводят дату
+  текстом, поэтому новой подписи кнопки не нужно; `pattern` не ставится — неверный формат объясняет сервер прежним текстом
+  «Įveskite teisingą datą.» / «Enter a valid date.», а не браузер на языке системы. Без JS — текстовое поле dd.mm.yyyy, кнопка не действует.
+- **Сервер:** `Dates::RULE = date_format:d.m.Y,Y-m-d` (dd.mm.yyyy и прежний Y-m-d; строгая проверка, 31.02 и mm/dd/yyyy — ошибка),
+  `Dates::toIso` перед сохранением. Контакты: `deadline` (было правило `date`, принимавшее и mm/dd/yyyy), ошибка
+  `public.forms.date`. Калькулятор: `parts.*.needed_by` — dd.mm.yyyy или Y-m-d и позже сегодня; ошибка теперь «Enter a valid date.»
+  (было «Choose a value from the list.» — непонятно для даты; ожидания в `OrderPositionsTest` изменены с комментарием J-04).
+  Админка/Telegram: meta `date` в форме — dd.mm.yyyy, принимается и Y-m-d, хранится Y-m-d (`ContentTypes::metaToForm/metaFromForm`).
+- **Тесты:** новый `FormsTest::test_contact_deadline_is_entered_and_shown_as_dd_mm_yyyy` (разметка поля LT/EN, ошибки 31.02.2027
+  и 03/01/2027, введённое остаётся в поле, сохранение 01.03.2027 → 2027-03-01, пустое — null, админка «01.03.2027» и время
+  dd.mm.yyyy HH:mm). **Прогон с откатом:** с прежними `field.blade.php` и `FormController.php` тест падает (`type` `date` вместо
+  `text`), с правкой проходит. `OrderPositionsTest`: заказ с датой dd.mm.yyyy хранит Y-m-d; сегодня (оба формата), 31.02 и
+  mm/dd/yyyy — 422. `AdminEditorsTest`: в форме обучения 03.02.2027, сохранение 10.02.2027 → 2027-02-10, 31.02.2027 и 2027-02-31 —
+  ошибка, прежний 2027-03-04 принимается и на сайте «04.03.2027». Ожидания вывода изменены (комментарий «правка 11.11, J-04»):
+  AdminShellTest (аудит), CustomerAccountTest, InvoicesTest (Data, UŽSAKYMO DATA), OrderPositionsDisplayTest (Needed by),
+  PublicSectionsTest (метка обучения), SheetsTest (тема регистрации), FormLabelsTest (поле в `span.date-field`).
+- **browser-check:** `new_page(..., locale=)`; новый `check_date_field` на /lt/kontaktai и /en/contact при 390 и 1440 в локалях
+  браузера **en-US и lt-LT** (`navigator.language` проверяется): поле text/dd.mm.yyyy/numeric, клавиатура «05032027» → «05.03.2027»,
+  Backspace×2 + «28» → «05.03.2028», точки с клавиатуры отбрасываются, кнопка календаря внутри поля, нажатие без ошибок
+  (showPicker, Esc), выбор в календаре (значение скрытого поля + change) → «09.04.2027»; кадры `shots/date-<локаль>-<страница>-<ширина>.png`
+  (8 шт., просмотрены Read: «09.04.2027» и иконка календаря справа в поле). Калькулятор: /en/quote в en-US, /lt/kalkuliatorius
+  в lt-LT; `min` календаря = завтра, выбор в календаре → dd.mm.yyyy в перерисованной карточке, ввод с клавиатуры маской, в заявку
+  уходит `parts[1][needed_by]` dd.mm.yyyy и заявка 201. `check_contact_form` отправляет форму с датой «01032027». В
+  `STEP2_ROWS_JS` невидимое поле календаря исключено из проверки обрезки (1 px, не поле ряда — иначе «4>1»).
+  Текстов в <main> эталона J-04 на этих страницах не меняет — D21_REPLACEMENTS не добавлялись.
+- **Проверки:** `bin/browser-check /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote` — первый прогон FAIL (30) только из-за
+  обрезки невидимого поля в `check_step2_rows`; после исключения `bin/browser-check /lt/kalkuliatorius /en/quote` —
+  `OK (1170 проверок)`, `bin/browser-check /lt/kontaktai /en/contact` — `OK (547 проверок)` (поиск маркеров без замечаний).
+  `bin/check` — `bin/check: OK` (PHPUnit 778/778, Pint, Vite). Новых зависимостей нет.
+- **Не проверено (ждёт пользователя):** настоящий системный календарь глазами (в headless Chromium его окно не снимается — выбор
+  в нём имитируется значением скрытого поля); Firefox и Safari (showPicker есть в Firefox 101+, Safari 16+; при ошибке фокус уходит
+  в поле — ввод с клавиатуры); реальные телефоны; поле даты обучения в админке (Livewire) и ответ Telegram-боту — проверены
+  тестами, в браузере не открывались; даты обучений на /lt/mokymai и странице услуги обучения (в эталоне прототипа «2026-11-12»,
+  у нас темы не опубликованы) — полный browser-check только в J-07; демо-сборка `demo/` не пересобиралась.
+
+### J-04, доработка по замечаниям приёмщика (12.11)
+
+- `bin/browser-check`: комментарий J-04 был вставлен внутрь строки `expected_fields` и закомментировал ожидания
+  `'parts[1][notes]': plate_notes` и `'parts[1][unit]': None` — восстановлены, комментарий перенесён в конец строки.
+- `OrderRequestController::partRules`: замыкание срока `needed_by` вызывалось и после провала `date_format` (`nullable` не
+  implicit-правило), а `Dates::toIso(?string)` с массивом давал TypeError и 500. Теперь не строка пропускается (ошибку уже дал
+  `date_format`). Тест `OrderPositionsTest` — случай «needed by array» (`parts[0][needed_by][]=x` → 422 «Enter a valid date.»,
+  без записей).
+- `Dates::show()`: убраны неиспользуемые параметр `$time` и ветка Carbon/DateTimeInterface — все вызовы передают строки Y-m-d;
+  теперь `show(?string)`.
+- Проверки: `bin/check` OK (778 тестов), `bin/browser-check /lt/kontaktai /en/contact /lt/kalkuliatorius /en/quote` OK (1703).

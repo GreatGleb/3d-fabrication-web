@@ -12,7 +12,7 @@
                     $subject = $entry->subject;
                 @endphp
                 <tr>
-                    <td>{{ $entry->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                    <td>{{ $entry->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</td>
                     <td>{{ $channel ? __('admin.audit.channels.'.$channel) : '' }}</td>
                     <td>{{ trans()->has('admin.audit.events.'.$entry->event) ? __('admin.audit.events.'.$entry->event) : $entry->event }}</td>
                     <td>{{ $subject instanceof \App\Domain\Content\Models\ContentTranslation ? Str::squish($subject->title ?? $subject->latestRevision()?->title).' ('.$subject->type->value.')' : class_basename($entry->subject_type).' #'.$entry->subject_id }}</td>

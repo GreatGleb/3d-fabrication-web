@@ -128,7 +128,7 @@
                         {{ $parameters($part->parameters) }}
                         @isset($part->parameters['unit'])<br>{{ __('admin.orders.unit') }}: {{ $part->parameters['unit'] }} · {{ __('admin.orders.scale') }} {{ $part->parameters['scale'] }}@endisset
                         @if (($part->parameters['term'] ?? null) === 'priority' && isset($part->parameters['method']))
-                            <br><span class="tag blue" data-urgent>{{ __('calculator.part.urgent') }}</span>@if (filled($part->parameters['needed_by'] ?? null)) {{ __('calculator.part.needed_by') }}: {{ $part->parameters['needed_by'] }}@endif
+                            <br><span class="tag blue" data-urgent>{{ __('calculator.part.urgent') }}</span>@if (filled($part->parameters['needed_by'] ?? null)) {{ __('calculator.part.needed_by') }}: {{ \App\Support\Dates::show($part->parameters['needed_by']) }}@endif
                         @endif
                         @if (filled($part->parameters['notes'] ?? null))
                             <br><small data-part-notes>{{ __('calculator.settings.notes') }}: <span style="white-space:pre-line">{{ $part->parameters['notes'] }}</span></small>
@@ -206,7 +206,7 @@
             <tbody>
                 @forelse ($requests as $request)
                     <tr wire:key="request-{{ $request->id }}">
-                        <td>{{ $request->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                        <td>{{ $request->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</td>
                         <td>{{ $money($request->amount) }}</td>
                         <td>{{ __('admin.orders.request_states.'.$request->state) }}@if ($request->needs_review) <span class="tag" data-needs-review>{{ __('admin.orders.needs_review') }}</span>@endif</td>
                         <td>
@@ -281,7 +281,7 @@
         <h3>{{ __('admin.orders.messages') }}</h3>
         @forelse ($messages as $item)
             <p wire:key="message-{{ $item->id }}">
-                <small>{{ $item->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</small><br>
+                <small>{{ $item->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</small><br>
                 @if ($item->kind === \App\Domain\Orders\Models\OrderMessage::ADMIN)
                     <strong>{{ __('admin.orders.from_admin') }}:</strong> <span style="white-space:pre-line">{{ $item->body }}</span>
                 @else
@@ -324,14 +324,14 @@
         <tbody>
             @foreach ($revisions as $revision)
                 <tr wire:key="revision-{{ $revision->id }}">
-                    <td>{{ $revision->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                    <td>{{ $revision->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</td>
                     <td>{{ __('admin.orders.revision', ['revision' => $revision->revision]) }}</td>
                     <td>{{ $money(array_sum($revision->after)) }}@if ($revision->reason) · {{ $revision->reason }} · {{ $revision->agreement }}@endif</td>
                 </tr>
             @endforeach
             @foreach ($history as $entry)
                 <tr wire:key="history-{{ $entry->id }}">
-                    <td>{{ $entry->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                    <td>{{ $entry->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</td>
                     <td>{{ trans()->has('admin.audit.events.'.$entry->event) ? __('admin.audit.events.'.$entry->event) : $entry->event }}</td>
                     <td>{{ collect($entry->properties)->except(['channel', 'message_id'])->map(fn ($value, $name) => $name.': '.(is_scalar($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE)))->join(' · ') }}</td>
                 </tr>

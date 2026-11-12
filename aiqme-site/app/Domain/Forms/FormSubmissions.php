@@ -6,6 +6,7 @@ use App\Domain\Content\Models\ContentTranslation;
 use App\Domain\Forms\Models\ContactRequest;
 use App\Domain\Forms\Models\TrainingRegistration;
 use App\Domain\Integrations\IntegrationEvents;
+use App\Support\Dates;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -86,7 +87,7 @@ final class FormSubmissions
                 'email' => $registration->email,
                 'phone' => null,
                 'company' => null,
-                'subject' => trim($registration->training_title.' · '.$registration->training_date, ' ·'),
+                'subject' => trim($registration->training_title.' · '.Dates::show($registration->training_date), ' ·'),
                 'summary' => Str::limit($registration->training_title, 200),
                 'format' => $registration->format,
                 'participants' => $registration->participants,

@@ -164,12 +164,17 @@ class AdminEditorsTest extends TestCase
         $this->get('/en/training')->assertDontSee('Reverse engineering basics');
 
         $editor->call('publish', 'en')->assertHasNoErrors();
-        $this->get('/en/training')->assertOk()->assertSee('Reverse engineering basics')->assertSee('2027-02-03')->assertSee('Two days at your site.');
+        $this->get('/en/training')->assertOk()->assertSee('Reverse engineering basics')->assertSee('03.02.2027')->assertDontSee('2027-02-03')->assertSee('Two days at your site.'); // правка 11.11, J-04: даты dd.mm.yyyy
         $this->get('/lt/mokymai')->assertDontSee('Atvirkštinės inžinerijos pagrindai');
 
-        $editor->set('meta.date', '03.02.2027')->call('save')->assertHasErrors(['meta.date']);
+        // Правка 11.11, J-04: в форме дата dd.mm.yyyy, хранится Y-m-d; неверная дата — ошибка поля.
+        $editor->assertSet('meta.date', '03.02.2027');
+        $editor->set('meta.date', '10.02.2027')->call('save')->assertHasNoErrors();
+        $this->assertSame('2027-02-10', $training->fresh()->meta['date']);
+        $editor->set('meta.date', '31.02.2027')->call('save')->assertHasErrors(['meta.date']);
+        $editor->set('meta.date', '2027-02-31')->call('save')->assertHasErrors(['meta.date']);
         $editor->set('meta.date', '2027-03-04')->call('save')->assertHasNoErrors();
-        $this->get('/en/training')->assertSee('2027-03-04');
+        $this->get('/en/training')->assertSee('04.03.2027'); // правка 11.11, J-04: прежний Y-m-d принимается, вывод — dd.mm.yyyy
 
         $editor->call('unpublish', 'en');
         $this->get('/en/training')->assertDontSee('Reverse engineering basics');

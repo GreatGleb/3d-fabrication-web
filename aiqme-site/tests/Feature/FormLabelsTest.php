@@ -35,7 +35,7 @@ class FormLabelsTest extends TestCase
         $this->assertGreaterThan(0, $nodes->length, $form);
         $fields = [];
         foreach ($xpath->query('.//label[@class="field"]', $nodes->item(0)) as $label) {
-            $control = $xpath->query('./input|./select|./textarea', $label)->item(0);
+            $control = $xpath->query('./input|./span[@class="date-field"]/input[@data-date]|./select|./textarea', $label)->item(0); // правка 11.11, J-04: поле даты в span.date-field
             $this->assertInstanceOf(DOMElement::class, $control);
             $fields[$control->getAttribute('name')] = [
                 'label' => trim((string) preg_replace('/\s+/u', ' ', $xpath->evaluate('string(./text()[1])', $label))),

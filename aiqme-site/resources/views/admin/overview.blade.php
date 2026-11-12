@@ -13,13 +13,13 @@
             <h3>{{ __('admin.requests.contact_item', ['id' => $shown->id]) }}</h3>
             @php
                 $rows = [
-                    'time' => $shown->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i'),
+                    'time' => $shown->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i'),
                     'name' => $shown->name,
                     'company' => $shown->company,
                     'email' => $shown->email,
                     'phone' => $shown->phone,
                     'service' => $serviceTitles[$shown->service] ?? $shown->service,
-                    'deadline' => $shown->deadline?->format('Y-m-d'),
+                    'deadline' => $shown->deadline?->format('d.m.Y'),
                     'language' => strtoupper($shown->locale),
                     'description' => $shown->description,
                 ];
@@ -53,7 +53,7 @@
         <tbody>
             @forelse ($requests as $item)
                 <tr>
-                    <td>{{ $item->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                    <td>{{ $item->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</td>
                     <td>{{ $item->name }}<br><small>{{ $item->email }}</small></td>
                     <td>{{ $serviceTitles[$item->service] ?? $item->service }}</td>
                     <td>{{ count($item->attachments) }}</td>

@@ -362,7 +362,7 @@ class PublicSectionsTest extends TestCase
             $xpath = Html::xpath($this->get($url)->assertOk()->getContent());
             $this->assertSame(1, $xpath->query('//div[@class="gap"]/div[@class="empty"]')->length, $url);
             $this->assertSame(0, $xpath->query('//div[@class="gap"]/div[@class="grid two"]')->length, $url);
-            $this->get($url)->assertDontSee('ILLUSTRATIVE SCHEDULE')->assertDontSee('DEMONSTRACINIS TVARKARAŠTIS')->assertDontSee('2026-11-12');
+            $this->get($url)->assertDontSee('ILLUSTRATIVE SCHEDULE')->assertDontSee('DEMONSTRACINIS TVARKARAŠTIS')->assertDontSee('2026-11-12')->assertDontSee('12.11.2026');
         }
         $this->assertSame('Practical 3D modelling training', Html::text(Html::xpath($this->get('/en/training')->getContent())->query('//main//h1')->item(0)));
 
@@ -370,7 +370,7 @@ class PublicSectionsTest extends TestCase
         foreach (['/en/training', '/en/services/3d-modelling-training'] as $url) {
             $xpath = Html::xpath($this->get($url)->getContent());
             $panel = '//div[@class="gap"]/div[@class="grid two"]/div[@class="panel"]';
-            $this->assertSame(['2026-11-12'], Html::texts($xpath, $panel.'/span[@class="tag blue"]'), $url);
+            $this->assertSame(['12.11.2026'], Html::texts($xpath, $panel.'/span[@class="tag blue"]'), $url); // правка 11.11, J-04: даты dd.mm.yyyy
             $this->assertSame(['Getting started with 3D modelling'], Html::texts($xpath, $panel.'/h3'));
             $this->assertSame(['Online · group'], Html::texts($xpath, $panel.'/p'));
             $this->assertSame(['Register for a session ↗'], Html::texts($xpath, $panel.'/a'));

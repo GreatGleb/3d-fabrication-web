@@ -184,7 +184,7 @@ class AdminShellTest extends TestCase
 
         $html = $this->get('/en/admin/audit')->assertOk()->getContent();
         $this->assertStringContainsString('<h2>Audit history</h2>', $html);
-        preg_match_all('~<tr>\s*<td>(\d{4}-\d\d-\d\d \d\d:\d\d)</td>\s*<td>([^<]*)</td>\s*<td>([^<]*)</td>\s*<td>([^<]*)</td>\s*<td>([^<]*)</td>~', str_replace("\n", '', $html), $rows, PREG_SET_ORDER);
+        preg_match_all('~<tr>\s*<td>(\d\d\.\d\d\.\d{4} \d\d:\d\d)</td>\s*<td>([^<]*)</td>\s*<td>([^<]*)</td>\s*<td>([^<]*)</td>\s*<td>([^<]*)</td>~', str_replace("\n", '', $html), $rows, PREG_SET_ORDER);
         $this->assertCount(2, $rows);
         $this->assertSame(['Telegram', 'Published', '3D scanning (service)', 'locale: en · revision: 1'], array_slice($rows[0], 2));
         $this->assertSame(['Website', 'Unpublished', '3D scanning (service)', 'locale: en · revision: 1'], array_slice($rows[1], 2));

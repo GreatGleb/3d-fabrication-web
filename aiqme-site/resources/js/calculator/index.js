@@ -169,6 +169,8 @@ function start(root) {
         value="${html(entry.options[entry.method][name])}" data-part="${entry.id}" data-option="${name}"></label>`;
   };
 
+  // «Reikalinga iki» (правка 11.11, J-04): поле dd.mm.yyyy (resources/js/date-field.js); календарь — с завтрашнего дня,
+  // прошедшую дату отклоняет сервер.
   const tomorrow = () => {
     const date = new Date();
     date.setDate(date.getDate() + 1);
@@ -211,7 +213,9 @@ function start(root) {
           <select id="${id}-priority" data-part="${entry.id}" data-priority>${Object.entries(texts.settings.terms).map(([key, text]) =>
             `<option value="${key}"${key === entry.priority ? ' selected' : ''}>${html(text)}</option>`).join('')}</select></label>
         ${urgent ? `<label class="field" for="${id}-needed-by"><span class="field-icon">${icon('calendar')}${html(texts.part.needed_by)}</span>
-          <input type="date" id="${id}-needed-by" min="${tomorrow()}" value="${html(entry.neededBy)}" data-part="${entry.id}" data-needed-by></label>` : ''}
+          <span class="date-field"><input type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="dd.mm.yyyy" id="${id}-needed-by" value="${html(entry.neededBy)}" data-part="${entry.id}" data-needed-by data-date>
+            <button type="button" class="date-pick" tabindex="-1" aria-hidden="true" data-date-pick>${icon('calendar')}</button>
+            <input type="date" class="date-native" tabindex="-1" aria-hidden="true" min="${tomorrow()}" data-date-native></span></label>` : ''}
       </div>
       ${urgent ? `<p class="part-note">${icon('info')}${html(texts.part.rush_note)}</p>` : ''}
       <label class="field" for="${id}-notes">${html(texts.part.notes)}

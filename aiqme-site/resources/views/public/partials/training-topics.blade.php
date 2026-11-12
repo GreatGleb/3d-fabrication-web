@@ -14,7 +14,7 @@
         <div class="grid two">
             @foreach ($trainings as $topic)
                 <div class="panel">
-                    <span class="tag blue">{{ $topic->item->meta('date') }}</span>
+                    <span class="tag blue">{{ \App\Support\Dates::show($topic->item->meta('date')) }}</span>
                     <h3 class="gap">{{ $topic->title }}</h3>
                     <p>{{ $topic->field('description') }}</p>
                     <a class="btn" href="{{ route($locale.'.contact', array_filter(['service' => $trainingSlug])) }}" data-training="{{ $topic->item->key }}" data-modal-open="training-modal-{{ $topic->item->id }}">{{ __('public.training.register') }}</a>
@@ -27,7 +27,7 @@
                 <form id="training-form-{{ $topic->item->id }}" class="training-form" method="post" action="{{ route($locale.'.training.store') }}">
                     @csrf
                     <input type="hidden" name="training" value="{{ $topic->item->id }}">
-                    <p class="gap">{{ $topic->title }} · {{ $topic->item->meta('date') }}</p>
+                    <p class="gap">{{ $topic->title }} · {{ \App\Support\Dates::show($topic->item->meta('date')) }}</p>
                     <x-field :id="$modal.'-name'" name="name" :label="__('public.training.name')" required autocomplete="name" />
                     <x-field :id="$modal.'-email'" name="email" type="email" :label="__('public.training.email')" required autocomplete="email" />
                     <x-field :id="$modal.'-format'" name="format" type="select" :label="__('public.training.format')" :options="__('public.training.formats')" value="online" />

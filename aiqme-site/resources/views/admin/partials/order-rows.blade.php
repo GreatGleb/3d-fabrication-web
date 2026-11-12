@@ -6,7 +6,7 @@
     <tbody>
         @forelse ($orders as $row)
             <tr>
-                <td><strong>{{ $row->number }}</strong><br><small>{{ \Illuminate\Support\Carbon::parse($row->created_at)->timezone(config('app.timezone'))->format('Y-m-d') }}</small></td>
+                <td><strong>{{ $row->number }}</strong><br><small>{{ \Illuminate\Support\Carbon::parse($row->created_at)->timezone(config('app.timezone'))->format('d.m.Y') }}</small></td>
                 <td>{{ __($row->products ? 'admin.orders.type_products' : 'admin.orders.type') }}</td>
                 <td><span class="tag blue">{{ __('admin.orders.stages.'.$row->stage) }}</span></td>
                 <td>{{ \Illuminate\Support\Number::currency($row->total / 100, in: 'EUR', locale: $locale) }}</td>

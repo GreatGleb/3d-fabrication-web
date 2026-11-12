@@ -13,6 +13,7 @@ use App\Domain\Payments\Models\PaymentRequest;
 use App\Models\CustomerProfile;
 use App\Models\StlFile;
 use App\Models\User;
+use App\Support\Dates;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -193,7 +194,7 @@ final class SheetsProjector
             $registration->email,
             '',
             '',
-            trim($registration->training_title.' · '.$registration->training_date, ' ·'),
+            trim($registration->training_title.' · '.Dates::show($registration->training_date), ' ·'),
             Str::limit('Format: '.$registration->format.'; participants: '.$registration->participants, 200),
             '0',
             route('lt.admin.training').'#training-registrations',

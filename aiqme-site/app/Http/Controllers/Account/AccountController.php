@@ -119,7 +119,7 @@ class AccountController extends Controller
         return $orders->map(fn (Order $order): array => [
             'number' => $metas[$order->id]->number,
             'products' => $metas[$order->id]->products,
-            'date' => $order->placed_at->timezone(config('app.timezone'))->format('Y-m-d'),
+            'date' => $order->placed_at->timezone(config('app.timezone'))->format('d.m.Y'),
             'stage' => $states[$order->id]->stage->value,
             'payment_state' => $this->workflow->balance($order)['payment_state'],
             'total' => $order->total->value,

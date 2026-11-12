@@ -171,6 +171,43 @@ class FormsTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    /**
+     * Правка 11.11, J-04: «Pageidaujamas terminas» — текстовое поле dd.mm.yyyy (не type=date с форматом локали браузера);
+     * сервер принимает dd.mm.yyyy и прежний Y-m-d, хранит дату; неверная — понятная ошибка, введённое остаётся в поле;
+     * в админке дата — dd.mm.yyyy.
+     */
+    public function test_contact_deadline_is_entered_and_shown_as_dd_mm_yyyy(): void
+    {
+        Mail::fake();
+        foreach (['/lt/kontaktai', '/en/contact'] as $path) {
+            $xpath = Html::xpath($this->get($path)->assertOk()->getContent());
+            $field = $xpath->query('//form[@id="contact-form"]//input[@name="deadline"]')->item(0);
+            $this->assertSame(['text', 'dd.mm.yyyy', 'numeric', '10'], [$field->getAttribute('type'), $field->getAttribute('placeholder'),
+                $field->getAttribute('inputmode'), $field->getAttribute('maxlength')], $path);
+            $this->assertTrue($field->hasAttribute('data-date'), $path);
+            $this->assertSame(0, $xpath->query('//form[@id="contact-form"]//input[@type="date"][@name]')->length, "$path: системное поле даты не отправляется");
+            $this->assertSame(1, $xpath->query('//form[@id="contact-form"]//span[@class="date-field"]/button[@data-date-pick]')->length, "$path: кнопка календаря");
+        }
+
+        $this->from('/lt/kontaktai')->post('/lt/kontaktai', [...$this->contact(['deadline' => '31.02.2027']), 'service' => '3d-spausdinimas'])
+            ->assertSessionHasErrors(['deadline' => 'Įveskite teisingą datą.']);
+        $this->from('/en/contact')->post('/en/contact', $this->contact(['deadline' => '03/01/2027']))
+            ->assertSessionHasErrors(['deadline' => 'Enter a valid date.']);
+        $this->assertSame(0, ContactRequest::count());
+        $this->withSession(['_old_input' => ['deadline' => '31.02.2027']])->get('/en/contact')->assertSee('value="31.02.2027"', false);
+
+        $this->post('/en/contact', $this->contact(['deadline' => '01.03.2027']))->assertSessionHasNoErrors();
+        $this->post('/en/contact', $this->contact(['deadline' => '']))->assertSessionHasNoErrors();
+        [$entered, $empty] = ContactRequest::orderBy('id')->get()->all();
+        $this->assertSame('2027-03-01', $entered->deadline->format('Y-m-d'));
+        $this->assertNull($empty->deadline);
+
+        $this->actingAs($this->admin());
+        $xpath = Html::xpath($this->get('/en/admin?request='.$entered->id)->assertOk()->getContent());
+        $this->assertSame('01.03.2027', Html::text($xpath->query('//tr[th="Target date"]/td')->item(0)));
+        $this->assertMatchesRegularExpression('/^\d\d\.\d\d\.\d{4} \d\d:\d\d$/', Html::text($xpath->query('//tr[th="Time"]/td')->item(0)));
+    }
+
     /** Правка 02.11 (Г3): после отправки — к якорю формы, чтобы сообщение было видно без прокрутки. */
     public function test_contact_form_redirects_to_its_anchor_after_success_and_errors(): void
     {

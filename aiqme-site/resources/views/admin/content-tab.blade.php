@@ -59,9 +59,9 @@
                     <tbody>
                         @foreach ($registrations as $registration)
                             <tr>
-                                <td>{{ $registration->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td>
+                                <td>{{ $registration->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</td>
                                 <td>{{ $registration->name }}<br><small><a href="mailto:{{ $registration->email }}">{{ $registration->email }}</a></small></td>
-                                <td>{{ $registration->training_title }}<br><small>{{ $registration->training_date }}</small></td>
+                                <td>{{ $registration->training_title }}<br><small>{{ \App\Support\Dates::show($registration->training_date) }}</small></td>
                                 <td>{{ __('public.training.formats.'.$registration->format) }}</td>
                                 <td>{{ $registration->participants }}</td>
                                 <td>

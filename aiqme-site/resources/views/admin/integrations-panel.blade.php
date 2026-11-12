@@ -3,7 +3,7 @@
      Таблицу; Telegram (W-19) — привязан ли личный чат, настроен ли бот, последняя ошибка Bot API и код привязки
      /start <код> на 10 минут. Описание прототипа о ролях и экспорте не переносится (§4.5). Надписи, которых нет
      в прототипе, — нейтральные (docs/progress.md, W-18, W-19). --}}
-@php($at = fn ($time) => $time?->timezone(config('app.timezone'))->format('Y-m-d H:i'))
+@php($at = fn ($time) => $time?->timezone(config('app.timezone'))->format('d.m.Y H:i'))
 <div class="grid two gap">
     <div class="panel" id="integration-stripe">
         <span class="tag {{ $stripe ? 'green' : 'orange' }}">{{ $stripe ? __('admin.integrations.connected') : __('admin.integrations.not_connected') }}</span>

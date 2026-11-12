@@ -476,9 +476,9 @@ class InvoicesTest extends TestCase
         $this->assertInOrder($this->htmlText($ltInvoice), [
             'TEST UAB '.self::LITHUANIAN, 'TEST g. 1, Vilnius', 'ĮMONĖS KODAS: TEST-000000', 'PVM MOKĖTOJO KODAS: TEST-LT000000',
             'info@test.example', '+370 600 11111', 'www.test.example',
-            'PVM SĄSKAITA FAKTŪRA', $this->seriesNumber('0007'), 'Data : '.now()->format('Y-m-d'),
+            'PVM SĄSKAITA FAKTŪRA', $this->seriesNumber('0007'), 'Data : '.now()->format('d.m.Y'), // правка 11.11, J-04: даты dd.mm.yyyy
             'PIRKĖJAS', 'Ona TEST', 'Gedimino pr. 1, Vilnius, LT-01103, LT',
-            'UŽSAKYMAS: Ona TEST, TEL. +370 600 00000', 'UŽSAKYMO DATA: 2026-10-08', 'PRISTATYMO SĄLYGOS (INCOTERMS 2010): EXW Vilnius',
+            'UŽSAKYMAS: Ona TEST, TEL. +370 600 00000', 'UŽSAKYMO DATA: 08.10.2026', 'PRISTATYMO SĄLYGOS (INCOTERMS 2010): EXW Vilnius',
             'PAVADINIMAS KIEKIS KAINA SUMA', 'bracket.stl — 3D spausdinimas, PLA 2 13,76 27,52', 'cover.stl — 3D spausdinimas, PLA 2 13,76 27,52', 'Užsakymo mokestis 1 4,59 4,59',
             'Pristatymas 1 27,52 27,52', 'IŠ VISO 87,15', 'PVM 9 % 7,85', 'Devyniasdešimt penki EUR 00 ct IŠ VISO SU PVM 95,00',
             'Apmokėta: 95,00 EUR', 'Bankas: TEST bankas SWIFT: TESTLT2X', 'A / S: LT00 TEST 0000 0000 0000',
@@ -487,8 +487,8 @@ class InvoicesTest extends TestCase
         ]);
         $this->assertInOrder($this->htmlText($enInvoice), [
             'TEST UAB', 'COMPANY NUMBER: TEST-000000', 'VAT NUMBER: TEST-LT000000', 'info@test.example', 'www.test.example',
-            'VAT INVOICE', $this->seriesNumber('0008'), 'Date: '.now()->format('Y-m-d'), 'BUYER', 'Ona TEST',
-            'ORDER: Ona TEST, TEL. +370 600 00000', 'ORDER DATE: 2026-10-08', 'DELIVERY TERMS (INCOTERMS 2010): EXW Vilnius',
+            'VAT INVOICE', $this->seriesNumber('0008'), 'Date: '.now()->format('d.m.Y'), 'BUYER', 'Ona TEST',
+            'ORDER: Ona TEST, TEL. +370 600 00000', 'ORDER DATE: 08.10.2026', 'DELIVERY TERMS (INCOTERMS 2010): EXW Vilnius',
             'DESCRIPTION QTY PRICE AMOUNT', 'bracket.stl — 3D printing, PLA 2 13.76 27.52', 'Order fee 1 4.59 4.59', 'Delivery 1 27.52 27.52',
             'TOTAL 87.15', 'VAT 9 % 7.85', 'Ninety-five EUR 00 ct TOTAL INCL. VAT 95.00',
             'Paid: 95.00 EUR', 'Bank: TEST bankas SWIFT: TESTLT2X', 'Account: LT00 TEST 0000 0000 0000',
@@ -497,7 +497,7 @@ class InvoicesTest extends TestCase
 
         // Сам PDF: те же надписи и значения в тексте pdftotext.
         $ltText = $this->pdfText($ltInvoice);
-        foreach (['PVM SĄSKAITA FAKTŪRA', $this->seriesNumber('0007'), 'PIRKĖJAS', 'UŽSAKYMO DATA', '2026-10-08', 'EXW Vilnius', 'KAINA', '13,76',
+        foreach (['PVM SĄSKAITA FAKTŪRA', $this->seriesNumber('0007'), 'PIRKĖJAS', 'UŽSAKYMO DATA', '08.10.2026', 'EXW Vilnius', 'KAINA', '13,76',
             'Devyniasdešimt penki EUR 00 ct', 'IŠ VISO SU PVM', 'Apmokėta: 95,00 EUR', 'SWIFT: TESTLT2X', 'A / S: LT00 TEST 0000 0000 0000',
             'NETURIU.', 'IŠRAŠĖ / IŠDAVĖ: Jonas TEST', 'GAVO:', 'TEST UAB '.self::LITHUANIAN, 'www.test.example'] as $part) {
             $this->assertStringContainsString($part, $ltText);

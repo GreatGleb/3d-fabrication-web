@@ -5,6 +5,7 @@ namespace App\Domain\Content;
 use App\Domain\Content\Models\ContentItem;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\ProjectController;
+use App\Support\Dates;
 use Illuminate\Validation\Rule;
 
 /**
@@ -18,7 +19,7 @@ use Illuminate\Validation\Rule;
  *
  * Атрибуты элемента (meta) общие для всех языков и применяются сразу при сохранении (без версий, как медиа):
  * select — одно значение из options (с default — без пустого варианта, отсутствующее значение = default), choices —
- * несколько, date — дата Y-m-d, url — https-ссылка, price — цена EUR с PVM (в форме — евро, в meta — центы).
+ * несколько, date — дата Y-m-d (в форме — dd.mm.yyyy, правка 11.11, J-04), url — https-ссылка, price — цена EUR с PVM (в форме — евро, в meta — центы).
  *
  * Товар (правка 05.11, H-07): sale — режим продажи (quote «Gauti pasiūlymą» по умолчанию, buy «Pirkti»), price —
  * обязательна при buy; документы — коллекция documents (PDF, несколько файлов).
@@ -196,7 +197,7 @@ final class ContentTypes
             $rules['meta.'.$name] = match ($field['kind']) {
                 'select' => ['nullable', 'string', Rule::in(array_map('strval', array_keys($field['options'])))],
                 'choices' => ['array'],
-                'date' => ['nullable', 'date_format:Y-m-d'],
+                'date' => ['nullable', Dates::RULE],
                 'url' => ['nullable', 'string', 'max:500', 'url:https'],
                 // Цена обязательна у товара «Pirkti» (правка 05.11, H-07).
                 'price' => ['nullable', 'required_if:meta.sale,buy', 'numeric', 'decimal:0,2', 'min:0.01', 'max:'.self::PRICE_MAX],
@@ -222,6 +223,7 @@ final class ContentTypes
             $form[$name] = match ($field['kind']) {
                 'choices' => array_map('strval', (array) $value),
                 'price' => $value === null ? '' : number_format($value / 100, 2, '.', ''),
+                'date' => (string) Dates::show($value),
                 default => (string) $value,
             };
         }
@@ -249,6 +251,7 @@ final class ContentTypes
             } else {
                 $meta[$name] = match (true) {
                     $field['kind'] === 'price' => (int) round((float) $value * 100),
+                    $field['kind'] === 'date' => Dates::toIso($value) ?? $value,
                     $item->type === ContentType::Product && $name === 'brand' => (int) $value,
                     default => $value,
                 };

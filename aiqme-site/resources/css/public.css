@@ -97,3 +97,12 @@
 @media(max-width:900px){
   .hero h1 br,.section-head p br{display:none}
 }
+
+/* Поле даты dd.mm.yyyy (правка 11.11, J-04): текстовое поле с кнопкой календаря справа; системное поле type=date — невидимое
+   (только для showPicker), рядом с кнопкой, чтобы календарь открывался у поля. */
+.date-field{position:relative;display:block}
+.field .date-field input[data-date]{padding-right:44px}
+.date-pick{position:absolute;top:50%;right:6px;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:4px;background:none;cursor:pointer}
+.date-pick:hover{background:#eef3f9}
+.date-pick img{width:20px;height:20px}
+.field .date-field .date-native{position:absolute;right:0;bottom:0;width:1px;height:1px;min-height:0;padding:0;border:0;opacity:0;pointer-events:none}

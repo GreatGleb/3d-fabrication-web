@@ -326,7 +326,7 @@ class SheetsTest extends TestCase
         $this->assertSame(['contact', 'Jonas Petraitis', 'jonas@example.test', '+370 611 11111', 'UAB Detalė', 'printing', 'Need ten brackets printed in PETG.', '0'],
             [$request['Type'], $request['Name'], $request['Email'], $request['Phone'], $request['Company'], $request['Service/Training'], $request['Summary'], $request['Attachments']]);
         $training = $this->sheets->rows('Requests')[1];
-        $this->assertSame(['training', 'Rūta TEST', 'ruta@example.test', 'CAD basics · 2027-02-10', 'Format: online; participants: 2'], [$training[1], $training[3], $training[4], $training[7], $training[8]]);
+        $this->assertSame(['training', 'Rūta TEST', 'ruta@example.test', 'CAD basics · 10.02.2027', 'Format: online; participants: 2'], [$training[1], $training[3], $training[4], $training[7], $training[8]]);
         $this->assertNotNull($this->sheets->row('Contacts', 'ruta@example.test'));
         $this->assertNotNull($this->sheets->row('Contacts', 'jonas@example.test'));
     }

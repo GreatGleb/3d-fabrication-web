@@ -98,6 +98,9 @@ check_lang_menu на LANG_MENU_PAGES при 390 и 1440 — кнопка «LT �
 Главная (правка 11.11, J-03): check_motion на /lt и /en — в «Darbo eiga» нет стрелок между этапами при 1440, 390 и
 reduced-motion; кнопок паузы лент нет, лента останавливается наведением и идёт дальше без него; в ленте брендов — названия
 текстом, без <img>; check_scenarios — новые SVG заказчика (те же имена и viewBox), левый край по заголовку (I-03).
+Даты (правка 11.11, J-04): check_date_field на /lt/kontaktai и /en/contact при 390 и 1440 в локалях браузера en-US и lt-LT —
+поле dd.mm.yyyy с маской, кнопка календаря, выбор в календаре → dd.mm.yyyy; калькулятор (/en — en-US, /lt — lt-LT) — дата
+«Reikalinga iki» вводом с клавиатуры и календарём, в заявку уходит dd.mm.yyyy; контактная форма отправляется с датой.
 Тексты и блок услуги (правка 02.11, Г2): новые тексты главной, 3D spausdinimas и ответа FAQ services-1 — замены D21_REPLACEMENTS;
 блока «Vienas kontaktas visam darbui» на страницах услуг нет (его фразы — '' в D21_REPLACEMENTS, без примера в check_blocks нет
 и div.grid.two).
@@ -2413,6 +2416,47 @@ def check_contact_lt(report, new_page, path, width):
     context.close()
 
 
+def check_date_field(report, new_page, path, width, locale):
+    """Правка 11.11, J-04: «Pageidaujamas terminas» / «Target date» в локали браузера en-US и lt-LT — текстовое поле
+    dd.mm.yyyy (не системное type=date с форматом локали); цифры с клавиатуры → маска dd.mm.yyyy, стирание работает;
+    кнопка календаря открывает системный календарь без ошибок (showPicker), выбранная в нём дата → dd.mm.yyyy; поле и
+    кнопка в границах поля. Кадр shots/date-<locale>-<страница>-<ширина>.png."""
+    where = f'{path} @{width} {locale} дата'
+    context, page, problems = new_page(width, 844 if width < 900 else 1000, locale=locale)
+    page.goto(BASE + path, wait_until='networkidle')
+    report.check(page.evaluate('navigator.language') == locale, f'{where}: локаль браузера {page.evaluate("navigator.language")}')
+    field = page.locator('#contact-form input[name=deadline]')
+    box = field.locator('xpath=..')
+    native = box.locator('[data-date-native]')
+    button = box.locator('[data-date-pick]')
+    report.check(field.get_attribute('type') == 'text' and field.get_attribute('placeholder') == 'dd.mm.yyyy'
+                 and field.get_attribute('inputmode') == 'numeric', f'{where}: поле не dd.mm.yyyy')
+    report.check(native.count() == 1 and not native.get_attribute('name') and native.get_attribute('type') == 'date', f'{where}: скрытое поле календаря')
+    field.scroll_into_view_if_needed()
+    field.click()
+    page.keyboard.type('05032027')
+    report.check(field.input_value() == '05.03.2027', f'{where}: ввод 05032027 дал «{field.input_value()}»')
+    page.keyboard.press('Backspace')
+    page.keyboard.press('Backspace')
+    page.keyboard.type('28')
+    report.check(field.input_value() == '05.03.2028', f'{where}: исправление года дал «{field.input_value()}»')
+    field.fill('')
+    page.keyboard.type('1.2')
+    report.check(field.input_value() == '12', f'{where}: точки с клавиатуры: «{field.input_value()}»')
+    rect = field.bounding_box()
+    pick = button.bounding_box()
+    report.check(button.is_visible() and pick['x'] >= rect['x'] and pick['x'] + pick['width'] <= rect['x'] + rect['width'] + 0.5
+                 and pick['y'] >= rect['y'] and pick['y'] + pick['height'] <= rect['y'] + rect['height'] + 0.5, f'{where}: кнопка календаря вне поля {pick} / {rect}')
+    button.click()
+    page.keyboard.press('Escape')
+    native.evaluate('(node) => { node.value = "2027-04-09"; node.dispatchEvent(new Event("change", {bubbles: true})); }')
+    report.check(field.input_value() == '09.04.2027', f'{where}: выбор в календаре дал «{field.input_value()}»')
+    box.locator('xpath=..').screenshot(path=str(OUT / 'shots' / f'date-{locale}-{path.strip("/").replace("/", "__")}-{width}.png'))
+    for problem in problems:
+        report.check(False, f'{where}: {problem}')
+    context.close()
+
+
 def check_contact_form(report, new_page, path, width):
     """Контактная форма (W-09): заполнение, два вложения, отправка, сообщение в #contact-result, письмо AIQME в Mailpit."""
     where = f'{path} @{width} форма'
@@ -2433,6 +2477,7 @@ def check_contact_form(report, new_page, path, width):
         form.locator('input[name=phone]').fill('+370 600 00000')  # правка 05.11, H-03: телефон обязателен
         form.locator('select[name=service]').select_option('3d-printing')
         form.locator('textarea[name=description]').fill('Need ten brackets printed in PETG.')
+        form.locator('input[name=deadline]').press_sequentially('01032027')  # правка 11.11, J-04: дата dd.mm.yyyy уходит с заявкой
         check_file_pick(report, page, form, path, where, [str(pdf), str(stl)])
         wait_altcha(report, page, form, where)
         altcha_shot(page, form, 'contact', width)
@@ -2501,7 +2546,7 @@ def check_calculator(report, new_page, path, width, allowlist, files):
     canvas отключён: проверка не зависит от просмотра (W-31)."""
     en = path.startswith('/en')
     where = f'{path} @{width} калькулятор'
-    context, page, problems = new_page(width, 1000)
+    context, page, problems = new_page(width, 1000, locale='en-US' if en else 'lt-LT')  # правка 11.11, J-04: локаль браузера
     page.add_init_script('HTMLCanvasElement.prototype.getContext = () => null;')
     page.goto(BASE + path, wait_until='networkidle')
     error = page.locator('#quote-error')
@@ -2694,15 +2739,26 @@ def check_calculator(report, new_page, path, width, allowlist, files):
                  f'{where}: параметры DXF изменились вместе с DWG')
     # «Skubu» и дата: при скорой очереди — метка в заголовке, поле даты не раньше завтра, пояснение; дата уходит в заявку.
     report.check(plate.locator('[data-urgent]').count() == 0 and plate.locator('[data-needed-by]').count() == 0, f'{where}: дата без скорой очереди')
+    # Правка 11.11, J-04: «Reikalinga iki» — поле dd.mm.yyyy (страница открыта в локали браузера en-US или lt-LT), ввод с клавиатуры
+    # маской; календарь — скрытое поле type=date с min = завтра (выбор в нём переносится в поле как dd.mm.yyyy).
     plate.locator('select[data-priority]').select_option('priority')
     urgent = plate.locator('[data-urgent]')
     report.check(urgent.count() == 1 and urgent.inner_text().strip() == ('Urgent' if en else 'Skubu'), f'{where}: нет метки «Skubu»')
     needed = plate.locator('[data-needed-by]')
+    native = plate.locator('[data-date-native]')
     tomorrow = (date.today() + timedelta(days=1)).isoformat()
-    report.check(needed.get_attribute('min') == tomorrow, f'{where}: дата min {needed.get_attribute("min")}, а не {tomorrow}')
+    report.check(native.get_attribute('min') == tomorrow, f'{where}: дата min {native.get_attribute("min")}, а не {tomorrow}')
+    report.check(needed.get_attribute('type') == 'text' and needed.get_attribute('placeholder') == 'dd.mm.yyyy' and not native.get_attribute('name'),
+                 f'{where}: поле даты не dd.mm.yyyy')
+    pick = (date.today() + timedelta(days=5))
+    native.evaluate('(node, value) => { node.value = value; node.dispatchEvent(new Event("change", {bubbles: true})); }', pick.isoformat())
+    needed = plate.locator('[data-needed-by]')  # карточка перерисована
+    report.check(needed.input_value() == pick.strftime('%d.%m.%Y'), f'{where}: выбор в календаре дал «{needed.input_value()}»')
     report.check(('The rush deadline will be confirmed separately.' if en else 'Skubos terminas bus patvirtintas atskirai.') in plate.inner_text(), f'{where}: нет пояснения срока')
-    needed_by = (date.today() + timedelta(days=3)).isoformat()
-    needed.fill(needed_by)
+    needed_by = (date.today() + timedelta(days=3)).strftime('%d.%m.%Y')
+    needed.fill('')
+    needed.press_sequentially(needed_by.replace('.', ''))
+    report.check(needed.input_value() == needed_by, f'{where}: маска даты дала «{needed.input_value()}», а не {needed_by}')
     needed.dispatch_event('change')
     plate_notes = 'Kraštai be šerpetų.\nDvi skylės.'
     plate.locator('textarea[data-notes]').fill(plate_notes)
@@ -2771,7 +2827,7 @@ def check_calculator(report, new_page, path, width, allowlist, files):
         'parts[0][method]': 'printing', 'parts[0][material]': 'PLA', 'parts[0][infill]': '100', 'parts[0][purpose]': 'practical',
         'parts[0][service]': 'inserts', 'parts[0][surface]': 'high', 'parts[0][unit]': 'mm', 'parts[0][scale]': '100', 'parts[0][priority]': 'standard',
         'parts[1][method]': 'milling', 'parts[1][material]': 'Mediena', 'parts[1][thickness]': '6.5', 'parts[1][priority]': 'priority',
-        'parts[1][needed_by]': needed_by, 'parts[1][notes]': plate_notes, 'parts[1][unit]': None,
+        'parts[1][needed_by]': needed_by, 'parts[1][notes]': plate_notes, 'parts[1][unit]': None,  # needed_by — dd.mm.yyyy (правка 11.11, J-04)
         'parts[2][method]': 'engraving', 'parts[2][material]': 'Aliuminis', 'parts[2][depth]': '0.25', 'parts[2][priority]': 'standard',
         'material': None, 'infill': None, 'term': None, 'notes': None,
     }
@@ -2871,8 +2927,9 @@ STEP2_ROWS_JS = """(grid) => {
   });
   // Обрезка: у <select> scrollWidth не растёт от длинного текста — каждый вариант меряется копией списка шириной по
   // содержимому (текст, отступы, стрелка) рядом с полем; копия шире поля — вариант обрезан.
+  // Правка 11.11, J-04: невидимое поле календаря (1 px, только для showPicker) — не поле ряда.
   const cut = [];
-  grid.querySelectorAll('select, input').forEach((control) => {
+  grid.querySelectorAll('select, input:not([data-date-native])').forEach((control) => {
     if (control.scrollWidth > control.clientWidth) cut.push(`${control.id} ${control.scrollWidth}>${control.clientWidth}`);
     [...(control.options || [])].forEach((option) => {
       const probe = control.cloneNode(false);
@@ -3594,9 +3651,9 @@ def main():
             log('== самопроверка детекторов и модального окна')
             self_test(report, browser, csp, assets)
 
-            def new_page(width, height, reduced_motion='no-preference', storage_state=None, java_script_enabled=True):
+            def new_page(width, height, reduced_motion='no-preference', storage_state=None, java_script_enabled=True, locale=None):
                 context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion=reduced_motion,
-                                              storage_state=storage_state, java_script_enabled=java_script_enabled)
+                                              storage_state=storage_state, java_script_enabled=java_script_enabled, locale=locale)
 
                 def guard(route):
                     if MAP_EMBED.match(route.request.url):
@@ -3702,6 +3759,8 @@ def main():
                 if path in CONTACT_PAGES:
                     for width in (390, 1440):
                         check_contact_map(report, new_page, path, width, shots_dir)
+                        for locale in ('en-US', 'lt-LT'):
+                            check_date_field(report, new_page, path, width, locale)  # правка 11.11, J-04
                 if path == '/en/contact':
                     for width in (390, FORM_PAGES[path]):
                         check_contact_form(report, new_page, path, width)
