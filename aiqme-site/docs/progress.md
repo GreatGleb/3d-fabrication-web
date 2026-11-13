@@ -6274,3 +6274,46 @@ J-01…J-06 сделаны и проверены, J-07 — сквозная пр
 - **Проверки:** `bin/browser-check /lt/krepselis /en/cart` — OK (250 проверок); `bin/check` — OK (789 тестов).
 - **Не проверено:** вид в настоящих почтовых клиентах (Gmail, Outlook, телефон) и доставка через SMTP сервера — ждёт пользователя (K-04).
   Шаблоны в админке не редактируются. Админская вкладка Settings в браузере не прогонялась (поля проверены Livewire-тестом).
+
+## Правки 12.11, K-02: письмо клиенту с трек-номером при отправке заказа (2026-11-13)
+
+- **Когда.** `OrderWorkflow::setTracking`: если перевозчик или трек-номер отличаются от сохранённых, в той же транзакции пишется
+  событие outbox `order.shipped_customer_mail` (номер, email клиента из контактов заказа, перевозчик, трек-номер; summary
+  «Customer email: order shipped»), письмо — `DeliverMail` после commit (`IntegrationEvents::record`, канал mail). Повторное сохранение
+  тех же значений письма не даёт, новый номер — новое письмо. Отменённому заказу трек-номер не сохраняется (`requireNotCancelled`
+  было и раньше) — письма нет. Заказ без email — без письма. Простейшее решение неопределённости: «тот же трек-номер» = та же пара
+  перевозчик + номер (исправление перевозчика при том же номере — новое письмо, потому что клиент получил неверные данные).
+- **Доставка** — outbox, как у K-01: статус sent/failed, ошибка, повтор (`retry`, 5 мин) без второго письма; адресат — email клиента,
+  Reply-To — `aiqme.forms.mail_to`; сбой почты сохранение трек-номера не отменяет. Отменённый после постановки письма заказ при
+  повторе доставки не проверяется (повтор шлёт то, что было записано при сохранении номера) — не требовалось планом.
+- **Общий макет без дублирования вёрстки.** Из письма K-01 вынесены `resources/views/mail/layout.blade.php` (шапка с логотипом и
+  заголовком, «Sveiki, {Vardas},», `@yield('content')`, «Jei turite klausimų…» с контактами, линия, подпись) и
+  `layout-text.blade.php` (то же для text/plain), кнопка кабинета — `mail/order-button.blade.php`; общие данные (язык, тема,
+  имя, номер, ссылка кабинета, контакты, логотип) и Envelope — базовый класс `App\Mail\CustomerOrderMail`, от него `OrderPaid` и
+  новый `OrderShipped`. Письмо K-01 после выноса не изменилось: рендер новых шаблонов сверен с шаблонами HEAD на тех же данных —
+  HTML совпадает с точностью до пробелов, text/plain — побайтно (сверочный тест — `build/verification/k02/SnapshotK02Test.php`, не в Git).
+- **Письмо** `App\Mail\OrderShipped`, `mail/order-shipped(-text).blade.php`: «Jūsų užsakymas išsiųstas!» / «Your order has been shipped!»,
+  «Užsakymas #{номер} išsiųstas.» / «Order #{number} has been shipped.», серый блок «Siuntos informacija» / «Shipment details» со строками
+  «Vežėjas:» / «Carrier:» и «Siuntos numeris:» / «Tracking number:» (номер синим жирным, как выделенное значение «Numatomas terminas» в
+  шаблоне; двоеточия — как у подписей блока доставки K-01), кнопка «Peržiūrėti užsakymą» / «View order» только клиенту кабинета, затем
+  «Jei turite klausimų…» и подпись. Тема — «AIQME užsakymas #{номер} išsiųstas» / «AIQME order #{number} shipped». Перевозчик и номер
+  берутся из события (то, что сохранено в этот раз). Язык — `locale` заказа. Тексты — `lang/*/orders.php`, `customer_mail`.
+- **Тесты** (`tests/Feature/CustomerOrderMailTest.php`, +3): LT гость — одно письмо клиенту (не на info@), тема, Reply-To, заголовок,
+  блок перевозчик/номер, подпись, без кнопки, text/plain; тот же номер и retry — без письма; новый номер — второе письмо с новым номером;
+  после отмены setTracking отклонён, номер не изменился, писем по-прежнему 2. EN клиент кабинета (текущий язык приложения — lt) — письмо
+  на английском, ссылка `en.account.orders.show`. Сбой транспорта — трек-номер сохранён, канал failed с ошибкой, retry отправляет одно
+  письмо через транспорт array (тема, адресат, text и HTML, без вложений, attempts 2). Ожидания списков событий дополнены
+  `order.shipped_customer_mail` (с комментарием «правка 12.11, K-02») в `OrderWorkflowTest::test_events_are_written_with_the_change_without_mail`
+  (единственное событие с каналом mail) и `GuestOrderLifecycleScenarioTest` (+ проверка письма OrderShipped).
+- **«Падает до правки» (проверено и возвращено):** письмо при каждом сохранении (без сравнения с прежним номером) — тест повтора падает;
+  отправка прямо из setTracking без outbox — тест сбоя почты падает (исключение транспорта прерывает сохранение).
+- **Снимки** (не в Git): `build/verification/k02/` — `lt-shipped-guest` и `en-shipped-customer` (HTML, text, meta, PNG 700/390 px,
+  bundled Chromium Playwright), `paid-0-new-*.png` — письмо K-01 после выноса макета. Горизонтальной прокрутки нет (scrollWidth = ширине
+  окна на 700 и 390). Сверено с оформлением K-01 и JPEG шаблона 1: та же шапка, ширина, блоки, контакты и подпись. На снимках логотип не
+  загружен — в снимке запросы к адресу сайта заблокированы (сервер не запускался); URL — тот же `defaults/logo-white.png`, что в K-01.
+- **Маркеры/browser-check:** страницы сайта не менялись (только шаблоны писем), поля browser_check у задачи нет — bin/browser-check не
+  запускался.
+- **Проверки:** `bin/php artisan test` — CustomerOrderMailTest (8), Scenarios, SheetsTest, CustomerAccountTest, OrderWorkflowTest,
+  AdminOrdersTest — OK; `bin/check` — OK (792 теста).
+- **Не проверено:** вид в настоящих почтовых клиентах и доставка через SMTP сервера — ждёт пользователя (K-04). Сохранение трек-номера
+  из админки в браузере не прогонялось (Livewire-сценарий GuestOrderLifecycleScenarioTest проверяет письмо).

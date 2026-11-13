@@ -5,43 +5,34 @@ namespace App\Mail;
 use App\Domain\Invoices\InvoiceService;
 use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Invoices\SellerSettings;
-use App\Domain\Orders\Models\OrderMeta;
 use App\Domain\Orders\ProductCart;
-use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Lunar\Models\Order;
 
 /**
  * Письмо клиенту после первой оплаты заказа (правка 12.11, K-01; docs/planning/edits-20261112/README.md, решения 1–10, 12,
- * 13): шаблон 1 (заказ товаров) или 2 (заказ калькулятора) на языке заказа. Данные читаются из БД в момент отправки:
+ * 13; общий макет и данные — CustomerOrderMail, K-02): шаблон 1 (заказ товаров) или 2 (заказ калькулятора) на языке заказа. Данные читаются из БД в момент отправки:
  * позиции — строками счёта (цена без VAT), итоги — как в счёте («Iš viso», «PVM», «Iš viso su PVM» = цена заказа);
  * выпущенный счёт — его снимок и PDF во вложении. Кнопка кабинета — только заказу клиента кабинета (у гостя токен
  * хранится хешем). Reply-To — aiqme.forms.mail_to. Доставка — outbox (IntegrationEvents::deliverMail).
  */
-class OrderPaid extends Mailable
+class OrderPaid extends CustomerOrderMail
 {
     /** Тип события outbox письма. */
     public const EVENT = 'order.paid_customer_mail';
 
-    public OrderMeta $meta;
-
     public ?Invoice $invoice;
 
-    public function __construct(public Order $order)
+    public function __construct(Order $order)
     {
-        $this->meta = OrderMeta::where('order_id', $order->id)->firstOrFail();
+        parent::__construct($order);
         $this->invoice = Invoice::where('order_id', $order->id)->first();
-        $this->locale($this->meta->locale);
     }
 
-    public function envelope(): Envelope
+    protected function subjectKey(): string
     {
-        return new Envelope(
-            replyTo: [config('aiqme.forms.mail_to')],
-            subject: __('orders.customer_mail.subject_paid', ['number' => $this->meta->number], $this->meta->locale),
-        );
+        return 'subject_paid';
     }
 
     public function content(): Content
@@ -83,12 +74,9 @@ class OrderPaid extends Mailable
         $address = $this->meta->address;
 
         return [
-            'locale' => $locale,
+            ...$this->common(),
             'title' => __('orders.customer_mail.'.($this->meta->products ? 'title_products' : 'title_calculator'), [], $locale),
-            'name' => $contact['name'] ?? '',
-            'number' => $this->meta->number,
             'date' => ($this->order->placed_at ?? $this->order->created_at)->timezone(config('app.timezone'))->format('d.m.Y'),
-            'url' => $this->order->user_id === null ? null : route($locale.'.account.orders.show', $this->meta->number),
             'lines' => $lines->map(fn (array $line): array => [
                 'description' => $line['description'],
                 'quantity' => __('orders.customer_mail.units', ['quantity' => number_format($line['quantity'], 2, '.', '')], $locale),
@@ -108,11 +96,6 @@ class OrderPaid extends Mailable
             'delivery_time' => ProductCart::deliveryTime($locale),
             'buyer' => array_values(array_filter([$contact['name'] ?? null, $contact['company'] ?? null])),
             'buyer_contacts' => implode('  |  ', array_filter([$contact['email'] ?? null, $contact['phone'] ?? null])),
-            'email' => ($values['email'] ?? null) ?: config('aiqme.forms.mail_to'),
-            'phone' => ($values['phone'] ?? null) ?: config('aiqme.customer_mail.phone'),
-            'website' => ($values['website'] ?? null) ?: config('aiqme.customer_mail.website'),
-            'address' => ($values['address'] ?? null) ?: config('aiqme.customer_mail.address'),
-            'logo' => asset('defaults/logo-white.png'),
         ];
     }
 }

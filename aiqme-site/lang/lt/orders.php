@@ -56,5 +56,13 @@ return [
         'questions' => 'Jei turite klausimų, susisiekite su mumis:',
         'regards' => 'Pagarbiai,',
         'team' => 'AIQME komanda',
+
+        // Правка 12.11, K-02: письмо с трек-номером (docs/planning/edits-20261112/README.md, решения 11, 12).
+        'subject_shipped' => 'AIQME užsakymas #:number išsiųstas',
+        'title_shipped' => 'Jūsų užsakymas išsiųstas!',
+        'shipped' => 'Užsakymas #:number išsiųstas.',
+        'shipment_info' => 'Siuntos informacija',
+        'carrier' => 'Vežėjas:',
+        'tracking_number' => 'Siuntos numeris:',
     ],
 ];

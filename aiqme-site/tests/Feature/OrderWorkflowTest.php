@@ -550,10 +550,12 @@ class OrderWorkflowTest extends TestCase
         $events = IntegrationEvent::orderBy('id')->skip($before)->take(100)->get();
         $this->assertSame([
             'order.price_confirmed', 'order.price_changed', 'payment_request.created', 'payment_request.cancelled',
-            'payment_request.created', 'order.stage_changed', 'order.tracking_set', 'payment_request.cancelled', 'order.cancelled',
+            'payment_request.created', 'order.stage_changed', 'order.tracking_set', 'order.shipped_customer_mail', 'payment_request.cancelled', 'order.cancelled',
         ], $events->pluck('type')->all());
+        // Правка 12.11, K-02: трек-номер даёт событие письма клиенту (канал mail) — единственное событие с письмом.
+        $this->assertSame(['order.shipped_customer_mail'], $events->where('mail_status', '!=', 'none')->pluck('type')->values()->all());
         foreach ($events as $event) {
-            $this->assertSame(['none', 'pending'], [$event->mail_status, $event->sheets_status], $event->type);
+            $this->assertSame('pending', $event->sheets_status, $event->type);
             $this->assertSame((int) $order->reference, $event->data['number']);
             $this->assertNotEmpty($event->data['summary']);
         }

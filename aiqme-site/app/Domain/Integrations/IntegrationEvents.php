@@ -7,6 +7,7 @@ use App\Domain\Integrations\Sheets\ProjectSheets;
 use App\Domain\Integrations\Sheets\SheetsProjector;
 use App\Mail\FormSubmitted;
 use App\Mail\OrderPaid;
+use App\Mail\OrderShipped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ use Throwable;
 
 /**
  * Outbox (§2.7): событие пишется в транзакции изменения, доставка — по каналам, у каждого свой статус, попытки и ошибка.
- * Канал mail — письмо на адрес aiqme.forms.mail_to (W-09, очередь mail) или клиенту после оплаты (правка 12.11, K-01); канал sheets — проекция в Google Таблицу
+ * Канал mail — письмо на адрес aiqme.forms.mail_to (W-09, очередь mail) или клиенту после оплаты и с трек-номером (правка 12.11, K-01, K-02); канал sheets — проекция в Google Таблицу
  * (W-18, очередь sheets). Задание канала захватывает его одним UPDATE, отправляет вне транзакции и ставит sent или
  * failed; повтор раз в 5 минут подбирает недоставленное и зависшее (retry). Сбой одного канала не трогает другой.
  */
@@ -72,7 +73,7 @@ final class IntegrationEvents
     }
 
     /**
-     * Доставка письма события: на aiqme.forms.mail_to, письмо клиенту после оплаты (правка 12.11, K-01) — на его email. Захват — атомарный UPDATE только из pending/failed или зависшего sending; 0 строк —
+     * Доставка письма события: на aiqme.forms.mail_to, письма клиенту после оплаты и с трек-номером (правка 12.11, K-01, K-02) — на его email. Захват — атомарный UPDATE только из pending/failed или зависшего sending; 0 строк —
      * канал уже взят другим заданием или доставлен, выход без письма. Ошибка транспорта — failed с текстом ошибки:
      * заявка остаётся, повтор подберёт канал позже.
      */
@@ -80,6 +81,7 @@ final class IntegrationEvents
     {
         $this->deliver($eventId, 'mail', fn (IntegrationEvent $event) => match ($event->type) {
             OrderPaid::EVENT => Mail::to($event->data['email'])->send(new OrderPaid(Order::findOrFail($event->entity_id))),
+            OrderShipped::EVENT => Mail::to($event->data['email'])->send(new OrderShipped(Order::findOrFail($event->entity_id), $event->data['carrier'], $event->data['tracking_number'])),
             default => Mail::to(config('aiqme.forms.mail_to'))->send(new FormSubmitted($event)),
         });
     }

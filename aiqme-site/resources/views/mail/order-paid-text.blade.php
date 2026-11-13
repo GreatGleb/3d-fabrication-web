@@ -1,9 +1,7 @@
-{{-- Текстовая версия письма клиенту после оплаты (правка 12.11, K-01): те же данные, что в HTML (OrderPaid::data()); text/plain — без экранирования HTML. --}}
+{{-- Текстовая версия письма клиенту после оплаты (правка 12.11, K-01): те же данные, что в HTML (OrderPaid::data()), в общем макете mail.layout-text (K-02). --}}
+@extends('mail.layout-text')
 @php($t = fn (string $key, array $replace = []): string => __('orders.customer_mail.'.$key, $replace, $mail['locale']))
-{!! $mail['title'] !!}
-
-{!! $t('hello', ['name' => $mail['name']]) !!}
-
+@section('content')
 {!! $t('received') !!}
 @if ($mail['url'])
 {!! $t('view_order') !!}: {!! $mail['url'] !!}
@@ -37,9 +35,4 @@
 
 {!! $t('next') !!}
 {!! $t('next_shipping') !!}
-{!! $t('questions') !!}
-{!! $mail['email'] !!} | {!! $mail['phone'] !!}
-
-{!! $t('regards') !!}
-{!! $t('team') !!}
-{!! $mail['website'] !!} • {!! $mail['address'] !!}
+@endsection

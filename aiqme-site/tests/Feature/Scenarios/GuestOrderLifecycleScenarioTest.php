@@ -12,6 +12,7 @@ use App\Domain\Payments\Models\PaymentRequest;
 use App\Livewire\Admin\Orders\Card;
 use App\Mail\FormSubmitted;
 use App\Mail\OrderPaid;
+use App\Mail\OrderShipped;
 use App\Models\OrderCharge;
 use App\Models\StlFile;
 use App\Models\User;
@@ -240,7 +241,10 @@ class GuestOrderLifecycleScenarioTest extends TestCase
         $this->assertSame(['completed', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST'.(now()->year % 10).'0007'], $this->orderRow($number));
         $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.paid_customer_mail', 'order.stage_changed',
             'payment_request.created', 'payment.succeeded', 'invoice.issued',
-            'order.stage_changed', 'order.stage_changed', 'order.tracking_set', 'order.stage_changed', 'order.stage_changed']);
+            'order.stage_changed', 'order.stage_changed', 'order.tracking_set', 'order.shipped_customer_mail', 'order.stage_changed', 'order.stage_changed']);
+        // Правка 12.11, K-02: сохранение трек-номера — письмо клиенту «išsiųstas» (одно).
+        Mail::assertSent(OrderShipped::class, fn (OrderShipped $mail): bool => $mail->hasTo('ona@example.test') && $mail->data()['tracking_number'] === 'TEST-TRACK-1');
+        Mail::assertSent(OrderShipped::class, 1);
 
         // Итог: два списания по 40 и 110 EUR, возвратов нет; Stripe вызывался только для создания двух intent.
         $this->assertSame([4000, 11000], Transaction::where('order_id', $order->id)->where('type', 'capture')->orderBy('id')->pluck('amount')->map(fn ($amount): int => (int) $amount->value)->all());

@@ -57,5 +57,13 @@ return [
         'questions' => 'If you have any questions, contact us:',
         'regards' => 'Kind regards,',
         'team' => 'AIQME team',
+
+        // Правка 12.11, K-02: письмо с трек-номером (docs/planning/edits-20261112/README.md, решения 11, 12).
+        'subject_shipped' => 'AIQME order #:number shipped',
+        'title_shipped' => 'Your order has been shipped!',
+        'shipped' => 'Order #:number has been shipped.',
+        'shipment_info' => 'Shipment details',
+        'carrier' => 'Carrier:',
+        'tracking_number' => 'Tracking number:',
     ],
 ];

@@ -9,6 +9,7 @@ use App\Domain\Invoices\InvoiceService;
 use App\Domain\Invoices\Models\Invoice;
 use App\Domain\Invoices\SellerSettings;
 use App\Domain\Orders\Models\OrderMeta;
+use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Orders\OrderSubmission;
 use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductCart;
@@ -16,6 +17,7 @@ use App\Domain\Payments\Models\PaymentRequest;
 use App\Livewire\Admin\Settings;
 use App\Mail\FormSubmitted;
 use App\Mail\OrderPaid;
+use App\Mail\OrderShipped;
 use App\Models\OrderCharge;
 use App\Models\User;
 use Database\Seeders\PrototypeContentSeeder;
@@ -26,6 +28,7 @@ use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
@@ -43,6 +46,8 @@ use Tests\TestCase;
  * вложении; одно письмо на заказ (повтор webhook, вторая оплата, retry); сбой почты не отменяет оплату и счёт, повтор
  * доставляет; письма на info@aiqme.com при оплате нет; настройка «Numatomas terminas» LT/EN. Оплата — подписанный webhook
  * (Stripe не вызывается), почта — Mail::fake() или транспорт array.
+ * Правка 12.11, K-02 — письмо «Jūsų užsakymas išsiųstas!» при сохранении трек-номера: тот же номер — без письма, новый —
+ * новое письмо, отменённый заказ — без письма, язык заказа, сбой почты не отменяет сохранение трек-номера.
  */
 class CustomerOrderMailTest extends TestCase
 {
@@ -77,9 +82,12 @@ class CustomerOrderMailTest extends TestCase
         InvoiceNumber::setNext('TEST', 7);
     }
 
-    /** Заказ товаров из корзины: 2 × PLA gija по 24 € + доставка 5 € = 53 €. */
-    private function productOrder(string $locale = 'lt'): Order
+    /** Заказ товаров из корзины: 2 × PLA gija по 24 € + доставка 5 € = 53 €; $user — клиент кабинета (K-02). */
+    private function productOrder(string $locale = 'lt', ?User $user = null): Order
     {
+        if ($user !== null) {
+            $this->actingAs($user);
+        }
         ProductCart::saveDeliveryCents(500);
         $this->post($locale === 'lt' ? '/lt/krepselis' : '/en/cart', ['product' => $locale === 'lt' ? 'pla-gija' : 'pla-filament', 'quantity' => 2]);
         $this->post($locale === 'lt' ? '/lt/krepselis/uzsakymas' : '/en/cart/checkout', [
@@ -332,5 +340,153 @@ class CustomerOrderMailTest extends TestCase
             ->set('deliveryTimeEn', '')->call('save')->assertHasNoErrors();
         $this->assertSame(['2–3 darbo dienos', null, 650], [ProductCart::deliveryTime('lt'), ProductCart::deliveryTime('en'), ProductCart::deliveryCents()]);
         $form->set('deliveryTimeLt', str_repeat('x', 256))->call('save')->assertHasErrors('deliveryTimeLt');
+    }
+
+    /** @return list<OrderShipped> */
+    private function sentShippedMails(): array
+    {
+        return Mail::sent(OrderShipped::class)->values()->all();
+    }
+
+    /** Правка 12.11, K-02. */
+    public function test_saving_a_tracking_number_sends_the_shipped_mail_once_per_new_number_and_not_for_a_cancelled_order(): void
+    {
+        Mail::fake();
+        $this->seller();
+        $flow = app(OrderWorkflow::class);
+        $order = $this->productOrder('lt');
+        $number = OrderMeta::where('order_id', $order->id)->value('number');
+        $this->assertSame([], $this->sentShippedMails());
+
+        $flow->setTracking($this->admin, $order, ' DPD ', ' LT000000001 ');
+        $mails = $this->sentShippedMails();
+        $this->assertCount(1, $mails);
+        $mail = $mails[0];
+        $this->assertTrue($mail->hasTo('ona@example.test'));
+        $this->assertFalse($mail->hasTo('info@aiqme.com'));
+        $this->assertTrue($mail->hasReplyTo('info@aiqme.com'));
+        $this->assertTrue($mail->hasSubject('AIQME užsakymas #'.$number.' išsiųstas'));
+        $this->assertSame([], $mail->attachments);
+        $html = $mail->render();
+        $page = Html::xpath($html);
+        $this->assertSame('Jūsų užsakymas išsiųstas!', Html::text($page->query('//h1')->item(0)));
+        $this->assertSame('Siuntos informacija', Html::text($page->query('//h2')->item(0)));
+        $this->assertSame(['Vežėjas:', 'DPD', 'Siuntos numeris:', 'LT000000001'], Html::texts($page, '//h2/following-sibling::table[1]//td[not(table)]'));
+        foreach (['Sveiki, Ona TEST,', 'Užsakymas #'.$number.' išsiųstas.', 'Jei turite klausimų, susisiekite su mumis:',
+            'info@aiqme.com  |  +370 688 84 084', 'Pagarbiai,', 'AIQME komanda', 'aiqme.com  •  TEST g. 1, Vilnius', url('defaults/logo-white.png')] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+        // Гостю — без кнопки кабинета; блоков письма об оплате нет.
+        $this->assertStringNotContainsString('Peržiūrėti užsakymą', $html);
+        foreach (['Kas toliau?', 'Produktas', 'Pirkėjo informacija'] as $text) {
+            $this->assertStringNotContainsString($text, $html);
+        }
+        $this->assertStringNotContainsString('<script', $html);
+        $text = view('mail.order-shipped-text', ['mail' => $mail->data()])->render();
+        foreach (['Jūsų užsakymas išsiųstas!', 'Sveiki, Ona TEST,', 'Užsakymas #'.$number.' išsiųstas.', 'Siuntos informacija', 'Vežėjas: DPD',
+            'Siuntos numeris: LT000000001', 'Jei turite klausimų', 'AIQME komanda'] as $part) {
+            $this->assertStringContainsString($part, $text);
+        }
+        $this->assertStringNotContainsString('<', $text);
+        $event = IntegrationEvent::where('type', OrderShipped::EVENT)->sole();
+        $this->assertSame(['sent', 1, $order->id, 'ona@example.test'], [$event->mail_status, $event->mail_attempts, $event->entity_id, $event->data['email']]);
+
+        // Повторное сохранение того же номера и повтор outbox — без письма.
+        $flow->setTracking($this->admin, $order, 'DPD', 'LT000000001');
+        $this->travel(10)->minutes();
+        app(IntegrationEvents::class)->retry();
+        $this->assertCount(1, $this->sentShippedMails());
+
+        // Новый номер — новое письмо с новым номером.
+        $flow->setTracking($this->admin, $order, 'DPD', 'LT000000002');
+        $mails = $this->sentShippedMails();
+        $this->assertCount(2, $mails);
+        $this->assertSame('LT000000002', $mails[1]->data()['tracking_number']);
+        $this->assertStringContainsString('LT000000002', $mails[1]->render());
+
+        // Отменённый заказ — трек-номер не сохраняется и письма нет.
+        $flow->cancel($this->admin, $order, 'TEST');
+        try {
+            $flow->setTracking($this->admin, $order, 'DPD', 'LT000000003');
+            $this->fail('Трек-номер отменённого заказа сохранён');
+        } catch (ValidationException) {
+        }
+        $this->assertSame('LT000000002', ProductionState::where('order_id', $order->id)->value('tracking_number'));
+        $this->assertCount(2, $this->sentShippedMails());
+        $this->assertSame(2, IntegrationEvent::where('type', OrderShipped::EVENT)->count());
+    }
+
+    /** Правка 12.11, K-02. */
+    public function test_shipped_mail_of_a_customer_is_in_the_order_language_with_the_account_link(): void
+    {
+        Mail::fake();
+        $client = User::factory()->create();
+        $order = $this->productOrder('en', $client);
+        auth()->logout();
+        $number = OrderMeta::where('order_id', $order->id)->value('number');
+        app()->setLocale('lt');
+
+        app(OrderWorkflow::class)->setTracking($this->admin, $order, 'Omniva', 'CC123456789EE');
+        $mail = $this->sentShippedMails()[0];
+        $this->assertTrue($mail->hasTo('ona@example.test'));
+        $this->assertTrue($mail->hasSubject('AIQME order #'.$number.' shipped'));
+        $html = $mail->render();
+        $page = Html::xpath($html);
+        $this->assertSame('Your order has been shipped!', Html::text($page->query('//h1')->item(0)));
+        $this->assertSame(['Carrier:', 'Omniva', 'Tracking number:', 'CC123456789EE'], Html::texts($page, '//h2/following-sibling::table[1]//td[not(table)]'));
+        foreach (['Hello, Ona TEST,', 'Order #'.$number.' has been shipped.', 'Shipment details', 'If you have any questions, contact us:', 'Kind regards,', 'AIQME team',
+            'aiqme.com  •  Metalo g. 4, LT-02190 Vilnius'] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+        $this->assertStringNotContainsString('Jūsų', $html);
+        $link = $page->query('//a[normalize-space()="View order"]')->item(0);
+        $this->assertNotNull($link);
+        $this->assertSame(route('en.account.orders.show', $number), $link->getAttribute('href'));
+        $text = view('mail.order-shipped-text', ['mail' => $mail->data()])->render();
+        $this->assertStringContainsString('View order: '.route('en.account.orders.show', $number), $text);
+        $this->assertStringContainsString('Tracking number: CC123456789EE', $text);
+    }
+
+    /** Правка 12.11, K-02. */
+    public function test_shipped_mail_failure_keeps_the_tracking_number_and_the_retry_delivers_once(): void
+    {
+        Mail::extend('failing', fn () => new class extends AbstractTransport
+        {
+            protected function doSend(SentMessage $message): void
+            {
+                throw new TransportException('Connection refused (test transport)');
+            }
+
+            public function __toString(): string
+            {
+                return 'failing://';
+            }
+        });
+        config(['mail.mailers.failing' => ['transport' => 'failing'], 'mail.default' => 'failing']);
+        $order = $this->productOrder('lt');
+        $number = OrderMeta::where('order_id', $order->id)->value('number');
+
+        app(OrderWorkflow::class)->setTracking($this->admin, $order, 'DPD', 'LT000000001');
+        $this->assertSame(['DPD', 'LT000000001'], array_values(ProductionState::where('order_id', $order->id)->first(['carrier', 'tracking_number'])->toArray()));
+        $event = IntegrationEvent::where('type', OrderShipped::EVENT)->sole();
+        $this->assertSame(['failed', 1], [$event->mail_status, $event->mail_attempts]);
+        $this->assertStringContainsString('Connection refused', $event->mail_error);
+
+        config(['mail.default' => 'array']);
+        app('mail.manager')->forgetMailers();
+        $this->travel(6)->minutes();
+        $this->assertGreaterThanOrEqual(1, app(IntegrationEvents::class)->retry());
+        $this->travel(6)->minutes();
+        app(IntegrationEvents::class)->retry();
+        /** @var ArrayTransport $transport */
+        $transport = app('mail.manager')->mailer('array')->getSymfonyTransport();
+        $sent = $transport->messages()->filter(fn ($message): bool => $message->getOriginalMessage()->getSubject() === 'AIQME užsakymas #'.$number.' išsiųstas');
+        $this->assertCount(1, $sent);
+        $email = $sent->first()->getOriginalMessage();
+        $this->assertSame('ona@example.test', $email->getTo()[0]->getAddress());
+        $this->assertStringContainsString('Siuntos numeris: LT000000001', $email->getTextBody());
+        $this->assertSame([], $email->getAttachments());
+        $this->assertStringContainsString('Jūsų užsakymas išsiųstas!', $email->getHtmlBody());
+        $this->assertSame(['sent', 2, null], [$event->fresh()->mail_status, $event->fresh()->mail_attempts, $event->fresh()->mail_error]);
     }
 }

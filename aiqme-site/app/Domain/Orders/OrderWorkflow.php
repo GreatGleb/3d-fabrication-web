@@ -13,6 +13,7 @@ use App\Domain\Orders\Models\PriceRevision;
 use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Domain\Payments\PaymentRequestService;
+use App\Mail\OrderShipped;
 use App\Models\OrderCharge;
 use App\Models\StlPart;
 use App\Models\User;
@@ -33,7 +34,7 @@ use Lunar\Models\OrderLine;
  * Stripe (создание в pending без intent, отмена pending без intent → void), стадии производства и трек, отмена заказа,
  * сообщения администратора и ответы клиента. Права проверяются здесь: действия администратора — Gate "admin", ответ
  * клиента — владелец заказа (OrderAccess). Каждое изменение — под блокировкой строки заказа, с событием outbox §5.1
- * (только Sheets, без письма) и записью журнала в той же транзакции. Оплату этот сервис не записывает: capture создаёт
+ * (только Sheets, без письма; исключение — письмо клиенту с трек-номером, правка 12.11, K-02) и записью журнала в той же транзакции. Оплату этот сервис не записывает: capture создаёт
  * только внутренний сервис записи по проверенным данным Stripe (W-16, W-28).
  */
 final class OrderWorkflow
@@ -185,7 +186,11 @@ final class OrderWorkflow
         });
     }
 
-    /** Перевозчик и трек-номер (вводятся вручную, видны клиенту) — только при доставке, до завершения или отмены. */
+    /**
+     * Перевозчик и трек-номер (вводятся вручную, видны клиенту) — только при доставке, до завершения или отмены. Новые
+     * перевозчик или номер — письмо клиенту «Jūsų užsakymas išsiųstas!» через outbox после commit (правка 12.11, K-02);
+     * повторное сохранение тех же значений письма не даёт.
+     */
     public function setTracking(User $admin, Order $order, string $carrier, string $trackingNumber): void
     {
         $this->authorize($admin);
@@ -198,11 +203,15 @@ final class OrderWorkflow
             $carrier = trim($carrier);
             $trackingNumber = trim($trackingNumber);
             $this->require($carrier !== '' && $trackingNumber !== '' && mb_strlen($carrier) <= 255 && mb_strlen($trackingNumber) <= 255, 'tracking_required');
+            $changed = [$state->carrier, $state->tracking_number] !== [$carrier, $trackingNumber];
             $state->update(['carrier' => $carrier, 'tracking_number' => $trackingNumber]);
             $this->recordOrderEvent('order.tracking_set', $order, $admin, 'Tracking: '.$carrier.' '.$trackingNumber, null, [
                 'carrier' => $carrier,
                 'tracking_number' => $trackingNumber,
             ]);
+            if ($changed) {
+                $this->shippedMail($order, $carrier, $trackingNumber);
+            }
         });
     }
 
@@ -468,6 +477,23 @@ final class OrderWorkflow
             'amount' => $amount === null ? null : number_format($amount / 100, 2, '.', ''),
             ...$data,
         ], mail: false);
+    }
+
+    /** Письмо клиенту с трек-номером (правка 12.11, K-02): событие outbox, адресат — email из контактов заказа; без email — без письма. */
+    private function shippedMail(Order $order, string $carrier, string $trackingNumber): void
+    {
+        $meta = OrderMeta::where('order_id', $order->id)->firstOrFail();
+        $email = $meta->contact['email'] ?? null;
+        if (! is_string($email) || $email === '') {
+            return;
+        }
+        $this->events->record(OrderShipped::EVENT, $order, [
+            'number' => $meta->number,
+            'summary' => 'Customer email: order shipped',
+            'email' => $email,
+            'carrier' => $carrier,
+            'tracking_number' => $trackingNumber,
+        ]);
     }
 
     private function authorize(User $admin): void
