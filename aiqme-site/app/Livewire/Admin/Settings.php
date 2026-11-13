@@ -16,7 +16,7 @@ use Livewire\Component;
  * ставка (целые проценты) или пометка для счёта неплательщика, префикс серии (по умолчанию AIQ) и следующий номер
  * текущего года (правка 05.11, H-06: вместо первого номера серии; номер не больше выданного в серии года — ошибка).
  * Реквизитов по умолчанию нет; после сохранения ставится задание «ожидающие счета». Каждый запрос — только
- * администратору, иначе 404. «Pristatymo kaina (prekėms)» — стоимость доставки покупки товаров (правка 05.11, H-08), запись settings products. Необязательные поля счёта (правка 02.11, Г5): банк, SWIFT, IBAN, почта, телефон, сайт, условия поставки (по умолчанию EXW Vilnius) и «кто выписал»; пустое сохраняется как null.
+ * администратору, иначе 404. «Pristatymo kaina (prekėms)» — стоимость доставки покупки товаров (правка 05.11, H-08), запись settings products; рядом — «Numatomas terminas» LT/EN для письма клиенту после оплаты (правка 12.11, K-01). Необязательные поля счёта (правка 02.11, Г5): банк, SWIFT, IBAN, почта, телефон, сайт, условия поставки (по умолчанию EXW Vilnius) и «кто выписал»; пустое сохраняется как null.
  */
 class Settings extends Component
 {
@@ -66,6 +66,11 @@ class Settings extends Component
     /** «Pristatymo kaina (prekėms)», EUR (правка 05.11, H-08; по умолчанию 0). */
     public string $productDelivery = '0.00';
 
+    /** «Numatomas terminas» письма клиенту после оплаты, LT и EN (правка 12.11, K-01; необязательно). */
+    public string $deliveryTimeLt = '';
+
+    public string $deliveryTimeEn = '';
+
     public ?string $status = null;
 
     public function boot(): void
@@ -99,6 +104,8 @@ class Settings extends Component
         }
         $this->nextNumber = (string) InvoiceNumber::upcoming($this->series);
         $this->productDelivery = number_format(ProductCart::deliveryCents() / 100, 2, '.', '');
+        $this->deliveryTimeLt = (string) ProductCart::deliveryTime('lt');
+        $this->deliveryTimeEn = (string) ProductCart::deliveryTime('en');
     }
 
     public function save(SellerSettings $settings): void
@@ -117,6 +124,8 @@ class Settings extends Component
             ...array_fill_keys(array_keys(self::OPTIONAL), ['nullable', 'string', 'max:255']),
             'email' => ['nullable', 'email', 'max:255'],
             'productDelivery' => ['required', 'regex:/^\d{1,6}([.,]\d{1,2})?$/D'],
+            'deliveryTimeLt' => ['nullable', 'string', 'max:255'],
+            'deliveryTimeEn' => ['nullable', 'string', 'max:255'],
         ], ['*' => __('admin.calculator.invalid')]);
         $last = InvoiceNumber::lastIssued($this->series);
         if ((int) $this->nextNumber <= $last) {
@@ -139,6 +148,7 @@ class Settings extends Component
         ]);
         InvoiceNumber::setNext($this->series, (int) $this->nextNumber);
         ProductCart::saveDeliveryCents((int) round((float) str_replace(',', '.', $this->productDelivery) * 100));
+        ProductCart::saveDeliveryTime(['lt' => trim($this->deliveryTimeLt) ?: null, 'en' => trim($this->deliveryTimeEn) ?: null]);
         IssuePendingInvoices::dispatch();
         $this->status = __('admin.calculator.saved');
     }

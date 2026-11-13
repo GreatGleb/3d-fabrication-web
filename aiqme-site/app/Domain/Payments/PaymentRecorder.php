@@ -11,6 +11,7 @@ use App\Domain\Orders\Models\ProductionState;
 use App\Domain\Orders\OrderWorkflow;
 use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
+use App\Mail\OrderPaid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -26,7 +27,8 @@ use Stripe\PaymentIntent;
  * без capture, на сверку; валюта не EUR — без capture, на сверку. Иначе capture на amount_received, запрос → paid из
  * любого состояния (§3.3); на сверку (needs_review с review_reason) — другой intent (пустой — только у creating),
  * order_id, сумма, отменённый заказ; переплата (оплачено за вычетом возвратов больше цены) — overpaid при любом исходе.
- * После записи capture и refund — проверка выпуска счёта (IssueInvoice после commit, W-17).
+ * После записи capture и refund — проверка выпуска счёта (IssueInvoice после commit, W-17). Первая запись capture заказа
+ * (исходы captured и captured_for_review) — письмо клиенту «получили заказ и оплату» после задания счёта (правка 12.11, K-01).
  */
 final class PaymentRecorder
 {
@@ -72,6 +74,7 @@ final class PaymentRecorder
                 return self::NOT_RECORDED;
             }
             $received = (int) $intent->amount_received;
+            $firstCapture = ! Transaction::where('order_id', $order->id)->where('type', 'capture')->exists();
             Transaction::create([
                 'order_id' => $order->id,
                 'success' => true,
@@ -83,7 +86,6 @@ final class PaymentRecorder
                 'captured_at' => now(),
                 'meta' => ['request_id' => $request->public_id, 'intent_id' => $intent->id],
             ]);
-            $this->issueInvoiceAfterCommit($order);
             $balance = $this->workflow->balance($order);
             $reason = match (true) {
                 $balance['paid'] > $balance['total'] => 'overpaid',
@@ -104,6 +106,7 @@ final class PaymentRecorder
                 'amount' => $received,
                 'review_reason' => $reason,
             ]);
+            $this->issueInvoiceAfterCommit($order, $firstCapture ? $this->customerMail($order) : null);
             if ($reason === null) {
                 return self::CAPTURED;
             }
@@ -149,9 +152,30 @@ final class PaymentRecorder
     }
 
     /** Единственная точка вызова issueIfDue после оплаты и возврата (§3.5): задание очереди после commit записи. */
-    private function issueInvoiceAfterCommit(Order $order): void
+    private function issueInvoiceAfterCommit(Order $order, ?int $mailEventId = null): void
     {
-        IssueInvoice::dispatch($order->id)->afterCommit();
+        IssueInvoice::dispatch($order->id, $mailEventId)->afterCommit();
+    }
+
+    /**
+     * Письмо клиенту после первой оплаты заказа (правка 12.11, K-01): событие outbox с адресом из контактов заказа;
+     * само письмо ставит задание выпуска счёта. Повторная оплата и повторный webhook сюда не доходят.
+     *
+     * @return ?int id события; без email в заказе — null
+     */
+    private function customerMail(Order $order): ?int
+    {
+        $meta = OrderMeta::where('order_id', $order->id)->first();
+        $email = $meta?->contact['email'] ?? null;
+        if (! is_string($email) || $email === '') {
+            return null;
+        }
+
+        return $this->events->recordCustomerMail(OrderPaid::EVENT, $order, [
+            'number' => $meta->number,
+            'summary' => 'Customer email: order and payment received',
+            'email' => $email,
+        ])->id;
     }
 
     /**

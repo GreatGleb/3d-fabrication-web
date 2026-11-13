@@ -6,16 +6,18 @@ use App\Domain\Integrations\Models\IntegrationEvent;
 use App\Domain\Integrations\Sheets\ProjectSheets;
 use App\Domain\Integrations\Sheets\SheetsProjector;
 use App\Mail\FormSubmitted;
+use App\Mail\OrderPaid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Lunar\Models\Order;
 use Throwable;
 
 /**
  * Outbox (§2.7): событие пишется в транзакции изменения, доставка — по каналам, у каждого свой статус, попытки и ошибка.
- * Канал mail — письмо на адрес aiqme.forms.mail_to (W-09, очередь mail); канал sheets — проекция в Google Таблицу
+ * Канал mail — письмо на адрес aiqme.forms.mail_to (W-09, очередь mail) или клиенту после оплаты (правка 12.11, K-01); канал sheets — проекция в Google Таблицу
  * (W-18, очередь sheets). Задание канала захватывает его одним UPDATE, отправляет вне транзакции и ставит sent или
  * failed; повтор раз в 5 минут подбирает недоставленное и зависшее (retry). Сбой одного канала не трогает другой.
  */
@@ -33,6 +35,29 @@ final class IntegrationEvents
      */
     public function record(string $type, Model $entity, array $data, bool $mail = true): IntegrationEvent
     {
+        $event = $this->create($type, $entity, $data, $mail);
+        if ($mail) {
+            DeliverMail::dispatch($event->id)->afterCommit();
+        }
+
+        return $event;
+    }
+
+    /**
+     * Письмо клиенту о заказе (правка 12.11, K-01): событие с каналом mail pending, адресат — email из data. Задание
+     * письма ставит вызывающий (после оплаты — задание выпуска счёта, чтобы приложить PDF); не поставленное или
+     * упавшее письмо подберёт повтор (retry).
+     *
+     * @param  array{number: int, summary: string, email: string}  $data
+     */
+    public function recordCustomerMail(string $type, Order $order, array $data): IntegrationEvent
+    {
+        return $this->create($type, $order, $data, true);
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function create(string $type, Model $entity, array $data, bool $mail): IntegrationEvent
+    {
         $event = IntegrationEvent::create([
             'type' => $type,
             'entity_type' => $entity->getTable(),
@@ -41,22 +66,22 @@ final class IntegrationEvents
             'mail_status' => $mail ? 'pending' : 'none',
             'sheets_status' => 'pending',
         ]);
-        if ($mail) {
-            DeliverMail::dispatch($event->id)->afterCommit();
-        }
         ProjectSheets::dispatch($event->id, SheetsProjector::entityKey($event))->afterCommit();
 
         return $event;
     }
 
     /**
-     * Доставка письма события. Захват — атомарный UPDATE только из pending/failed или зависшего sending; 0 строк —
+     * Доставка письма события: на aiqme.forms.mail_to, письмо клиенту после оплаты (правка 12.11, K-01) — на его email. Захват — атомарный UPDATE только из pending/failed или зависшего sending; 0 строк —
      * канал уже взят другим заданием или доставлен, выход без письма. Ошибка транспорта — failed с текстом ошибки:
      * заявка остаётся, повтор подберёт канал позже.
      */
     public function deliverMail(int $eventId): void
     {
-        $this->deliver($eventId, 'mail', fn (IntegrationEvent $event) => Mail::to(config('aiqme.forms.mail_to'))->send(new FormSubmitted($event)));
+        $this->deliver($eventId, 'mail', fn (IntegrationEvent $event) => match ($event->type) {
+            OrderPaid::EVENT => Mail::to($event->data['email'])->send(new OrderPaid(Order::findOrFail($event->entity_id))),
+            default => Mail::to(config('aiqme.forms.mail_to'))->send(new FormSubmitted($event)),
+        });
     }
 
     /**

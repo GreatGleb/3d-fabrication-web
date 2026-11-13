@@ -20,6 +20,9 @@
         <x-field name="nextNumber" type="number" :label="__('admin.settings.next_number')" :value="$nextNumber" min="1" wire:model="nextNumber" />
         {{-- Правка 05.11, H-08: доставка покупки товаров. --}}
         <x-field name="productDelivery" type="number" step="0.01" :label="__('admin.settings.product_delivery')" :value="$productDelivery" min="0" wire:model="productDelivery" />
+        {{-- Правка 12.11, K-01: «Numatomas terminas» письма клиенту после оплаты, на каждый язык; пусто — строки в письме нет. --}}
+        <x-field name="deliveryTimeLt" :label="__('admin.settings.delivery_time_lt')" :value="$deliveryTimeLt" maxlength="255" wire:model="deliveryTimeLt" />
+        <x-field name="deliveryTimeEn" :label="__('admin.settings.delivery_time_en')" :value="$deliveryTimeEn" maxlength="255" wire:model="deliveryTimeEn" />
         @foreach (['bank', 'swift', 'iban', 'email', 'phone', 'website', 'deliveryTerms', 'issuedBy'] as $optional)
             <x-field :name="$optional" :label="__('admin.settings.'.$optional)" :value="$this->{$optional}" maxlength="255" wire:model="{{ $optional }}" />
         @endforeach

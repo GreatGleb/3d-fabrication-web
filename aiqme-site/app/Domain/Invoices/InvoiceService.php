@@ -111,8 +111,12 @@ final class InvoiceService
         return intdiv(2 * $gross * $rate + 100 + $rate, 2 * (100 + $rate));
     }
 
-    /** @return Collection<int, array{description: string, quantity: int, net: int, vat: int, gross: int}> */
-    private function lines(Order $order, string $locale, int $rate): Collection
+    /**
+     * Строки счёта; ими же строится таблица письма клиенту после оплаты (правка 12.11, K-01).
+     *
+     * @return Collection<int, array{description: string, quantity: int, net: int, vat: int, gross: int}>
+     */
+    public static function lines(Order $order, string $locale, int $rate): Collection
     {
         return $order->lines()->with('purchasable')->orderBy('id')->get()->map(function (OrderLine $line) use ($locale, $rate): array {
             $part = $line->purchasable instanceof StlPart ? $line->purchasable : null;

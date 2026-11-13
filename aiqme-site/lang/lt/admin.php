@@ -395,6 +395,9 @@ return [
         // Правка 05.11, H-06: следующий номер года вместо первого номера серии; ошибка — нейтральная надпись (docs/progress.md).
         'next_number' => 'Kitas sąskaitos numeris (šiems metams)',
         'product_delivery' => 'Pristatymo kaina (prekėms), €', // правка 05.11, H-08
+        // Правка 12.11, K-01: «Numatomas terminas» шаблона письма; LT/EN — как «Pavadinimas LT».
+        'delivery_time_lt' => 'Numatomas terminas LT',
+        'delivery_time_en' => 'Numatomas terminas EN',
         'next_number_issued' => 'Šis numeris jau išduotas. Įveskite didesnį nei :last.',
         // Правка 02.11, Г5: необязательные поля счёта — нейтральные надписи (docs/progress.md, G-05).
         'bank' => 'Bankas',

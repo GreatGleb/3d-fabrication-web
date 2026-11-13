@@ -11,6 +11,7 @@ use App\Domain\Orders\ProductionStage;
 use App\Domain\Payments\Models\PaymentRequest;
 use App\Livewire\Admin\Orders\Card;
 use App\Mail\FormSubmitted;
+use App\Mail\OrderPaid;
 use App\Models\OrderCharge;
 use App\Models\StlFile;
 use App\Models\User;
@@ -193,7 +194,10 @@ class GuestOrderLifecycleScenarioTest extends TestCase
         $this->guestPays($guestUrl, $advance, 'evt_test_advance');
         $this->assertSame(['confirmed', '150.00', '40.00', '110.00', 'partial', '', ''], $this->orderRow($number));
         $this->assertSame([$advance->public_id => ['40.00', 'paid', 'ch_test_'.$advance->public_id]], $this->paymentRows());
-        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded']);
+        // Правка 12.11, K-01: после первой оплаты — событие письма клиенту (одно на заказ; вторая оплата его не повторяет).
+        // Правка 12.11, K-01: ожидания списков событий ниже дополнены этим событием.
+        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.paid_customer_mail']);
+        Mail::assertSent(OrderPaid::class, fn (OrderPaid $mail): bool => $mail->hasTo('ona@example.test'));
         $this->assertSame(ProductionStage::Confirmed, ProductionState::where('order_id', $order->id)->value('stage'), 'оплата не запускает производство');
 
         // 7. Производство при долге 110 EUR — только после второго нажатия (подтверждение администратора).
@@ -201,7 +205,7 @@ class GuestOrderLifecycleScenarioTest extends TestCase
         $this->assertSame(ProductionStage::Confirmed, ProductionState::where('order_id', $order->id)->value('stage'));
         $card->call('startProduction')->assertSee('Stage changed.');
         $this->assertSame(['in_production', '150.00', '40.00', '110.00', 'partial', '', ''], $this->orderRow($number));
-        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.stage_changed']);
+        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.paid_customer_mail', 'order.stage_changed']);
 
         // 8. Запрос остатка 110 EUR и оплата → счёт выпущен автоматически.
         $this->card($order)->set('amount', '110')->call('requestPayment')->assertHasNoErrors();
@@ -218,7 +222,7 @@ class GuestOrderLifecycleScenarioTest extends TestCase
             $advance->public_id => ['40.00', 'paid', 'ch_test_'.$advance->public_id],
             $rest->public_id => ['110.00', 'paid', 'ch_test_'.$rest->public_id],
         ], $this->paymentRows());
-        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.stage_changed',
+        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.paid_customer_mail', 'order.stage_changed',
             'payment_request.created', 'payment.succeeded', 'invoice.issued']);
         // Гость скачивает счёт со своей страницы (право в сессии).
         $this->visitor()->get($guestUrl)->assertOk()->assertSee(route('invoices.download', $invoice->id), false);
@@ -234,7 +238,7 @@ class GuestOrderLifecycleScenarioTest extends TestCase
         $this->assertSame(['shipped', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST'.(now()->year % 10).'0007'], $this->orderRow($number));
         $this->card($order)->call('advance', 'completed')->assertHasNoErrors();
         $this->assertSame(['completed', '150.00', '150.00', '0.00', 'paid', 'DPD TEST-TRACK-1', 'TEST'.(now()->year % 10).'0007'], $this->orderRow($number));
-        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.stage_changed',
+        $this->assertEvents(['order.submitted', 'order.price_confirmed', 'payment_request.created', 'payment.succeeded', 'order.paid_customer_mail', 'order.stage_changed',
             'payment_request.created', 'payment.succeeded', 'invoice.issued',
             'order.stage_changed', 'order.stage_changed', 'order.tracking_set', 'order.stage_changed', 'order.stage_changed']);
 

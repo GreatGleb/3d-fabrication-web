@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
  * Цена берётся из товара в момент показа и оформления (в сессии её нет). Товар, снятый с публикации на локали или
  * переведённый в «Gauti pasiūlymą», убирается из корзины при показе и оформлении (prune → true — покупателю сообщение).
  * Стоимость доставки товаров — настройка «Pristatymo kaina (prekėms)» (settings products.delivery_cents, по умолчанию 0).
+ * «Numatomas terminas» письма клиенту после оплаты (правка 12.11, K-01) — products.delivery_time по языкам, пусто — без строки.
  */
 final class ProductCart
 {
@@ -97,7 +98,28 @@ final class ProductCart
 
     public static function saveDeliveryCents(int $cents): void
     {
-        Setting::updateOrCreate(['key' => self::SETTING], ['value' => ['delivery_cents' => $cents]]);
+        self::saveValue('delivery_cents', $cents);
+    }
+
+    /** «Numatomas terminas» на языке (правка 12.11, K-01); не задан — null. */
+    public static function deliveryTime(string $locale): ?string
+    {
+        $time = Setting::find(self::SETTING)?->value['delivery_time'][$locale] ?? null;
+
+        return is_string($time) && trim($time) !== '' ? $time : null;
+    }
+
+    /** @param  array<string, ?string>  $times  язык => текст (пусто — null) */
+    public static function saveDeliveryTime(array $times): void
+    {
+        self::saveValue('delivery_time', $times);
+    }
+
+    private static function saveValue(string $key, mixed $value): void
+    {
+        $setting = Setting::find(self::SETTING);
+        $values = is_array($setting?->value) ? $setting->value : [];
+        Setting::updateOrCreate(['key' => self::SETTING], ['value' => [...$values, $key => $value]]);
     }
 
     /** @return array<int, int> */

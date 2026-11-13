@@ -2,6 +2,7 @@
 
 namespace App\Domain\Invoices;
 
+use App\Domain\Integrations\DeliverMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -21,10 +22,14 @@ class IssueInvoice implements ShouldQueue
 
     public int $backoff = 60;
 
-    public function __construct(public int $orderId) {}
+    /** @param  ?int  $mailEventId  письмо клиенту после первой оплаты (правка 12.11, K-01): ставится после выпуска счёта */
+    public function __construct(public int $orderId, public ?int $mailEventId = null) {}
 
     public function handle(InvoiceService $invoices): void
     {
         $invoices->issueIfDue(Order::findOrFail($this->orderId));
+        if ($this->mailEventId !== null) {
+            DeliverMail::dispatch($this->mailEventId);
+        }
     }
 }

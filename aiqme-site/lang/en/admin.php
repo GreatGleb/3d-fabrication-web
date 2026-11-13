@@ -411,6 +411,9 @@ return [
         // Правка 05.11, H-06: следующий номер года вместо первого номера серии; ошибка — нейтральная надпись (docs/progress.md).
         'next_number' => 'Next invoice number (this year)',
         'product_delivery' => 'Delivery price (products), €', // правка 05.11, H-08
+        // Правка 12.11, K-01: «Estimated delivery time» (README плана).
+        'delivery_time_lt' => 'Estimated delivery time LT',
+        'delivery_time_en' => 'Estimated delivery time EN',
         'next_number_issued' => 'This number has already been issued. Enter a number greater than :last.',
         // Правка 02.11, Г5: необязательные поля счёта — нейтральные надписи (docs/progress.md, G-05).
         'bank' => 'Bank',
