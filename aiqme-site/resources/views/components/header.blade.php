@@ -8,7 +8,7 @@
      Правка 05.11, H-11: тёмная шапка и белый логотип — только при тёмном верхе страницы ($overlay, сейчас только главная);
      на остальных страницах сразу белая шапка §7.1 с обычным логотипом, header.js её не трогает.
      Правка 11.11, J-02: второго ряда (подпись и CTA) нет ни на одной странице. Переключатель языка — кнопка с текущим
-     кодом («EN ▾») и список остальных языков config('aiqme.languages') (resources/js/lang-menu.js; без JS список
+     кодом («EN»; стрелку ▾ убрали — правка 13.11) и список остальных языков config('aiqme.languages') (resources/js/lang-menu.js; без JS список
      открывается наведением и фокусом). Адрес языка — версия этой страницы, иначе $switchUrl, иначе главная языка.
      Правка 05.11, H-08: у значка корзины — число товаров корзины сессии (<small>, как в прототипе); пустая — без числа. --}}
 @props(['languages' => [], 'switchUrl' => null, 'logo', 'logoWhite' => null, 'overlay' => false])
@@ -31,7 +31,7 @@
         <div class="tools">
             <a class="icon-btn" href="{{ route($locale.'.search') }}" data-modal-open="search-modal" aria-label="{{ __('shell.search') }}"><x-line-icon name="search" /></a>
             <div class="lang-menu" data-lang-menu>
-                <button class="icon-btn lang" type="button" aria-expanded="false" aria-controls="lang-list" aria-label="{{ __('shell.language') }}: {{ strtoupper($locale) }}">{{ strtoupper($locale) }} <span aria-hidden="true">▾</span></button>
+                <button class="icon-btn lang" type="button" aria-expanded="false" aria-controls="lang-list" aria-label="{{ __('shell.language') }}: {{ strtoupper($locale) }}">{{ strtoupper($locale) }}</button>
                 <ul class="lang-list" id="lang-list">
                     @foreach (array_diff(config('aiqme.languages'), [$locale]) as $code)
                         <li><a href="{{ $languages[$code] ?? ($code === $switchTo ? $switchUrl : null) ?? route($code.'.home') }}" hreflang="{{ $code }}" lang="{{ $code }}">{{ strtoupper($code) }}</a></li>

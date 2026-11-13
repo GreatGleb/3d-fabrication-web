@@ -188,7 +188,7 @@ class LocaleRoutesTest extends TestCase
     }
 
     /**
-     * Правка 11.11, J-02: переключатель — кнопка с текущим кодом («LT ▾»), закрытая (aria-expanded=false), и список
+     * Правка 11.11, J-02: переключатель — кнопка с текущим кодом («LT»; без стрелки — правка 13.11), закрытая (aria-expanded=false), и список
      * остальных языков config('aiqme.languages'): на LT — только EN, на EN — только LT, ссылка — та же страница
      * другого языка (без версии — главная языка).
      *
@@ -210,9 +210,9 @@ class LocaleRoutesTest extends TestCase
 
     public function test_language_switcher_links_to_the_same_page_in_the_other_locale(): void
     {
-        $this->assertSame(['button' => 'LT ▾', 'expanded' => 'false', 'controls' => 'lang-list', 'links' => [['EN', route('en.services')]]],
+        $this->assertSame(['button' => 'LT', 'expanded' => 'false', 'controls' => 'lang-list', 'links' => [['EN', route('en.services')]]],
             $this->switcher('/lt/paslaugos/'));
-        $this->assertSame(['button' => 'EN ▾', 'expanded' => 'false', 'controls' => 'lang-list', 'links' => [['LT', route('lt.services')]]],
+        $this->assertSame(['button' => 'EN', 'expanded' => 'false', 'controls' => 'lang-list', 'links' => [['LT', route('lt.services')]]],
             $this->switcher('/en/services'));
         $this->assertSame([['LT', route('lt.home')]], $this->switcher('/en/missing')['links']);
         $this->assertSame([['EN', route('en.contact')]], $this->switcher('/lt/kontaktai')['links']);

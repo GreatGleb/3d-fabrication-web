@@ -95,7 +95,7 @@ check_scenarios на главной при всех ширинах — прав�
 LT-надпись hero — замена D21_REPLACEMENTS только для /lt.
 Шапка без второго ряда и выбор языка (правка 11.11, J-02): .head-sub/.header-cta нет ни на одной странице (check_styles,
 check_header_white), шапка 91/82/73 px = --header-height, вне главной первый блок main — вплотную под шапкой ±1 px;
-check_lang_menu на LANG_MENU_PAGES при 390 и 1440 — кнопка «LT ▾»/«EN ▾», список закрыт, наведение (ПК), нажатие, Enter
+check_lang_menu на LANG_MENU_PAGES при 390 и 1440 — кнопка «LT»/«EN» (без стрелки, правка 13.11), список закрыт, наведение (ПК), нажатие, Enter
 открывают, aria-expanded, Esc закрывает с фокусом на кнопке, Tab из списка и нажатие вне закрывают, список — другой язык той же
 страницы, белый, в окне; кадры shots/lang-closed|open-<страница>-<ширина>.png.
 Главная (правка 11.11, J-03): check_motion на /lt и /en — в «Darbo eiga» нет стрелок между этапами при 1440, 390 и
@@ -590,7 +590,7 @@ def check_focus_style(report, page, path):
     report.check(focus['top'] >= 0, f'{path}: ссылка «к содержимому» не видна при фокусе')
 
 
-# Правка 11.11, J-02: выбор языка — кнопка «<код> ▾» и список остальных языков (та же страница другого языка).
+# Правка 11.11, J-02: выбор языка — кнопка «<код>» (без стрелки, правка 13.11) и список остальных языков (та же страница другого языка).
 LANG_MENU_PAGES = {'/lt': ('LT', {'EN': '/en'}), '/en': ('EN', {'LT': '/lt'}), '/lt/paslaugos': ('LT', {'EN': '/en/services'}),
                    '/en/services': ('EN', {'LT': '/lt/paslaugos'}), '/lt/kontaktai': ('LT', {'EN': '/en/contact'}),
                    '/en/contact': ('EN', {'LT': '/lt/kontaktai'})}
@@ -615,7 +615,7 @@ def check_lang_menu(report, new_page, path, width):
     button = page.locator('[data-lang-menu] button')
     probe = lambda: page.evaluate(LANG_PROBE)  # noqa: E731
     got = probe()
-    report.check(got['text'] == f'{code} ▾' and got['expanded'] == 'false' and not got['visible'], f'{where}: при загрузке {got}')
+    report.check(got['text'] == code and got['expanded'] == 'false' and not got['visible'], f'{where}: при загрузке {got}')
     page.screenshot(path=str(OUT / 'shots' / f'lang-closed-{slug}-{width}.png'), clip={'x': 0, 'y': 0, 'width': width, 'height': 220})
     if width > 900:
         button.hover()

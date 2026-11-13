@@ -108,7 +108,7 @@ altcha-widget{--altcha-color-base:#fff;--altcha-color-base-content:var(--ink);--
 @media(prefers-reduced-motion:reduce){
  .header--ready,.header--ready .lang span,.header--ready .logo img{transition:none}
 }
-/* Выбор языка (правка 11.11, J-02): кнопка «EN ▾» (.lang прототипа) и список остальных языков под ней — белый с тёмным
+/* Выбор языка (правка 11.11, J-02): кнопка «EN» (.lang прототипа; без стрелки с 13.11) и список остальных языков под ней — белый с тёмным
    текстом и в тёмной шапке, вплотную под кнопкой (без зазора мышь не уходит из меню по пути к списку). Открыт с классом open (resources/js/lang-menu.js); без JS — наведением и фокусом. */
 .lang-menu{position:relative}
 .lang-list{display:none;position:absolute;top:100%;left:0;min-width:64px;margin:0;padding:6px 0;list-style:none;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:3px;box-shadow:0 8px 24px rgba(10,17,25,.12);z-index:60}
