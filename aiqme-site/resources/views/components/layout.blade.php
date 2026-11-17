@@ -24,11 +24,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0a1119">
-@if ($favicon)
-<link rel="icon" href="{{ $favicon->getUrl() }}" type="image/png">
-@else
-<link rel="icon" href="{{ asset(ContentItem::mediaDefault(ContentType::PageText, 'home', 'favicon')) }}" type="image/svg+xml">
-@endif
+{{-- Правка 16.11: умолчание — PNG заказчика (Q на тёмной плашке; вариант без фона теряет белую Q на светлой вкладке). --}}
+<link rel="icon" href="{{ $favicon?->getUrl() ?? asset(ContentItem::mediaDefault(ContentType::PageText, 'home', 'favicon')) }}" type="image/png">
+<link rel="apple-touch-icon" href="{{ $favicon?->getUrl() ?? asset(ContentItem::mediaDefault(ContentType::PageText, 'home', 'favicon')) }}">
 <x-seo-head :title="$title" :description="$description" :canonical="$canonical"
     :alternates="$noindex ? [] : $languages" :image="$image" :noindex="$noindex" />
 @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -101,8 +101,8 @@ class DefaultMediaTest extends TestCase
             $this->markTestSkipped('не проверено (нет исходников source-backup)');
         }
         foreach (collect(config('aiqme.media_defaults'))->flatten() as $file) {
-            // logo.png и logo-white.png — не файлы прототипа, а новый логотип заказчика (правка 30.10, Г1).
-            if (! str_starts_with($file, 'defaults/services/') && ! in_array($file, ['defaults/logo.png', 'defaults/logo-white.png'], true)) {
+            // logo.png и logo-white.png — не файлы прототипа, а новый логотип заказчика (правка 30.10, Г1); favicon.png — его же значок (правка 16.11).
+            if (! str_starts_with($file, 'defaults/services/') && ! in_array($file, ['defaults/logo.png', 'defaults/logo-white.png', 'defaults/favicon.png'], true)) {
                 $this->assertSame(hash_file('sha256', self::SOURCE.'/'.basename($file)), hash_file('sha256', public_path($file)), $file);
             }
         }
@@ -157,7 +157,7 @@ class DefaultMediaTest extends TestCase
         }
         $this->assertSame(asset('defaults/logo.png'), $this->src($html, '//header//a[@class="logo"]/img'));
         $this->assertSame(asset('defaults/logo.png'), $this->src($html, '//footer//a[@class="logo"]/img'));
-        $this->assertSame(asset('defaults/favicon.svg'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
+        $this->assertSame(asset('defaults/favicon.png'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
 
         // Шесть услуг: главная, список, своя страница — фрагмент услуги, alt — название услуги, width/height файла.
         foreach (['/en', '/en/services', '/lt/paslaugos'] as $path) {
@@ -186,7 +186,7 @@ class DefaultMediaTest extends TestCase
         // Логотип и favicon — и в админке.
         $admin = $this->actingAs($this->admin)->get('/en/admin')->assertOk()->getContent();
         $this->assertSame(asset('defaults/logo.png'), $this->src($admin, '//header//a[@class="logo"]/img'));
-        $this->assertStringContainsString('<link rel="icon" href="'.asset('defaults/favicon.svg').'"', $admin);
+        $this->assertStringContainsString('<link rel="icon" href="'.asset('defaults/favicon.png').'"', $admin);
     }
 
     public function test_project_photo_default_appears_only_after_publication_and_a_new_project_keeps_the_svg_placeholder(): void
@@ -218,7 +218,7 @@ class DefaultMediaTest extends TestCase
         $slots = [
             ['/en', $home, 'logo', 'defaults/logo.png', '//header//a[@class="logo"]/img/@src'],
             ['/en', $home, 'logo_white', 'defaults/logo-white.png', '//header//a[@class="logo"]/img[@class="logo-white"]/@src'],
-            ['/en', $home, 'favicon', 'defaults/favicon.svg', '//head/link[@rel="icon"]/@href'],
+            ['/en', $home, 'favicon', 'defaults/favicon.png', '//head/link[@rel="icon"]/@href'],
             ['/en/about', $this->item(ContentType::PageText, 'about'), 'images', 'defaults/engineering.jpg', '//div[@class="split-image"]/img/@src'],
             ['/en/services/engraving', $this->item(ContentType::Service, 'engraving'), 'images', 'defaults/services/engraving.png', '//div[@class="media-frame"]/img/@src'],
             ['/en/projects/prototype', $this->item(ContentType::Project, 'prototype'), 'images', 'defaults/project-prototype.jpg', '//div[@class="project-image"]/img/@src'],
@@ -303,7 +303,7 @@ class DefaultMediaTest extends TestCase
         $editor = fn (ContentType $type, string $key) => Livewire::test(ContentEditor::class, ['type' => $type->value, 'itemId' => $this->item($type, $key)->id]);
 
         $home = $editor(ContentType::PageText, 'home');
-        foreach (['logo.png', 'logo-white.png', 'favicon.svg', 'hero-engineering.mp4', 'hero-engineering-mobile.mp4', 'hero-video-poster.jpg'] as $file) {
+        foreach (['logo.png', 'logo-white.png', 'favicon.png', 'hero-engineering.mp4', 'hero-engineering-mobile.mp4', 'hero-video-poster.jpg'] as $file) {
             $home->assertSee(asset('defaults/'.$file), false);
         }
         $home->assertSee('Logo')->assertSee('Favicon (PNG)')->assertSee('(default)')

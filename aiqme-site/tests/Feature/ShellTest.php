@@ -161,7 +161,12 @@ class ShellTest extends TestCase
             $this->assertSame(asset('defaults/logo.png'), $xpath->query($query)->item(0)->getAttribute('src'));
             $this->assertSame('AIQME', $xpath->query($query)->item(0)->getAttribute('alt'));
         }
-        $this->assertSame(asset('defaults/favicon.svg'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
+        $this->assertSame(asset('defaults/favicon.png'), $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('href'));
+        // Правка 16.11: значок заказчика — PNG 512×512 на тёмной плашке, он же apple-touch-icon; /favicon.ico — не пустой.
+        $this->assertSame('image/png', $xpath->query('//head/link[@rel="icon"]')->item(0)->getAttribute('type'));
+        $this->assertSame(asset('defaults/favicon.png'), $xpath->query('//head/link[@rel="apple-touch-icon"]')->item(0)->getAttribute('href'));
+        $this->assertSame([512, 512], array_slice(getimagesize(public_path('defaults/favicon.png')), 0, 2));
+        $this->assertGreaterThan(0, filesize(public_path('favicon.ico')));
         // D-43 заменяет D-25: прежних копий логотипа нет. Правка 11.11, J-05: в public/images/ — только картинка карты «Kontaktai».
         $this->assertSame(['contact-map.jpg'], array_values(array_diff(scandir(public_path('images')), ['.', '..'])));
     }
