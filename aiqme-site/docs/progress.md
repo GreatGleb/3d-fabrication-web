@@ -6409,3 +6409,12 @@ K-05, K-06, K-01, K-02, K-03 — выполнены (track L); K-04 (выпус�
    шаблона 1 (товары) и шаблона 2 (калькулятор), PDF счёта во вложении; затем трек-номер в карточке → письмо отправки. Посмотреть в
    Gmail/Outlook и на телефоне; в админке/журнале — событие `order.paid_customer_mail` со статусом sent.
 7. Новый заказ — 8-значный случайный номер; `/lt/informacija` в Chrome на Windows (1500–1600 px, 125 %) — «Kategorija» вровень с поиском.
+
+## Правка 16.11: значок вкладки (favicon) заказчика (2026-11-17)
+
+- Заказчик прислал два PNG 512×512 (приватно `docs/customer/client/edits-20261116-favicon/`): Q без фона и Q на тёмной плашке.
+  Выбран вариант с плашкой: у варианта без фона белая Q пропадает на светлой вкладке. `defaults/favicon.svg` → `defaults/favicon.png`,
+  он же `apple-touch-icon`; пустой `public/favicon.ico` — 16/32/48 px. Свой favicon из админки по-прежнему важнее. Код `c7e5941`, `bin/check` OK.
+- Выпуск на aiqme.com: копия `/var/backups/aiqme/20261117-131703`; git archive → rsync, build, up, «Nothing to migrate», bootstrap, optimize,
+  restart worker/scheduler; `/up` 200. На `/en`, `/lt`, `/lt/kalkuliatorius` — `icon` и `apple-touch-icon` = `/defaults/favicon.png` (200, PNG),
+  `/favicon.ico` 200 (4297 Б).
